@@ -40,6 +40,18 @@ class BattleError(Exception):
     pass
 
 
+def cell_label(x: int, y: int) -> str:
+    """격자 좌표를 체스판/스프레드시트 표기처럼 '알파벳+숫자'로 변환합니다. (예: (0,0) -> A1)"""
+    col = ""
+    n = x
+    while True:
+        col = chr(65 + (n % 26)) + col
+        n = n // 26 - 1
+        if n < 0:
+            break
+    return f"{col}{y + 1}"
+
+
 def decide_first_team(team_a, team_b):
     """
     민첩 합산을 기준으로 선공 팀을 자동 결정합니다.
@@ -332,6 +344,8 @@ class Battle:
                 tag="crit",
             )
             self._log_public_only("상대 방어 크리티컬!", tag="crit")
+        elif dfs.get("auto"):
+            pass  # 거점/적 자동 방어는 치명타가 발생하지 않는 규칙이므로 별도 안내가 필요 없습니다.
         elif dfs["active"] and not dfs["position_match"]:
             self._log_operator_only(
                 f"(방어를 부여한 사람이 탱커가 아니므로 방어 크리티컬이 발생하지 않습니다)", tag="formula",
@@ -395,7 +409,9 @@ class Battle:
         self._check_finish()
 
     # ------------------------------------------------------------------
-    # 행동 : 이동 (매스 레이드 격자 전용) - 행동 전에 한 번만, has_acted를 소모하지 않습니다.
+    # 행동 : 이동 (매스 레이드 격자 전용) - 라운드당 한 번만, has_acted를 소모하지 않습니다.
+    # 행동(공격/힐 등) 전후 순서는 자유입니다 - 아군은 보통 이동 후 행동하고, 적군은 행동 후
+    # 이동하는 편이지만 서버는 어느 쪽이든 허용하고 "이동은 한 번만"만 강제합니다.
     # ------------------------------------------------------------------
     def perform_move(self, name: str, x: int, y: int):
         actor = self.find_character(name)
@@ -405,8 +421,6 @@ class Battle:
 
         if not actor.is_alive:
             raise BattleError("지금은 이동할 수 없는 상태입니다.")
-        if actor.has_acted:
-            raise BattleError("이미 행동한 캐릭터입니다.")
         if not actor.can_move or actor.grid_pos is None:
             raise BattleError("이 전투는 격자 이동을 지원하지 않습니다.")
         if actor.moved_this_round:
@@ -432,7 +446,7 @@ class Battle:
         self._push_history()
         actor.grid_pos = (x, y)
         actor.moved_this_round = True
-        self._log(f"{actor.name} 이동 ({cur_x},{cur_y}) → ({x},{y})", tag="action")
+        self._log(f"{actor.name} 이동 {cell_label(cur_x, cur_y)} → {cell_label(x, y)}", tag="action")
 
     # ------------------------------------------------------------------
     # 행동 : 공격 (모든 역할 가능)
@@ -709,6 +723,15 @@ class Battle:
         actor.has_acted = True
         self._log(f"{actor.name} 시간 초과", tag="system")
         self._check_finish()
+
+    def perform_timeout_unacted_runners(self):
+        """
+        1팀(러너)이면서 아직 행동하지 않아 턴 진행을 막고 있는 캐릭터를 일괄로 시간 초과 처리합니다.
+        (운영진이 응답 없는 러너를 한 번에 넘기기 위한 기능)
+        """
+        names = [name for name in self.unacted_members() if name in {c.name for c in self.team_a}]
+        for name in names:
+            self.perform_timeout(name)
 
     def perform_flee(self, name: str):
         """

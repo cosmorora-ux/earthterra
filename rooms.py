@@ -27,7 +27,14 @@ BATTLE_TYPE_DEFAULTS = {
     "mass_raid": (30, 5),
 }
 # 매스 레이드 격자 크기 (가로, 세로)
-MASS_RAID_GRID_SIZE = 12
+MASS_RAID_GRID_SIZE = 14
+# 점령전 격자 크기 (가로, 세로) - 점령전도 매스 레이드처럼 격자 이동을 사용합니다.
+SIEGE_GRID_SIZE = 10
+# 격자 이동을 사용하는 전투 유형과 그 격자 크기
+GRID_SIZES = {
+    "siege": SIEGE_GRID_SIZE,
+    "mass_raid": MASS_RAID_GRID_SIZE,
+}
 
 
 class RoomState:
@@ -55,6 +62,11 @@ class RoomState:
         # {"type": "youtube"|"mp3", "src": 유튜브 영상ID 또는 mp3 URL, "title": str, "started_at": epoch}
         # started_at 기준으로 모든 접속자가 같은 재생 위치로 맞춰서(동기화) 재생합니다.
         self.music = None
+
+        # 매스 레이드 전용 : GM이 "전조 출력"으로 미리 찍어 러너에게 공개한 격자 칸 목록.
+        # 이 칸에 곧(공격 행동과는 별개로) 무조건 피해가 발생한다는 시각적 경고입니다.
+        # [[x, y], ...] 또는 공개 전/해제 상태면 빈 리스트.
+        self.telegraph_cells = []
 
 
 def create_room(battle_type: str = "pvp") -> RoomState:

@@ -142,13 +142,21 @@
   {% endif %}
   <div id="gridSection" style="display:none; margin-bottom:10px;">
     <b>🗺 격자 지도</b>
+    <div style="margin:4px 0;">
+      <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">🔮 전조 출력</button>
+      <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;">📢 전조 공개 (러너에게 표시)</button>
+      <button onclick="clearTelegraph()" id="telegraphClearBtn" style="display:none;">✖ 전조 해제</button>
+      <span id="telegraphStatus" style="font-size:12px; opacity:0.8;"></span>
+    </div>
     <div id="gridLegend" style="font-size:12px; opacity:0.8; margin:4px 0;"></div>
     <div id="gridMap" style="overflow-x:auto;"></div>
+    <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
   </div>
   <div id="teams"></div>
   <div>
     <button onclick="doAction('advance_turn', {})">▶ 다음 턴</button>
     <button onclick="doAction('undo', {})">↩ 행동 취소</button>
+    <button onclick="doAction('timeout_unacted_runners', {})">⏱ 시간 초과 (행동 안 한 러너 일괄 처리)</button>
   </div>
 
   <h3>행동 실행</h3>
@@ -192,6 +200,8 @@
 <script>
 const ROOM_ID = "{{ room_id }}";
 const KEY = "{{ key }}";
+const BATTLE_TYPE = "{{ battle_type }}";
+const GRID_SIZE = {{ grid_size }};
 
 const socket = io();
 let lastState = null;
@@ -249,6 +259,8 @@ socket.on('register_result', (d) => {
 
 socket.on('gm_state', (state) => {
   lastState = state;
+  telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
+  renderTelegraphControls();
   renderRoster(state.roster);
   renderRosterManage(state.roster_detail || []);
   renderBattle(state.battle);
@@ -447,6 +459,7 @@ function renderBattle(battle) {
     teamsEl.innerHTML = '';
     actorSel.innerHTML = '';
     targetSel.innerHTML = '';
+    renderGrid(null, []);
     return;
   }
   document.getElementById('formatLabel').textContent = `${battle.format_label} 전투`;
@@ -490,13 +503,121 @@ function renderCardHtml(c) {
     <b>${c.name}</b> <span class="info-icon" title="${statsTitle(c)}">ⓘ</span> [${c.role}] ▾<br>
     HP ${c.current_hp}/${c.max_hp}<br>
     상태: ${c.status}${c.has_acted ? ' · 행동완료' : ''}
-    ${c.grid_pos ? `<br>위치 (${c.grid_pos[0]},${c.grid_pos[1]}) · 이동범위 ${c.move_range}${c.moved_this_round ? ' (이동함)' : ''}` : ''}
+    ${c.grid_pos ? `<br>위치 ${cellLabel(c.grid_pos[0], c.grid_pos[1])} · 이동범위 ${c.move_range}${c.moved_this_round ? ' (이동함)' : ''}` : ''}
     ${c.pending_attacks ? `<br><span class="err">보류 피해 ${c.pending_attacks}건</span>` : ''}
   </div>`;
 }
 
-let selectedGridChar = null;  // 지도에서 클릭해 범위를 미리보기 중인 아군 이름
+let selectedGridChar = null;  // 지도에서 선택된 "행동하는" 캐릭터 (범위 미리보기 대상)
+let selectedGridTargetName = null;  // 범위 내에서 클릭해 지정한 대상 (본인 포함)
 const GRID_CELL_PX = 36;
+const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐"]);
+const ENEMY_TARGET_ACTIONS = new Set(["공격"]);
+const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산"]);
+const ROLE_MOVE_COLOR = { "딜러": "#ff5555", "탱커": "#4a90ff", "힐러": "#ffe066" };
+const ROLE_MOVE_EMOJI = { "딜러": "🔴", "탱커": "🔵", "힐러": "🟡" };
+const ACTION_RANGE_COLOR = "#ffffff";
+
+function cellLabel(x, y) {
+  // 격자 좌표를 체스판/스프레드시트 표기처럼 '알파벳+숫자'로 변환합니다. (예: (0,0) -> A1)
+  let col = '';
+  let n = x;
+  do {
+    col = String.fromCharCode(65 + (n % 26)) + col;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return `${col}${y + 1}`;
+}
+
+// ------------------------------------------------------------------
+// 전조 출력 (매스 레이드 전용) : GM이 격자 칸을 미리 찍어뒀다가 공개하면,
+// 그 칸이 모두의 화면에서 밝게 표시됩니다. 곧 그 칸에 무조건 피해가 발생한다는
+// 시각적 경고이며, 실제 피해 판정(공격 행동)은 별도로 이루어집니다.
+// ------------------------------------------------------------------
+let telegraphMode = false;             // GM이 칸을 고르는 중인지
+let telegraphSelectedCells = new Set();  // GM이 고른 칸 (아직 미공개, "x,y")
+let telegraphRevealedCells = new Set();  // 서버로부터 받은, 이미 공개된 칸 ("x,y")
+
+function toggleTelegraphMode() {
+  telegraphMode = !telegraphMode;
+  if (!telegraphMode) telegraphSelectedCells.clear();
+  renderTelegraphControls();
+  renderGrid(lastBattleForPanel, lastAllForCards);
+}
+
+function currentGridDims() {
+  const battle = lastBattleForPanel;
+  return {
+    width: battle ? battle.grid_width : GRID_SIZE,
+    height: battle ? battle.grid_height : GRID_SIZE,
+  };
+}
+
+function toggleTelegraphRow(y) {
+  const { width } = currentGridDims();
+  const keys = [];
+  for (let x = 0; x < width; x++) keys.push(`${x},${y}`);
+  const allSelected = keys.every(k => telegraphSelectedCells.has(k));
+  keys.forEach(k => { if (allSelected) telegraphSelectedCells.delete(k); else telegraphSelectedCells.add(k); });
+}
+
+function toggleTelegraphColumn(x) {
+  const { height } = currentGridDims();
+  const keys = [];
+  for (let y = 0; y < height; y++) keys.push(`${x},${y}`);
+  const allSelected = keys.every(k => telegraphSelectedCells.has(k));
+  keys.forEach(k => { if (allSelected) telegraphSelectedCells.delete(k); else telegraphSelectedCells.add(k); });
+}
+
+function onTelegraphCellClick(x, y, evt) {
+  // Shift+왼쪽 클릭 : 가로 한 줄 전체를 일괄 선택/해제
+  if (evt && evt.shiftKey) {
+    toggleTelegraphRow(y);
+  } else {
+    const key = `${x},${y}`;
+    if (telegraphSelectedCells.has(key)) telegraphSelectedCells.delete(key);
+    else telegraphSelectedCells.add(key);
+  }
+  renderTelegraphControls();
+  renderGrid(lastBattleForPanel, lastAllForCards);
+}
+
+function onTelegraphCellRightClick(x, y, evt) {
+  // Shift+오른쪽 클릭 : 세로 한 줄 전체를 일괄 선택/해제
+  if (evt) evt.preventDefault();
+  if (evt && evt.shiftKey) {
+    toggleTelegraphColumn(x);
+    renderTelegraphControls();
+    renderGrid(lastBattleForPanel, lastAllForCards);
+  }
+  return false;
+}
+
+function revealTelegraph() {
+  const cells = [...telegraphSelectedCells].map(k => k.split(',').map(Number));
+  socket.emit('telegraph_reveal', { cells });
+  telegraphMode = false;
+  telegraphSelectedCells.clear();
+  renderTelegraphControls();
+}
+
+function clearTelegraph() {
+  socket.emit('telegraph_clear', {});
+}
+
+function renderTelegraphControls() {
+  const modeBtn = document.getElementById('telegraphModeBtn');
+  const revealBtn = document.getElementById('telegraphRevealBtn');
+  const clearBtn = document.getElementById('telegraphClearBtn');
+  const status = document.getElementById('telegraphStatus');
+  if (!modeBtn) return;
+  modeBtn.textContent = telegraphMode ? '🔮 전조 출력 중 (칸을 클릭해 선택)' : '🔮 전조 출력';
+  revealBtn.style.display = telegraphMode ? '' : 'none';
+  clearBtn.style.display = telegraphRevealedCells.size > 0 ? '' : 'none';
+  status.textContent = telegraphMode
+    ? `선택된 칸 ${telegraphSelectedCells.size}개 (공개 전까지는 나만 보여요) · Shift+좌클릭 가로 일괄, Shift+우클릭 세로 일괄`
+    : (telegraphRevealedCells.size > 0 ? `공개된 전조 ${telegraphRevealedCells.size}칸` : '');
+}
 
 function crossPlusNeighbors(px, py, crossLen) {
   // 이동/사거리 공용 모양 : 십자(상하좌우 crossLen칸) + 본인을 두르는 대각선 포함 8칸
@@ -521,8 +642,15 @@ function computeHighlightCells(character, showActionRange) {
   return crossPlusNeighbors(px, py, crossLen);
 }
 
-function onGridCellClick(name) {
-  selectedGridChar = (selectedGridChar === name) ? null : name;
+function onGridActorClick(name) {
+  selectedGridChar = name;
+  selectedGridTargetName = null;
+  renderGrid(lastBattleForPanel, lastAllForCards);
+}
+
+function onGridTargetClick(actorName, targetName) {
+  selectedGridChar = actorName;
+  selectedGridTargetName = targetName;
   renderGrid(lastBattleForPanel, lastAllForCards);
 }
 
@@ -530,13 +658,16 @@ function onGridMoveClick(x, y) {
   if (!selectedGridChar) return;
   const name = selectedGridChar;
   selectedGridChar = null;
+  selectedGridTargetName = null;
   doAction('move', { name, x, y });
 }
 
 function renderGrid(battle, all) {
   const section = document.getElementById('gridSection');
   const el = document.getElementById('gridMap');
-  if (!battle.grid_width) { section.style.display = 'none'; return; }
+  const gridWidth = battle ? battle.grid_width : (GRID_SIZE > 0 ? GRID_SIZE : null);
+  const gridHeight = battle ? battle.grid_height : (GRID_SIZE > 0 ? GRID_SIZE : null);
+  if (!gridWidth) { section.style.display = 'none'; return; }
   section.style.display = '';
   const posMap = {};
   all.forEach(c => { if (c.grid_pos) posMap[`${c.grid_pos[0]},${c.grid_pos[1]}`] = c; });
@@ -547,47 +678,76 @@ function renderGrid(battle, all) {
   if (selectedGridChar) {
     selChar = all.find(c => c.name === selectedGridChar);
     if (selChar && selChar.grid_pos) {
-      highlightIsAction = !!selChar.moved_this_round;
+      // 아군은 이동 후 행동, 적군(2팀)은 행동 후 이동으로 순서가 반대입니다.
+      highlightIsAction = selChar.teamLabel === 'B' ? !selChar.has_acted : !!selChar.moved_this_round;
       highlightCells = computeHighlightCells(selChar, highlightIsAction);
     } else {
       selectedGridChar = null;
     }
   }
 
-  let html = '<table style="border-collapse:collapse;">';
-  for (let y = 0; y < battle.grid_height; y++) {
+  let html = '<table style="border-collapse:separate; border-spacing:0;">';
+  for (let y = 0; y < gridHeight; y++) {
     html += '<tr>';
-    for (let x = 0; x < battle.grid_width; x++) {
+    for (let x = 0; x < gridWidth; x++) {
       const key = `${x},${y}`;
       const c = posMap[key];
       let bg = '#222';
-      let border = '1px solid #444';
+      let borderColor = '#444';
       let cursor = 'default';
       let onclick = '';
       if (c) {
+        // 이동을 마쳐 사거리(주황)가 표시 중일 때만 대상을 지정해 행동할 수 있습니다.
+        // 이동 전(파란 이동범위 표시 중)에는 클릭해도 행동 캐릭터만 바뀌고, 반드시 이동부터 해야 합니다.
+        const canTargetNow = !!(selectedGridChar && highlightIsAction);
+        const isSelectedActor = selectedGridChar && c.name === selectedGridChar;
+        const isTargetable = canTargetNow && !isSelectedActor && highlightCells.has(key);
+        const isSelfTargetable = canTargetNow && isSelectedActor;
         if (c.teamLabel === 'A') {
           bg = c.moved_this_round ? '#666' : '#555';
-          border = c.moved_this_round ? '2px solid #fff' : '1px solid #888';
+          borderColor = c.moved_this_round ? '#fff' : '#888';
           cursor = 'pointer';
-          onclick = `onclick="onGridCellClick('${c.name}')"`;
+          if (isSelfTargetable || isTargetable) {
+            onclick = `onclick="onGridTargetClick('${selectedGridChar}','${c.name}')"`;
+          } else {
+            onclick = `onclick="onGridActorClick('${c.name}')"`;
+          }
         } else {
-          bg = '#7a2a2a';
-          border = '1px solid #a44';
+          bg = c.moved_this_round ? '#a83a3a' : '#7a2a2a';
+          borderColor = c.moved_this_round ? '#ff9999' : '#a44';
+          cursor = 'pointer';
+          if (isSelfTargetable || isTargetable) {
+            onclick = `onclick="onGridTargetClick('${selectedGridChar}','${c.name}')"`;
+          } else {
+            onclick = `onclick="onGridActorClick('${c.name}')"`;
+          }
         }
       } else if (highlightCells.has(key) && !highlightIsAction) {
         cursor = 'pointer';
         onclick = `onclick="onGridMoveClick(${x},${y})"`;
       }
       if (highlightCells.has(key)) {
-        border = highlightIsAction ? '2px solid #ffb300' : '2px solid #4ad0ff';
+        borderColor = highlightIsAction ? ACTION_RANGE_COLOR : (ROLE_MOVE_COLOR[selChar.role] || '#4ad0ff');
       }
       if (selChar && selChar.grid_pos && selChar.grid_pos[0] === x && selChar.grid_pos[1] === y) {
-        border = '3px solid #4dff4d';
+        borderColor = '#4dff4d';
+      }
+      // 전조는 테두리(이동범위/사거리 등 기존 표시)를 가리지 않도록 은은한 안쪽 글로우로만 표시합니다.
+      let glow = '';
+      if (telegraphRevealedCells.has(key)) {
+        glow = 'box-shadow: inset 0 0 10px 3px rgba(255,120,120,0.4);';
+      } else if (telegraphSelectedCells.has(key)) {
+        glow = 'box-shadow: inset 0 0 8px 2px rgba(255,170,0,0.65);';
+      }
+      if (telegraphMode) {
+        cursor = 'pointer';
+        onclick = `onclick="onTelegraphCellClick(${x},${y},event)" oncontextmenu="onTelegraphCellRightClick(${x},${y},event); return false;"`;
       }
       const label = c ? c.name.slice(0, 2) : '';
-      const stateText = c && c.teamLabel === 'A' ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
-      const title = c ? `${c.name} (${c.role}) HP ${c.current_hp}/${c.max_hp} · (${x},${y})${stateText}` : `(${x},${y})`;
-      html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; border:${border}; background:${bg}; text-align:center; font-size:12px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
+      const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
+      const telegraphText = telegraphRevealedCells.has(key) ? ' · 🔮 전조(곧 피해)' : (telegraphSelectedCells.has(key) ? ' · 전조 선택됨(미공개)' : '');
+      const title = c ? `${c.name} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
+      html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; border:2px solid ${borderColor}; background:${bg}; ${glow} text-align:center; font-size:12px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
     }
     html += '</tr>';
   }
@@ -597,9 +757,46 @@ function renderGrid(battle, all) {
   const legend = document.getElementById('gridLegend');
   if (legend) {
     legend.textContent = selChar
-      ? `선택: ${selChar.name} — ${highlightIsAction ? '🟠 사거리(십자3+주변8) 표시 중' : '🔵 이동 가능 범위 표시 중'} (다시 클릭하면 해제)`
-      : '아군(파란/회색 칸)을 클릭하면 이동 전엔 이동 범위, 이동 후엔 사거리가 표시돼요.';
+      ? (highlightIsAction
+          ? `선택: ${selChar.name} — ⚪ 사거리(십자3+주변8) 표시 중 · 범위 내 아군/적군(본인 포함)을 클릭하면 대상을 지정해 행동을 고를 수 있어요.`
+          : `선택: ${selChar.name} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 가능 범위 표시 중 · 먼저 이동할 칸을 클릭하세요 (이동을 마쳐야 행동할 수 있어요).`)
+      : '아군을 클릭하면 이동 범위가 표시돼요(딜러 🔴 · 탱커 🔵 · 힐러 🟡). 이동을 마치면 사거리(⚪)가 표시되고, 그 범위 내 캐릭터(본인 포함)를 클릭해 대상을 정하면 행동 팝업이 뜹니다.';
   }
+
+  renderGridActionPopup(battle, all);
+}
+
+function renderGridActionPopup(battle, all) {
+  const popup = document.getElementById('gridActionPopup');
+  if (!popup) return;
+  if (!battle || !selectedGridChar || !selectedGridTargetName) { popup.style.display = 'none'; return; }
+  const actor = all.find(c => c.name === selectedGridChar);
+  const target = all.find(c => c.name === selectedGridTargetName);
+  if (!actor || !target) { popup.style.display = 'none'; return; }
+
+  const isSelf = actor.name === target.name;
+  const isEnemy = actor.teamLabel !== target.teamLabel;
+  const allowedLabels = isEnemy ? ENEMY_TARGET_ACTIONS
+    : isSelf ? new Set([...ALLY_TARGET_ACTIONS, ...SELF_ONLY_ACTIONS])
+    : ALLY_TARGET_ACTIONS;
+
+  const buttons = actor.available_actions.filter(label => allowedLabels.has(label)).map(label => {
+    const type = ACTION_LABELS[label];
+    if (NEEDS_TARGET.has(type)) {
+      return `<button onclick="quickAction('${type}','${actor.name}','${target.name}'); closeGridSelection();">${label}</button>`;
+    }
+    return `<button onclick="quickAction('${type}','${actor.name}'); closeGridSelection();">${label}</button>`;
+  }).join(' ');
+
+  const targetLabel = isSelf ? '본인' : target.name;
+  popup.innerHTML = `<b>${actor.name}</b> → <b>${targetLabel}</b> 행동 선택 : ${buttons || '<i>이 대상에게 가능한 행동이 없습니다</i>'} <button onclick="closeGridSelection()" style="float:right;">닫기</button>`;
+  popup.style.display = '';
+}
+
+function closeGridSelection() {
+  selectedGridChar = null;
+  selectedGridTargetName = null;
+  renderGrid(lastBattleForPanel, lastAllForCards);
 }
 
 function tickTimer() {
@@ -859,7 +1056,17 @@ function startMusicPlayback() {
           width: 200, height: 113,
           videoId: musicState.src,
           playerVars: { autoplay: 1, loop: 1, playlist: musicState.src, start: Math.floor(elapsed) },
-          events: { onReady: (e) => { e.target.playVideo(); } },
+          events: {
+            onReady: (e) => { e.target.playVideo(); },
+            // loop+playlist 파라미터만으로는 영상이 끝난 뒤 다시 재생되지 않는 경우가 있어,
+            // 재생 종료(ENDED=0)를 직접 감지해서 처음부터 다시 재생합니다.
+            onStateChange: (e) => {
+              if (e.data === YT.PlayerState.ENDED) {
+                ytPlayer.seekTo(0, true);
+                ytPlayer.playVideo();
+              }
+            },
+          },
         });
       }
     };

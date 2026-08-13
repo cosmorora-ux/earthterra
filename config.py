@@ -194,7 +194,8 @@ def roll_attack(stats: dict, role: str = None, overrides: dict = None) -> dict:
     atk_bonus = atk_val * stat_mult
     subtotal = core["subtotal"] + atk_bonus
 
-    position_match = (role == ROLE_DEALER)
+    # role이 None이면 포지션이 없는 존재(점령전 거점 / 매스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
+    position_match = (role is None) or (role == ROLE_DEALER)
     if position_match:
         crit_chance = (get_value("BASE_CRIT_CHANCE", overrides)
                        + luck * get_value("LUCK_CRIT_CHANCE_MULT", overrides)
@@ -309,9 +310,9 @@ def roll_defense(target_stats: dict, active: bool, grantor_stats: dict = None,
 
 def roll_site_auto_defense(target_stats: dict, overrides: dict = None) -> dict:
     """
-    점령전 "거점" 전용 자동 방어입니다. 공격 1회당 무조건 능동 방어 1회가 발생하며
+    점령전 거점 / 매스 레이드 적군 전용 자동 방어입니다. 공격 1회당 무조건 능동 방어 1회가 발생하며
     (방어 선언/능동 방어 계층 유무와 무관), 기본 다이스 공식 대신 1~30 고정 범위로 굴립니다.
-    치명타 판정식은 기존 방어 크리티컬 공식을 그대로 재사용합니다(거점은 항상 탱커 취급).
+    치명타는 발생하지 않습니다.
     """
     passive_mult = get_value("PASSIVE_DEFENSE_STAT_MULTIPLIER", overrides)
     def_val = int(target_stats.get("방어", 0))
@@ -320,20 +321,7 @@ def roll_site_auto_defense(target_stats: dict, overrides: dict = None) -> dict:
     roll = random.randint(1, 30)
     stat_mult = get_value("DEFENSE_STAT_MULTIPLIER", overrides)
     active_bonus = def_val * stat_mult
-    active_subtotal = roll + active_bonus
-
-    luck = int(target_stats.get("행운", 0))
-    mental = int(target_stats.get("정신", 0))
-    agi = int(target_stats.get("민첩", 0))
-    ability = int(target_stats.get("이능", 0))
-    crit_chance = (get_value("DEFENSE_CRIT_BASE_CHANCE", overrides)
-                   + luck * get_value("DEFENSE_CRIT_LUCK_MULT", overrides)
-                   + mental * get_value("DEFENSE_CRIT_MENTAL_MULT", overrides))
-    is_crit = random.randint(1, 100) <= crit_chance
-    crit_mult = (get_value("DEFENSE_CRIT_BASE_MULT", overrides)
-                 + agi * get_value("DEFENSE_CRIT_AGI_MULT", overrides)
-                 + ability * get_value("DEFENSE_CRIT_ABILITY_MULT", overrides))
-    active_component = round(active_subtotal * crit_mult) if is_crit else active_subtotal
+    active_component = roll + active_bonus
 
     total = passive_component + active_component
 
@@ -341,8 +329,8 @@ def roll_site_auto_defense(target_stats: dict, overrides: dict = None) -> dict:
         "active": True, "auto": True, "roll": roll,
         "passive_component": passive_component, "active_component": active_component,
         "grantor_name": None, "stat_val": def_val, "stat_mult": stat_mult,
-        "is_crit": is_crit, "position_match": True,
-        "crit_chance": crit_chance, "crit_mult": round(crit_mult, 3),
+        "is_crit": False, "position_match": False,
+        "crit_chance": 0, "crit_mult": 1.0,
         "total": total,
     }
 
@@ -404,7 +392,8 @@ def roll_heal(stats: dict, role: str = None, overrides: dict = None) -> dict:
     core = _roll_core_dice(stats, get_value("HEAL_DICE_COUNT", overrides), overrides)
     base_total = round(core["subtotal"] * get_value("HEAL_OUTPUT_MULTIPLIER", overrides))
 
-    position_match = (role == ROLE_HEALER)
+    # role이 None이면 포지션이 없는 존재(점령전 거점 / 매스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
+    position_match = (role is None) or (role == ROLE_HEALER)
     luck = int(stats.get("행운", 0))
     mental = int(stats.get("정신", 0))
     agi = int(stats.get("민첩", 0))

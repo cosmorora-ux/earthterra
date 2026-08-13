@@ -21,7 +21,7 @@ from flask_socketio import SocketIO, join_room, emit
 
 import config
 from battle import Battle, BattleError
-from rooms import create_room, get_room, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, MASS_RAID_GRID_SIZE
+from rooms import create_room, get_room, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -76,6 +76,7 @@ def gm_page(room_id):
         battle_type=room.battle_type,
         battle_type_label=BATTLE_TYPE_LABELS.get(room.battle_type, "PVP"),
         default_team_a=default_team_a, default_team_b=default_team_b,
+        grid_size=GRID_SIZES.get(room.battle_type, 0),
     )
 
 
@@ -89,7 +90,9 @@ def guest_page(room_id):
         abort(403)
     return render_template(
         "guest.html", room_id=room_id, key=key,
+        battle_type=room.battle_type,
         battle_type_label=BATTLE_TYPE_LABELS.get(room.battle_type, "PVP"),
+        grid_size=GRID_SIZES.get(room.battle_type, 0),
     )
 
 
@@ -133,7 +136,7 @@ def upload_music():
 def build_character_public(c):
     return {
         "name": c.name,
-        "role": c.role,
+        "role": c.role or "몹",
         "color": c.color,
         "current_hp": c.current_hp,
         "max_hp": c.max_hp,
@@ -202,6 +205,7 @@ def build_public_state(room):
         "chat": room.chat_log[-200:],
         "roster": room.game.db.all_names_by_position(),
         "music": room.music,
+        "telegraph_cells": room.telegraph_cells,
         "server_now": time.time(),
     }
 
@@ -508,14 +512,15 @@ def on_start_battle(data):
         return
     forced_first_team = Battle.TEAM_A if room.battle_type == "siege" else None
     formula_overrides = config.load_profile_overrides(room.battle_type)
-    site_auto_defense = room.battle_type == "siege"
-    is_mass_raid = room.battle_type == "mass_raid"
-    grid_width = MASS_RAID_GRID_SIZE if is_mass_raid else None
-    grid_height = MASS_RAID_GRID_SIZE if is_mass_raid else None
+    site_auto_defense = room.battle_type in ("siege", "mass_raid")
+    grid_size = GRID_SIZES.get(room.battle_type)
+    is_grid_battle = grid_size is not None
+    grid_width = grid_size
+    grid_height = grid_size
 
     team_a = data.get("team_a", [])
     team_b = data.get("team_b", [])
-    if is_mass_raid and len(team_a) + len(team_b) > grid_width * grid_height:
+    if is_grid_battle and len(team_a) + len(team_b) > grid_width * grid_height:
         emit("action_error", {"message": f"격자 칸({grid_width}×{grid_height})보다 인원이 많습니다."})
         return
 
@@ -531,13 +536,15 @@ def on_start_battle(data):
         emit("action_error", {"message": str(e)})
         return
 
-    # 점령전 : 거점(2팀)은 방어가 자동이라 역할과 무관하게 "방어 정산"/"공격"/"힐"만 직접 선택합니다.
-    if room.battle_type == "siege":
+    # 점령전 거점 / 매스 레이드 적군(2팀) : 방어가 자동이라 역할과 무관하게 "방어 정산"/"공격"/"힐"만
+    # 직접 선택합니다. 포지션이 없으므로 공격/힐 모두 치명타가 발생할 수 있습니다.
+    if room.battle_type in ("siege", "mass_raid"):
         for c in room.game.battle.team_b:
             c.forced_actions = [config.ACTION_DEFENSE_SETTLE, config.ACTION_ATTACK, config.ACTION_HEAL]
+            c.role = None
 
-    # 매스 레이드 : 중앙에 몹을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
-    if is_mass_raid:
+    # 격자 전투(매스 레이드/점령전) : 중앙에 몹(거점)을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
+    if is_grid_battle:
         assign_mass_raid_positions(room.game.battle, grid_width, grid_height)
         for c in room.game.battle.team_a + room.game.battle.team_b:
             c.can_move = True
@@ -567,6 +574,44 @@ def on_roll_site_dice(data):
     room.site_dice_value = value
     room.site_dice_used = 0
     battle.log_event(f"🔮 전조 : 이번 라운드 거점은 {value}회 행동합니다.", tag="system")
+    broadcast_state(room)
+
+
+@socketio.on("telegraph_reveal")
+def on_telegraph_reveal(data):
+    """
+    매스 레이드 전용 : GM이 '전조 출력'으로 찍어둔 격자 칸을 러너에게 공개합니다.
+    공개된 칸은 모두의 화면에서 밝게 표시되며, 곧 그 칸에 무조건 피해가 발생한다는
+    시각적 경고일 뿐입니다. 실제 피해 판정(공격 행동)은 별도로 이루어집니다.
+    """
+    room = _require_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    battle = room.game.battle
+    if battle is None or battle.grid_width is None:
+        emit("action_error", {"message": "격자 전투(점령전/매스 레이드)에서만 사용할 수 있습니다."})
+        return
+    cells = []
+    for cell in data.get("cells", []):
+        try:
+            x, y = int(cell[0]), int(cell[1])
+        except (TypeError, ValueError, IndexError):
+            continue
+        if 0 <= x < battle.grid_width and 0 <= y < battle.grid_height:
+            cells.append([x, y])
+    room.telegraph_cells = cells
+    battle.log_event(f"🔮 전조 공개 : {len(cells)}칸에 곧 피해가 발생합니다.", tag="system")
+    broadcast_state(room)
+
+
+@socketio.on("telegraph_clear")
+def on_telegraph_clear(data):
+    room = _require_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    room.telegraph_cells = []
     broadcast_state(room)
 
 
@@ -613,6 +658,7 @@ ACTION_HANDLERS = {
     "dodge": lambda battle, p: battle.perform_dodge(p["name"]),
     "heal": lambda battle, p: battle.perform_heal(p["healer"], p["target"]),
     "timeout": lambda battle, p: battle.perform_timeout(p["name"]),
+    "timeout_unacted_runners": lambda battle, p: battle.perform_timeout_unacted_runners(),
     "flee": lambda battle, p: battle.perform_flee(p["name"]),
     "defense_settle": lambda battle, p: battle.perform_defense_settle(p["name"]),
     "move": lambda battle, p: battle.perform_move(p["name"], int(p["x"]), int(p["y"])),
@@ -645,7 +691,7 @@ def on_battle_action(data):
 
     control = resolve_control(room, info)
 
-    if action_type in ("advance_turn", "undo", "timeout"):
+    if action_type in ("advance_turn", "undo", "timeout", "timeout_unacted_runners"):
         if control["scope"] != "all":
             emit("action_error", {"message": "이 행동은 운영진만 사용할 수 있습니다."})
             return
@@ -770,4 +816,4 @@ def on_reveal_pending_action(data):
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=False, allow_unsafe_werkzeug=True)
