@@ -31,11 +31,7 @@
   #globalError { display:none; position:sticky; top:0; z-index:50; background:#4a1f1f; color:#ffcccc;
                  padding:10px 14px; border-radius:10px; margin-bottom:12px; font-weight:bold; }
 
-  /* ---------- 입장 화면 ---------- */
-  #joinSection.panel { padding: 18px 20px; margin-bottom: 14px; display:flex; align-items:center; gap:10px; }
-  #joinSection input { background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:8px 10px; font-size:14px; }
-  #joinSection button, .btn { background: var(--accent-blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; font-weight:600; }
-  #joinStatus { color: var(--muted); font-size: 13px; }
+  .btn { background: var(--accent-blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; font-weight:600; }
 
   /* ---------- 상단바 ---------- */
   .topbar { display:flex; align-items:center; gap:18px; padding:16px 24px; margin-bottom:14px; font-size:14px; flex-wrap:wrap; }
@@ -43,9 +39,18 @@
   .topbar .sep { color:#3a3a3e; }
   .topbar .spacer { flex:1; }
   .topbar .clock { color: var(--muted); font-variant-numeric: tabular-nums; }
-  .avatar-dot { width:34px; height:34px; border-radius:50%; background: var(--accent-red); display:inline-flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#2a0f0c; flex-shrink:0; }
+  .avatar-dot { width:34px; height:34px; border-radius:50%; background:#4a4a4e; flex-shrink:0; cursor:pointer; }
+  .avatar-dot:hover { box-shadow: 0 0 0 2px var(--card-border); }
   .whoami { display:flex; align-items:center; gap:10px; }
   .whoami .label { color: var(--muted); font-size:13px; }
+
+  /* ---------- 캐릭터 입장 / 색상 선택 모달 ---------- */
+  .modal-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); align-items:center; justify-content:center; }
+  .modal-box { width:300px; padding:20px; }
+  .modal-box .modal-title { font-size:15px; font-weight:700; margin-bottom:12px; }
+  .modal-box input { width:100%; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:9px 12px; font-size:14px; }
+  .modal-box .row { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:10px; }
+  .modal-box .err { color: var(--accent-red); font-size:12px; min-height:16px; margin-top:8px; }
 
   .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding: 0 4px; }
   .breadcrumb { color: var(--muted); font-size:13px; }
@@ -151,11 +156,18 @@
 
 <div id="globalError"></div>
 
-<section id="joinSection" class="panel">
-  닉네임: <input id="nicknameInput" placeholder="닉네임" onkeydown="if(event.key==='Enter') doJoin()">
-  <button onclick="doJoin()">입장</button>
-  <span id="joinStatus"></span>
-</section>
+<div id="joinModal" class="modal-overlay">
+  <div class="modal-box panel">
+    <div class="modal-title">캐릭터 이름으로 입장</div>
+    <input id="joinNameInput" placeholder="캐릭터 이름을 정확히 입력" onkeydown="if(event.key==='Enter') submitJoinModal()">
+    <div id="joinModalError" class="err"></div>
+    <div class="row">
+      <button class="btn-plain" onclick="closeJoinModal()">취소</button>
+      <button class="btn-primary" onclick="submitJoinModal()">입장</button>
+    </div>
+  </div>
+</div>
+<input type="color" id="myColorInput" value="#4a90ff" style="position:fixed; opacity:0; pointer-events:none; width:0; height:0;" onchange="onMyColorChange(this.value)">
 
 <div class="topbar panel">
   <div class="seg">🆔 {{ room_id }}</div>
@@ -167,8 +179,8 @@
   <div class="clock" id="liveClock">--:--:--</div>
   <div class="whoami">
     <span class="label" id="roundTimerLabel">⏱ <span id="roundTimer">--:--</span></span>
-    <div class="avatar-dot" id="myAvatarDot">-</div>
-    <span class="label">로그인 <span id="myNicknameLabel">본인</span></span>
+    <div class="avatar-dot" id="myAvatarDot" title="클릭해서 캐릭터로 입장" onclick="onAvatarDotClick()" ondblclick="onAvatarDotDblClick()"></div>
+    <span class="label" id="myNicknameLabel">미입장</span>
   </div>
 </div>
 
@@ -233,7 +245,7 @@
       </div>
       <div id="chatLog"></div>
       <div class="input-row" id="chatInputRow" style="display:none;">
-        <div class="avatar-dot" id="inputAvatarDot">-</div>
+        <div class="avatar-dot" id="inputAvatarDot" title="더블클릭해서 색상 변경" ondblclick="onInputAvatarDotDblClick()"></div>
         <input id="chatInput" placeholder="대사를 입력해 주세요." onkeydown="if(event.key==='Enter') sendChat()">
         <button class="btn-plain" onclick="sendChat()">채팅 전송</button>
         <button class="btn-primary" onclick="onCommandSendClick()">커맨드 전송</button>
@@ -291,33 +303,108 @@ function updateChatVisibility() {
 }
 
 function silentJoin() {
-  MY_NICKNAME = document.getElementById('nicknameInput').value.trim() || '익명';
+  // 페이지에 들어오면 일단 '익명'으로 관전만 가능하게 조용히 접속합니다.
+  // 실제 캐릭터로 입장하려면 상단 아바타 동그라미를 클릭해야 합니다.
+  MY_NICKNAME = '익명';
   socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
 }
 
-function doJoin() {
-  const nickname = document.getElementById('nicknameInput').value.trim();
-  if (!nickname) {
-    showError('닉네임을 입력해주세요.');
+// ------------------------------------------------------------------
+// 캐릭터 이름으로 입장 (아바타 동그라미 클릭 → 모달)
+// ------------------------------------------------------------------
+function onAvatarDotClick() {
+  if (isMatchedCharacter()) return;  // 이미 캐릭터로 입장한 상태면 클릭은 무시(더블클릭하면 로그아웃)
+  openJoinModal();
+}
+
+function onAvatarDotDblClick() {
+  if (!isMatchedCharacter()) return;
+  if (confirm('로그아웃 하시겠습니까?')) logout();
+}
+
+function onInputAvatarDotDblClick() {
+  if (!isMatchedCharacter()) return;
+  document.getElementById('myColorInput').click();
+}
+
+function logout() {
+  MY_NICKNAME = '익명';
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+  explicitlyJoined = false;
+  updateChatVisibility();
+  document.getElementById('myNicknameLabel').textContent = '미입장';
+  updateAvatarDots();
+  renderCards();
+}
+
+function isMatchedCharacter(battle) {
+  if (!explicitlyJoined) return false;
+  const control = myControlInfo(battle !== undefined ? battle : lastBattleForPanel);
+  return control.scope === 'character' || control.scope === 'all';
+}
+
+function openJoinModal() {
+  document.getElementById('joinModalError').textContent = '';
+  document.getElementById('joinNameInput').value = '';
+  document.getElementById('joinModal').style.display = 'flex';
+  document.getElementById('joinNameInput').focus();
+}
+
+function closeJoinModal() {
+  document.getElementById('joinModal').style.display = 'none';
+}
+
+function submitJoinModal() {
+  const name = document.getElementById('joinNameInput').value.trim();
+  if (!name) {
+    document.getElementById('joinModalError').textContent = '캐릭터 이름을 입력해주세요.';
     return;
   }
-  MY_NICKNAME = nickname;
+  MY_NICKNAME = name;
   socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
-  explicitlyJoined = true;
-  updateChatVisibility();
+  // 서버가 join → public_state 순으로 응답하는 짧은 시간을 기다린 뒤, 이 이름이 실제
+  // 전투에 참여 중인 캐릭터와 일치하는지 확인합니다 (전투 시작 전에는 항상 실패합니다).
+  setTimeout(() => {
+    const control = myControlInfo(lastBattleForPanel);
+    if (control.scope === 'character' || control.scope === 'all') {
+      explicitlyJoined = true;
+      updateChatVisibility();
+      document.getElementById('myNicknameLabel').textContent = MY_NICKNAME;
+      closeJoinModal();
+      renderCards();
+      updateAvatarDots();
+    } else {
+      document.getElementById('joinModalError').textContent =
+        '캐릭터 이름이 일치하지 않습니다. 전투가 시작된 뒤 정확한 이름을 입력해주세요.';
+    }
+  }, 350);
+}
+
+function onMyColorChange(hex) {
+  socket.emit('set_my_color', { color: hex });
+}
+
+function myCharacterColor(battle) {
+  if (!explicitlyJoined) return null;
+  const control = myControlInfo(battle !== undefined ? battle : lastBattleForPanel);
+  if (control.scope === 'character') return control.character.color || null;
+  return null;
+}
+
+function updateAvatarDots(battle) {
+  const color = myCharacterColor(battle);
+  [document.getElementById('myAvatarDot'), document.getElementById('inputAvatarDot')].forEach(el => {
+    if (!el) return;
+    el.style.background = color || '#4a4a4e';
+  });
 }
 
 socket.on('connect', () => {
-  document.getElementById('joinStatus').textContent = '(서버 연결됨)';
   silentJoin();
 });
 
-socket.on('joined', (d) => {
-  document.getElementById('joinStatus').textContent = `입장 완료 (역할: ${d.role})`;
-  document.getElementById('myNicknameLabel').textContent = MY_NICKNAME || '본인';
-  const initial = (MY_NICKNAME || '?').slice(0, 1);
-  document.getElementById('myAvatarDot').textContent = initial;
-  document.getElementById('inputAvatarDot').textContent = initial;
+socket.on('joined', () => {
+  updateAvatarDots();
 });
 
 function showError(msg) {
@@ -412,6 +499,7 @@ function renderBattle(battle) {
   lastSeesAll = seesAll;
   lastForcedTarget = battle.forced_target;
   renderCards();
+  updateAvatarDots(battle);
 
   renderGrid(battle, all);
 }
@@ -451,7 +539,7 @@ function renderCardHtml(c) {
         <div class="cname">${c.name}${isMine ? ' <span style="color:var(--accent-blue); font-size:11px;">(나)</span>' : ''}</div>
         <div class="crole" style="color:${roleColorVar(c.role)}">${c.role}${(c.skill && BATTLE_TYPE === 'mass_raid') ? ' 【' + c.skill + '】' : ''}<span class="cstatus-tag">${statusTag}</span></div>
       </div>
-      <div class="cavatar"></div>
+      <div class="cavatar" style="background:${c.color || '#4a4a4e'};"></div>
     </div>
     <div class="cbadges">${badges.join('&nbsp;&nbsp;')}</div>
     <div class="hpbar-wrap">
@@ -890,7 +978,7 @@ function renderChatFiltered() {
 
 function nicknameDotColor(nickname) {
   const c = lastAllForCards.find(x => x.name === nickname);
-  if (c) return roleColorVar(c.role);
+  if (c) return c.color || roleColorVar(c.role);
   let hash = 0;
   for (let i = 0; i < (nickname || '').length; i++) hash = (hash * 31 + nickname.charCodeAt(i)) % 360;
   return `hsl(${hash}, 55%, 55%)`;

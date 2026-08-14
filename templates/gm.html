@@ -5,192 +5,325 @@
 <title>운영진 화면 - {{ room_id }}</title>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <style>
-  body { font-family: sans-serif; margin: 16px; background: #1e1e1e; color: #eee; }
-  textarea { width: 100%; height: 100px; }
-  input, select, button { font-size: 14px; padding: 4px 6px; margin: 2px; }
-  section { border: 1px solid #444; border-radius: 6px; padding: 10px; margin-bottom: 14px; }
-  h2 { margin-top: 0; font-size: 16px; }
-  .card { display: inline-block; border: 1px solid #555; border-radius: 6px; padding: 8px; margin: 4px; min-width: 160px; vertical-align: top; }
-  .card.team-A { border-color: #4a90e2; }
-  .card.team-B { border-color: #e24a4a; }
-  .log-op { height: 260px; overflow-y: auto; background: #111; padding: 6px; font-size: 12px; white-space: pre-wrap; }
-  .log-chat { height: 160px; overflow-y: auto; background: #111; padding: 6px; font-size: 13px; }
-  .logline { padding: 1px 0; }
-  .logline.group-start { margin-top: 10px; padding-top: 6px; border-top: 1px solid #333; font-weight: bold; }
-  .logline.group-start:first-child { margin-top: 0; border-top: none; }
-  .err { color: #ff8080; }
-  .ok { color: #8f8; }
-  #guestLink { width: 100%; }
-  .battle-header { display: flex; gap: 18px; align-items: center; font-size: 15px; margin-bottom: 10px; flex-wrap: wrap; }
-  .battle-header b { font-size: 17px; }
-  #roundTimer { font-weight: bold; }
-  .info-icon { cursor: help; opacity: 0.7; border: 1px solid #777; border-radius: 50%; padding: 0 5px; font-size: 11px; }
-  .log-tabs button { opacity: 0.6; }
-  .log-tabs button.active { opacity: 1; font-weight: bold; text-decoration: underline; }
-  .chat-tabs button { opacity: 0.6; }
-  .chat-tabs button.active { opacity: 1; font-weight: bold; text-decoration: underline; }
-  #globalError { display: none; position: sticky; top: 0; z-index: 10; background: #552222; color: #ffcccc;
-                 padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; font-weight: bold; }
-  .teamList { width: 100%; height: 90px; }
+  :root {
+    --bg: #050505;
+    --panel: #141416;
+    --panel-border: #262629;
+    --card: #17171a;
+    --card-border: #2a2a2e;
+    --text: #f2f2f2;
+    --muted: #8b8b90;
+    --accent-blue: #3b82f6;
+    --accent-red: #e2574a;
+    --role-스트라이커: #ff6b5b;
+    --role-딜러: #ff6b5b;
+    --role-가디언: #4a90ff;
+    --role-탱커: #4a90ff;
+    --role-메딕: #ffd166;
+    --role-힐러: #ffd166;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", "Pretendard", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
+  .shell { max-width: 1360px; margin: 0 auto; padding: 20px 20px 40px; }
+  .panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; }
+  a { color: inherit; }
+
+  #globalError { display:none; position:sticky; top:0; z-index:50; background:#4a1f1f; color:#ffcccc;
+                 padding:10px 14px; border-radius:10px; margin-bottom:12px; font-weight:bold; }
+
+  input, select, textarea, button { font-family: inherit; font-size: 13px; }
+  input, select, textarea { background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:6px 9px; }
+  textarea { width:100%; min-height:90px; resize:vertical; }
+  button { background:#232327; color:var(--text); border:1px solid var(--card-border); border-radius:8px; padding:7px 14px; cursor:pointer; font-weight:600; }
+  button:hover { border-color:#4a4a4e; }
+  .btn-primary { background: var(--accent-blue); color:#fff; border:none; }
+  hr { border:none; border-top:1px solid var(--panel-border); margin:12px 0; }
+
+  .hint { color: var(--muted); font-size:12px; font-weight:400; }
+  .ok { color:#7ee787; }
+  .err { color: var(--accent-red); }
+  .row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0; }
+
+  .setup-panel { padding: 16px 20px; margin-bottom: 14px; }
+  .setup-panel h2 { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:14px; }
+
+  .roster-chip { display:inline-flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--card-border); border-radius:8px; padding:5px 10px; margin:3px; font-size:12px; }
+  .roster-chip button { padding:2px 8px; font-size:11px; }
+  .info-icon { cursor:help; opacity:0.75; border:1px solid var(--card-border); border-radius:50%; padding:0 5px; font-size:11px; color: var(--muted); }
+
+  /* ---------- 상단바 / 브레드크럼 ---------- */
+  .topbar { display:flex; align-items:center; gap:18px; padding:14px 22px; margin-bottom:14px; font-size:14px; flex-wrap:wrap; }
+  .topbar .seg { display:flex; align-items:center; gap:10px; font-weight:600; }
+  .topbar .sep { color:#3a3a3e; }
+  .topbar .spacer { flex:1; }
+  .topbar .whoami { display:flex; align-items:center; gap:10px; }
+  .topbar .whoami .label { color: var(--muted); font-size:13px; }
+  .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; padding: 0 4px; }
+  .breadcrumb { color: var(--muted); font-size:13px; }
+  .breadcrumb b { color: var(--text); }
+
+  .avatar-dot { width:30px; height:30px; border-radius:50%; background:#4a4a4e; flex-shrink:0; cursor:pointer; }
+  .avatar-dot:hover { box-shadow: 0 0 0 2px var(--card-border); }
+
+  /* ---------- 입장 모달 ---------- */
+  .modal-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); align-items:center; justify-content:center; }
+  .modal-box { width:300px; padding:20px; }
+  .modal-box .modal-title { font-size:15px; font-weight:700; margin-bottom:12px; }
+  .modal-box input { width:100%; }
+  .modal-box .row { justify-content:flex-end; margin-top:10px; }
+
+  /* ---------- 캐릭터 카드 ---------- */
+  .card-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap:14px; }
+  .char-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 12px 14px; cursor:pointer; position:relative; transition: border-color .12s; }
+  .char-card:hover { border-color:#444; }
+  .char-card.team-A { border-left: 3px solid var(--accent-blue); }
+  .char-card.team-B { border-left: 3px solid var(--accent-red); }
+  .char-card .row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
+  .char-card .cname { font-weight:700; font-size:14px; }
+  .char-card .crole { font-size:12px; font-weight:600; margin-top:3px; }
+  .char-card .cbadges { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color: var(--muted); margin-top:6px; min-height:14px; }
+  .hpbar-wrap { display:flex; align-items:center; gap:8px; margin-top:8px; }
+  .hpbar-track { flex:1; height:6px; border-radius:4px; background:#2a2a2e; overflow:hidden; }
+  .hpbar-fill { height:100%; background:#d8d8dc; }
+  .hpbar-fill.low { background: var(--accent-red); }
+  .hpnum { font-size:11px; color: var(--muted); white-space:nowrap; }
+  .card-detail { margin-top:8px; font-size:11px; color: var(--muted); border-top:1px solid var(--card-border); padding-top:6px; }
+
+  /* ---------- 로그 / 채팅 ---------- */
+  .bottom-grid { display:grid; grid-template-columns: 1fr 1.35fr; gap:16px; }
+  .panel-head { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--panel-border); }
+  .panel-head b { font-size:14px; }
+  .logline { color: var(--text); opacity:.92; }
+  .logline .li { margin-right:6px; opacity:.85; }
+  .logline.group-start { margin-top:10px; font-weight:600; }
+  .logline.group-start:first-child { margin-top:0; }
+  .logline.tag-crit { color:#ffd166; font-weight:700; }
+  .logline.tag-system { color: var(--muted); font-size:12px; }
+  .logline.tag-round { color:#7fb0ff; font-weight:700; margin-top:14px; }
+
+  .chat-tabs { display:flex; gap:6px; margin-left:auto; }
+  .chat-tabs button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:6px; padding:3px 8px; font-size:11px; }
+  .chat-tabs button.active { color:#fff; border-color: var(--accent-blue); }
+  .chat-line { display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; }
+  .chat-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; margin-top:2px; }
+  .chat-body b { font-weight:700; }
+  .chat-body .time { color: var(--muted); font-size:11px; margin-left:6px; }
+  .chat-line.is-command .chat-text { color:#9fc3ff; font-family: ui-monospace, monospace; font-size:12px; }
+  .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
+
+  .input-row { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--panel-border); align-items:center; }
+  .input-row input { flex:1; }
+
+  #gridSection b { font-size:14px; }
 </style>
 </head>
 <body>
-<h1>운영진 화면 (방 {{ room_id }} · {{ battle_type_label }})</h1>
+<div class="shell">
 
 <div id="globalError"></div>
 
-<section id="joinSection">
-  <h2>0. 입장</h2>
-  닉네임: <input id="nicknameInput" value="GM" onkeydown="if(event.key==='Enter') doJoin()">
-  <button onclick="doJoin()">입장</button>
-  <span id="joinStatus"></span>
-</section>
+<div id="joinModal" class="modal-overlay">
+  <div class="modal-box panel">
+    <div class="modal-title">운영진 닉네임으로 입장</div>
+    <input id="joinNameInput" placeholder="닉네임 (비우면 GM)" onkeydown="if(event.key==='Enter') submitJoinModal()">
+    <div class="row">
+      <button onclick="closeJoinModal()">취소</button>
+      <button class="btn-primary" onclick="submitJoinModal()">입장</button>
+    </div>
+  </div>
+</div>
 
-<section>
+<section class="panel setup-panel">
   <h2>참가자 공유 링크</h2>
-  <input id="guestLink" readonly value="{{ guest_url }}">
-  <button onclick="copyGuestLink()">복사</button>
+  <div class="row">
+    <input id="guestLink" readonly value="{{ guest_url }}" style="flex:1;">
+    <button onclick="copyGuestLink()">복사</button>
+  </div>
 </section>
 
-<section>
-  <h2>🎵 배경음악 <span style="font-size:12px; opacity:0.7;">(방에 있는 모두가 같은 위치로 동기화됩니다)</span></h2>
-  유튜브 링크: <input id="musicYoutubeUrl" placeholder="https://www.youtube.com/watch?v=..." style="width:320px;">
-  <button onclick="playYoutubeMusic()">유튜브로 재생</button>
-  <br>
-  mp3 파일: <input id="musicMp3File" type="file" accept=".mp3">
-  <button onclick="uploadAndPlayMp3()">mp3로 재생</button>
-  <br>
-  <button onclick="stopMusic()">⏹ 정지</button>
-  <span id="musicStatus">음악 없음</span>
-  <button id="musicSyncBtn" onclick="startMusicPlayback()" style="display:none;">🔊 음악 재생 (동기화)</button>
+<section class="panel setup-panel">
+  <h2>🎵 배경음악 <span class="hint">(방에 있는 모두가 같은 위치로 동기화됩니다)</span></h2>
+  <div class="row">
+    유튜브 링크: <input id="musicYoutubeUrl" placeholder="https://www.youtube.com/watch?v=..." style="width:320px;">
+    <button onclick="playYoutubeMusic()">유튜브로 재생</button>
+  </div>
+  <div class="row">
+    mp3 파일: <input id="musicMp3File" type="file" accept=".mp3">
+    <button onclick="uploadAndPlayMp3()">mp3로 재생</button>
+  </div>
+  <div class="row">
+    <button onclick="stopMusic()">⏹ 정지</button>
+    <span id="musicStatus" class="hint">음악 없음</span>
+    <button id="musicSyncBtn" onclick="startMusicPlayback()" style="display:none;">🔊 음악 재생 (동기화)</button>
+  </div>
   <div id="youtubePlayerHolder" style="display:none; margin-top:6px;"><div id="youtubePlayer"></div></div>
   <audio id="mp3Player" style="display:none; margin-top:6px;" controls></audio>
 </section>
 
-<section>
-  <h2>⚙ 전투 수식 설정 <span style="font-size:12px; opacity:0.7;">({{ battle_type_label }} 전용)</span> <button onclick="toggleFormulaPanel()" id="formulaToggleBtn">열기</button></h2>
+<section class="panel setup-panel">
+  <h2>⚙ 전투 수식 설정 <span class="hint">({{ battle_type_label }} 전용)</span> <button onclick="toggleFormulaPanel()" id="formulaToggleBtn" style="margin-left:auto;">열기</button></h2>
   <div id="formulaPanel" style="display:none;">
     <div id="formulaFields" style="max-height: 320px; overflow-y: auto;"></div>
-    <button onclick="saveFormulas()">저장</button>
+    <button class="btn-primary" onclick="saveFormulas()">저장</button>
     <span id="formulaSaveMsg" class="ok"></span>
   </div>
 </section>
 
-<section>
-  <h2>1. 캐릭터 등록 (붙여넣기)</h2>
+<section class="panel setup-panel">
+  <h2>1. 팀 편성 &amp; 전투 시작 <span class="hint">({{ battle_type_label }})</span></h2>
+  <div class="row">
+    {% if battle_type == 'pvp' %}1팀{% else %}러너팀{% endif %} 인원:
+    <input id="teamACount" type="number" value="{{ default_team_a }}" min="1" max="30" style="width:60px;">
+    {% if battle_type == 'pvp' %}2팀{% else %}GM팀(적){% endif %} 인원:
+    <input id="teamBCount" type="number" value="{{ default_team_b }}" min="1" max="30" style="width:60px;">
+    <button onclick="randomAssign()">🎲 무작위 배치</button>
+  </div>
+  <div style="margin-top:6px;">
+    {% if battle_type == 'pvp' %}1팀{% else %}러너팀{% endif %} 명단 (한 줄에 한 명):<br>
+    <textarea id="teamAList" class="teamList" placeholder="B&#10;A&#10;C" style="min-height:70px;"></textarea>
+  </div>
+  <div style="margin-top:8px;">
+    {% if battle_type == 'pvp' %}2팀{% else %}GM팀(적){% endif %} 명단 (한 줄에 한 명):<br>
+    <textarea id="teamBList" class="teamList" placeholder="E&#10;D&#10;F" style="min-height:70px;"></textarea>
+  </div>
+  <div class="row" style="margin-top:6px;"><button class="btn-primary" onclick="startBattle()">전투 시작</button></div>
+</section>
+
+<section class="panel setup-panel">
+  <h2>2. 캐릭터 등록 (붙여넣기)</h2>
   <textarea id="regText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴"></textarea>
-  <button onclick="registerCharacters()">일괄 등록</button>
+  <div class="row"><button class="btn-primary" onclick="registerCharacters()">일괄 등록</button></div>
   <div id="regResult"></div>
   <hr>
-  <label>더미 캐릭터 생성 개수: <input id="dummyCount" type="number" value="6" min="1" max="100" style="width:60px;"></label>
-  <button onclick="generateDummies()">🎲 더미 데이터 생성</button>
+  <div class="row">
+    <label>더미 캐릭터 생성 개수: <input id="dummyCount" type="number" value="6" min="1" max="100" style="width:60px;"></label>
+    <button onclick="generateDummies()">🎲 더미 데이터 생성</button>
+  </div>
   <hr>
-  <b>등록된 캐릭터</b> (전투 중 스탯을 고치면 참가자 화면에도 바로 반영됩니다)
-  <div id="rosterManage">-</div>
-  <div id="editCharPanel" style="display:none; border:1px solid #666; border-radius:6px; padding:8px; margin-top:8px;">
+  <div class="row">
+    <b>등록된 캐릭터</b> <span class="hint">(전투 중 스탯을 고치면 참가자 화면에도 바로 반영됩니다)</span>
+    <button onclick="toggleRosterPanel()" id="rosterToggleBtn" style="margin-left:auto;">접기</button>
+  </div>
+  <div id="rosterManage" style="margin-top:6px;">-</div>
+  <div id="editCharPanel" style="display:none; margin-top:10px; padding:10px; border:1px solid var(--card-border); border-radius:10px; background:#0c0c0d;">
     <b id="editCharTitle"></b><br>
-    역할:
-    <select id="editRole" onchange="refreshEditSkillOptions()">
-      <option value="가디언">가디언</option>
-      <option value="스트라이커">스트라이커</option>
-      <option value="메딕">메딕</option>
-    </select>
-    스킬(매스 레이드 전용): <select id="editSkill"></select><br>
-    <div id="editStatsFields"></div>
-    <button onclick="saveCharacterEdit()">저장</button>
-    <button onclick="cancelCharacterEdit()">취소</button>
-  </div>
-</section>
-
-<section>
-  <h2>2. 팀 편성 &amp; 전투 시작 <span style="font-size:12px; opacity:0.7;">({{ battle_type_label }})</span></h2>
-  {% if battle_type == 'pvp' %}1팀{% else %}러너팀{% endif %} 인원:
-  <input id="teamACount" type="number" value="{{ default_team_a }}" min="1" max="30" style="width:60px;">
-  {% if battle_type == 'pvp' %}2팀{% else %}GM팀(적){% endif %} 인원:
-  <input id="teamBCount" type="number" value="{{ default_team_b }}" min="1" max="30" style="width:60px;">
-  <button onclick="randomAssign()">🎲 무작위 배치</button>
-  <br><br>
-  {% if battle_type == 'pvp' %}1팀{% else %}러너팀{% endif %} 명단 (한 줄에 한 명):<br>
-  <textarea id="teamAList" class="teamList" placeholder="B&#10;A&#10;C"></textarea>
-  <br>
-  {% if battle_type == 'pvp' %}2팀{% else %}GM팀(적){% endif %} 명단 (한 줄에 한 명):<br>
-  <textarea id="teamBList" class="teamList" placeholder="E&#10;D&#10;F"></textarea>
-  <br>
-  <button onclick="startBattle()">전투 시작</button>
-</section>
-
-<section>
-  <h2>3. 전투 화면</h2>
-  <div class="battle-header">
-    <b>방 {{ room_id }}</b>
-    <span id="formatLabel"></span>
-    <span id="roundInfo"></span>
-    <span>⏱ <span id="roundTimer">--:--</span></span>
-  </div>
-  {% if battle_type == 'siege' %}
-  <div class="battle-header" style="background:#2a2a40; padding:6px 10px; border-radius:6px;">
-    <b>🔮 거점 행동 다이스</b>
-    <button onclick="rollSiteDice()">🎲 다이스 굴리기</button>
-    <span id="siteDiceStatus">아직 굴리지 않았습니다</span>
-  </div>
-  {% endif %}
-  {% if battle_type in ('siege', 'raid') %}
-  <div id="pendingRevealBanner" style="display:none; background:#553311; padding:8px 10px; border-radius:6px; margin-bottom:8px;">
-    ⏸ 적 행동 미리보기 대기 중 — 운영진 로그에서 결과를 확인하세요.
-    <button onclick="revealPendingAction()">📢 공개하기 (러너 채팅에 알림)</button>
-    <button onclick="doAction('undo', {})">↩ 되돌리기 (없던 일로)</button>
-  </div>
-  {% endif %}
-  <div id="gridSection" style="display:none; margin-bottom:10px;">
-    <b>🗺 격자 지도</b>
-    <div style="margin:4px 0;">
-      <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">🔮 전조 출력</button>
-      <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;">📢 전조 공개 (러너에게 표시)</button>
-      <button onclick="clearTelegraph()" id="telegraphClearBtn" style="display:none;">✖ 전조 해제</button>
-      <span id="telegraphStatus" style="font-size:12px; opacity:0.8;"></span>
+    <div class="row">
+      역할:
+      <select id="editRole" onchange="refreshEditSkillOptions()">
+        <option value="가디언">가디언</option>
+        <option value="스트라이커">스트라이커</option>
+        <option value="메딕">메딕</option>
+      </select>
+      스킬(마스 레이드 전용): <select id="editSkill"></select>
     </div>
-    <div id="gridLegend" style="font-size:12px; opacity:0.8; margin:4px 0;"></div>
-    <div id="gridMap" style="overflow-x:auto;"></div>
-    <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
+    <div id="editStatsFields" class="row"></div>
+    <div class="row">
+      <button class="btn-primary" onclick="saveCharacterEdit()">저장</button>
+      <button onclick="cancelCharacterEdit()">취소</button>
+    </div>
   </div>
-  <div id="teams"></div>
-  <div>
+</section>
+
+<div class="breadcrumb-row">
+  <div class="breadcrumb"><b>3. 전투 화면</b> ◢ {{ battle_type_label }}</div>
+</div>
+
+<div class="topbar panel">
+  <div class="seg">🆔 방 {{ room_id }}</div>
+  <span class="sep">▶</span>
+  <div class="seg" id="formatLabel"></div>
+  <span class="sep">▶</span>
+  <div class="seg" id="roundInfo"></div>
+  <div class="spacer"></div>
+  <div class="whoami">
+    <span class="label">⏱ <span id="roundTimer">--:--</span></span>
+    <div class="avatar-dot" id="myAvatarDot" title="클릭해서 닉네임으로 입장" onclick="onAvatarDotClick()" ondblclick="onAvatarDotDblClick()"></div>
+    <span class="label" id="myNicknameLabel">미입장</span>
+  </div>
+</div>
+
+{% if battle_type == 'siege' %}
+<div class="panel row" style="padding:10px 16px; margin-bottom:12px;">
+  <b>🔮 거점 행동 다이스</b>
+  <button onclick="rollSiteDice()">🎲 다이스 굴리기</button>
+  <span id="siteDiceStatus" class="hint">아직 굴리지 않았습니다</span>
+</div>
+{% endif %}
+
+{% if battle_type in ('siege', 'raid') %}
+<div id="pendingRevealBanner" style="display:none; background:#3a2410; padding:10px 14px; border-radius:10px; margin-bottom:12px;">
+  ⏸ 적 행동 미리보기 대기 중 — 운영진 로그에서 결과를 확인하세요.
+  <button onclick="revealPendingAction()">📢 공개하기 (러너 채팅에 알림)</button>
+  <button onclick="doAction('undo', {})">↩ 되돌리기 (없던 일로)</button>
+</div>
+{% endif %}
+
+<div id="gridSection" class="panel" style="display:none; padding:16px 18px; margin-bottom:12px;">
+  <b>🗺 격자 지도</b>
+  <div class="row">
+    <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">🔮 전조 출력</button>
+    <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;">📢 전조 공개 (러너에게 표시)</button>
+    <button onclick="clearTelegraph()" id="telegraphClearBtn" style="display:none;">✖ 전조 해제</button>
+    <span id="telegraphStatus" class="hint"></span>
+  </div>
+  <div id="gridLegend" class="hint" style="margin:4px 0;"></div>
+  <div id="gridMap" style="overflow-x:auto;"></div>
+  <div id="gridActionPopup" style="display:none; margin-top:8px; padding:10px; border:1px solid var(--accent-blue); border-radius:10px; background:#0c0c0d;"></div>
+</div>
+
+<div id="teams" class="card-grid" style="margin-bottom:14px;"></div>
+
+<section class="panel setup-panel">
+  <div class="row">
     <button onclick="doAction('advance_turn', {})">▶ 다음 턴</button>
     <button onclick="doAction('undo', {})">↩ 행동 취소</button>
     <button onclick="doAction('timeout_unacted_runners', {})">⏱ 시간 초과 (행동 안 한 러너 일괄 처리)</button>
   </div>
-
-  <h3>행동 실행</h3>
-  행동자: <select id="actActor" onchange="refreshActTypeOptions()"></select>
-  행동: <select id="actType" onchange="refreshActTargetOptions()"></select>
-  대상(필요한 경우): <select id="actTarget"></select>
-  <span id="actTargetMultiWrap" style="display:none;">
-    <select id="actTarget2"></select>
-    <select id="actTarget3"></select>
-  </span>
-  <button onclick="submitAction()">실행</button>
+  <h2 style="margin-top:10px;">행동 실행</h2>
+  <div class="row">
+    행동자: <select id="actActor" onchange="refreshActTypeOptions()"></select>
+    행동: <select id="actType" onchange="refreshActTargetOptions()"></select>
+    대상(필요한 경우): <select id="actTarget"></select>
+    <span id="actTargetMultiWrap" style="display:none;">
+      <select id="actTarget2"></select>
+      <select id="actTarget3"></select>
+    </span>
+    <button class="btn-primary" onclick="submitAction()">실행</button>
+  </div>
   <div id="actionError" class="err"></div>
 </section>
 
-<section>
-  <h2>로그 <span class="log-tabs">
-    <button id="logBtnOp" onclick="setLogView('operator')">운영진 로그</button>
-    <button id="logBtnPub" onclick="setLogView('public')">러너 로그</button>
-  </span></h2>
-  <div id="opLog" class="log-op"></div>
-</section>
+<div class="bottom-grid">
+  <div class="panel">
+    <div class="panel-head">
+      <b>로그</b>
+      <span class="chat-tabs">
+        <button id="logBtnOp" onclick="setLogView('operator')">운영진 로그</button>
+        <button id="logBtnPub" onclick="setLogView('public')">러너 로그</button>
+      </span>
+    </div>
+    <div id="opLog" style="height:420px; overflow-y:auto; padding:12px 18px; font-size:13px; line-height:1.65;"></div>
+  </div>
 
-<section>
-  <h2>채팅 <span class="chat-tabs">
-    <button id="chatTabAll" onclick="setChatFilter('all')">전체 표시</button>
-    <button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button>
-    <button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button>
-  </span></h2>
-  <div id="chatLog" class="log-chat"></div>
-  <div id="actionPanel" style="margin: 6px 0;"></div>
-  <input id="chatInput" placeholder="메시지 입력" onkeydown="if(event.key==='Enter') sendChat()">
-  <button onclick="sendChat()">전송</button>
-</section>
+  <div class="panel" style="position:relative;">
+    <div class="panel-head">
+      <b>채팅</b>
+      <span class="chat-tabs">
+        <button id="chatTabAll" onclick="setChatFilter('all')">전체 표시</button>
+        <button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button>
+        <button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button>
+      </span>
+    </div>
+    <div id="chatLog" style="height:280px; overflow-y:auto; padding:12px 18px; font-size:13px;"></div>
+    <div id="actionPanel" style="padding:8px 18px; border-top:1px solid var(--panel-border);"></div>
+    <div class="input-row">
+      <input id="chatInput" placeholder="메시지 입력" onkeydown="if(event.key==='Enter') sendChat()">
+      <button class="btn-primary" onclick="sendChat()">전송</button>
+    </div>
+  </div>
+</div>
+
+</div>
 
 <script>
 const ROOM_ID = "{{ room_id }}";
@@ -221,8 +354,12 @@ const ACTION_LABELS = {
 };
 const TYPE_TO_LABEL = Object.fromEntries(Object.entries(ACTION_LABELS).map(([label, type]) => [type, label]));
 const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap", "collapse", "shield", "restore"]);
-// 역할별 매스 레이드 스킬 2종 (캐릭터 등록/수정 화면의 스킬 드롭다운용)
+// 역할별 마스 레이드 스킬 2종 (캐릭터 등록/수정 화면의 스킬 드롭다운용)
 const SKILL_OPTIONS = { "가디언": ["차폐", "편광"], "스트라이커": ["붕괴", "방출"], "메딕": ["환류", "복원"] };
+
+function roleColorVar(role) {
+  return `var(--role-${role}, #9aa0a6)`;
+}
 
 function showError(msg) {
   const el = document.getElementById('globalError');
@@ -232,19 +369,67 @@ function showError(msg) {
   showError._t = setTimeout(() => { el.style.display = 'none'; }, 6000);
 }
 
-function doJoin() {
-  const nickname = document.getElementById('nicknameInput').value.trim() || 'GM';
-  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname });
+let MY_NICKNAME = 'GM';
+let explicitlyJoined = false;
+
+function silentJoin() {
+  MY_NICKNAME = 'GM';
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+}
+
+// ------------------------------------------------------------------
+// 닉네임으로 입장 (아바타 동그라미 클릭 → 모달). 운영진 링크는 키만 맞으면 항상
+// gm 권한이 주어지므로, 여기서의 "입장"은 표시용 닉네임을 정하는 것에 가깝습니다.
+// ------------------------------------------------------------------
+function onAvatarDotClick() {
+  if (explicitlyJoined) return;  // 이미 입장한 상태면 더블클릭으로 로그아웃
+  openJoinModal();
+}
+
+function onAvatarDotDblClick() {
+  if (!explicitlyJoined) return;
+  if (confirm('로그아웃 하시겠습니까?')) logout();
+}
+
+function openJoinModal() {
+  document.getElementById('joinNameInput').value = '';
+  document.getElementById('joinModal').style.display = 'flex';
+  document.getElementById('joinNameInput').focus();
+}
+
+function closeJoinModal() {
+  document.getElementById('joinModal').style.display = 'none';
+}
+
+function submitJoinModal() {
+  const name = document.getElementById('joinNameInput').value.trim() || 'GM';
+  MY_NICKNAME = name;
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+  explicitlyJoined = true;
+  document.getElementById('myNicknameLabel').textContent = MY_NICKNAME;
+  updateAvatarDot();
+  closeJoinModal();
+}
+
+function logout() {
+  MY_NICKNAME = 'GM';
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+  explicitlyJoined = false;
+  document.getElementById('myNicknameLabel').textContent = '미입장';
+  updateAvatarDot();
+}
+
+function updateAvatarDot() {
+  const dot = document.getElementById('myAvatarDot');
+  dot.style.background = explicitlyJoined ? nicknameDotColor(MY_NICKNAME) : '#4a4a4e';
 }
 
 socket.on('connect', () => {
-  document.getElementById('joinStatus').textContent = '(서버 연결됨)';
-  doJoin();
+  silentJoin();
 });
 
 socket.on('joined', (d) => {
   joined = true;
-  document.getElementById('joinStatus').textContent = `입장 완료 (역할: ${d.role})`;
 });
 
 socket.on('error', (d) => showError(d.message));
@@ -363,6 +548,13 @@ function renderRoster(names) {
   lastRoster = names;
 }
 
+function toggleRosterPanel() {
+  const el = document.getElementById('rosterManage');
+  const opening = el.style.display === 'none';
+  el.style.display = opening ? '' : 'none';
+  document.getElementById('rosterToggleBtn').textContent = opening ? '접기' : '열기';
+}
+
 let lastRosterDetail = [];
 let editingCharName = null;
 
@@ -371,8 +563,8 @@ function renderRosterManage(list) {
   const el = document.getElementById('rosterManage');
   if (!list.length) { el.innerHTML = '-'; return; }
   el.innerHTML = list.map(c => `
-    <span style="display:inline-block; border:1px solid #555; border-radius:4px; padding:3px 6px; margin:2px;">
-      ${c.name} [${c.role}${c.skill ? ' 【' + c.skill + '】' : ''}]
+    <span class="roster-chip">
+      <span style="color:${roleColorVar(c.role)}">${c.role}</span> ${c.name}${c.skill ? ' 【' + c.skill + '】' : ''}
       <button onclick="editCharacter('${c.name}')">수정</button>
       <button onclick="deleteCharacterFromRoster('${c.name}')">삭제</button>
     </span>
@@ -555,21 +747,34 @@ function toggleCard(name) {
 function renderCardHtml(c) {
   const expanded = expandedCards.has(c.name);
   const isAllyGrid = c.grid_pos && c.teamLabel === 'A';
-  const gridStyle = isAllyGrid
-    ? (c.moved_this_round ? 'border:2px solid #fff; background:#3a3a3a;' : 'border:2px solid #888; background:#333;')
+  const gridBorder = isAllyGrid
+    ? (c.moved_this_round ? 'border:2px solid #fff;' : 'border:2px solid #888;')
     : '';
-  const shieldText = c.shield_hp ? ` 🛡${c.shield_hp}` : '';
-  if (!expanded) {
-    return `<div class="card team-${c.teamLabel}" style="cursor:pointer; ${gridStyle}" onclick="toggleCard('${c.name}')">
-      <b>${c.name}</b> <span class="info-icon" title="${statsTitle(c)}">ⓘ</span> HP ${c.current_hp}/${c.max_hp}${shieldText} ▸
-    </div>`;
-  }
-  return `<div class="card team-${c.teamLabel}" style="cursor:pointer; ${gridStyle}" onclick="toggleCard('${c.name}')">
-    <b>${c.name}</b> <span class="info-icon" title="${statsTitle(c)}">ⓘ</span> [${c.role}${c.skill ? ' 【' + c.skill + '】' : ''}] ▾<br>
-    HP ${c.current_hp}/${c.max_hp}${shieldText}<br>
-    상태: ${c.status}${c.has_acted ? ' · 행동완료' : ''}${c.polarize_active ? ' · 🛡편광중' : ''}${c.has_leech_buff ? ' · 🩸흡수버프' : ''}
-    ${c.grid_pos ? `<br>위치 ${cellLabel(c.grid_pos[0], c.grid_pos[1])} · 이동범위 ${c.move_range}${c.moved_this_round ? ' (이동함)' : ''}` : ''}
-    ${c.pending_attacks ? `<br><span class="err">보류 피해 ${c.pending_attacks}건</span>` : ''}
+  const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
+  const shieldText = c.shield_hp ? ` 🔷${c.shield_hp}` : '';
+  const badges = [];
+  if (c.has_acted) badges.push('✅ 행동완료');
+  if (c.polarize_active) badges.push('🛡 편광중');
+  if (c.has_leech_buff) badges.push('🩸 흡수버프');
+  if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
+
+  return `<div class="char-card team-${c.teamLabel}" style="${gridBorder}" onclick="toggleCard('${c.name}')">
+    <div class="row1">
+      <div>
+        <div class="cname">${c.name}</div>
+        <div class="crole" style="color:${roleColorVar(c.role)}">${c.role}${c.skill ? ' 【' + c.skill + '】' : ''}</div>
+      </div>
+      <span class="info-icon" title="${statsTitle(c)}">ⓘ</span>
+    </div>
+    <div class="cbadges">${badges.join('&nbsp;&nbsp;')}</div>
+    <div class="hpbar-wrap">
+      <div class="hpbar-track"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
+      <div class="hpnum">${c.current_hp}/${c.max_hp}${shieldText}</div>
+    </div>
+    ${expanded ? `<div class="card-detail">
+      상태: ${c.status}
+      ${c.grid_pos ? `<br>위치 ${cellLabel(c.grid_pos[0], c.grid_pos[1])} · 이동범위 ${c.move_range}${c.moved_this_round ? ' (이동함)' : ''}` : ''}
+    </div>` : ''}
   </div>`;
 }
 
@@ -601,7 +806,7 @@ function cellLabel(x, y) {
 }
 
 // ------------------------------------------------------------------
-// 전조 출력 (매스 레이드 전용) : GM이 격자 칸을 미리 찍어뒀다가 공개하면,
+// 전조 출력 (마스 레이드 전용) : GM이 격자 칸을 미리 찍어뒀다가 공개하면,
 // 그 칸이 모두의 화면에서 밝게 표시됩니다. 곧 그 칸에 무조건 피해가 발생한다는
 // 시각적 경고이며, 실제 피해 판정(공격 행동)은 별도로 이루어집니다.
 // ------------------------------------------------------------------
@@ -909,10 +1114,15 @@ function setLogView(view) {
 }
 
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round']);
+const LOG_TAG_ICON = {
+  round: '📍', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
+  heal: '✚', crit: '✦', system: '·', hp: '❤', formula: '', summary: '📊',
+};
 function formatLogHtml(lines) {
   return (lines || []).map(l => {
     const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
-    return `<div class="${cls}">${l.text}</div>`;
+    const icon = LOG_TAG_ICON[l.tag] || '';
+    return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${l.text}</div>`;
   }).join('');
 }
 
@@ -953,8 +1163,22 @@ function renderChatFiltered() {
   el.scrollTop = el.scrollHeight;
 }
 
+function nicknameDotColor(nickname) {
+  const c = lastAllForCards.find(x => x.name === nickname);
+  if (c) return roleColorVar(c.role);
+  let hash = 0;
+  for (let i = 0; i < (nickname || '').length; i++) hash = (hash * 31 + nickname.charCodeAt(i)) % 360;
+  return `hsl(${hash}, 55%, 55%)`;
+}
+
 function fmtChat(entry) {
-  return `<div>[${entry.time}] <b>${entry.nickname}</b>: ${entry.text}</div>`;
+  const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:');
+  const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
+  return `<div class="chat-line ${cls}">
+    <div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>
+    <div class="chat-body"><b>${entry.nickname}</b><span class="time">${entry.time}</span><br>
+    <span class="chat-text">${entry.text}</span></div>
+  </div>`;
 }
 
 function appendChat(entry) {
@@ -1013,7 +1237,7 @@ function renderActionPanel(battle) {
     return `<button onclick="quickAction('${type}','${character.name}')">${label}</button>`;
   }).filter(Boolean).join(' ');
 
-  el.innerHTML = `조작 대상: <select onchange="actionPanelActorName=this.value; renderActionPanel(lastBattleForPanel)">${actorOpts}</select> ${buttons}`;
+  el.innerHTML = `<div class="row">조작 대상: <select onchange="actionPanelActorName=this.value; renderActionPanel(lastBattleForPanel)">${actorOpts}</select> ${buttons}</div>`;
 }
 
 function quickAction(type, actorName, targetName) {

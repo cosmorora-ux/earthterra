@@ -100,7 +100,7 @@ class Battle:
             c.team = "B"
 
         self.formula_overrides = formula_overrides  # 이 전투(방 전투 유형)에 적용되는 수식 override
-        # 매스 레이드 전용 격자 크기. None이면 이 전투는 격자를 사용하지 않습니다.
+        # 마스 레이드 전용 격자 크기. None이면 이 전투는 격자를 사용하지 않습니다.
         self.grid_width = grid_width
         self.grid_height = grid_height
         # 점령전 전용 : 2팀(거점) 캐릭터는 공격을 받을 때마다 방어 선언 여부와 무관하게
@@ -148,11 +148,6 @@ class Battle:
         self.polarize_skill = PolarizeSkill()
         self.reflux_skill = RefluxSkill()
         self.restore_skill = RestoreSkill()
-
-        # 차폐(가디언) 스킬을 선택한 캐릭터는 전투 시작 시 영구 보호막을 자동으로 얻습니다.
-        for c in team_a + team_b:
-            if c.skill == config.SKILL_SHIELD:
-                c.shield_permanent = config.SKILL_SHIELD_INITIAL
 
         for text, tag in explain_lines:
             self._log(text, tag=tag)
@@ -481,7 +476,7 @@ class Battle:
         self._check_finish()
 
     # ------------------------------------------------------------------
-    # 행동 : 이동 (매스 레이드 격자 전용) - 라운드당 한 번만, has_acted를 소모하지 않습니다.
+    # 행동 : 이동 (마스 레이드 격자 전용) - 라운드당 한 번만, has_acted를 소모하지 않습니다.
     # 행동(공격/힐 등) 전후 순서는 자유입니다 - 아군은 보통 이동 후 행동하고, 적군은 행동 후
     # 이동하는 편이지만 서버는 어느 쪽이든 허용하고 "이동은 한 번만"만 강제합니다.
     # ------------------------------------------------------------------
@@ -574,6 +569,8 @@ class Battle:
             raise BattleError(reason)
         if not target.is_alive:
             raise BattleError("대상이 존재하지 않습니다.")
+        if target.team == attacker.team:
+            raise BattleError("아군은 공격할 수 없습니다.")
 
         # 강제 대상이 죽거나 도주해 더 이상 유효하지 않다면 정리합니다.
         if self.forced_target is not None and not self.forced_target.is_alive:
@@ -674,6 +671,8 @@ class Battle:
             raise BattleError(reason)
         if not target.is_alive:
             raise BattleError("대상이 존재하지 않습니다.")
+        if target.team == attacker.team:
+            raise BattleError("아군은 공격할 수 없습니다.")
 
         if self.forced_target is not None and not self.forced_target.is_alive:
             self.forced_target = None
@@ -1048,6 +1047,8 @@ class Battle:
             raise BattleError(reason)
         if not target.is_alive:
             raise BattleError("사망한 캐릭터는 회복 대상이 될 수 없습니다.")
+        if target.team != healer.team:
+            raise BattleError("적군은 회복시킬 수 없습니다.")
 
         self._push_history()
         self._resolve_pending_attacks(healer)
@@ -1516,7 +1517,7 @@ class GameManager:
         forced_first_team을 지정하면(예: 점령전의 "거점은 항상 후공" 규칙) 그 팀이 무조건 선공이 됩니다.
         formula_overrides는 이 전투에 적용할 전투 유형별 수식(없으면 전역 기본값을 그대로 씁니다).
         site_auto_defense=True면 2팀은 공격을 받을 때마다 항상 자동으로 능동 방어합니다(점령전 거점 규칙).
-        grid_width/grid_height를 지정하면 매스 레이드용 격자 전투가 됩니다.
+        grid_width/grid_height를 지정하면 마스 레이드용 격자 전투가 됩니다.
         """
         team_a = self.build_team(team_a_names, formula_overrides=formula_overrides)
         team_b = self.build_team(team_b_names, formula_overrides=formula_overrides)

@@ -37,7 +37,7 @@ battle_manager/
 ├── static/music/            # 업로드된 mp3 (배경음악)
 ├── characters.json          # 캐릭터 데이터베이스 (파일 저장)
 ├── formulas.json             # 전역(PVP) 전투 수식 override (파일 저장)
-├── formula_profiles.json      # 점령전/레이드/매스레이드 전용 수식 override (파일 저장)
+├── formula_profiles.json      # 점령전/레이드/마스 레이드 전용 수식 override (파일 저장)
 │
 ├── gui.py, database.py, main.py   # 예전 Tkinter 단일 사용자 버전 (레거시, 웹 서버와 무관)
 ```
@@ -55,7 +55,7 @@ battle_manager/
   - GM은 거점의 공격/방어 굴림을 러너에게 공개하기 전 운영진 로그에서만 미리보고, 마음에
     들면 공개(reveal), 마음에 안 들면 되돌리기(undo) 후 재굴림 가능.
 - **레이드(raid)** — GM이 조작하는 보스 vs 러너 다인(10~30인).
-- **매스 레이드(mass_raid)** — 레이드의 격자 이동 버전. 12×12 격자에 몹은 중앙, 러너는
+- **마스 레이드(mass_raid)** — 레이드의 격자 이동 버전. 12×12 격자에 몹은 중앙, 러너는
   나머지 칸에 배치. 매 라운드 자기 행동 전에 먼저 이동을 선언할 수 있음(행동력 소모 없음).
   - 이동 가능 칸수 = `AGILITY_MOVE_BASE + 민첩 × AGILITY_MOVE_PER_POINT` (기본 1~6칸)
   - 이동 가능 모양은 사각형이 아니라 **십자(상하좌우로 이동범위만큼) + 본인 주변 8칸**

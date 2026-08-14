@@ -112,6 +112,7 @@ def guest_page(room_id):
 _YOUTUBE_ID_RE = re.compile(
     r"(?:youtube\.com/(?:watch\?v=|live/|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})"
 )
+_HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 def extract_youtube_id(url_or_id: str):
@@ -176,7 +177,7 @@ def build_character_public(c):
 
 def telegraph_pending(room, battle):
     """
-    이번 라운드에 GM이 아직 전조(점령전 다이스 굴리기 / 매스 레이드 칸 공개)를 출력하지
+    이번 라운드에 GM이 아직 전조(점령전 다이스 굴리기 / 마스 레이드 칸 공개)를 출력하지
     않았는지 여부. 전조는 GM의 행동이므로, 이게 True인 동안은 러너의 이동을 막고
     라운드 제한시간도 아직 시작시키지 않습니다.
     """
@@ -413,6 +414,39 @@ def on_chat_message(data):
     socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
 
 
+@socketio.on("set_my_color")
+def on_set_my_color(data):
+    """참가자가 자신의 캐릭터 색상(아바타 동그라미/카드/채팅에 쓰이는 구분색)을 직접 지정합니다.
+    본인 닉네임이 현재 전투에 참여 중인 캐릭터 이름과 일치할 때만 그 캐릭터의 색상을 바꿀 수 있습니다."""
+    info = CONNECTIONS.get(request.sid)
+    if info is None:
+        emit("action_error", {"message": "먼저 입장해주세요."})
+        return
+    room = get_room(info["room_id"])
+    if room is None:
+        return
+    control = resolve_control(room, info)
+    if control["scope"] != "character":
+        emit("action_error", {"message": "캐릭터로 입장한 뒤에만 색상을 바꿀 수 있습니다."})
+        return
+    name = control["name"]
+    color = (data.get("color") or "").strip()
+    if not _HEX_COLOR_RE.match(color):
+        emit("action_error", {"message": "색상 형식이 올바르지 않습니다."})
+        return
+    existing = room.game.db.get(name) or {}
+    room.game.db.add_or_update(
+        name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
+        color=color, skill=existing.get("skill"),
+    )
+    battle = room.game.battle
+    if battle is not None:
+        live = battle.find_character(name)
+        if live is not None:
+            live.color = color
+    broadcast_state(room)
+
+
 # ----------------------------------------------------------------------
 # 소켓 이벤트 : 운영진 전용 행동
 # ----------------------------------------------------------------------
@@ -585,24 +619,27 @@ def on_start_battle(data):
         emit("action_error", {"message": str(e)})
         return
 
-    # 점령전 거점 / 매스 레이드 적군(2팀) : 방어가 자동이라 역할과 무관하게 "방어 정산"/"공격"/"힐"만
+    # 점령전 거점 / 마스 레이드 적군(2팀) : 방어가 자동이라 역할과 무관하게 "방어 정산"/"공격"/"힐"만
     # 직접 선택합니다. 포지션이 없으므로 공격/힐 모두 치명타가 발생할 수 있습니다.
     if room.battle_type in ("siege", "mass_raid"):
         for c in room.game.battle.team_b:
             c.forced_actions = [config.ACTION_DEFENSE_SETTLE, config.ACTION_ATTACK, config.ACTION_HEAL]
             c.role = None
 
-    # 매스 레이드 러너(1팀) : 같은 역할(가디언/스트라이커/메딕)이라도 매스 레이드에서는
+    # 마스 레이드 러너(1팀) : 같은 역할(가디언/스트라이커/메딕)이라도 마스 레이드에서는
     # 행동 목록이 다릅니다 (MASS_RAID_ROLE_ACTIONS). 이름/명칭은 다른 전투 유형과 공유하되
-    # 행동만 매스 레이드 전용으로 덮어씁니다. 캐릭터가 선택한 스킬(붕괴/방출/차폐/편광/환류/복원)이
+    # 행동만 마스 레이드 전용으로 덮어씁니다. 캐릭터가 선택한 스킬(붕괴/방출/차폐/편광/환류/복원)이
     # 있으면 "스킬" 버튼 대신 그 스킬 고유 이름으로 행동 목록에 추가됩니다.
     if room.battle_type == "mass_raid":
         for c in room.game.battle.team_a:
             base_actions = config.MASS_RAID_ROLE_ACTIONS.get(c.role, [])
             skill_actions = [c.skill] if c.skill else []
             c.forced_actions = base_actions + skill_actions + config.COMMON_ACTIONS
+            # 차폐(가디언) 스킬을 선택한 캐릭터는 마스 레이드 전투 시작 시에만 영구 보호막을 자동으로 얻습니다.
+            if c.skill == config.SKILL_SHIELD:
+                c.shield_permanent = config.SKILL_SHIELD_INITIAL
 
-    # 격자 전투(매스 레이드/점령전) : 중앙에 몹(거점)을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
+    # 격자 전투(마스 레이드/점령전) : 중앙에 몹(거점)을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
     if is_grid_battle:
         assign_mass_raid_positions(room.game.battle, grid_width, grid_height)
         for c in room.game.battle.team_a + room.game.battle.team_b:
@@ -643,7 +680,7 @@ def on_roll_site_dice(data):
 @socketio.on("telegraph_reveal")
 def on_telegraph_reveal(data):
     """
-    매스 레이드 전용 : GM이 '전조 출력'으로 찍어둔 격자 칸을 러너에게 공개합니다.
+    마스 레이드 전용 : GM이 '전조 출력'으로 찍어둔 격자 칸을 러너에게 공개합니다.
     공개된 칸은 모두의 화면에서 밝게 표시되며, 곧 그 칸에 무조건 피해가 발생한다는
     시각적 경고일 뿐입니다. 실제 피해 판정(공격 행동)은 별도로 이루어집니다.
     """
@@ -653,7 +690,7 @@ def on_telegraph_reveal(data):
         return
     battle = room.game.battle
     if battle is None or battle.grid_width is None:
-        emit("action_error", {"message": "격자 전투(점령전/매스 레이드)에서만 사용할 수 있습니다."})
+        emit("action_error", {"message": "격자 전투(점령전/마스 레이드)에서만 사용할 수 있습니다."})
         return
     cells = []
     for cell in data.get("cells", []):
@@ -804,8 +841,8 @@ def on_battle_action(data):
         emit("action_error", {"message": "먼저 🎲 다이스 굴리기로 이번 라운드 거점 행동(전조)을 정해주세요."})
         return
 
-    # 격자 전투(점령전/매스 레이드) : 러너가 이동하려면 먼저 GM이 이번 라운드 전조를
-    # 출력해야 합니다 (점령전 = 거점 다이스, 매스 레이드 = 격자 칸 공개).
+    # 격자 전투(점령전/마스 레이드) : 러너가 이동하려면 먼저 GM이 이번 라운드 전조를
+    # 출력해야 합니다 (점령전 = 거점 다이스, 마스 레이드 = 격자 칸 공개).
     if action_type == "move" and telegraph_pending(room, battle):
         emit("action_error", {"message": "먼저 GM이 이번 라운드 전조를 출력해야 이동할 수 있습니다."})
         return

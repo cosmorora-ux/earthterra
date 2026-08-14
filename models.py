@@ -48,12 +48,12 @@ class Character:
         self.pending_attacks = []         # 아직 정산되지 않은 공격(피해 보류) 목록
         self.fleeing_watch_key = None     # 도주 시도 중, 이 팀 키("A"/"B")의 턴이 끝나면 도주가 확정됩니다.
 
-        # 매스 레이드(격자) 전용. can_move가 True인 전투에서만 의미가 있습니다.
+        # 마스 레이드(격자) 전용. can_move가 True인 전투에서만 의미가 있습니다.
         self.grid_pos = None          # (x, y) 또는 None(격자를 쓰지 않는 전투)
         self.can_move = False          # 이 전투가 격자 이동을 지원하는지
         self.moved_this_round = False  # 이번 라운드에 이미 이동을 사용했는지 (행동 전에 한 번만 가능)
 
-        # 매스 레이드 전용 스킬 (역할당 2종 중 1개, config.SKILL_OPTIONS 참고). 역할과 맞지 않으면 무시합니다.
+        # 마스 레이드 전용 스킬 (역할당 2종 중 1개, config.SKILL_OPTIONS 참고). 역할과 맞지 않으면 무시합니다.
         self.skill = skill if skill in config.SKILL_OPTIONS.get(self.role, []) else None
 
         # 차폐(가디언) 전용 보호막. 영구(전투 시작 시 1회)와 임시(사용할 때마다, 라운드 만료 있음)를 구분합니다.
@@ -188,7 +188,7 @@ class Skill:
 
     name = "스킬"
     allowed_roles = None  # None 이면 모든 역할이 사용 가능
-    requires_skill = None  # None이 아니면, actor.skill이 이 값과 같아야만 사용 가능(매스 레이드 스킬용)
+    requires_skill = None  # None이 아니면, actor.skill이 이 값과 같아야만 사용 가능(마스 레이드 스킬용)
 
     def can_use(self, actor: Character):
         """이 스킬을 사용할 수 있는지 검사합니다. 반환값: (가능여부:bool, 실패사유:str)"""
@@ -341,7 +341,7 @@ class HealSkill(Skill):
 
 class CommandSkill(Skill):
     """
-    가디언 전용(매스 레이드) '지휘' - 지정 아군 1인에게 어그로 1회를 부여합니다.
+    가디언 전용(마스 레이드) '지휘' - 지정 아군 1인에게 어그로 1회를 부여합니다.
     공격유도와 달리, 본인을 지정해도 추가 방어 효과는 붙지 않는 순수 어그로 강제입니다.
     """
     name = "지휘"
@@ -352,7 +352,7 @@ class CommandSkill(Skill):
 
 
 class SwapSkill(Skill):
-    """메딕 전용(매스 레이드) '배치' - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 사정거리 제한 없음."""
+    """메딕 전용(마스 레이드) '배치' - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 사정거리 제한 없음."""
     name = "배치"
     allowed_roles = [config.ROLE_HEALER]
 
@@ -362,7 +362,7 @@ class SwapSkill(Skill):
 
 
 # ==========================================================================
-# 매스 레이드 전용 스킬 (역할당 2종 중 1개, 캐릭터 생성 시 선택 - config.SKILL_OPTIONS 참고)
+# 마스 레이드 전용 스킬 (역할당 2종 중 1개, 캐릭터 생성 시 선택 - config.SKILL_OPTIONS 참고)
 # 아래 클래스들은 사용 가능 여부(can_use)만 판정하는 얇은 표식이며, 실제 다이스/피해/회복 계산은
 # 대부분 기존 AttackSkill/HealSkill 로직을 재사용해 Battle의 전용 perform_* 메서드가 처리합니다.
 # ==========================================================================

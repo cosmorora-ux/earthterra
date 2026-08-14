@@ -44,7 +44,7 @@ def get_value(key, overrides: dict = None):
 # 역할 자체의 정체성(포지션)은 그대로이며, 이 상수들의 "이름"만 바뀐 것입니다 - 그래서 치명타
 # 포지션 판정(role == ROLE_DEALER 등) 같은 기존 로직은 전부 그대로 동작합니다.
 # 다만 "행동 목록"은 전투 유형에 따라 달라집니다: 기본(PVP/점령전/레이드)에서는 아래 ROLE_ACTIONS의
-# 원래(옛 탱커/딜러/힐러) 행동 그대로이고, 매스 레이드에서만 MASS_RAID_ROLE_ACTIONS로 교체됩니다.
+# 원래(옛 탱커/딜러/힐러) 행동 그대로이고, 마스 레이드에서만 MASS_RAID_ROLE_ACTIONS로 교체됩니다.
 ROLE_TANKER = "가디언"
 ROLE_DEALER = "스트라이커"
 ROLE_HEALER = "메딕"
@@ -95,7 +95,7 @@ def stat_total(stats: dict) -> int:
 #    - 힐 : 메딕 전용.
 #    - 시간초과 / 도주 : 전원 공통.
 #
-#    매스 레이드 전용 - MASS_RAID_ROLE_ACTIONS. 격자 전투에 맞춰 행동 목록이 재구성됩니다
+#    마스 레이드 전용 - MASS_RAID_ROLE_ACTIONS. 격자 전투에 맞춰 행동 목록이 재구성됩니다
 #    (같은 역할이라도 전투 유형에 따라 쓸 수 있는 행동이 다릅니다).
 #    - 스트라이커 : 공격, 회피.
 #    - 가디언 : 방어(자신 포함 지정 1인에게 능동 방어 부여 - 기본 '방어'와 동일한 단순 방어),
@@ -112,16 +112,16 @@ ACTION_DODGE = "회피"
 ACTION_TIMEOUT = "시간초과"
 ACTION_FLEE = "도주"
 ACTION_DEFENSE_SETTLE = "방어 정산"  # 점령전 거점 전용 - 보류된 공격을 정산만 하고, 이후 공격/힐을 이어서 할 수 있습니다.
-ACTION_MOVE = "이동"  # 매스 레이드(격자) 전용 - 이번 라운드 행동 전에 먼저 선언합니다. has_acted를 소모하지 않습니다.
-ACTION_COMMAND = "지휘"  # 가디언 전용(매스 레이드) - 공격유도와 같은 어그로 강제이지만, 방어 부여 효과는 없습니다.
-ACTION_SWAP = "배치"  # 메딕 전용(매스 레이드) - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 사정거리 제한 없음.
+ACTION_MOVE = "이동"  # 마스 레이드(격자) 전용 - 이번 라운드 행동 전에 먼저 선언합니다. has_acted를 소모하지 않습니다.
+ACTION_COMMAND = "지휘"  # 가디언 전용(마스 레이드) - 공격유도와 같은 어그로 강제이지만, 방어 부여 효과는 없습니다.
+ACTION_SWAP = "배치"  # 메딕 전용(마스 레이드) - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 사정거리 제한 없음.
 
 ROLE_ACTIONS = {
     ROLE_TANKER: [ACTION_ATTACK, ACTION_DEFEND, ACTION_TAUNT],
     ROLE_DEALER: [ACTION_ATTACK, ACTION_SELF_DEFEND, ACTION_DODGE],
     ROLE_HEALER: [ACTION_ATTACK, ACTION_SELF_DEFEND, ACTION_HEAL],
 }
-# 매스 레이드에서만 위 ROLE_ACTIONS 대신 적용되는 역할별 행동 목록 (webapp.py가
+# 마스 레이드에서만 위 ROLE_ACTIONS 대신 적용되는 역할별 행동 목록 (webapp.py가
 # forced_actions로 덮어씁니다 - 여기 없는 COMMON_ACTIONS(시간초과/도주)는 webapp.py에서 함께 붙여줍니다).
 MASS_RAID_ROLE_ACTIONS = {
     ROLE_TANKER: [ACTION_DEFEND, ACTION_COMMAND],
@@ -131,7 +131,7 @@ MASS_RAID_ROLE_ACTIONS = {
 COMMON_ACTIONS = [ACTION_TIMEOUT, ACTION_FLEE]  # 모든 역할이 사용 가능
 
 # ----------------------------------------------------------------------
-# 1.5 매스 레이드 전용 스킬 - 역할당 2종 중 1개를 캐릭터 생성 시 선택합니다.
+# 1.5 마스 레이드 전용 스킬 - 역할당 2종 중 1개를 캐릭터 생성 시 선택합니다.
 #     행동 버튼에는 "스킬" 대신 스킬 고유 이름(【 】 안 2글자)이 그대로 표시됩니다.
 # ----------------------------------------------------------------------
 SKILL_COLLAPSE = "붕괴"    # 스트라이커 - 단일 공격 : 다이스 ×3, 2회 공격, 최소 1회 크리티컬 보장
@@ -269,7 +269,7 @@ def roll_attack(stats: dict, role: str = None, overrides: dict = None) -> dict:
     atk_bonus = atk_val * stat_mult
     subtotal = core["subtotal"] + atk_bonus
 
-    # role이 None이면 포지션이 없는 존재(점령전 거점 / 매스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
+    # role이 None이면 포지션이 없는 존재(점령전 거점 / 마스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
     position_match = (role is None) or (role == ROLE_DEALER)
     if position_match:
         crit_chance = (get_value("BASE_CRIT_CHANCE", overrides)
@@ -385,7 +385,7 @@ def roll_defense(target_stats: dict, active: bool, grantor_stats: dict = None,
 
 def roll_site_auto_defense(target_stats: dict, overrides: dict = None) -> dict:
     """
-    점령전 거점 / 매스 레이드 적군 전용 자동 방어입니다. 공격 1회당 무조건 능동 방어 1회가 발생하며
+    점령전 거점 / 마스 레이드 적군 전용 자동 방어입니다. 공격 1회당 무조건 능동 방어 1회가 발생하며
     (방어 선언/능동 방어 계층 유무와 무관), 기본 다이스 공식 대신 1~30 고정 범위로 굴립니다.
     치명타는 발생하지 않습니다.
     """
@@ -467,7 +467,7 @@ def roll_heal(stats: dict, role: str = None, overrides: dict = None) -> dict:
     core = _roll_core_dice(stats, get_value("HEAL_DICE_COUNT", overrides), overrides)
     base_total = round(core["subtotal"] * get_value("HEAL_OUTPUT_MULTIPLIER", overrides))
 
-    # role이 None이면 포지션이 없는 존재(점령전 거점 / 매스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
+    # role이 None이면 포지션이 없는 존재(점령전 거점 / 마스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
     position_match = (role is None) or (role == ROLE_HEALER)
     luck = int(stats.get("행운", 0))
     mental = int(stats.get("정신", 0))
@@ -503,7 +503,7 @@ ROUND_TIME_LIMIT_SECONDS = 300  # 5분
 
 
 # ----------------------------------------------------------------------
-# 9.5. 격자 이동 (매스 레이드 전용)
+# 9.5. 격자 이동 (마스 레이드 전용)
 #      이동 가능 칸수 = AGILITY_MOVE_BASE + 민첩 × AGILITY_MOVE_PER_POINT  (기본: 민첩 0~5 → 1~6칸)
 # ----------------------------------------------------------------------
 AGILITY_MOVE_BASE = 1
@@ -594,9 +594,9 @@ FORMULA_FIELDS = [
 
     {"key": "ROUND_TIME_LIMIT_SECONDS", "label": "라운드 제한시간(초)", "desc": "라운드마다 행동을 선언해야 하는 제한시간", "type": int},
 
-    {"key": "AGILITY_MOVE_BASE", "label": "이동 가능 칸수 기본값 (매스 레이드)",
+    {"key": "AGILITY_MOVE_BASE", "label": "이동 가능 칸수 기본값 (마스 레이드)",
      "desc": "이동 칸수 = 기본값 + 민첩 × 민첩당 증가량", "type": int},
-    {"key": "AGILITY_MOVE_PER_POINT", "label": "민첩 1당 이동 칸수 증가 (매스 레이드)",
+    {"key": "AGILITY_MOVE_PER_POINT", "label": "민첩 1당 이동 칸수 증가 (마스 레이드)",
      "desc": "이동 칸수 = 기본값 + 민첩 × 민첩당 증가량", "type": int},
 ]
 
