@@ -168,6 +168,7 @@ def build_character_public(c):
         "move_range": config.calculate_move_range(c.stats, overrides=c.formula_overrides) if c.can_move else None,
         "skill": c.skill,
         "shield_hp": c.shield_hp,
+        "defense_count": len(c.defense_grants),
         "polarize_active": c.polarize_active,
         "has_leech_buff": c.leech_buff_expires_round is not None,
     }
