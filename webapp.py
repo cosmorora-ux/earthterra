@@ -46,6 +46,19 @@ def room_channel(room_id: str, suffix: str) -> str:
     return f"{room_id}:{suffix}"
 
 
+def post_system_chat(room, text: str, nickname: str = "system"):
+    """채팅 로그에 타임스탬프가 찍힌 시스템 메시지를 남기고 전체에게 전송합니다."""
+    entry = {
+        "time": time.strftime("%H:%M:%S"),
+        "nickname": nickname,
+        "role": "system",
+        "category": "system",
+        "text": text,
+    }
+    room.chat_log.append(entry)
+    socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
+
+
 # ----------------------------------------------------------------------
 # 페이지 라우트
 # ----------------------------------------------------------------------
@@ -156,15 +169,36 @@ def build_character_public(c):
     }
 
 
+def telegraph_pending(room, battle):
+    """
+    이번 라운드에 GM이 아직 전조(점령전 다이스 굴리기 / 매스 레이드 칸 공개)를 출력하지
+    않았는지 여부. 전조는 GM의 행동이므로, 이게 True인 동안은 러너의 이동을 막고
+    라운드 제한시간도 아직 시작시키지 않습니다.
+    """
+    if battle is None:
+        return False
+    if room.battle_type == "siege":
+        return room.site_dice_round_no != battle.round_no
+    if room.battle_type == "mass_raid":
+        return room.telegraph_round_no != battle.round_no
+    return False
+
+
 def sync_round_timer(room):
-    """라운드가 바뀔 때마다 제한시간 마감 시각을 새로 계산합니다. (모든 접속자가 같은 마감 시각을 봄)"""
+    """
+    라운드가 바뀔 때마다 제한시간 마감 시각을 새로 계산합니다. (모든 접속자가 같은 마감 시각을 봄)
+    단, 이번 라운드 전조가 아직 안 나왔다면(telegraph_pending) 러너의 행동 시간이 깎이지
+    않도록, 전조가 나올 때까지는 타이머를 시작하지 않습니다.
+    """
     battle = room.game.battle
     if battle is None:
         room.round_deadline = None
         room.last_round_no = None
         return
-    if room.last_round_no != battle.round_no or room.round_deadline is None:
+    if room.last_round_no != battle.round_no:
         room.last_round_no = battle.round_no
+        room.round_deadline = None
+    if room.round_deadline is None and not telegraph_pending(room, battle):
         room.round_deadline = time.time() + config.ROUND_TIME_LIMIT_SECONDS
 
 
@@ -553,6 +587,8 @@ def on_start_battle(data):
     room.site_dice_value = None
     room.site_dice_used = 0
     room.pending_reveal = None
+    room.telegraph_cells = []
+    room.telegraph_round_no = None
     broadcast_state(room)
 
 
@@ -573,7 +609,9 @@ def on_roll_site_dice(data):
     room.site_dice_round_no = battle.round_no
     room.site_dice_value = value
     room.site_dice_used = 0
-    battle.log_event(f"🔮 전조 : 이번 라운드 거점은 {value}회 행동합니다.", tag="system")
+    text = f"🔮 전조 : 이번 라운드 거점은 {value}회 행동합니다."
+    battle.log_event(text, tag="system")
+    post_system_chat(room, text, nickname="🔮 전조")
     broadcast_state(room)
 
 
@@ -601,7 +639,10 @@ def on_telegraph_reveal(data):
         if 0 <= x < battle.grid_width and 0 <= y < battle.grid_height:
             cells.append([x, y])
     room.telegraph_cells = cells
-    battle.log_event(f"🔮 전조 공개 : {len(cells)}칸에 곧 피해가 발생합니다.", tag="system")
+    room.telegraph_round_no = battle.round_no
+    text = f"🔮 전조 공개 : {len(cells)}칸에 곧 피해가 발생합니다."
+    battle.log_event(text, tag="system")
+    post_system_chat(room, text, nickname="🔮 전조")
     broadcast_state(room)
 
 
@@ -728,6 +769,12 @@ def on_battle_action(data):
         and room.site_dice_round_no != battle.round_no
     ):
         emit("action_error", {"message": "먼저 🎲 다이스 굴리기로 이번 라운드 거점 행동(전조)을 정해주세요."})
+        return
+
+    # 격자 전투(점령전/매스 레이드) : 러너가 이동하려면 먼저 GM이 이번 라운드 전조를
+    # 출력해야 합니다 (점령전 = 거점 다이스, 매스 레이드 = 격자 칸 공개).
+    if action_type == "move" and telegraph_pending(room, battle):
+        emit("action_error", {"message": "먼저 GM이 이번 라운드 전조를 출력해야 이동할 수 있습니다."})
         return
 
     should_preview = (

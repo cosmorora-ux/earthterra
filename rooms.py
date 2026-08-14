@@ -67,6 +67,7 @@ class RoomState:
         # 이 칸에 곧(공격 행동과는 별개로) 무조건 피해가 발생한다는 시각적 경고입니다.
         # [[x, y], ...] 또는 공개 전/해제 상태면 빈 리스트.
         self.telegraph_cells = []
+        self.telegraph_round_no = None  # 매스 레이드 : 이번 라운드에 전조를 공개했는지 (라운드 번호로 기록)
 
 
 def create_room(battle_type: str = "pvp") -> RoomState:
