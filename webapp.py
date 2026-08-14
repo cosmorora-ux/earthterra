@@ -579,6 +579,13 @@ def on_start_battle(data):
             c.forced_actions = [config.ACTION_DEFENSE_SETTLE, config.ACTION_ATTACK, config.ACTION_HEAL]
             c.role = None
 
+    # 매스 레이드 러너(1팀) : 같은 역할(가디언/스트라이커/메딕)이라도 매스 레이드에서는
+    # 행동 목록이 다릅니다 (MASS_RAID_ROLE_ACTIONS). 이름/명칭은 다른 전투 유형과 공유하되
+    # 행동만 매스 레이드 전용으로 덮어씁니다.
+    if room.battle_type == "mass_raid":
+        for c in room.game.battle.team_a:
+            c.forced_actions = config.MASS_RAID_ROLE_ACTIONS.get(c.role, []) + config.COMMON_ACTIONS
+
     # 격자 전투(매스 레이드/점령전) : 중앙에 몹(거점)을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
     if is_grid_battle:
         assign_mass_raid_positions(room.game.battle, grid_width, grid_height)

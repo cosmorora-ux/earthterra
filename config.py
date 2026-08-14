@@ -40,16 +40,17 @@ def get_value(key, overrides: dict = None):
 # ----------------------------------------------------------------------
 # 0. 캐릭터 역할 / 스탯 이름 / 스탯 최대치
 # ----------------------------------------------------------------------
-ROLE_TANKER = "탱커"
-ROLE_DEALER = "딜러"
-ROLE_HEALER = "힐러"
-# 매스 레이드 전용 역할 (기존 탱커/딜러/힐러와 별개로, 격자 전투에 맞춰 재설계된 역할입니다)
-ROLE_STRIKER = "스트라이커"
-ROLE_GUARDIAN = "가디언"
-ROLE_MEDIC = "메딕"
-ROLES = [ROLE_TANKER, ROLE_DEALER, ROLE_HEALER, ROLE_STRIKER, ROLE_GUARDIAN, ROLE_MEDIC]
+# 역할 이름은 가디언/스트라이커/메딕으로 통일합니다 (예전 탱커/딜러/힐러 명칭은 더 이상 쓰지 않습니다).
+# 역할 자체의 정체성(포지션)은 그대로이며, 이 상수들의 "이름"만 바뀐 것입니다 - 그래서 치명타
+# 포지션 판정(role == ROLE_DEALER 등) 같은 기존 로직은 전부 그대로 동작합니다.
+# 다만 "행동 목록"은 전투 유형에 따라 달라집니다: 기본(PVP/점령전/레이드)에서는 아래 ROLE_ACTIONS의
+# 원래(옛 탱커/딜러/힐러) 행동 그대로이고, 매스 레이드에서만 MASS_RAID_ROLE_ACTIONS로 교체됩니다.
+ROLE_TANKER = "가디언"
+ROLE_DEALER = "스트라이커"
+ROLE_HEALER = "메딕"
+ROLES = [ROLE_TANKER, ROLE_DEALER, ROLE_HEALER]
 # 캐릭터 데이터베이스 목록을 이 순서(포지션순)로 정렬합니다.
-ROLE_ORDER = [ROLE_TANKER, ROLE_DEALER, ROLE_HEALER, ROLE_GUARDIAN, ROLE_STRIKER, ROLE_MEDIC]
+ROLE_ORDER = [ROLE_TANKER, ROLE_DEALER, ROLE_HEALER]
 
 # 붙여넣기 등록 시 역할이 명시되지 않았을 때 사용할 기본 역할
 DEFAULT_ROLE = ROLE_DEALER
@@ -83,20 +84,22 @@ def stat_total(stats: dict) -> int:
 
 # ----------------------------------------------------------------------
 # 1. 역할별 사용 가능한 행동
-#    - 공격 : 모든 역할 가능 (탱커 포함)
-#    - 방어 : 탱커 전용. 본인 또는 아군 1명(택1)을 지정해 그 대상에게 능동 방어를 부여합니다.
+#    기본(PVP/점령전/레이드) - ROLE_ACTIONS. 옛 탱커/딜러/힐러 시절과 완전히 동일한 행동입니다.
+#    - 공격 : 모든 역할 가능 (가디언 포함)
+#    - 방어 : 가디언 전용. 본인 또는 아군 1명(택1)을 지정해 그 대상에게 능동 방어를 부여합니다.
 #             (어그로 효과는 없습니다)
-#    - 공격유도 : 탱커 전용. 어그로를 걸 대상(본인 또는 아군)을 지정합니다. 대상이 본인이면
+#    - 공격유도 : 가디언 전용. 어그로를 걸 대상(본인 또는 아군)을 지정합니다. 대상이 본인이면
 #                 추가로 능동 방어도 함께 부여됩니다.
-#    - 본인방어 : 딜러/힐러 전용. 자기 자신에게만 능동 방어를 부여합니다.
-#    - 회피 : 딜러 전용. 행운/민첩 기반으로 다음 피격을 완전히 회피할 확률을 얻습니다.
-#    - 힐 : 힐러 전용.
+#    - 본인방어 : 스트라이커/메딕 전용. 자기 자신에게만 능동 방어를 부여합니다.
+#    - 회피 : 스트라이커 전용. 행운/민첩 기반으로 다음 피격을 완전히 회피할 확률을 얻습니다.
+#    - 힐 : 메딕 전용.
 #    - 시간초과 / 도주 : 전원 공통.
 #
-#    매스 레이드 전용 역할(스트라이커/가디언/메딕)의 행동
+#    매스 레이드 전용 - MASS_RAID_ROLE_ACTIONS. 격자 전투에 맞춰 행동 목록이 재구성됩니다
+#    (같은 역할이라도 전투 유형에 따라 쓸 수 있는 행동이 다릅니다).
 #    - 스트라이커 : 공격, 회피.
-#    - 가디언 : 방어(자신 포함 지정 1인에게 능동 방어 부여 - 탱커의 '방어'와 동일한 단순 방어),
-#               지휘(지정 아군 1인에게 어그로 1회 부여. 방어 효과는 없습니다 - 탱커의 '공격유도'와
+#    - 가디언 : 방어(자신 포함 지정 1인에게 능동 방어 부여 - 기본 '방어'와 동일한 단순 방어),
+#               지휘(지정 아군 1인에게 어그로 1회 부여. 방어 효과는 없습니다 - 기본 '공격유도'와
 #               달리 본인을 지정해도 추가 방어가 붙지 않습니다).
 #    - 메딕 : 회복(힐과 동일), 배치(지정 아군 1인과 본인의 위치(칸)를 교환).
 # ----------------------------------------------------------------------
@@ -110,16 +113,20 @@ ACTION_TIMEOUT = "시간초과"
 ACTION_FLEE = "도주"
 ACTION_DEFENSE_SETTLE = "방어 정산"  # 점령전 거점 전용 - 보류된 공격을 정산만 하고, 이후 공격/힐을 이어서 할 수 있습니다.
 ACTION_MOVE = "이동"  # 매스 레이드(격자) 전용 - 이번 라운드 행동 전에 먼저 선언합니다. has_acted를 소모하지 않습니다.
-ACTION_COMMAND = "지휘"  # 가디언 전용 - 공격유도와 같은 어그로 강제이지만, 방어 부여 효과는 없습니다.
-ACTION_SWAP = "배치"  # 메딕 전용 - 지정 아군 1인과 본인의 위치(칸)를 교환합니다.
+ACTION_COMMAND = "지휘"  # 가디언 전용(매스 레이드) - 공격유도와 같은 어그로 강제이지만, 방어 부여 효과는 없습니다.
+ACTION_SWAP = "배치"  # 메딕 전용(매스 레이드) - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 사정거리 제한 없음.
 
 ROLE_ACTIONS = {
     ROLE_TANKER: [ACTION_ATTACK, ACTION_DEFEND, ACTION_TAUNT],
     ROLE_DEALER: [ACTION_ATTACK, ACTION_SELF_DEFEND, ACTION_DODGE],
     ROLE_HEALER: [ACTION_ATTACK, ACTION_SELF_DEFEND, ACTION_HEAL],
-    ROLE_STRIKER: [ACTION_ATTACK, ACTION_DODGE],
-    ROLE_GUARDIAN: [ACTION_DEFEND, ACTION_COMMAND],
-    ROLE_MEDIC: [ACTION_HEAL, ACTION_SWAP],
+}
+# 매스 레이드에서만 위 ROLE_ACTIONS 대신 적용되는 역할별 행동 목록 (webapp.py가
+# forced_actions로 덮어씁니다 - 여기 없는 COMMON_ACTIONS(시간초과/도주)는 webapp.py에서 함께 붙여줍니다).
+MASS_RAID_ROLE_ACTIONS = {
+    ROLE_TANKER: [ACTION_DEFEND, ACTION_COMMAND],
+    ROLE_DEALER: [ACTION_ATTACK, ACTION_DODGE],
+    ROLE_HEALER: [ACTION_HEAL, ACTION_SWAP],
 }
 COMMON_ACTIONS = [ACTION_TIMEOUT, ACTION_FLEE]  # 모든 역할이 사용 가능
 

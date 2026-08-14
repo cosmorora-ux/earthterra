@@ -228,11 +228,11 @@ class SelfDefendSkill(Skill):
 
 class DefendSkill(Skill):
     """
-    탱커/가디언 전용 '방어' - 본인 또는 아군 1명(택1)에게 능동 방어를 부여합니다.
+    가디언 전용 '방어' - 본인 또는 아군 1명(택1)에게 능동 방어를 부여합니다.
     어그로 효과는 없습니다.
     """
     name = "방어"
-    allowed_roles = [config.ROLE_TANKER, config.ROLE_GUARDIAN]
+    allowed_roles = [config.ROLE_TANKER]
 
     def execute(self, actor: Character, target: Character):
         target.defended_this_round = True
@@ -243,7 +243,7 @@ class DefendSkill(Skill):
 
 class TauntSkill(Skill):
     """
-    탱커 전용 '공격유도' - 어그로를 걸 대상(본인 또는 아군)을 지정합니다.
+    가디언 전용 '공격유도' - 어그로를 걸 대상(본인 또는 아군)을 지정합니다.
     대상이 본인이면 상대의 다음 공격을 자신에게 유도함과 동시에 스스로에게 능동 방어도 부여됩니다.
     """
     name = "공격유도"
@@ -257,9 +257,9 @@ class TauntSkill(Skill):
 
 
 class DodgeSkill(Skill):
-    """딜러/스트라이커 전용 '회피' - 행운/민첩 기반으로 다음 피격을 완전히 회피할 확률을 얻습니다."""
+    """스트라이커 전용 '회피' - 행운/민첩 기반으로 다음 피격을 완전히 회피할 확률을 얻습니다."""
     name = "회피"
-    allowed_roles = [config.ROLE_DEALER, config.ROLE_STRIKER]
+    allowed_roles = [config.ROLE_DEALER]
 
     def execute(self, actor: Character):
         actor.dodging_this_round = True
@@ -268,7 +268,7 @@ class DodgeSkill(Skill):
 
 class HealSkill(Skill):
     name = "힐"
-    allowed_roles = [config.ROLE_HEALER, config.ROLE_MEDIC]
+    allowed_roles = [config.ROLE_HEALER]
 
     def execute(self, actor: Character, target: Character, overrides: dict = None):
         heal = config.roll_heal(actor.stats, role=actor.role, overrides=overrides)
@@ -280,20 +280,20 @@ class HealSkill(Skill):
 
 class CommandSkill(Skill):
     """
-    가디언 전용 '지휘' - 지정 아군 1인에게 어그로 1회를 부여합니다.
-    공격유도(탱커)와 달리, 본인을 지정해도 추가 방어 효과는 붙지 않는 순수 어그로 강제입니다.
+    가디언 전용(매스 레이드) '지휘' - 지정 아군 1인에게 어그로 1회를 부여합니다.
+    공격유도와 달리, 본인을 지정해도 추가 방어 효과는 붙지 않는 순수 어그로 강제입니다.
     """
     name = "지휘"
-    allowed_roles = [config.ROLE_GUARDIAN]
+    allowed_roles = [config.ROLE_TANKER]
 
     def execute(self, actor: Character, target: Character):
         return {}
 
 
 class SwapSkill(Skill):
-    """메딕 전용 '배치' - 지정 아군 1인과 본인의 위치(칸)를 교환합니다."""
+    """메딕 전용(매스 레이드) '배치' - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 사정거리 제한 없음."""
     name = "배치"
-    allowed_roles = [config.ROLE_MEDIC]
+    allowed_roles = [config.ROLE_HEALER]
 
     def execute(self, actor: Character, target: Character):
         actor.grid_pos, target.grid_pos = target.grid_pos, actor.grid_pos

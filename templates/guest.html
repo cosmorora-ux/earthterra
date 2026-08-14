@@ -240,11 +240,9 @@ const RANGE_IGNORING_ACTIONS = new Set(["배치"]);  // 사정거리 제한 없�
 // GM이 '전조 출력'으로 공개한 격자 칸. 곧 그 칸에 무조건 피해가 발생한다는 시각적 경고입니다.
 let telegraphRevealedCells = new Set();
 const ROLE_MOVE_COLOR = {
-  "딜러": "#ff5555", "탱커": "#4a90ff", "힐러": "#ffe066",
   "스트라이커": "#ff5555", "가디언": "#4a90ff", "메딕": "#ffe066",
 };
 const ROLE_MOVE_EMOJI = {
-  "딜러": "🔴", "탱커": "🔵", "힐러": "🟡",
   "스트라이커": "🔴", "가디언": "🔵", "메딕": "🟡",
 };
 const ACTION_RANGE_COLOR = "#ffffff";
@@ -414,7 +412,7 @@ function renderGrid(battle, all) {
         ? (highlightIsAction
             ? `선택: ${selChar.name} — ⚪ 사거리(십자3+주변8) 표시 중 · 범위 내 아군/적군(본인 포함)을 클릭하면 대상을 지정해 행동을 고를 수 있어요.`
             : `선택: ${selChar.name} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 가능 범위 표시 중 · 먼저 이동할 칸을 클릭하세요 (이동을 마쳐야 행동할 수 있어요).`)
-        : '아군을 클릭하면 이동 범위가 표시돼요(딜러 🔴 · 탱커 🔵 · 힐러 🟡). 이동을 마치면 사거리(⚪)가 표시되고, 그 범위 내 캐릭터(본인 포함)를 클릭해 대상을 정하면 행동 팝업이 뜹니다.');
+        : '아군을 클릭하면 이동 범위가 표시돼요(스트라이커 🔴 · 가디언 🔵 · 메딕 🟡). 이동을 마치면 사거리(⚪)가 표시되고, 그 범위 내 캐릭터(본인 포함)를 클릭해 대상을 정하면 행동 팝업이 뜹니다.');
   }
 
   renderGridActionPopup(battle, all);
