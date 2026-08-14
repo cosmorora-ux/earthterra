@@ -160,20 +160,8 @@
   </div>
 
   <h3>행동 실행</h3>
-  행동자: <select id="actActor"></select>
-  행동: <select id="actType">
-    <option value="attack">공격</option>
-    <option value="self_defend">본인방어</option>
-    <option value="defend">방어(가디언)</option>
-    <option value="taunt">공격유도(가디언)</option>
-    <option value="dodge">회피(스트라이커)</option>
-    <option value="heal">힐(메딕)</option>
-    <option value="timeout">시간초과</option>
-    <option value="flee">도주</option>
-    <option value="defense_settle">방어 정산(거점)</option>
-    <option value="command">지휘(가디언, 매스 레이드)</option>
-    <option value="swap">배치(메딕, 매스 레이드)</option>
-  </select>
+  행동자: <select id="actActor" onchange="refreshActTypeOptions()"></select>
+  행동: <select id="actType" onchange="refreshActTargetOptions()"></select>
   대상(필요한 경우): <select id="actTarget"></select>
   <button onclick="submitAction()">실행</button>
   <div id="actionError" class="err"></div>
@@ -224,6 +212,7 @@ const ACTION_LABELS = {
   "회피": "dodge", "힐": "heal", "시간초과": "timeout", "도주": "flee",
   "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
 };
+const TYPE_TO_LABEL = Object.fromEntries(Object.entries(ACTION_LABELS).map(([label, type]) => [type, label]));
 const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap"]);
 
 function showError(msg) {
@@ -476,10 +465,45 @@ function renderBattle(battle) {
   teamsEl.innerHTML = all.map(c => renderCardHtml(c)).join('');
 
   const opts = all.map(c => `<option value="${c.name}">${c.name} (${c.teamLabel}팀)</option>`).join('');
+  const prevActor = actorSel.value;
   actorSel.innerHTML = opts;
-  targetSel.innerHTML = `<option value="">-</option>` + opts;
+  if ([...actorSel.options].some(o => o.value === prevActor)) actorSel.value = prevActor;
+  refreshActTypeOptions();
 
   renderGrid(battle, all);
+}
+
+// 행동자가 선택되면, 그 캐릭터가 실제로 쓸 수 있는 행동만 "행동" 드롭다운에 남깁니다.
+function refreshActTypeOptions() {
+  const typeSel = document.getElementById('actType');
+  const actor = lastAllForCards.find(c => c.name === document.getElementById('actActor').value);
+  if (!actor) { typeSel.innerHTML = ''; refreshActTargetOptions(); return; }
+  const prevType = typeSel.value;
+  typeSel.innerHTML = actor.available_actions
+    .filter(label => label !== '이동')  // 이동은 지도 클릭으로만 처리합니다.
+    .map(label => `<option value="${ACTION_LABELS[label]}">${label}</option>`)
+    .join('');
+  if ([...typeSel.options].some(o => o.value === prevType)) typeSel.value = prevType;
+  refreshActTargetOptions();
+}
+
+// 선택된 행동이 아군/적군 중 어느 쪽을 대상으로 하는지에 따라 "대상" 드롭다운을 좁힙니다.
+function refreshActTargetOptions() {
+  const targetSel = document.getElementById('actTarget');
+  const actor = lastAllForCards.find(c => c.name === document.getElementById('actActor').value);
+  const label = TYPE_TO_LABEL[document.getElementById('actType').value];
+  if (!actor || !label) { targetSel.innerHTML = '<option value="">-</option>'; return; }
+  let pool;
+  if (ENEMY_TARGET_ACTIONS.has(label)) {
+    pool = lastAllForCards.filter(c => c.teamLabel !== actor.teamLabel);
+  } else if (ALLY_TARGET_ACTIONS.has(label)) {
+    pool = lastAllForCards.filter(c => c.teamLabel === actor.teamLabel);
+  } else {
+    pool = [actor];  // 본인방어/회피/도주/시간초과/방어 정산 등 대상이 필요 없는 행동
+  }
+  const prevTarget = targetSel.value;
+  targetSel.innerHTML = '<option value="">-</option>' + pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  if ([...targetSel.options].some(o => o.value === prevTarget)) targetSel.value = prevTarget;
 }
 
 let expandedCards = new Set();   // 펼쳐진 카드 이름 (기본은 전부 접힘)
@@ -923,7 +947,6 @@ function renderActionPanel(battle) {
   }
   const character = all.find(c => c.name === actionPanelActorName);
   const actorOpts = all.map(c => `<option value="${c.name}" ${c.name === actionPanelActorName ? 'selected' : ''}>${c.name} (${c.role})</option>`).join('');
-  const targetOpts = all.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
 
   const buttons = character.available_actions.map(label => {
     const type = ACTION_LABELS[label];
@@ -931,6 +954,10 @@ function renderActionPanel(battle) {
       return '';  // 이동은 지도(🗺 격자 지도)에서 아군을 클릭한 뒤 이동 가능 범위 칸을 클릭해서 처리합니다.
     }
     if (NEEDS_TARGET.has(type)) {
+      const pool = ENEMY_TARGET_ACTIONS.has(label)
+        ? all.filter(c => c.team !== character.team)
+        : all.filter(c => c.team === character.team);  // 아군 대상 행동 (본인 포함)
+      const targetOpts = pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
       return `<button onclick="quickAction('${type}','${character.name}',document.getElementById('qaTarget_${type}').value)">${label}</button>
               <select id="qaTarget_${type}">${targetOpts}</select>`;
     }

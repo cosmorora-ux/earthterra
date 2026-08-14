@@ -556,7 +556,6 @@ function renderActionPanel(battle) {
     return;
   }
 
-  const targetOpts = all.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
   let character;
   let actorPicker = '';
   if (control.scope === 'all') {
@@ -576,6 +575,10 @@ function renderActionPanel(battle) {
       return '';  // 이동은 지도(🗺 격자 지도)에서 아군을 클릭한 뒤 이동 가능 범위 칸을 클릭해서 처리합니다.
     }
     if (NEEDS_TARGET.has(type)) {
+      const pool = ENEMY_TARGET_ACTIONS.has(label)
+        ? all.filter(c => c.team !== character.team)
+        : all.filter(c => c.team === character.team);  // 아군 대상 행동 (본인 포함)
+      const targetOpts = pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
       return `<button onclick="quickAction('${type}','${character.name}',document.getElementById('qaTarget_${type}').value)">${label}</button>
               <select id="qaTarget_${type}">${targetOpts}</select>`;
     }
