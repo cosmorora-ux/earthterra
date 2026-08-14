@@ -130,6 +130,58 @@ MASS_RAID_ROLE_ACTIONS = {
 }
 COMMON_ACTIONS = [ACTION_TIMEOUT, ACTION_FLEE]  # 모든 역할이 사용 가능
 
+# ----------------------------------------------------------------------
+# 1.5 매스 레이드 전용 스킬 - 역할당 2종 중 1개를 캐릭터 생성 시 선택합니다.
+#     행동 버튼에는 "스킬" 대신 스킬 고유 이름(【 】 안 2글자)이 그대로 표시됩니다.
+# ----------------------------------------------------------------------
+SKILL_COLLAPSE = "붕괴"    # 스트라이커 - 단일 공격 : 다이스 ×3, 2회 공격, 최소 1회 크리티컬 보장
+SKILL_EMISSION = "방출"    # 스트라이커 - 광역 공격 : 다이스 ×2, 생존한 모든 적에게 개별로 2회 공격
+SKILL_SHIELD = "차폐"      # 가디언 - 보호막 : 전투 시작 시 본인에게 영구 보호막, 사용 시 지정 아군에게 임시 보호막+방어
+SKILL_POLARIZE = "편광"    # 가디언 - 광역 방어 : 아군 전원의 피해를 본인에게 집중(3턴)
+SKILL_REFLUX = "환류"      # 메딕 - HP 흡수 : 본인 회복 + 메딕 전원 회복 + 지정 아군 3인에게 흡수 버프
+SKILL_RESTORE = "복원"     # 메딕 - 광역 회복 : 모든 아군 회복 + 지정 아군 1인 추가 회복
+
+SKILL_OPTIONS = {
+    ROLE_TANKER: [SKILL_SHIELD, SKILL_POLARIZE],
+    ROLE_DEALER: [SKILL_COLLAPSE, SKILL_EMISSION],
+    ROLE_HEALER: [SKILL_REFLUX, SKILL_RESTORE],
+}
+ALL_SKILLS = [SKILL_COLLAPSE, SKILL_EMISSION, SKILL_SHIELD, SKILL_POLARIZE, SKILL_REFLUX, SKILL_RESTORE]
+
+# 붕괴/방출 : 기본 공격 다이스 개수(ATTACK_DICE_COUNT)에 곱하는 배율
+SKILL_COLLAPSE_DICE_MULT = 3
+SKILL_EMISSION_DICE_MULT = 2
+
+# 차폐 : 전투 시작 시 본인에게 붙는 영구 보호막(데미지로만 소모되며 시간 만료가 없습니다)
+SKILL_SHIELD_INITIAL = 150
+# 차폐 : 사용(행동)할 때마다 대상에게 붙는 임시 보호막량 - 본인 지정 시에는 2배
+SKILL_SHIELD_GRANT_ALLY = 50
+SKILL_SHIELD_GRANT_SELF = 100
+# 차폐로 부여한 임시 보호막의 지속 라운드 수 (데미지로 다 안 깎여도 이 라운드가 지나면 사라집니다)
+SKILL_SHIELD_GRANT_DURATION = 3
+
+# 편광 : 지속 라운드 수. 이 기간 동안 같은 팀에 대한 모든 공격이 편광 사용자에게 집중되며,
+# 편광 사용자는 이 효과로는 죽지 않고(최소 1hp) 못 막은 만큼은 다음 라운드 시작 시 무조건
+# 생존 아군 전원에게 1/n씩 나눠서 가산됩니다.
+SKILL_POLARIZE_DURATION = 3
+
+# 환류 : 본인 회복량 (최대 HP 대비 %)
+SKILL_REFLUX_SELF_HEAL_PCT = 50
+# 환류 : 지정 아군 3인에게 부여하는 흡수 버프의 지속 라운드 수 / 인원수
+SKILL_REFLUX_BUFF_DURATION = 3
+SKILL_REFLUX_BUFF_TARGET_COUNT = 3
+# 환류 흡수 버프 : 다이스 면수 = 행운 × 이 배율. 굴린 값을 3등분해서 하/중/상 등급을 매깁니다.
+# (행운 0이면 다이스를 굴리지 않고 항상 '하' 등급으로 처리합니다)
+SKILL_REFLUX_BUFF_DICE_PER_LUCK = 3
+# 흡수 버프 등급별 회복량 (등급 판정 시점의 본인 최대 HP 대비 %)
+SKILL_REFLUX_BUFF_PCT_LOW = 10
+SKILL_REFLUX_BUFF_PCT_MID = 20
+SKILL_REFLUX_BUFF_PCT_HIGH = 30
+
+# 복원 : 지정 아군 1인에게 추가로 붙는 회복 보너스 (%)
+SKILL_RESTORE_BONUS_PCT = 50
+
+
 # 힐러는 "후공 페이즈"(이번 라운드에서 순서상 나중에 행동하는 팀의 차례)라면,
 # 설령 자기 팀 턴이 아니더라도 라운드당 1회의 행동을 사용할 수 있습니다.
 # (예: 우리 팀이 선공이었다면, 힐러는 상대의 후공 페이즈 때 반응하듯 힐을 쓸 수 있습니다)

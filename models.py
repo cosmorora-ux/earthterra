@@ -18,7 +18,8 @@ class Character:
     STATUS_DEAD = "dead"
     STATUS_FLED = "fled"        # 도주에 완전히 성공한 상태
 
-    def __init__(self, name: str, role: str, stats: dict, color: str = None, formula_overrides: dict = None):
+    def __init__(self, name: str, role: str, stats: dict, color: str = None, formula_overrides: dict = None,
+                 skill: str = None):
         self.name = name
         self.role = role if role in config.ROLES else config.DEFAULT_ROLE
         # 스탯은 항상 STAT_KEYS 순서/형태 + 최대치 범위로 정규화해서 저장합니다.
@@ -52,6 +53,23 @@ class Character:
         self.can_move = False          # 이 전투가 격자 이동을 지원하는지
         self.moved_this_round = False  # 이번 라운드에 이미 이동을 사용했는지 (행동 전에 한 번만 가능)
 
+        # 매스 레이드 전용 스킬 (역할당 2종 중 1개, config.SKILL_OPTIONS 참고). 역할과 맞지 않으면 무시합니다.
+        self.skill = skill if skill in config.SKILL_OPTIONS.get(self.role, []) else None
+
+        # 차폐(가디언) 전용 보호막. 영구(전투 시작 시 1회)와 임시(사용할 때마다, 라운드 만료 있음)를 구분합니다.
+        self.shield_permanent = 0
+        self.shield_temp = 0
+        self.shield_temp_expires_round = None  # 이 라운드가 지나면 shield_temp가 사라집니다.
+
+        # 편광(가디언) 전용 - 활성화되면 같은 팀에 대한 모든 공격이 이 캐릭터에게 집중됩니다.
+        self.polarize_active = False
+        self.polarize_expires_round = None
+        self.polarize_overflow = 0     # 이 효과로 못 막은(1hp 클램프로 못 넣은) 피해 누적치
+        self.polarize_ally_count = 0   # 활성화 시점의 보호 대상 아군 수(n) - 방어력 배율/오버플로 분배에 사용
+
+        # 환류(메딕) 전용 - 이 캐릭터가 흡수 버프를 받고 있으면, 공격/방어/힐을 할 때마다 자동으로 발동됩니다.
+        self.leech_buff_expires_round = None
+
     # ------------------------------------------------------------------
     @property
     def is_alive(self) -> bool:
@@ -66,7 +84,37 @@ class Character:
     def stat_total(self) -> int:
         return config.stat_total(self.stats)
 
+    @property
+    def shield_hp(self) -> int:
+        """차폐(가디언) 보호막 총량 (영구 + 임시)."""
+        return self.shield_permanent + self.shield_temp
+
+    def absorb_damage(self, amount: int) -> int:
+        """피해를 보호막으로 먼저 흡수합니다(임시 보호막부터 소모). 반환값은 보호막을 넘어선 잔여 피해량."""
+        if amount <= 0 or (self.shield_temp <= 0 and self.shield_permanent <= 0):
+            return amount
+        used = min(self.shield_temp, amount)
+        self.shield_temp -= used
+        amount -= used
+        if amount > 0 and self.shield_permanent > 0:
+            used = min(self.shield_permanent, amount)
+            self.shield_permanent -= used
+            amount -= used
+        return amount
+
     def take_damage(self, amount: int):
+        amount = self.absorb_damage(amount)
+        if amount <= 0:
+            return  # 보호막으로 전부 막았습니다.
+
+        if self.polarize_active:
+            # 편광 : 이 피해로는 죽지 않고 최소 1hp를 남깁니다. 못 막은 만큼은 다음 라운드
+            # 시작 시 생존 아군 전체에게 나눠서 가산될 오버플로로 누적됩니다.
+            survivable = max(0, self.current_hp - 1)
+            self.polarize_overflow += max(0, amount - survivable)
+            self.current_hp = max(1, self.current_hp - amount)
+            return
+
         self.current_hp = max(0, self.current_hp - amount)
         if self.current_hp <= 0:
             self.current_hp = 0
@@ -121,6 +169,8 @@ class Character:
         d = {"role": self.role, "stats": dict(self.stats)}
         if self.color:
             d["color"] = self.color
+        if self.skill:
+            d["skill"] = self.skill
         return d
 
     def __repr__(self):
@@ -138,6 +188,7 @@ class Skill:
 
     name = "스킬"
     allowed_roles = None  # None 이면 모든 역할이 사용 가능
+    requires_skill = None  # None이 아니면, actor.skill이 이 값과 같아야만 사용 가능(매스 레이드 스킬용)
 
     def can_use(self, actor: Character):
         """이 스킬을 사용할 수 있는지 검사합니다. 반환값: (가능여부:bool, 실패사유:str)"""
@@ -147,6 +198,8 @@ class Skill:
             return False, "도주(시도) 중인 캐릭터는 행동할 수 없습니다."
         if actor.has_acted:
             return False, "이미 행동한 캐릭터입니다."
+        if self.requires_skill is not None and actor.skill != self.requires_skill:
+            return False, f"이 캐릭터는 '{self.requires_skill}' 스킬을 선택하지 않았습니다."
         if actor.forced_actions is not None:
             if self.name not in actor.forced_actions:
                 return False, f"이 캐릭터는 {self.name}을(를) 사용할 수 없습니다."
@@ -166,7 +219,8 @@ class AttackSkill(Skill):
         return config.roll_attack(actor.stats, role=actor.role, overrides=overrides)
 
     @staticmethod
-    def resolve(atk: dict, target: Character, overrides: dict = None, auto_defense: bool = False):
+    def resolve(atk: dict, target: Character, overrides: dict = None, auto_defense: bool = False,
+                defense_stat_mult: float = 1.0):
         """
         공격 판정 결과(atk)를 대상에게 실제로 적용합니다.
         회피(딜러 회피/도주 중 강제 회피) -> 방어(능동 계층 소모/무방비) -> 최종 피해 순으로 처리합니다.
@@ -174,6 +228,7 @@ class AttackSkill(Skill):
         도주 시도 중(STATUS_FLEEING)에는 무방비로 취급되며 회피 확률이 1.5배 적용됩니다. (요청 11)
         auto_defense=True(점령전 거점 전용)면 방어 선언 여부와 무관하게 공격 1회당 항상
         능동 방어 1회(1~30 다이스)가 자동으로 발생합니다.
+        defense_stat_mult(편광 전용)는 대상 본인의 방어 스탯(수동 바닥값 계산용)에만 곱해집니다.
         반환값 dict: dodged, dfs(있다면), damage, hp_before, hp_after
         """
         hp_before = target.current_hp
@@ -189,8 +244,14 @@ class AttackSkill(Skill):
         else:
             dodge = None
 
+        if defense_stat_mult != 1.0:
+            target_def_stats = dict(target.stats)
+            target_def_stats["방어"] = int(target_def_stats.get("방어", 0) * defense_stat_mult)
+        else:
+            target_def_stats = target.stats
+
         if auto_defense and not is_fleeing:
-            dfs = config.roll_site_auto_defense(target.stats, overrides=overrides)
+            dfs = config.roll_site_auto_defense(target_def_stats, overrides=overrides)
         else:
             if is_fleeing:
                 # 도주 시도 중에는 걸려있던 방어와 무관하게 무방비로 취급합니다.
@@ -202,7 +263,7 @@ class AttackSkill(Skill):
                 grantor, active = target, False
 
             dfs = config.roll_defense(
-                target.stats, active=active,
+                target_def_stats, active=active,
                 grantor_stats=grantor.stats, grantor_role=grantor.role, grantor_name=grantor.name,
                 overrides=overrides,
             )
@@ -298,6 +359,76 @@ class SwapSkill(Skill):
     def execute(self, actor: Character, target: Character):
         actor.grid_pos, target.grid_pos = target.grid_pos, actor.grid_pos
         return {}
+
+
+# ==========================================================================
+# 매스 레이드 전용 스킬 (역할당 2종 중 1개, 캐릭터 생성 시 선택 - config.SKILL_OPTIONS 참고)
+# 아래 클래스들은 사용 가능 여부(can_use)만 판정하는 얇은 표식이며, 실제 다이스/피해/회복 계산은
+# 대부분 기존 AttackSkill/HealSkill 로직을 재사용해 Battle의 전용 perform_* 메서드가 처리합니다.
+# ==========================================================================
+class CollapseSkill(Skill):
+    """
+    스트라이커 전용 '붕괴' - 단일 적에게 기본 공격 다이스 ×3 배율로 2회 공격 판정합니다.
+    두 판정 모두 크리티컬이 아니면 두 번째 판정에 강제로 크리티컬을 적용합니다(최소 1회 보장).
+    """
+    name = config.SKILL_COLLAPSE
+    requires_skill = config.SKILL_COLLAPSE
+    allowed_roles = [config.ROLE_DEALER]
+
+
+class EmissionSkill(Skill):
+    """스트라이커 전용 '방출' - 기본 공격 다이스 ×2 배율로 생존한 모든 적에게 개별로 2회씩 공격합니다."""
+    name = config.SKILL_EMISSION
+    requires_skill = config.SKILL_EMISSION
+    allowed_roles = [config.ROLE_DEALER]
+
+
+class ShieldSkill(Skill):
+    """
+    가디언 전용 '차폐' - 지정 아군(본인 포함) 1인에게 임시 보호막 + 능동 방어를 부여합니다.
+    전투 시작 시 본인에게 붙는 영구 보호막은 이 스킬을 선택한 것만으로 자동 적용되며(Battle이 처리),
+    execute()는 "사용(행동)"했을 때의 효과만 담당합니다.
+    """
+    name = config.SKILL_SHIELD
+    requires_skill = config.SKILL_SHIELD
+    allowed_roles = [config.ROLE_TANKER]
+
+    def execute(self, actor: Character, target: Character):
+        amount = config.SKILL_SHIELD_GRANT_SELF if target is actor else config.SKILL_SHIELD_GRANT_ALLY
+        target.shield_temp += amount
+        target.defended_this_round = True
+        target.defense_grants.append(actor)
+        return {"amount": amount}
+
+
+class PolarizeSkill(Skill):
+    """
+    가디언 전용 '편광' - 활성화하면 일정 기간 같은 팀에 대한 모든 공격이 본인에게 집중됩니다.
+    실제 리다이렉트/방어력 배율/사망 방지/오버플로 이월은 Battle이 담당합니다.
+    """
+    name = config.SKILL_POLARIZE
+    requires_skill = config.SKILL_POLARIZE
+    allowed_roles = [config.ROLE_TANKER]
+
+    def execute(self, actor: Character):
+        return {}
+
+
+class RefluxSkill(Skill):
+    """
+    메딕 전용 '환류' - 본인 회복 + 메딕 직군 아군 전원 회복 + 지정 아군 3인에게 흡수 버프를 부여합니다.
+    실제 다이스/회복 적용은 Battle이 담당합니다.
+    """
+    name = config.SKILL_REFLUX
+    requires_skill = config.SKILL_REFLUX
+    allowed_roles = [config.ROLE_HEALER]
+
+
+class RestoreSkill(Skill):
+    """메딕 전용 '복원' - 모든 아군에게 회복 판정, 지정 아군 1인은 추가로 회복 보너스를 받습니다."""
+    name = config.SKILL_RESTORE
+    requires_skill = config.SKILL_RESTORE
+    allowed_roles = [config.ROLE_HEALER]
 
 
 class TimeoutSkill(Skill):

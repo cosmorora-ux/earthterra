@@ -31,6 +31,7 @@ from models import (
     Character, AttackSkill, SelfDefendSkill, DefendSkill, TauntSkill,
     DodgeSkill, HealSkill, TimeoutSkill, FleeSkill, DefenseSettleSkill,
     CommandSkill, SwapSkill,
+    CollapseSkill, EmissionSkill, ShieldSkill, PolarizeSkill, RefluxSkill, RestoreSkill,
 )
 from database import CharacterDatabase
 import config
@@ -141,6 +142,17 @@ class Battle:
         self.defense_settle_skill = DefenseSettleSkill()
         self.command_skill = CommandSkill()
         self.swap_skill = SwapSkill()
+        self.collapse_skill = CollapseSkill()
+        self.emission_skill = EmissionSkill()
+        self.shield_skill = ShieldSkill()
+        self.polarize_skill = PolarizeSkill()
+        self.reflux_skill = RefluxSkill()
+        self.restore_skill = RestoreSkill()
+
+        # 차폐(가디언) 스킬을 선택한 캐릭터는 전투 시작 시 영구 보호막을 자동으로 얻습니다.
+        for c in team_a + team_b:
+            if c.skill == config.SKILL_SHIELD:
+                c.shield_permanent = config.SKILL_SHIELD_INITIAL
 
         for text, tag in explain_lines:
             self._log(text, tag=tag)
@@ -238,6 +250,14 @@ class Battle:
                 "fleeing_watch_key": c.fleeing_watch_key,
                 "grid_pos": c.grid_pos,
                 "moved_this_round": c.moved_this_round,
+                "shield_permanent": c.shield_permanent,
+                "shield_temp": c.shield_temp,
+                "shield_temp_expires_round": c.shield_temp_expires_round,
+                "polarize_active": c.polarize_active,
+                "polarize_expires_round": c.polarize_expires_round,
+                "polarize_overflow": c.polarize_overflow,
+                "polarize_ally_count": c.polarize_ally_count,
+                "leech_buff_expires_round": c.leech_buff_expires_round,
             }
         return {
             "round_no": self.round_no,
@@ -298,6 +318,14 @@ class Battle:
             c.fleeing_watch_key = cs["fleeing_watch_key"]
             c.grid_pos = cs["grid_pos"]
             c.moved_this_round = cs["moved_this_round"]
+            c.shield_permanent = cs["shield_permanent"]
+            c.shield_temp = cs["shield_temp"]
+            c.shield_temp_expires_round = cs["shield_temp_expires_round"]
+            c.polarize_active = cs["polarize_active"]
+            c.polarize_expires_round = cs["polarize_expires_round"]
+            c.polarize_overflow = cs["polarize_overflow"]
+            c.polarize_ally_count = cs["polarize_ally_count"]
+            c.leech_buff_expires_round = cs["leech_buff_expires_round"]
         for c in self.team_a + self.team_b:
             grant_names = snap["chars"][c.name]["defense_grants"]
             c.defense_grants = [self.find_character(n) for n in grant_names if self.find_character(n)]
@@ -373,6 +401,46 @@ class Battle:
         """점령전 거점(2팀) 대상이면 방어 선언 여부와 무관하게 항상 능동 방어가 자동 발생합니다."""
         return self.site_auto_defense and target.team == "B"
 
+    def _redirect_for_polarize(self, target: Character) -> Character:
+        """편광(가디언 스킬)이 활성화된 아군이 있으면 공격 대상을 그쪽으로 강제 리다이렉트합니다."""
+        if target.polarize_active:
+            return target
+        polarizer = next(
+            (c for c in self.team_members(self.team_label_of(target)) if c.polarize_active and c.is_alive),
+            None,
+        )
+        if polarizer is not None:
+            self._log(f"🛡 편광 : {target.name}에게 향한 피해가 {polarizer.name}에게 집중됩니다.", tag="system")
+            return polarizer
+        return target
+
+    def _maybe_trigger_leech(self, actor: Character):
+        """환류(메딕 스킬) 흡수 버프 보유자가 공격/방어/힐을 사용하면 자동으로 발동됩니다."""
+        if actor.leech_buff_expires_round is None or self.round_no > actor.leech_buff_expires_round:
+            return
+        luck = int(actor.stats.get("행운", 0))
+        if luck <= 0:
+            pct = config.SKILL_REFLUX_BUFF_PCT_LOW
+            roll_desc = "행운 0 - 고정"
+        else:
+            sides = luck * config.SKILL_REFLUX_BUFF_DICE_PER_LUCK
+            roll = random.randint(1, sides)
+            if roll <= luck:
+                pct = config.SKILL_REFLUX_BUFF_PCT_LOW
+            elif roll <= luck * 2:
+                pct = config.SKILL_REFLUX_BUFF_PCT_MID
+            else:
+                pct = config.SKILL_REFLUX_BUFF_PCT_HIGH
+            roll_desc = f"1d{sides} 굴림 {roll}"
+        heal_amount = round(actor.max_hp * pct / 100)
+        hp_before = actor.current_hp
+        actor.heal(heal_amount)
+        self._log_operator_only(
+            f"🩸 환류 흡수 판정 : {actor.name} 행운{luck} → {roll_desc} → {pct}% 회복",
+            tag="formula",
+        )
+        self._log(f"🩸 {actor.name} 환류 흡수 회복 {heal_amount} ({hp_before}→{actor.current_hp})", tag="heal")
+
     def _resolve_pending_attacks(self, actor: Character):
         """
         actor 자신에게 걸려있던 '보류된 공격'을 정산합니다.
@@ -387,6 +455,7 @@ class Battle:
             result = AttackSkill.resolve(
                 entry["atk"], actor,
                 overrides=self.formula_overrides, auto_defense=self._auto_defense_for(actor),
+                defense_stat_mult=entry.get("defense_stat_mult", 1.0),
             )
             self._log_attack_resolution(actor, result)
 
@@ -553,19 +622,28 @@ class Battle:
                 f"({attacker.name}은(는) 딜러가 아니므로 크리티컬이 발생하지 않습니다)", tag="formula",
             )
 
-        if target.has_acted:
+        # 편광(가디언 스킬)이 활성화된 아군이 있으면 실제 피해는 그쪽으로 집중됩니다.
+        resolved_target = self._redirect_for_polarize(target)
+        def_mult = resolved_target.polarize_ally_count if resolved_target.polarize_active else 1.0
+
+        if resolved_target.has_acted:
             # 대상이 이미 이번 라운드 행동을 마쳤다면 더 기다릴 필요가 없으므로 즉시 정산합니다.
             result = AttackSkill.resolve(
-                atk, target,
-                overrides=self.formula_overrides, auto_defense=self._auto_defense_for(target),
+                atk, resolved_target,
+                overrides=self.formula_overrides, auto_defense=self._auto_defense_for(resolved_target),
+                defense_stat_mult=def_mult,
             )
-            self._log_attack_resolution(target, result)
+            self._log_attack_resolution(resolved_target, result)
         else:
             # 대상이 아직 이번 라운드 행동 전이라면 피해를 보류하고, 대상의 턴에 정산합니다.
-            target.pending_attacks.append({"attacker_name": attacker.name, "atk": atk})
+            resolved_target.pending_attacks.append({
+                "attacker_name": attacker.name, "atk": atk, "defense_stat_mult": def_mult,
+            })
             self._log(
-                f"{target.name} 판정 대기중 (피격자의 행동 대응 후 피해값이 정산됩니다)", tag="system",
+                f"{resolved_target.name} 판정 대기중 (피격자의 행동 대응 후 피해값이 정산됩니다)", tag="system",
             )
+
+        self._maybe_trigger_leech(attacker)
 
         if forced_active:
             self._forced_turn_had_attack = True
@@ -580,6 +658,165 @@ class Battle:
 
         self._check_finish()
         return atk
+
+    # ------------------------------------------------------------------
+    # 스킬 : 붕괴 (스트라이커 전용) - 단일 적에게 다이스 ×3 배율로 2회 공격, 최소 1회 크리티컬 보장.
+    # ------------------------------------------------------------------
+    def perform_collapse(self, attacker_name: str, target_name: str):
+        attacker = self.find_character(attacker_name)
+        target = self.find_character(target_name)
+        if attacker is None or target is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(attacker)
+
+        ok, reason = self.collapse_skill.can_use(attacker)
+        if not ok:
+            raise BattleError(reason)
+        if not target.is_alive:
+            raise BattleError("대상이 존재하지 않습니다.")
+
+        if self.forced_target is not None and not self.forced_target.is_alive:
+            self.forced_target = None
+            self.forced_target_team = None
+            self.forced_target_count = 0
+        attacker_team_label = self.team_label_of(attacker)
+        forced_active = self.forced_target is not None and self.forced_target_team == attacker_team_label
+        if forced_active and target is not self.forced_target:
+            raise BattleError(
+                "현재 공격유도/지휘 효과가 적용 중입니다.\n"
+                f"이번 공격은 반드시 {self.forced_target.name}을(를) 대상으로 해야 합니다. "
+                f"(남은 강제 횟수 {self.forced_target_count}회)"
+            )
+
+        self._push_history()
+        self._resolve_pending_attacks(attacker)
+
+        base_count = config.get_value("ATTACK_DICE_COUNT", self.formula_overrides)
+        merged = dict(self.formula_overrides or {})
+        merged["ATTACK_DICE_COUNT"] = base_count * config.SKILL_COLLAPSE_DICE_MULT
+        hits = [self.attack_skill.roll(attacker, overrides=merged) for _ in range(2)]
+        forced_crit_applied = False
+        if not any(h["is_crit"] for h in hits):
+            hits[1]["is_crit"] = True
+            hits[1]["total"] = round(hits[1]["subtotal"] * hits[1]["crit_mult"])
+            forced_crit_applied = True
+        attacker.has_acted = True
+
+        self._log(
+            f"{attacker.name} 【붕괴】 → {target.name} (다이스 ×{config.SKILL_COLLAPSE_DICE_MULT}, 2회 공격)",
+            tag="action",
+        )
+
+        resolved_target = self._redirect_for_polarize(target)
+        def_mult = resolved_target.polarize_ally_count if resolved_target.polarize_active else 1.0
+
+        for i, atk in enumerate(hits, 1):
+            note = " (강제 크리티컬 적용)" if forced_crit_applied and i == 2 else ""
+            self._log(f"[붕괴 {i}/2] 공격 수치 {atk['total']}{note}", tag="damage")
+            if atk["is_crit"]:
+                self._log_public_only("크리티컬!", tag="crit")
+            if resolved_target.has_acted:
+                result = AttackSkill.resolve(
+                    atk, resolved_target, overrides=self.formula_overrides,
+                    auto_defense=self._auto_defense_for(resolved_target), defense_stat_mult=def_mult,
+                )
+                self._log_attack_resolution(resolved_target, result)
+            else:
+                resolved_target.pending_attacks.append({
+                    "attacker_name": attacker.name, "atk": atk, "defense_stat_mult": def_mult,
+                })
+                self._log(f"{resolved_target.name} 판정 대기중 ({i}/2)", tag="system")
+
+        self._maybe_trigger_leech(attacker)
+
+        if forced_active:
+            self._forced_turn_had_attack = True
+            self.forced_target_count -= 1
+            self._log(
+                f"공격 대상 변경 (공격유도/지휘 효과, 남은 강제 횟수 {self.forced_target_count}회)", tag="system",
+            )
+            if self.forced_target_count <= 0:
+                self.forced_target = None
+                self.forced_target_team = None
+                self.forced_target_count = 0
+
+        self._check_finish()
+
+    # ------------------------------------------------------------------
+    # 스킬 : 방출 (스트라이커 전용) - 다이스 ×2 배율로 생존한 모든 적에게 개별로 2회씩 공격.
+    # ------------------------------------------------------------------
+    def perform_emission(self, attacker_name: str):
+        attacker = self.find_character(attacker_name)
+        if attacker is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(attacker)
+
+        ok, reason = self.emission_skill.can_use(attacker)
+        if not ok:
+            raise BattleError(reason)
+
+        enemy_label = self.enemy_team_label(self.team_label_of(attacker))
+        enemies = [c for c in self.team_members(enemy_label) if c.is_alive]
+        if not enemies:
+            raise BattleError("공격할 적이 없습니다.")
+
+        if self.forced_target is not None and not self.forced_target.is_alive:
+            self.forced_target = None
+            self.forced_target_team = None
+            self.forced_target_count = 0
+        attacker_team_label = self.team_label_of(attacker)
+        # 방출은 광역 공격이라 강제 대상도 어차피 맞으므로, 대상 지정 자체는 막지 않습니다.
+        forced_active = self.forced_target is not None and self.forced_target_team == attacker_team_label
+
+        self._push_history()
+        self._resolve_pending_attacks(attacker)
+
+        base_count = config.get_value("ATTACK_DICE_COUNT", self.formula_overrides)
+        merged = dict(self.formula_overrides or {})
+        merged["ATTACK_DICE_COUNT"] = base_count * config.SKILL_EMISSION_DICE_MULT
+        attacker.has_acted = True
+
+        self._log(
+            f"{attacker.name} 【방출】 → 적 전원({len(enemies)}명) "
+            f"(다이스 ×{config.SKILL_EMISSION_DICE_MULT}, 각 2회 공격)",
+            tag="action",
+        )
+
+        for enemy in enemies:
+            resolved_target = self._redirect_for_polarize(enemy)
+            def_mult = resolved_target.polarize_ally_count if resolved_target.polarize_active else 1.0
+            for i in range(1, 3):
+                atk = self.attack_skill.roll(attacker, overrides=merged)
+                self._log(f"[방출 → {enemy.name} {i}/2] 공격 수치 {atk['total']}", tag="damage")
+                if atk["is_crit"]:
+                    self._log_public_only("크리티컬!", tag="crit")
+                if resolved_target.has_acted:
+                    result = AttackSkill.resolve(
+                        atk, resolved_target, overrides=self.formula_overrides,
+                        auto_defense=self._auto_defense_for(resolved_target), defense_stat_mult=def_mult,
+                    )
+                    self._log_attack_resolution(resolved_target, result)
+                else:
+                    resolved_target.pending_attacks.append({
+                        "attacker_name": attacker.name, "atk": atk, "defense_stat_mult": def_mult,
+                    })
+                    self._log(f"{resolved_target.name} 판정 대기중 ({i}/2)", tag="system")
+
+        self._maybe_trigger_leech(attacker)
+
+        if forced_active:
+            self._forced_turn_had_attack = True
+            self.forced_target_count -= 1
+            self._log(
+                f"강제 대상도 방출 범위에 포함됨 (공격유도/지휘 효과, 남은 강제 횟수 {self.forced_target_count}회)",
+                tag="system",
+            )
+            if self.forced_target_count <= 0:
+                self.forced_target = None
+                self.forced_target_team = None
+                self.forced_target_count = 0
+
+        self._check_finish()
 
     # ------------------------------------------------------------------
     # 행동 : 본인방어 (딜러 / 힐러)
@@ -628,6 +865,7 @@ class Battle:
             self._log(f"{tanker.name} 방어 (본인)", tag="defend")
         else:
             self._log(f"{tanker.name} 방어 → {target.name} (능동 방어 부여)", tag="defend")
+        self._maybe_trigger_leech(tanker)
         self._check_finish()
 
     # ------------------------------------------------------------------
@@ -713,6 +951,67 @@ class Battle:
         self._check_finish()
 
     # ------------------------------------------------------------------
+    # 스킬 : 차폐 (가디언 전용) - 지정 아군(본인 포함) 1인에게 임시 보호막 + 능동 방어를 부여합니다.
+    # ------------------------------------------------------------------
+    def perform_shield(self, name: str, target_name: str):
+        actor = self.find_character(name)
+        target = self.find_character(target_name)
+        if actor is None or target is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(actor)
+
+        ok, reason = self.shield_skill.can_use(actor)
+        if not ok:
+            raise BattleError(reason)
+        if not target.is_alive:
+            raise BattleError("대상이 존재하지 않습니다.")
+        if target.team != actor.team:
+            raise BattleError("차폐 대상은 같은 팀의 캐릭터여야 합니다.")
+
+        self._push_history()
+        self._resolve_pending_attacks(actor)
+        result = self.shield_skill.execute(actor, target)
+        target.shield_temp_expires_round = self.round_no + config.SKILL_SHIELD_GRANT_DURATION
+        actor.has_acted = True
+
+        if target is actor:
+            self._log(f"{actor.name} 【차폐】(본인) : 보호막 +{result['amount']}, 능동 방어 부여", tag="defend")
+        else:
+            self._log(f"{actor.name} 【차폐】 → {target.name} : 보호막 +{result['amount']}, 능동 방어 부여", tag="defend")
+        self._maybe_trigger_leech(actor)
+        self._check_finish()
+
+    # ------------------------------------------------------------------
+    # 스킬 : 편광 (가디언 전용) - 활성화 시 일정 기간 같은 팀에 대한 모든 공격이 본인에게 집중됩니다.
+    # ------------------------------------------------------------------
+    def perform_polarize(self, name: str):
+        actor = self.find_character(name)
+        if actor is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(actor)
+
+        ok, reason = self.polarize_skill.can_use(actor)
+        if not ok:
+            raise BattleError(reason)
+
+        self._push_history()
+        self._resolve_pending_attacks(actor)
+        self.polarize_skill.execute(actor)
+
+        allies = [c for c in self.team_members(self.team_label_of(actor)) if c.is_alive]
+        actor.polarize_active = True
+        actor.polarize_expires_round = self.round_no + config.SKILL_POLARIZE_DURATION
+        actor.polarize_ally_count = max(1, len(allies))
+        actor.has_acted = True
+
+        self._log(
+            f"{actor.name} 【편광】 : {config.SKILL_POLARIZE_DURATION}턴간 아군 전원의 피해를 집중시킵니다 "
+            f"(방어력 ×{actor.polarize_ally_count}, 이 효과로는 죽지 않습니다).",
+            tag="defend",
+        )
+        self._check_finish()
+
+    # ------------------------------------------------------------------
     # 행동 : 회피 (딜러 전용)
     # ------------------------------------------------------------------
     def perform_dodge(self, name: str):
@@ -784,6 +1083,116 @@ class Battle:
         if target_was_downed and target.status == Character.STATUS_ALIVE:
             self._log(f"{target.name} 위기를 넘기고 전투에 복귀했습니다!", tag="system")
 
+        self._maybe_trigger_leech(healer)
+        self._check_finish()
+
+    # ------------------------------------------------------------------
+    # 스킬 : 환류 (메딕 전용) - 본인 회복 + 메딕 직군 아군 전원 회복 + 지정 아군 3인에게 흡수 버프.
+    # ------------------------------------------------------------------
+    def perform_reflux(self, name: str, target_names: list):
+        actor = self.find_character(name)
+        if actor is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(actor, allow_free_turn=True)
+
+        ok, reason = self.reflux_skill.can_use(actor)
+        if not ok:
+            raise BattleError(reason)
+
+        targets = []
+        seen = set()
+        for tn in target_names or []:
+            t = self.find_character(tn)
+            if t is None or not t.is_alive:
+                raise BattleError("대상이 존재하지 않습니다.")
+            if t.team != actor.team:
+                raise BattleError("환류 대상은 같은 팀의 캐릭터여야 합니다.")
+            if t.name in seen:
+                raise BattleError("같은 대상을 중복 지정할 수 없습니다.")
+            seen.add(t.name)
+            targets.append(t)
+        if len(targets) != config.SKILL_REFLUX_BUFF_TARGET_COUNT:
+            raise BattleError(f"환류는 아군 정확히 {config.SKILL_REFLUX_BUFF_TARGET_COUNT}명을 지정해야 합니다.")
+
+        self._push_history()
+        self._resolve_pending_attacks(actor)
+
+        # 1) 본인 회복
+        self_heal = round(actor.max_hp * config.SKILL_REFLUX_SELF_HEAL_PCT / 100)
+        hp_before = actor.current_hp
+        actor.heal(self_heal)
+        self._log(
+            f"{actor.name} 【환류】 본인 회복 {self_heal} ({hp_before}→{actor.current_hp})", tag="heal",
+        )
+
+        # 2) 메딕 직군 아군 전원에게 1다이스 광역 회복
+        medics = [
+            c for c in self.team_members(self.team_label_of(actor))
+            if c.is_alive and c.role == config.ROLE_HEALER
+        ]
+        merged = dict(self.formula_overrides or {})
+        merged["HEAL_DICE_COUNT"] = 1
+        for medic in medics:
+            heal = config.roll_heal(actor.stats, role=actor.role, overrides=merged)
+            hp_before = medic.current_hp
+            medic.heal(heal["total"])
+            self._log(
+                f"[환류 - 메딕 회복] {medic.name} +{heal['total']} ({hp_before}→{medic.current_hp})", tag="heal",
+            )
+
+        # 3) 지정 아군 3인에게 3턴 흡수 버프 부여
+        for t in targets:
+            t.leech_buff_expires_round = self.round_no + config.SKILL_REFLUX_BUFF_DURATION
+        self._log(
+            f"{actor.name} 【환류】 흡수 버프 부여 → {', '.join(t.name for t in targets)} "
+            f"({config.SKILL_REFLUX_BUFF_DURATION}턴)",
+            tag="defend",
+        )
+
+        actor.has_acted = True
+        self._maybe_trigger_leech(actor)
+        self._check_finish()
+
+    # ------------------------------------------------------------------
+    # 스킬 : 복원 (메딕 전용) - 모든 아군에게 회복 판정, 지정 아군 1인은 추가 회복 보너스.
+    # ------------------------------------------------------------------
+    def perform_restore(self, name: str, target_name: str):
+        actor = self.find_character(name)
+        if actor is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(actor, allow_free_turn=True)
+
+        ok, reason = self.restore_skill.can_use(actor)
+        if not ok:
+            raise BattleError(reason)
+
+        bonus_target = None
+        if target_name:
+            bonus_target = self.find_character(target_name)
+            if bonus_target is None or not bonus_target.is_alive:
+                raise BattleError("대상이 존재하지 않습니다.")
+            if bonus_target.team != actor.team:
+                raise BattleError("복원 보너스 대상은 같은 팀의 캐릭터여야 합니다.")
+
+        self._push_history()
+        self._resolve_pending_attacks(actor)
+
+        allies = [c for c in self.team_members(self.team_label_of(actor)) if c.is_alive]
+        merged = dict(self.formula_overrides or {})
+        merged["HEAL_DICE_COUNT"] = 1
+        self._log(f"{actor.name} 【복원】 → 아군 전원({len(allies)}명) 회복", tag="heal")
+        for ally in allies:
+            heal = config.roll_heal(actor.stats, role=actor.role, overrides=merged)
+            total = heal["total"]
+            if bonus_target is not None and ally is bonus_target:
+                total = round(total * (1 + config.SKILL_RESTORE_BONUS_PCT / 100))
+            hp_before = ally.current_hp
+            ally.heal(total)
+            bonus_note = f" (+{config.SKILL_RESTORE_BONUS_PCT}% 보너스)" if ally is bonus_target else ""
+            self._log(f"[복원] {ally.name} +{total}{bonus_note} ({hp_before}→{ally.current_hp})", tag="heal")
+
+        actor.has_acted = True
+        self._maybe_trigger_leech(actor)
         self._check_finish()
 
     # ------------------------------------------------------------------
@@ -992,6 +1401,39 @@ class Battle:
             self.forced_target.defended_this_round = True
             self.forced_target.defense_grants = [self.forced_target] * self.forced_target_count
 
+        # 차폐(가디언) 임시 보호막 만료 처리 (전투 시작 시 붙는 영구 보호막은 만료되지 않습니다)
+        for c in self.team_a + self.team_b:
+            if c.shield_temp_expires_round is not None and self.round_no > c.shield_temp_expires_round:
+                c.shield_temp = 0
+                c.shield_temp_expires_round = None
+
+        # 편광(가디언) : 못 막은 피해(오버플로)는 적의 행동과 무관하게 이번 라운드 시작 시
+        # 무조건 생존 아군 전체에게 1/n씩 나눠서 가산됩니다.
+        for c in self.team_a + self.team_b:
+            if c.polarize_overflow > 0:
+                survivors = [m for m in self.team_members(self.team_label_of(c)) if m.is_alive]
+                n = c.polarize_ally_count or max(1, len(survivors))
+                share = round(c.polarize_overflow / n) if n else 0
+                if share > 0 and survivors:
+                    self._log(
+                        f"⚡ 편광 : {c.name}이(가) 못 막은 피해 {c.polarize_overflow}가 "
+                        f"생존 아군 {len(survivors)}명에게 각 {share}씩 가산됩니다.",
+                        tag="system",
+                    )
+                    for m in survivors:
+                        m.take_damage(share)
+                c.polarize_overflow = 0
+            if c.polarize_active and c.polarize_expires_round is not None and self.round_no > c.polarize_expires_round:
+                c.polarize_active = False
+                c.polarize_expires_round = None
+                c.polarize_ally_count = 0
+                self._log(f"🛡 {c.name}의 편광 효과가 종료되었습니다.", tag="system")
+
+        # 환류(메딕) 흡수 버프 만료 정리
+        for c in self.team_a + self.team_b:
+            if c.leech_buff_expires_round is not None and self.round_no > c.leech_buff_expires_round:
+                c.leech_buff_expires_round = None
+
         self._round_summarized = False
         self.round_start_hp = {c.name: c.current_hp for c in self.team_a + self.team_b}
 
@@ -1051,7 +1493,10 @@ class GameManager:
         data = self.db.get(name)
         if data is None:
             raise BattleError("존재하지 않는 캐릭터입니다.")
-        return Character(name, data["role"], data["stats"], data.get("color"), formula_overrides=formula_overrides)
+        return Character(
+            name, data["role"], data["stats"], data.get("color"),
+            formula_overrides=formula_overrides, skill=data.get("skill"),
+        )
 
     def build_team(self, names: list, formula_overrides: dict = None) -> list:
         """이름 리스트(3개)로 팀(Character 리스트)을 생성합니다."""

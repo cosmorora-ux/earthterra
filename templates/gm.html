@@ -78,7 +78,7 @@
 
 <section>
   <h2>1. 캐릭터 등록 (붙여넣기)</h2>
-  <textarea id="regText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커"></textarea>
+  <textarea id="regText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴"></textarea>
   <button onclick="registerCharacters()">일괄 등록</button>
   <div id="regResult"></div>
   <hr>
@@ -90,11 +90,12 @@
   <div id="editCharPanel" style="display:none; border:1px solid #666; border-radius:6px; padding:8px; margin-top:8px;">
     <b id="editCharTitle"></b><br>
     역할:
-    <select id="editRole">
+    <select id="editRole" onchange="refreshEditSkillOptions()">
       <option value="가디언">가디언</option>
       <option value="스트라이커">스트라이커</option>
       <option value="메딕">메딕</option>
-    </select><br>
+    </select>
+    스킬(매스 레이드 전용): <select id="editSkill"></select><br>
     <div id="editStatsFields"></div>
     <button onclick="saveCharacterEdit()">저장</button>
     <button onclick="cancelCharacterEdit()">취소</button>
@@ -163,6 +164,10 @@
   행동자: <select id="actActor" onchange="refreshActTypeOptions()"></select>
   행동: <select id="actType" onchange="refreshActTargetOptions()"></select>
   대상(필요한 경우): <select id="actTarget"></select>
+  <span id="actTargetMultiWrap" style="display:none;">
+    <select id="actTarget2"></select>
+    <select id="actTarget3"></select>
+  </span>
   <button onclick="submitAction()">실행</button>
   <div id="actionError" class="err"></div>
 </section>
@@ -211,9 +216,13 @@ const ACTION_LABELS = {
   "공격": "attack", "본인방어": "self_defend", "방어": "defend", "공격유도": "taunt",
   "회피": "dodge", "힐": "heal", "시간초과": "timeout", "도주": "flee",
   "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
+  "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
+  "환류": "reflux", "복원": "restore",
 };
 const TYPE_TO_LABEL = Object.fromEntries(Object.entries(ACTION_LABELS).map(([label, type]) => [type, label]));
-const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap"]);
+const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap", "collapse", "shield", "restore"]);
+// 역할별 매스 레이드 스킬 2종 (캐릭터 등록/수정 화면의 스킬 드롭다운용)
+const SKILL_OPTIONS = { "가디언": ["차폐", "편광"], "스트라이커": ["붕괴", "방출"], "메딕": ["환류", "복원"] };
 
 function showError(msg) {
   const el = document.getElementById('globalError');
@@ -363,11 +372,19 @@ function renderRosterManage(list) {
   if (!list.length) { el.innerHTML = '-'; return; }
   el.innerHTML = list.map(c => `
     <span style="display:inline-block; border:1px solid #555; border-radius:4px; padding:3px 6px; margin:2px;">
-      ${c.name} [${c.role}]
+      ${c.name} [${c.role}${c.skill ? ' 【' + c.skill + '】' : ''}]
       <button onclick="editCharacter('${c.name}')">수정</button>
       <button onclick="deleteCharacterFromRoster('${c.name}')">삭제</button>
     </span>
   `).join('');
+}
+
+function refreshEditSkillOptions(selectedSkill) {
+  const role = document.getElementById('editRole').value;
+  const options = SKILL_OPTIONS[role] || [];
+  const sel = document.getElementById('editSkill');
+  sel.innerHTML = '<option value="">(없음)</option>' + options.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (selectedSkill && options.includes(selectedSkill)) sel.value = selectedSkill;
 }
 
 function editCharacter(name) {
@@ -376,6 +393,7 @@ function editCharacter(name) {
   editingCharName = name;
   document.getElementById('editCharTitle').textContent = `${name} 수정`;
   document.getElementById('editRole').value = c.role;
+  refreshEditSkillOptions(c.skill);
   document.getElementById('editStatsFields').innerHTML = STAT_KEYS.map(k => `
     <label>${k} <input id="editStat_${k}" type="number" value="${c.stats[k]}" style="width:60px;"></label>
   `).join(' ');
@@ -390,9 +408,10 @@ function cancelCharacterEdit() {
 function saveCharacterEdit() {
   if (!editingCharName) return;
   const role = document.getElementById('editRole').value;
+  const skill = document.getElementById('editSkill').value || null;
   const stats = {};
   STAT_KEYS.forEach(k => { stats[k] = document.getElementById('editStat_' + k).value; });
-  socket.emit('update_character', { name: editingCharName, role, stats });
+  socket.emit('update_character', { name: editingCharName, role, stats, skill });
   cancelCharacterEdit();
 }
 
@@ -488,21 +507,40 @@ function refreshActTypeOptions() {
 }
 
 // 선택된 행동이 아군/적군 중 어느 쪽을 대상으로 하는지에 따라 "대상" 드롭다운을 좁힙니다.
+// 환류처럼 지정 인원 수가 고정된 스킬은 대상 드롭다운을 여러 개(actTarget/2/3) 채웁니다.
 function refreshActTargetOptions() {
   const targetSel = document.getElementById('actTarget');
+  const multiWrap = document.getElementById('actTargetMultiWrap');
   const actor = lastAllForCards.find(c => c.name === document.getElementById('actActor').value);
   const label = TYPE_TO_LABEL[document.getElementById('actType').value];
-  if (!actor || !label) { targetSel.innerHTML = '<option value="">-</option>'; return; }
+  if (!actor || !label) {
+    targetSel.innerHTML = '<option value="">-</option>';
+    multiWrap.style.display = 'none';
+    return;
+  }
+  const multiCount = MULTI_TARGET_ACTIONS[label];
   let pool;
   if (ENEMY_TARGET_ACTIONS.has(label)) {
     pool = lastAllForCards.filter(c => c.teamLabel !== actor.teamLabel);
-  } else if (ALLY_TARGET_ACTIONS.has(label)) {
+  } else if (ALLY_TARGET_ACTIONS.has(label) || multiCount) {
     pool = lastAllForCards.filter(c => c.teamLabel === actor.teamLabel);
   } else {
-    pool = [actor];  // 본인방어/회피/도주/시간초과/방어 정산 등 대상이 필요 없는 행동
+    pool = [actor];  // 본인방어/회피/도주/시간초과/방어 정산/방출/편광 등 대상이 필요 없는 행동
   }
+  const optsHtml = '<option value="">-</option>' + pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+
+  if (multiCount === 3) {
+    multiWrap.style.display = '';
+    [targetSel, document.getElementById('actTarget2'), document.getElementById('actTarget3')].forEach(sel => {
+      const prev = sel.value;
+      sel.innerHTML = optsHtml;
+      if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+    });
+    return;
+  }
+  multiWrap.style.display = 'none';
   const prevTarget = targetSel.value;
-  targetSel.innerHTML = '<option value="">-</option>' + pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  targetSel.innerHTML = optsHtml;
   if ([...targetSel.options].some(o => o.value === prevTarget)) targetSel.value = prevTarget;
 }
 
@@ -520,15 +558,16 @@ function renderCardHtml(c) {
   const gridStyle = isAllyGrid
     ? (c.moved_this_round ? 'border:2px solid #fff; background:#3a3a3a;' : 'border:2px solid #888; background:#333;')
     : '';
+  const shieldText = c.shield_hp ? ` 🛡${c.shield_hp}` : '';
   if (!expanded) {
     return `<div class="card team-${c.teamLabel}" style="cursor:pointer; ${gridStyle}" onclick="toggleCard('${c.name}')">
-      <b>${c.name}</b> <span class="info-icon" title="${statsTitle(c)}">ⓘ</span> HP ${c.current_hp}/${c.max_hp} ▸
+      <b>${c.name}</b> <span class="info-icon" title="${statsTitle(c)}">ⓘ</span> HP ${c.current_hp}/${c.max_hp}${shieldText} ▸
     </div>`;
   }
   return `<div class="card team-${c.teamLabel}" style="cursor:pointer; ${gridStyle}" onclick="toggleCard('${c.name}')">
-    <b>${c.name}</b> <span class="info-icon" title="${statsTitle(c)}">ⓘ</span> [${c.role}] ▾<br>
-    HP ${c.current_hp}/${c.max_hp}<br>
-    상태: ${c.status}${c.has_acted ? ' · 행동완료' : ''}
+    <b>${c.name}</b> <span class="info-icon" title="${statsTitle(c)}">ⓘ</span> [${c.role}${c.skill ? ' 【' + c.skill + '】' : ''}] ▾<br>
+    HP ${c.current_hp}/${c.max_hp}${shieldText}<br>
+    상태: ${c.status}${c.has_acted ? ' · 행동완료' : ''}${c.polarize_active ? ' · 🛡편광중' : ''}${c.has_leech_buff ? ' · 🩸흡수버프' : ''}
     ${c.grid_pos ? `<br>위치 ${cellLabel(c.grid_pos[0], c.grid_pos[1])} · 이동범위 ${c.move_range}${c.moved_this_round ? ' (이동함)' : ''}` : ''}
     ${c.pending_attacks ? `<br><span class="err">보류 피해 ${c.pending_attacks}건</span>` : ''}
   </div>`;
@@ -537,10 +576,11 @@ function renderCardHtml(c) {
 let selectedGridChar = null;  // 지도에서 선택된 "행동하는" 캐릭터 (범위 미리보기 대상)
 let selectedGridTargetName = null;  // 범위 내에서 클릭해 지정한 대상 (본인 포함)
 const GRID_CELL_PX = 36;
-const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐", "지휘", "배치"]);
-const ENEMY_TARGET_ACTIONS = new Set(["공격"]);
-const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산"]);
+const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐", "지휘", "배치", "차폐", "복원"]);
+const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴"]);
+const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산", "방출", "편광"]);
 const RANGE_IGNORING_ACTIONS = new Set(["배치"]);  // 사정거리 제한 없이 아무 아군이나 대상 지정 가능
+const MULTI_TARGET_ACTIONS = { "환류": 3 };  // 지정 인원 수가 고정된 스킬 (행동 실행 패널 전용 UI)
 const ROLE_MOVE_COLOR = {
   "스트라이커": "#ff5555", "가디언": "#4a90ff", "메딕": "#ffe066",
 };
@@ -953,6 +993,15 @@ function renderActionPanel(battle) {
     if (type === 'move') {
       return '';  // 이동은 지도(🗺 격자 지도)에서 아군을 클릭한 뒤 이동 가능 범위 칸을 클릭해서 처리합니다.
     }
+    if (MULTI_TARGET_ACTIONS[label]) {
+      // 환류처럼 지정 인원이 여럿인 스킬 - 대상 드롭다운을 인원수만큼 나열합니다.
+      const pool = all.filter(c => c.team === character.team);
+      const opts = pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      const n = MULTI_TARGET_ACTIONS[label];
+      const selects = Array.from({ length: n }, (_, i) =>
+        `<select id="qaMulti_${type}_${i}">${opts}</select>`).join(' ');
+      return `<button onclick="quickMultiAction('${type}','${character.name}',${n})">${label}</button> ${selects}`;
+    }
     if (NEEDS_TARGET.has(type)) {
       const pool = ENEMY_TARGET_ACTIONS.has(label)
         ? all.filter(c => c.team !== character.team)
@@ -980,8 +1029,22 @@ function quickAction(type, actorName, targetName) {
     defense_settle: () => ({ name: actorName }),
     command: () => ({ guardian: actorName, target: targetName || actorName }),
     swap: () => ({ medic: actorName, target: targetName }),
+    collapse: () => ({ attacker: actorName, target: targetName }),
+    emission: () => ({ attacker: actorName }),
+    shield: () => ({ name: actorName, target: targetName || actorName }),
+    polarize: () => ({ name: actorName }),
+    restore: () => ({ name: actorName, target: targetName || null }),
   };
   doAction(type, payloadBuilders[type]());
+}
+
+function quickMultiAction(type, actorName, count) {
+  const targets = [];
+  for (let i = 0; i < count; i++) {
+    const v = document.getElementById(`qaMulti_${type}_${i}`).value;
+    if (v) targets.push(v);
+  }
+  doAction(type, { name: actorName, targets });
 }
 
 function submitAction() {
@@ -1001,6 +1064,16 @@ function submitAction() {
     defense_settle: { name: actor },
     command: { guardian: actor, target: target || actor },
     swap: { medic: actor, target },
+    collapse: { attacker: actor, target },
+    emission: { attacker: actor },
+    shield: { name: actor, target: target || actor },
+    polarize: { name: actor },
+    restore: { name: actor, target: target || null },
+    reflux: {
+      name: actor,
+      targets: [target, document.getElementById('actTarget2').value, document.getElementById('actTarget3').value]
+        .filter(Boolean),
+    },
   };
   doAction(type, payloadMap[type]);
 }

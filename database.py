@@ -76,11 +76,14 @@ class CharacterDatabase:
     _STAT_LINE_RE = re.compile(r"^\s*(체력|공격|방어|이능|정신|민첩|행운)\s+(-?\d+)\s*$")
     _ROLE_LINE_RE = re.compile(r"^\s*역할\s*[:：]?\s*(가디언|스트라이커|메딕)\s*$")
     _COLOR_LINE_RE = re.compile(r"^\s*색상\s*[:：]?\s*(#[0-9a-fA-F]{6})\s*$")
+    _SKILL_LINE_RE = re.compile(r"^\s*스킬\s*[:：]?\s*(" + "|".join(config.ALL_SKILLS) + r")\s*$")
 
     def parse_bulk_text(self, text: str):
         """
         운영자가 붙여넣은 텍스트를 파싱하여 캐릭터 여러 명을 한 번에 등록합니다.
-        스탯 줄도, 역할/색상 줄도 아닌 줄은 새로운 캐릭터의 '이름'으로 간주합니다.
+        스탯 줄도, 역할/색상/스킬 줄도 아닌 줄은 새로운 캐릭터의 '이름'으로 간주합니다.
+        "스킬 붕괴" 처럼 역할당 2종 중 하나를 지정할 수 있습니다 (매스 레이드 전용,
+        config.SKILL_OPTIONS 참고). 역할과 맞지 않는 스킬을 지정하면 무시되고 경고가 남습니다.
 
         반환값: (등록된 이름 리스트, 오류/경고 메시지 리스트)
         """
@@ -93,9 +96,10 @@ class CharacterDatabase:
         current_stats = {}
         current_role = None
         current_color = None
+        current_skill = None
 
         def flush():
-            nonlocal current_name, current_stats, current_role, current_color
+            nonlocal current_name, current_stats, current_role, current_color, current_skill
             if current_name is None:
                 return
             if len(current_stats) == 0:
@@ -109,17 +113,26 @@ class CharacterDatabase:
                 entry = {"role": role, "stats": clamped}
                 if current_color:
                     entry["color"] = current_color
+                if current_skill:
+                    if current_skill in config.SKILL_OPTIONS.get(role, []):
+                        entry["skill"] = current_skill
+                    else:
+                        errors.append(
+                            f"'{current_name}' - '{current_skill}'은(는) {role}의 스킬이 아니라서 무시되었습니다."
+                        )
                 self.characters[current_name] = entry
                 registered.append(current_name)
             current_name = None
             current_stats = {}
             current_role = None
             current_color = None
+            current_skill = None
 
         for line in lines:
             stat_match = self._STAT_LINE_RE.match(line)
             role_match = self._ROLE_LINE_RE.match(line)
             color_match = self._COLOR_LINE_RE.match(line)
+            skill_match = self._SKILL_LINE_RE.match(line)
 
             if stat_match:
                 if current_name is None:
@@ -131,8 +144,10 @@ class CharacterDatabase:
                 current_role = role_match.group(1)
             elif color_match:
                 current_color = color_match.group(1)
+            elif skill_match:
+                current_skill = skill_match.group(1)
             else:
-                # 스탯/역할/색상 줄이 아니면 새 캐릭터 이름의 시작으로 간주합니다.
+                # 스탯/역할/색상/스킬 줄이 아니면 새 캐릭터 이름의 시작으로 간주합니다.
                 flush()
                 current_name = line
 
@@ -146,12 +161,14 @@ class CharacterDatabase:
     # ------------------------------------------------------------------
     # CRUD (추가/수정/삭제/조회)
     # ------------------------------------------------------------------
-    def add_or_update(self, name: str, role: str, stats: dict, color: str = None):
+    def add_or_update(self, name: str, role: str, stats: dict, color: str = None, skill: str = None):
         """캐릭터를 새로 추가하거나, 이미 있으면 정보를 수정합니다. 스탯은 자동으로 캡 적용됩니다."""
         clamped, warns = config.clamp_stats(stats)
         entry = {"role": role, "stats": clamped}
         if color:
             entry["color"] = color
+        if skill and skill in config.SKILL_OPTIONS.get(role, []):
+            entry["skill"] = skill
         self.characters[name] = entry
         self.save()
         return warns

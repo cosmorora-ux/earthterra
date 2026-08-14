@@ -100,8 +100,11 @@ const ACTION_LABELS = {
   "공격": "attack", "본인방어": "self_defend", "방어": "defend", "공격유도": "taunt",
   "회피": "dodge", "힐": "heal", "시간초과": "timeout", "도주": "flee",
   "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
+  "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
+  "환류": "reflux", "복원": "restore",
 };
-const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap"]);
+const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap", "collapse", "shield", "restore"]);
+const MULTI_TARGET_ACTIONS = { "환류": 3 };
 
 let explicitlyJoined = false;
 
@@ -217,15 +220,16 @@ function renderCardHtml(c) {
   const gridStyle = isAllyGrid
     ? (c.moved_this_round ? 'border:2px solid #fff; background:#3a3a3a;' : 'border:2px solid #888; background:#333;')
     : '';
+  const shieldText = c.shield_hp ? ` 🛡${c.shield_hp}` : '';
   if (!expanded) {
     return `<div class="card team-${c.teamLabel}" style="cursor:pointer; ${gridStyle}" onclick="toggleCard('${c.name}')">
-      <b>${c.name}</b> ${infoIcon} HP ${c.current_hp}/${c.max_hp} ▸
+      <b>${c.name}</b> ${infoIcon} HP ${c.current_hp}/${c.max_hp}${shieldText} ▸
     </div>`;
   }
   return `<div class="card team-${c.teamLabel}" style="cursor:pointer; ${gridStyle}" onclick="toggleCard('${c.name}')">
-    <b>${c.name}</b> ${infoIcon} [${c.role}] ▾<br>
-    HP ${c.current_hp}/${c.max_hp}<br>
-    상태: ${c.status}
+    <b>${c.name}</b> ${infoIcon} [${c.role}${c.skill ? ' 【' + c.skill + '】' : ''}] ▾<br>
+    HP ${c.current_hp}/${c.max_hp}${shieldText}<br>
+    상태: ${c.status}${c.polarize_active ? ' · 🛡편광중' : ''}${c.has_leech_buff ? ' · 🩸흡수버프' : ''}
     ${c.grid_pos ? `<br>위치 ${cellLabel(c.grid_pos[0], c.grid_pos[1])}${isAllyGrid ? ` · 이동범위 ${c.move_range}${c.moved_this_round ? ' (이동함)' : ''}` : ''}` : ''}
   </div>`;
 }
@@ -233,9 +237,9 @@ function renderCardHtml(c) {
 let selectedGridChar = null;  // 지도에서 선택된 "행동하는" 캐릭터 (범위 미리보기 대상)
 let selectedGridTargetName = null;  // 범위 내에서 클릭해 지정한 대상 (본인 포함)
 const GRID_CELL_PX = 36;
-const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐", "지휘", "배치"]);
-const ENEMY_TARGET_ACTIONS = new Set(["공격"]);
-const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산"]);
+const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐", "지휘", "배치", "차폐", "복원"]);
+const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴"]);
+const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산", "방출", "편광"]);
 const RANGE_IGNORING_ACTIONS = new Set(["배치"]);  // 사정거리 제한 없이 아무 아군이나 대상 지정 가능
 // GM이 '전조 출력'으로 공개한 격자 칸. 곧 그 칸에 무조건 피해가 발생한다는 시각적 경고입니다.
 let telegraphRevealedCells = new Set();
@@ -574,6 +578,15 @@ function renderActionPanel(battle) {
     if (type === 'move') {
       return '';  // 이동은 지도(🗺 격자 지도)에서 아군을 클릭한 뒤 이동 가능 범위 칸을 클릭해서 처리합니다.
     }
+    if (MULTI_TARGET_ACTIONS[label]) {
+      // 환류처럼 지정 인원이 여럿인 스킬 - 대상 드롭다운을 인원수만큼 나열합니다.
+      const pool = all.filter(c => c.team === character.team);
+      const opts = pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      const n = MULTI_TARGET_ACTIONS[label];
+      const selects = Array.from({ length: n }, (_, i) =>
+        `<select id="qaMulti_${type}_${i}">${opts}</select>`).join(' ');
+      return `<button onclick="quickMultiAction('${type}','${character.name}',${n})">${label}</button> ${selects}`;
+    }
     if (NEEDS_TARGET.has(type)) {
       const pool = ENEMY_TARGET_ACTIONS.has(label)
         ? all.filter(c => c.team !== character.team)
@@ -601,8 +614,22 @@ function quickAction(type, actorName, targetName) {
     defense_settle: () => ({ name: actorName }),
     command: () => ({ guardian: actorName, target: targetName || actorName }),
     swap: () => ({ medic: actorName, target: targetName }),
+    collapse: () => ({ attacker: actorName, target: targetName }),
+    emission: () => ({ attacker: actorName }),
+    shield: () => ({ name: actorName, target: targetName || actorName }),
+    polarize: () => ({ name: actorName }),
+    restore: () => ({ name: actorName, target: targetName || null }),
   };
   doAction(type, payloadBuilders[type]());
+}
+
+function quickMultiAction(type, actorName, count) {
+  const targets = [];
+  for (let i = 0; i < count; i++) {
+    const v = document.getElementById(`qaMulti_${type}_${i}`).value;
+    if (v) targets.push(v);
+  }
+  doAction(type, { name: actorName, targets });
 }
 
 // ------------------------------------------------------------------

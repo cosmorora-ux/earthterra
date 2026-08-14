@@ -166,6 +166,10 @@ def build_character_public(c):
         "grid_pos": list(c.grid_pos) if c.grid_pos else None,
         "moved_this_round": c.moved_this_round,
         "move_range": config.calculate_move_range(c.stats, overrides=c.formula_overrides) if c.can_move else None,
+        "skill": c.skill,
+        "shield_hp": c.shield_hp,
+        "polarize_active": c.polarize_active,
+        "has_leech_buff": c.leech_buff_expires_round is not None,
     }
 
 
@@ -312,6 +316,12 @@ ACTOR_FIELD = {
     "move": "name",
     "command": "guardian",
     "swap": "medic",
+    "collapse": "attacker",
+    "emission": "attacker",
+    "shield": "name",
+    "polarize": "name",
+    "reflux": "name",
+    "restore": "name",
 }
 
 
@@ -450,7 +460,9 @@ def on_update_character(data):
         return
     role = data.get("role") or config.DEFAULT_ROLE
     stats = data.get("stats", {})
-    warns = room.game.db.add_or_update(name, role, stats)
+    skill = data.get("skill") or None
+    existing = room.game.db.get(name) or {}
+    warns = room.game.db.add_or_update(name, role, stats, color=existing.get("color"), skill=skill)
 
     # 전투가 진행 중이고 이 캐릭터가 현재 전투에 참여 중이라면, 실시간 스탯도 즉시 갱신합니다.
     battle = room.game.battle
@@ -581,10 +593,13 @@ def on_start_battle(data):
 
     # 매스 레이드 러너(1팀) : 같은 역할(가디언/스트라이커/메딕)이라도 매스 레이드에서는
     # 행동 목록이 다릅니다 (MASS_RAID_ROLE_ACTIONS). 이름/명칭은 다른 전투 유형과 공유하되
-    # 행동만 매스 레이드 전용으로 덮어씁니다.
+    # 행동만 매스 레이드 전용으로 덮어씁니다. 캐릭터가 선택한 스킬(붕괴/방출/차폐/편광/환류/복원)이
+    # 있으면 "스킬" 버튼 대신 그 스킬 고유 이름으로 행동 목록에 추가됩니다.
     if room.battle_type == "mass_raid":
         for c in room.game.battle.team_a:
-            c.forced_actions = config.MASS_RAID_ROLE_ACTIONS.get(c.role, []) + config.COMMON_ACTIONS
+            base_actions = config.MASS_RAID_ROLE_ACTIONS.get(c.role, [])
+            skill_actions = [c.skill] if c.skill else []
+            c.forced_actions = base_actions + skill_actions + config.COMMON_ACTIONS
 
     # 격자 전투(매스 레이드/점령전) : 중앙에 몹(거점)을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
     if is_grid_battle:
@@ -714,6 +729,12 @@ ACTION_HANDLERS = {
     "move": lambda battle, p: battle.perform_move(p["name"], int(p["x"]), int(p["y"])),
     "command": lambda battle, p: battle.perform_command(p["guardian"], p["target"]),
     "swap": lambda battle, p: battle.perform_swap(p["medic"], p["target"]),
+    "collapse": lambda battle, p: battle.perform_collapse(p["attacker"], p["target"]),
+    "emission": lambda battle, p: battle.perform_emission(p["attacker"]),
+    "shield": lambda battle, p: battle.perform_shield(p["name"], p["target"]),
+    "polarize": lambda battle, p: battle.perform_polarize(p["name"]),
+    "reflux": lambda battle, p: battle.perform_reflux(p["name"], p.get("targets", [])),
+    "restore": lambda battle, p: battle.perform_restore(p["name"], p.get("target")),
     "advance_turn": lambda battle, p: battle.advance_turn(),
     "undo": lambda battle, p: battle.undo_last(),
 }
