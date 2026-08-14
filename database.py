@@ -74,7 +74,7 @@ class CharacterDatabase:
     # 붙여넣기 텍스트 파싱
     # ------------------------------------------------------------------
     _STAT_LINE_RE = re.compile(r"^\s*(체력|공격|방어|이능|정신|민첩|행운)\s+(-?\d+)\s*$")
-    _ROLE_LINE_RE = re.compile(r"^\s*역할\s*[:：]?\s*(탱커|딜러|힐러)\s*$")
+    _ROLE_LINE_RE = re.compile(r"^\s*역할\s*[:：]?\s*(탱커|딜러|힐러|스트라이커|가디언|메딕)\s*$")
     _COLOR_LINE_RE = re.compile(r"^\s*색상\s*[:：]?\s*(#[0-9a-fA-F]{6})\s*$")
 
     def parse_bulk_text(self, text: str):

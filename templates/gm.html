@@ -94,6 +94,9 @@
       <option value="탱커">탱커</option>
       <option value="딜러">딜러</option>
       <option value="힐러">힐러</option>
+      <option value="스트라이커">스트라이커</option>
+      <option value="가디언">가디언</option>
+      <option value="메딕">메딕</option>
     </select><br>
     <div id="editStatsFields"></div>
     <button onclick="saveCharacterEdit()">저장</button>
@@ -220,9 +223,9 @@ const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "
 const ACTION_LABELS = {
   "공격": "attack", "본인방어": "self_defend", "방어": "defend", "공격유도": "taunt",
   "회피": "dodge", "힐": "heal", "시간초과": "timeout", "도주": "flee",
-  "방어 정산": "defense_settle", "이동": "move",
+  "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
 };
-const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal"]);
+const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap"]);
 
 function showError(msg) {
   const el = document.getElementById('globalError');
@@ -511,11 +514,17 @@ function renderCardHtml(c) {
 let selectedGridChar = null;  // 지도에서 선택된 "행동하는" 캐릭터 (범위 미리보기 대상)
 let selectedGridTargetName = null;  // 범위 내에서 클릭해 지정한 대상 (본인 포함)
 const GRID_CELL_PX = 36;
-const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐"]);
+const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐", "지휘", "배치"]);
 const ENEMY_TARGET_ACTIONS = new Set(["공격"]);
 const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산"]);
-const ROLE_MOVE_COLOR = { "딜러": "#ff5555", "탱커": "#4a90ff", "힐러": "#ffe066" };
-const ROLE_MOVE_EMOJI = { "딜러": "🔴", "탱커": "🔵", "힐러": "🟡" };
+const ROLE_MOVE_COLOR = {
+  "딜러": "#ff5555", "탱커": "#4a90ff", "힐러": "#ffe066",
+  "스트라이커": "#ff5555", "가디언": "#4a90ff", "메딕": "#ffe066",
+};
+const ROLE_MOVE_EMOJI = {
+  "딜러": "🔴", "탱커": "🔵", "힐러": "🟡",
+  "스트라이커": "🔴", "가디언": "🔵", "메딕": "🟡",
+};
 const ACTION_RANGE_COLOR = "#ffffff";
 
 function cellLabel(x, y) {
@@ -933,6 +942,8 @@ function quickAction(type, actorName, targetName) {
     timeout: () => ({ name: actorName }),
     flee: () => ({ name: actorName }),
     defense_settle: () => ({ name: actorName }),
+    command: () => ({ guardian: actorName, target: targetName || actorName }),
+    swap: () => ({ medic: actorName, target: targetName }),
   };
   doAction(type, payloadBuilders[type]());
 }

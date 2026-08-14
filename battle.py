@@ -30,6 +30,7 @@ import copy
 from models import (
     Character, AttackSkill, SelfDefendSkill, DefendSkill, TauntSkill,
     DodgeSkill, HealSkill, TimeoutSkill, FleeSkill, DefenseSettleSkill,
+    CommandSkill, SwapSkill,
 )
 from database import CharacterDatabase
 import config
@@ -138,6 +139,8 @@ class Battle:
         self.timeout_skill = TimeoutSkill()
         self.flee_skill = FleeSkill()
         self.defense_settle_skill = DefenseSettleSkill()
+        self.command_skill = CommandSkill()
+        self.swap_skill = SwapSkill()
 
         for text, tag in explain_lines:
             self._log(text, tag=tag)
@@ -451,6 +454,42 @@ class Battle:
         self._log(f"{actor.name} 이동 {cell_label(cur_x, cur_y)} → {cell_label(x, y)}", tag="action")
 
     # ------------------------------------------------------------------
+    # 행동 : 배치 (메딕 전용) - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 정식 행동이므로
+    # has_acted를 소모합니다 (이동과 달리 라운드당 1회 행동에 포함됩니다).
+    # ------------------------------------------------------------------
+    def perform_swap(self, name: str, target_name: str):
+        actor = self.find_character(name)
+        target = self.find_character(target_name)
+        if actor is None or target is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(actor)
+
+        ok, reason = self.swap_skill.can_use(actor)
+        if not ok:
+            raise BattleError(reason)
+        if actor.grid_pos is None or target.grid_pos is None:
+            raise BattleError("이 전투는 격자 이동을 지원하지 않습니다.")
+        if not target.is_alive:
+            raise BattleError("대상이 존재하지 않습니다.")
+        if target.team != actor.team:
+            raise BattleError("배치 대상은 같은 팀의 캐릭터여야 합니다.")
+        if target is actor:
+            raise BattleError("본인과는 위치를 교환할 수 없습니다.")
+
+        self._push_history()
+        self._resolve_pending_attacks(actor)
+        actor_pos, target_pos = actor.grid_pos, target.grid_pos
+        self.swap_skill.execute(actor, target)
+        actor.has_acted = True
+
+        self._log(
+            f"{actor.name} 배치 : {target.name}과(와) 위치 교환 "
+            f"({cell_label(*actor_pos)} ↔ {cell_label(*target_pos)})",
+            tag="action",
+        )
+        self._check_finish()
+
+    # ------------------------------------------------------------------
     # 행동 : 공격 (모든 역할 가능)
     # ------------------------------------------------------------------
     def perform_attack(self, attacker_name: str, target_name: str):
@@ -626,6 +665,47 @@ class Battle:
             self._log(f"{tanker.name} 공격유도 (본인) - 능동 방어도 함께 부여됩니다", tag="taunt")
         else:
             self._log(f"{tanker.name} 공격유도 → {target.name}", tag="taunt")
+        self._log(
+            f"→ {enemy_label}의 다음 공격 {self.forced_target_count}회가 {target.name}을(를) 대상으로 강제됩니다.",
+            tag="system",
+        )
+        self._check_finish()
+
+    # ------------------------------------------------------------------
+    # 행동 : 지휘 (가디언 전용) - 공격유도와 동일한 어그로 강제이지만, 방어 부여 효과는 없습니다.
+    # ------------------------------------------------------------------
+    def perform_command(self, guardian_name: str, target_name: str):
+        guardian = self.find_character(guardian_name)
+        target = self.find_character(target_name)
+        if guardian is None or target is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(guardian)
+
+        ok, reason = self.command_skill.can_use(guardian)
+        if not ok:
+            raise BattleError(reason)
+        if not target.is_alive:
+            raise BattleError("대상이 존재하지 않습니다.")
+        if target.team != guardian.team:
+            raise BattleError("지휘 대상은 같은 팀의 캐릭터여야 합니다.")
+
+        self._push_history()
+        self.command_skill.execute(guardian, target)
+        self._resolve_pending_attacks(guardian)
+        guardian.has_acted = True
+
+        enemy_label = self.enemy_team_label(self.team_label_of(guardian))
+        if self.forced_target is target:
+            self.forced_target_count += 1  # 같은 대상에게 다시 걸면 강제 횟수가 누적됩니다.
+        else:
+            self.forced_target = target
+            self.forced_target_team = enemy_label
+            self.forced_target_count = 1
+
+        if target is guardian:
+            self._log(f"{guardian.name} 지휘 (본인)", tag="taunt")
+        else:
+            self._log(f"{guardian.name} 지휘 → {target.name}", tag="taunt")
         self._log(
             f"→ {enemy_label}의 다음 공격 {self.forced_target_count}회가 {target.name}을(를) 대상으로 강제됩니다.",
             tag="system",

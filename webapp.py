@@ -310,6 +310,8 @@ ACTOR_FIELD = {
     "flee": "name",
     "defense_settle": "name",
     "move": "name",
+    "command": "guardian",
+    "swap": "medic",
 }
 
 
@@ -703,6 +705,8 @@ ACTION_HANDLERS = {
     "flee": lambda battle, p: battle.perform_flee(p["name"]),
     "defense_settle": lambda battle, p: battle.perform_defense_settle(p["name"]),
     "move": lambda battle, p: battle.perform_move(p["name"], int(p["x"]), int(p["y"])),
+    "command": lambda battle, p: battle.perform_command(p["guardian"], p["target"]),
+    "swap": lambda battle, p: battle.perform_swap(p["medic"], p["target"]),
     "advance_turn": lambda battle, p: battle.advance_turn(),
     "undo": lambda battle, p: battle.undo_last(),
 }
