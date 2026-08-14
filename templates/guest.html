@@ -119,9 +119,15 @@
   .btn-plain { background:#232327; color: var(--text); border:1px solid var(--card-border); border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer; }
   .btn-primary { background: var(--accent-blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:13px; cursor:pointer; font-weight:600; }
 
-  /* ---------- 액션 팝업 (플로팅) ---------- */
+  /* ---------- 액션 팝업 (커맨드 전송 버튼 위로 뜨는 말풍선형 플로팅) ---------- */
   #actionPopup { display:none; position:absolute; z-index:40; width: 340px; background:#0c0c0d; border:1px solid var(--card-border);
-                 border-radius:14px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+                 border-radius:14px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.6);
+                 right: 16px; bottom: 72px; }
+  #actionPopup::after {
+    content: ""; position:absolute; bottom:-7px; right:36px; width:14px; height:14px;
+    background:#0c0c0d; border-right:1px solid var(--card-border); border-bottom:1px solid var(--card-border);
+    transform: rotate(45deg);
+  }
   #actionPopup .ap-head { font-size:12px; color: var(--muted); margin-bottom:10px; }
   #actionPopup .ap-head b { color:#fff; }
   .ap-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
@@ -443,7 +449,7 @@ function renderCardHtml(c) {
     <div class="row1">
       <div>
         <div class="cname">${c.name}${isMine ? ' <span style="color:var(--accent-blue); font-size:11px;">(나)</span>' : ''}</div>
-        <div class="crole" style="color:${roleColorVar(c.role)}">${c.role}${c.skill ? ' 【' + c.skill + '】' : ''}<span class="cstatus-tag">${statusTag}</span></div>
+        <div class="crole" style="color:${roleColorVar(c.role)}">${c.role}${(c.skill && BATTLE_TYPE === 'mass_raid') ? ' 【' + c.skill + '】' : ''}<span class="cstatus-tag">${statusTag}</span></div>
       </div>
       <div class="cavatar"></div>
     </div>
