@@ -436,8 +436,13 @@ AGILITY_MOVE_PER_POINT = 1
 
 
 def calculate_move_range(stats: dict, overrides: dict = None) -> int:
+    """
+    민첩 0이어도 십자로 최소 1칸은 움직일 수 있도록 최소값 1을 보장합니다.
+    (민첩 0 - 십자4칸, 민첩 1 - 네모8칸, 민첩 2 - 십자8칸+네모8칸, 민첩 3 - 십자12칸+네모8칸 …)
+    """
     agi = int(stats.get("민첩", 0))
-    return get_value("AGILITY_MOVE_BASE", overrides) + agi * get_value("AGILITY_MOVE_PER_POINT", overrides)
+    raw = get_value("AGILITY_MOVE_BASE", overrides) + agi * get_value("AGILITY_MOVE_PER_POINT", overrides)
+    return max(1, raw)
 
 
 def is_within_move_shape(dx: int, dy: int, move_range: int, agility: int = 0) -> bool:
