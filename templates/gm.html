@@ -517,6 +517,7 @@ const GRID_CELL_PX = 36;
 const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐", "지휘", "배치"]);
 const ENEMY_TARGET_ACTIONS = new Set(["공격"]);
 const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산"]);
+const RANGE_IGNORING_ACTIONS = new Set(["배치"]);  // 사정거리 제한 없이 아무 아군이나 대상 지정 가능
 const ROLE_MOVE_COLOR = {
   "딜러": "#ff5555", "탱커": "#4a90ff", "힐러": "#ffe066",
   "스트라이커": "#ff5555", "가디언": "#4a90ff", "메딕": "#ffe066",
@@ -707,7 +708,7 @@ function renderGrid(battle, all) {
       const key = `${x},${y}`;
       const c = posMap[key];
       let bg = '#222';
-      let borderColor = '#444';
+      let borderStyle = 'border:2px solid #444;';
       let cursor = 'default';
       let onclick = '';
       if (c) {
@@ -715,11 +716,23 @@ function renderGrid(battle, all) {
         // 이동 전(파란 이동범위 표시 중)에는 클릭해도 행동 캐릭터만 바뀌고, 반드시 이동부터 해야 합니다.
         const canTargetNow = !!(selectedGridChar && highlightIsAction);
         const isSelectedActor = selectedGridChar && c.name === selectedGridChar;
-        const isTargetable = canTargetNow && !isSelectedActor && highlightCells.has(key);
+        // 배치(메딕)처럼 사정거리 제한이 없는 행동을 쓸 수 있는 캐릭터는, 하이라이트 범위 밖의
+        // 아군도 대상으로 지정할 수 있습니다.
+        const actorIgnoresRange = selChar && selChar.available_actions.some(l => RANGE_IGNORING_ACTIONS.has(l));
+        const inRangeOrExempt = highlightCells.has(key) || (actorIgnoresRange && c.teamLabel === selChar.teamLabel);
+        const isTargetable = canTargetNow && !isSelectedActor && inRangeOrExempt;
         const isSelfTargetable = canTargetNow && isSelectedActor;
+        // 이동 완료(하단만 흰색) / 행동 완료(전체 흰색) 2단계로 테두리를 표시합니다.
+        const baseColor = c.teamLabel === 'A' ? '#888' : '#a44';
+        if (c.has_acted) {
+          borderStyle = 'border:2px solid #fff;';
+        } else if (c.moved_this_round) {
+          borderStyle = `border-top:2px solid ${baseColor}; border-left:2px solid ${baseColor}; border-right:2px solid ${baseColor}; border-bottom:2px solid #fff;`;
+        } else {
+          borderStyle = `border:2px solid ${baseColor};`;
+        }
         if (c.teamLabel === 'A') {
           bg = c.moved_this_round ? '#666' : '#555';
-          borderColor = c.moved_this_round ? '#fff' : '#888';
           cursor = 'pointer';
           if (isSelfTargetable || isTargetable) {
             onclick = `onclick="onGridTargetClick('${selectedGridChar}','${c.name}')"`;
@@ -728,7 +741,6 @@ function renderGrid(battle, all) {
           }
         } else {
           bg = c.moved_this_round ? '#a83a3a' : '#7a2a2a';
-          borderColor = c.moved_this_round ? '#ff9999' : '#a44';
           cursor = 'pointer';
           if (isSelfTargetable || isTargetable) {
             onclick = `onclick="onGridTargetClick('${selectedGridChar}','${c.name}')"`;
@@ -741,10 +753,10 @@ function renderGrid(battle, all) {
         onclick = `onclick="onGridMoveClick(${x},${y})"`;
       }
       if (highlightCells.has(key)) {
-        borderColor = highlightIsAction ? ACTION_RANGE_COLOR : (ROLE_MOVE_COLOR[selChar.role] || '#4ad0ff');
+        borderStyle = `border:2px solid ${highlightIsAction ? ACTION_RANGE_COLOR : (ROLE_MOVE_COLOR[selChar.role] || '#4ad0ff')};`;
       }
       if (selChar && selChar.grid_pos && selChar.grid_pos[0] === x && selChar.grid_pos[1] === y) {
-        borderColor = '#4dff4d';
+        borderStyle = 'border:3px solid #4dff4d;';
       }
       // 전조는 테두리(이동범위/사거리 등 기존 표시)를 가리지 않도록 은은한 안쪽 글로우로만 표시합니다.
       let glow = '';
@@ -761,7 +773,7 @@ function renderGrid(battle, all) {
       const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
       const telegraphText = telegraphRevealedCells.has(key) ? ' · 🔮 전조(곧 피해)' : (telegraphSelectedCells.has(key) ? ' · 전조 선택됨(미공개)' : '');
       const title = c ? `${c.name} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
-      html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; border:2px solid ${borderColor}; background:${bg}; ${glow} text-align:center; font-size:12px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
+      html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; ${borderStyle} background:${bg}; ${glow} text-align:center; font-size:12px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
     }
     html += '</tr>';
   }
