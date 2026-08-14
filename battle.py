@@ -433,8 +433,10 @@ class Battle:
             raise BattleError("이미 그 칸에 있습니다.")
 
         move_range = config.calculate_move_range(actor.stats, overrides=self.formula_overrides)
-        if not config.is_within_move_shape(x - cur_x, y - cur_y, move_range):
-            raise BattleError(f"이동 가능 범위(십자 {move_range}칸 + 주변 8칸)를 벗어났습니다.")
+        agi = int(actor.stats.get("민첩", 0))
+        if not config.is_within_move_shape(x - cur_x, y - cur_y, move_range, agi):
+            shape_desc = f"십자 {move_range}칸" + (" + 주변 8칸" if agi > 0 else " (민첩 0 - 대각선 불가)")
+            raise BattleError(f"이동 가능 범위({shape_desc})를 벗어났습니다.")
 
         occupied = any(
             c is not actor and c.is_alive and c.grid_pos == (x, y)

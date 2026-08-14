@@ -440,9 +440,14 @@ def calculate_move_range(stats: dict, overrides: dict = None) -> int:
     return get_value("AGILITY_MOVE_BASE", overrides) + agi * get_value("AGILITY_MOVE_PER_POINT", overrides)
 
 
-def is_within_move_shape(dx: int, dy: int, move_range: int) -> bool:
-    """이동 가능 모양 = 십자(상하좌우로 move_range칸) + 본인을 두르는 대각선 포함 8칸."""
+def is_within_move_shape(dx: int, dy: int, move_range: int, agility: int = 0) -> bool:
+    """
+    이동 가능 모양 = 십자(상하좌우로 move_range칸) + 본인을 두르는 대각선 포함 8칸.
+    단, 민첩이 0이면 대각선/8칸 보너스 없이 십자로만 이동할 수 있습니다.
+    """
     is_cross = (dx == 0 and abs(dy) <= move_range) or (dy == 0 and abs(dx) <= move_range)
+    if agility <= 0:
+        return is_cross
     is_adjacent = abs(dx) <= 1 and abs(dy) <= 1
     return is_cross or is_adjacent
 

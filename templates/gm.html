@@ -619,17 +619,19 @@ function renderTelegraphControls() {
     : (telegraphRevealedCells.size > 0 ? `공개된 전조 ${telegraphRevealedCells.size}칸` : '');
 }
 
-function crossPlusNeighbors(px, py, crossLen) {
-  // 이동/사거리 공용 모양 : 십자(상하좌우 crossLen칸) + 본인을 두르는 대각선 포함 8칸
+function crossPlusNeighbors(px, py, crossLen, includeDiagonal) {
+  // 이동/사거리 공용 모양 : 십자(상하좌우 crossLen칸) + (민첩이 있으면) 본인을 두르는 대각선 포함 8칸
   const cells = new Set();
   for (let d = 1; d <= crossLen; d++) {
     cells.add(`${px + d},${py}`); cells.add(`${px - d},${py}`);
     cells.add(`${px},${py + d}`); cells.add(`${px},${py - d}`);
   }
-  for (let dx = -1; dx <= 1; dx++) {
-    for (let dy = -1; dy <= 1; dy++) {
-      if (dx === 0 && dy === 0) continue;
-      cells.add(`${px + dx},${py + dy}`);
+  if (includeDiagonal) {
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        cells.add(`${px + dx},${py + dy}`);
+      }
     }
   }
   cells.delete(`${px},${py}`);
@@ -638,8 +640,11 @@ function crossPlusNeighbors(px, py, crossLen) {
 
 function computeHighlightCells(character, showActionRange) {
   const [px, py] = character.grid_pos;
-  const crossLen = showActionRange ? 3 : (character.move_range || 0);
-  return crossPlusNeighbors(px, py, crossLen);
+  if (showActionRange) {
+    return crossPlusNeighbors(px, py, 3, true);
+  }
+  const agi = (character.stats && character.stats['민첩']) || 0;
+  return crossPlusNeighbors(px, py, character.move_range || 0, agi > 0);
 }
 
 function onGridActorClick(name) {
