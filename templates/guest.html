@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>참가자 화면 - {{ room_id }}</title>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+  :root {
+    --bg: #050505;
+    --panel: #141416;
+    --panel-border: #262629;
+    --card: #17171a;
+    --card-border: #2a2a2e;
+    --text: #f2f2f2;
+    --muted: #8b8b90;
+    --accent-blue: #3b82f6;
+    --accent-red: #e2574a;
+    --role-스트라이커: #ff6b5b;
+    --role-딜러: #ff6b5b;
+    --role-가디언: #4a90ff;
+    --role-탱커: #4a90ff;
+    --role-메딕: #ffd166;
+    --role-힐러: #ffd166;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", "Pretendard", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
+  .shell { max-width: 1360px; margin: 0 auto; padding: 20px 20px 40px; }
+  .panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; }
+  a { color: inherit; }
+
+  #globalError { display:none; position:sticky; top:0; z-index:50; background:#4a1f1f; color:#ffcccc;
+                 padding:10px 14px; border-radius:10px; margin-bottom:12px; font-weight:bold; }
+
+  .btn { background: var(--accent-blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; font-weight:600; }
+
+  /* ---------- 상단바 ---------- */
+  .topbar { display:flex; align-items:center; gap:18px; padding:16px 24px; margin-bottom:14px; font-size:14px; flex-wrap:wrap; }
+  .topbar .seg { display:flex; align-items:center; gap:10px; font-weight:600; }
+  .topbar .sep { color:#3a3a3e; }
+  .topbar .spacer { flex:1; }
+  .topbar .clock { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .avatar-dot { width:34px; height:34px; border-radius:50%; background:#4a4a4e; flex-shrink:0; cursor:pointer; }
+  .avatar-dot:hover { box-shadow: 0 0 0 2px var(--card-border); }
+  .whoami { display:flex; align-items:center; gap:10px; }
+  .whoami .label { color: var(--muted); font-size:13px; }
+
+  /* ---------- 캐릭터 입장 / 색상 선택 모달 ---------- */
+  .modal-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); align-items:center; justify-content:center; }
+  .modal-box { width:300px; padding:20px; }
+  .modal-box .modal-title { font-size:15px; font-weight:700; margin-bottom:12px; }
+  .modal-box input { width:100%; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:9px 12px; font-size:14px; }
+  .modal-box .row { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:10px; }
+  .modal-box .err { color: var(--accent-red); font-size:12px; min-height:16px; margin-top:8px; }
+
+  .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding: 0 4px; }
+  .breadcrumb { color: var(--muted); font-size:13px; }
+  .breadcrumb b { color: var(--text); }
+  .bgm-label { color: var(--muted); font-size:13px; display:flex; align-items:center; gap:6px; }
+
+  /* ---------- 메인 그리드 (좌측 패널 + 카드) ---------- */
+  .main-grid { display:grid; grid-template-columns: 300px 1fr; gap:16px; margin-bottom:16px; align-items:start; }
+  .side-panel { padding: 26px 22px; display:flex; flex-direction:column; gap:14px; min-height: 320px; }
+  .side-panel .sun-icon { font-size:26px; opacity:0.85; }
+  .side-panel h3 { margin:0; font-size:20px; }
+  .side-panel .sub { color: var(--muted); font-size:13px; margin-top:-8px; }
+  .side-panel .grow { flex:1; }
+  .side-panel .btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; }
+
+  .sort-row { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .sort-btn { background:#0c0c0d; border:1px solid var(--card-border); color: var(--muted); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; }
+  .sort-btn.active { color:#fff; border-color: var(--accent-blue); background:#132038; }
+
+  .card-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+  .char-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px; cursor:pointer; position:relative; transition: border-color .12s; }
+  .char-card:hover { border-color:#444; }
+  .char-card.selected-target { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue); }
+  .char-card.team-B { }
+  .char-card .row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
+  .char-card .cname { font-weight:700; font-size:15px; }
+  .char-card .cavatar { width:26px; height:26px; border-radius:50%; background:#4a4a4e; flex-shrink:0; }
+  .char-card .crole { font-size:12px; font-weight:600; margin-top:4px; }
+  .char-card .cstatus-tag { font-size:11px; color: var(--muted); margin-left:4px; }
+  .char-card .cbadges { display:flex; gap:10px; font-size:11px; color: var(--muted); margin-top:6px; min-height:14px; }
+  .hpbar-wrap { display:flex; align-items:center; gap:8px; margin-top:10px; }
+  .hpbar-track { flex:1; height:6px; border-radius:4px; background:#2a2a2e; overflow:hidden; }
+  .hpbar-fill { height:100%; background:#d8d8dc; }
+  .hpbar-fill.low { background: var(--accent-red); }
+  .hpnum { font-size:11px; color: var(--muted); white-space:nowrap; }
+  .stat-tip { position:absolute; z-index:30; top:-42px; left:0; background:#0c0c0d; border:1px solid var(--card-border);
+              border-radius:10px; padding:8px 12px; font-size:12px; white-space:nowrap; display:none; box-shadow:0 6px 18px rgba(0,0,0,.5); }
+  .char-card:hover .stat-tip { display:block; }
+
+  /* ---------- 하단 그리드 (로그 / 커맨드) ---------- */
+  .bottom-grid { display:grid; grid-template-columns: 1fr 1.35fr; gap:16px; }
+  .panel-head { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--panel-border); }
+  .panel-head b { font-size:14px; }
+  .panel-head .hint { color: var(--muted); font-size:12px; }
+  .panel-head .gear { margin-left:auto; opacity:.6; }
+
+  #pubLog { height: 420px; overflow-y:auto; padding: 12px 18px; font-size:13px; line-height:1.65; }
+  .logline { color: var(--text); opacity:.92; }
+  .logline .li { margin-right:6px; opacity:.85; }
+  .logline.group-start { margin-top:10px; font-weight:600; }
+  .logline.group-start:first-child { margin-top:0; }
+  .logline.tag-crit { color:#ffd166; font-weight:700; }
+  .logline.tag-system { color: var(--muted); font-size:12px; }
+  .logline.tag-round { color:#7fb0ff; font-weight:700; margin-top:14px; }
+
+  #chatPanelBody { display:flex; flex-direction:column; height:420px; }
+  .chat-tabs { display:flex; gap:6px; margin-left:auto; }
+  .chat-tabs button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:6px; padding:3px 8px; font-size:11px; cursor:pointer; }
+  .chat-tabs button.active { color:#fff; border-color: var(--accent-blue); }
+  #chatLog { flex:1; overflow-y:auto; padding:12px 18px; font-size:13px; }
+  .chat-line { display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; }
+  .chat-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; margin-top:2px; }
+  .chat-body b { font-weight:700; }
+  .chat-body .time { color: var(--muted); font-size:11px; margin-left:6px; }
+  .chat-line.is-command .chat-text { color:#9fc3ff; font-family: ui-monospace, monospace; font-size:12px; }
+  .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
+
+  .input-row { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--panel-border); align-items:center; }
+  .input-row .avatar-dot { width:30px; height:30px; }
+  .input-row input { flex:1; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:9px 12px; font-size:13px; }
+  .btn-plain { background:#232327; color: var(--text); border:1px solid var(--card-border); border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer; }
+  .btn-primary { background: var(--accent-blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:13px; cursor:pointer; font-weight:600; }
+
+  /* ---------- 액션 팝업 (커맨드 전송 버튼 위로 뜨는 말풍선형 플로팅) ---------- */
+  #actionPopup { display:none; position:absolute; z-index:40; width: 340px; background:#0c0c0d; border:1px solid var(--card-border);
+                 border-radius:14px; padding:14px; box-shadow: 0 10px 30px rgba(0,0,0,.6);
+                 right: 16px; bottom: 72px; }
+  #actionPopup::after {
+    content: ""; position:absolute; bottom:-7px; right:36px; width:14px; height:14px;
+    background:#0c0c0d; border-right:1px solid var(--card-border); border-bottom:1px solid var(--card-border);
+    transform: rotate(45deg);
+  }
+  #actionPopup .ap-head { font-size:12px; color: var(--muted); margin-bottom:10px; }
+  #actionPopup .ap-head b { color:#fff; }
+  .ap-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .ap-btn { background:#1c1c20; border:1px solid var(--card-border); color: var(--text); border-radius:10px; padding:12px 8px; font-size:13px; cursor:pointer; font-weight:600; }
+  .ap-btn:hover { border-color: var(--accent-blue); }
+  .ap-close { display:block; margin-top:10px; text-align:right; color: var(--muted); font-size:12px; cursor:pointer; background:none; border:none; }
+  .ap-multi-select { width:100%; margin-bottom:6px; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:6px; padding:5px; font-size:12px; }
+
+  /* ---------- 격자 지도 (PVP 외 전투용, 톤만 맞춤) ---------- */
+  #gridSection.panel { padding:16px 18px; margin-bottom:16px; }
+  #gridSection b { font-size:14px; }
+
+  /* ---------- 배경음악 ---------- */
+  #musicExtra { margin-top:4px; }
+
+  .help-box { font-size:12px; color: var(--muted); line-height:1.6; background:#0c0c0d; border:1px solid var(--card-border); border-radius:10px; padding:10px 12px; display:none; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div id="globalError"></div>
+
+<div id="joinModal" class="modal-overlay">
+  <div class="modal-box panel">
+    <div class="modal-title">캐릭터 이름으로 입장</div>
+    <input id="joinNameInput" placeholder="캐릭터 이름을 정확히 입력" onkeydown="if(event.key==='Enter') submitJoinModal()">
+    <div id="joinModalError" class="err"></div>
+    <div class="row">
+      <button class="btn-plain" onclick="closeJoinModal()">취소</button>
+      <button class="btn-primary" onclick="submitJoinModal()">입장</button>
+    </div>
+  </div>
+</div>
+<input type="color" id="myColorInput" value="#4a90ff" style="position:fixed; opacity:0; pointer-events:none; width:0; height:0;" onchange="onMyColorChange(this.value)">
+
+<div class="topbar panel">
+  <div class="seg">🆔 {{ room_id }}</div>
+  <span class="sep">▶</span>
+  <div class="seg" id="formatLabel">-</div>
+  <span class="sep">▶</span>
+  <div class="seg" id="roundInfo">-</div>
+  <div class="spacer"></div>
+  <div class="clock" id="liveClock">--:--:--</div>
+  <div class="whoami">
+    <span class="label" id="roundTimerLabel">⏱ <span id="roundTimer">--:--</span></span>
+    <div class="avatar-dot" id="myAvatarDot" title="클릭해서 캐릭터로 입장" onclick="onAvatarDotClick()" ondblclick="onAvatarDotDblClick()"></div>
+    <span class="label" id="myNicknameLabel">미입장</span>
+  </div>
+</div>
+
+<div class="breadcrumb-row">
+  <div class="breadcrumb"><b>전투 화면</b> ◢ {{ battle_type_label }}</div>
+  <div class="bgm-label">🎵 <span id="musicStatus">음악 없음</span></div>
+</div>
+
+<div class="main-grid">
+  <div class="side-panel panel">
+    <div class="sun-icon">☀</div>
+    <h3 id="sideTitle">{{ battle_type_label }}</h3>
+    <div class="sub">방 {{ room_id }}</div>
+    <div id="helpBox" class="help-box">
+      <b>대사</b>: 역할극 대사만 채팅으로 보냅니다.<br>
+      <b>캐릭터 카드 클릭</b>: 대상을 지정해 행동을 선택합니다.<br>
+      <b>커맨드 전송</b>: 선택한 행동을 실제로 실행하고, 요약을 채팅에 남깁니다.
+    </div>
+    <div class="grow"></div>
+    <button class="btn" onclick="toggleHelp()">⚙ 질문/건의</button>
+  </div>
+
+  <div>
+    <div class="sort-row">
+      <button class="sort-btn" id="sortHpBtn" onclick="setSortMode('hp')">체력 적은 순</button>
+      <button class="sort-btn" id="sortRoleBtn" onclick="setSortMode('role')">포지션 순</button>
+      <button class="sort-btn active" id="sortNameBtn" onclick="setSortMode('name')">가나다 순</button>
+      <span id="multiSkillSlot"></span>
+    </div>
+    <div id="teams" class="card-grid"></div>
+  </div>
+</div>
+
+<div id="gridSection" class="panel" style="display:none;">
+  <b>🗺 격자 지도</b>
+  <div id="gridLegend" style="font-size:12px; opacity:0.8; margin:6px 0;"></div>
+  <div id="gridMap" style="overflow-x:auto;"></div>
+  <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
+</div>
+
+<div class="bottom-grid">
+  <div class="panel">
+    <div class="panel-head">
+      <b>출력 창</b><span class="hint">러너 전용 로그</span>
+      <span class="gear">⚙</span>
+    </div>
+    <div id="pubLog"></div>
+  </div>
+
+  <div class="panel" style="position:relative;">
+    <div class="panel-head">
+      <b>커맨드 창</b><span class="hint">회의는 회의 DM방에서, 이쪽은 커맨드 위주</span>
+      <span class="gear">⚙</span>
+    </div>
+    <div id="chatPanelBody">
+      <div style="padding:8px 18px 0;">
+        <span class="chat-tabs">
+          <button id="chatTabAll" onclick="setChatFilter('all')">전체 표시</button>
+          <button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button>
+          <button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button>
+        </span>
+      </div>
+      <div id="chatLog"></div>
+      <div class="input-row" id="chatInputRow" style="display:none;">
+        <div class="avatar-dot" id="inputAvatarDot" title="더블클릭해서 색상 변경" ondblclick="onInputAvatarDotDblClick()"></div>
+        <input id="chatInput" placeholder="대사를 입력해 주세요." onkeydown="if(event.key==='Enter') sendChat()">
+        <button class="btn-plain" onclick="sendChat()">채팅 전송</button>
+        <button class="btn-primary" onclick="onCommandSendClick()">커맨드 전송</button>
+      </div>
+    </div>
+    <div id="actionPopup"></div>
+  </div>
+</div>
+
+<section class="panel" style="padding:14px 18px; margin-top:16px;">
+  <h2 style="margin:0 0 8px; font-size:14px;">🎵 배경음악</h2>
+  <button id="musicSyncBtn" class="btn-plain" onclick="startMusicPlayback()" style="display:none;">🔊 음악 재생 (동기화)</button>
+  <div id="youtubePlayerHolder" style="display:none; margin-top:6px;"><div id="youtubePlayer"></div></div>
+  <audio id="mp3Player" style="display:none; margin-top:6px;" controls></audio>
+</section>
+
+</div>
+
+<script>
+const ROOM_ID = "{{ room_id }}";
+const KEY = "{{ key }}";
+const BATTLE_TYPE = "{{ battle_type }}";
+const GRID_SIZE = {{ grid_size }};
+
+const socket = io();
+let roundDeadlineAt = null;
+let MY_NICKNAME = '';
+let chatFilter = 'all';
+let lastChat = [];
+let lastBattleForPanel = null;
+let actionPanelActorName = null;
+
+const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "행운"];
+const ACTION_LABELS = {
+  "공격": "attack", "본인방어": "self_defend", "방어": "defend", "공격유도": "taunt",
+  "회피": "dodge", "힐": "heal", "시간초과": "timeout", "도주": "flee",
+  "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
+  "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
+  "환류": "reflux", "복원": "restore",
+};
+const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap", "collapse", "shield", "restore"]);
+const MULTI_TARGET_ACTIONS = { "환류": 3 };
+const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐", "지휘", "배치", "차폐", "복원"]);
+const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴"]);
+const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산", "방출", "편광"]);
+const RANGE_IGNORING_ACTIONS = new Set(["배치"]);
+const ROLE_MOVE_COLOR = { "스트라이커": "#ff5555", "가디언": "#4a90ff", "메딕": "#ffe066" };
+const ROLE_MOVE_EMOJI = { "스트라이커": "🔴", "가디언": "🔵", "메딕": "🟡" };
+const ACTION_RANGE_COLOR = "#ffffff";
+
+let explicitlyJoined = false;
+
+function updateChatVisibility() {
+  document.getElementById('chatInputRow').style.display = explicitlyJoined ? '' : 'none';
+}
+
+function silentJoin() {
+  // 페이지에 들어오면 일단 '익명'으로 관전만 가능하게 조용히 접속합니다.
+  // 실제 캐릭터로 입장하려면 상단 아바타 동그라미를 클릭해야 합니다.
+  MY_NICKNAME = '익명';
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+}
+
+// ------------------------------------------------------------------
+// 캐릭터 이름으로 입장 (아바타 동그라미 클릭 → 모달)
+// ------------------------------------------------------------------
+function onAvatarDotClick() {
+  if (isMatchedCharacter()) return;  // 이미 캐릭터로 입장한 상태면 클릭은 무시(더블클릭하면 로그아웃)
+  openJoinModal();
+}
+
+function onAvatarDotDblClick() {
+  if (!isMatchedCharacter()) return;
+  if (confirm('로그아웃 하시겠습니까?')) logout();
+}
+
+function onInputAvatarDotDblClick() {
+  if (!isMatchedCharacter()) return;
+  document.getElementById('myColorInput').click();
+}
+
+function logout() {
+  MY_NICKNAME = '익명';
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+  explicitlyJoined = false;
+  updateChatVisibility();
+  document.getElementById('myNicknameLabel').textContent = '미입장';
+  updateAvatarDots();
+  renderCards();
+}
+
+function isMatchedCharacter(battle) {
+  if (!explicitlyJoined) return false;
+  const control = myControlInfo(battle !== undefined ? battle : lastBattleForPanel);
+  return control.scope === 'character' || control.scope === 'all';
+}
+
+function openJoinModal() {
+  document.getElementById('joinModalError').textContent = '';
+  document.getElementById('joinNameInput').value = '';
+  document.getElementById('joinModal').style.display = 'flex';
+  document.getElementById('joinNameInput').focus();
+}
+
+function closeJoinModal() {
+  document.getElementById('joinModal').style.display = 'none';
+}
+
+function submitJoinModal() {
+  const name = document.getElementById('joinNameInput').value.trim();
+  if (!name) {
+    document.getElementById('joinModalError').textContent = '캐릭터 이름을 입력해주세요.';
+    return;
+  }
+  MY_NICKNAME = name;
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+  // 서버가 join → public_state 순으로 응답하는 짧은 시간을 기다린 뒤, 이 이름이 실제
+  // 전투에 참여 중인 캐릭터와 일치하는지 확인합니다 (전투 시작 전에는 항상 실패합니다).
+  setTimeout(() => {
+    const control = myControlInfo(lastBattleForPanel);
+    if (control.scope === 'character' || control.scope === 'all') {
+      explicitlyJoined = true;
+      updateChatVisibility();
+      document.getElementById('myNicknameLabel').textContent = MY_NICKNAME;
+      closeJoinModal();
+      renderCards();
+      updateAvatarDots();
+    } else {
+      document.getElementById('joinModalError').textContent =
+        '캐릭터 이름이 일치하지 않습니다. 전투가 시작된 뒤 정확한 이름을 입력해주세요.';
+    }
+  }, 350);
+}
+
+function onMyColorChange(hex) {
+  socket.emit('set_my_color', { color: hex });
+}
+
+function myCharacterColor(battle) {
+  if (!explicitlyJoined) return null;
+  const control = myControlInfo(battle !== undefined ? battle : lastBattleForPanel);
+  if (control.scope === 'character') return control.character.color || null;
+  return null;
+}
+
+function updateAvatarDots(battle) {
+  const color = myCharacterColor(battle);
+  [document.getElementById('myAvatarDot'), document.getElementById('inputAvatarDot')].forEach(el => {
+    if (!el) return;
+    el.style.background = color || '#4a4a4e';
+  });
+}
+
+socket.on('connect', () => {
+  silentJoin();
+});
+
+socket.on('joined', () => {
+  updateAvatarDots();
+});
+
+function showError(msg) {
+  const el = document.getElementById('globalError');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+  clearTimeout(showError._t);
+  showError._t = setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+socket.on('error', (d) => showError(d.message));
+socket.on('action_error', (d) => showError(d.message));
+
+socket.on('public_state', (state) => {
+  telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
+  renderBattle(state.battle);
+  renderPubLog(state.log);
+  renderChat(state.chat);
+  lastBattleForPanel = state.battle;
+  renderMusic(state.music, state.server_now);
+});
+
+socket.on('chat_message', (entry) => appendChat(entry));
+
+function statsTitle(c) {
+  const parts = STAT_KEYS.map(k => `${k} ${c.stats[k]}`);
+  parts.push(`총합 ${c.stat_total}`);
+  return parts.join('   ');
+}
+
+function toggleHelp() {
+  const el = document.getElementById('helpBox');
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+// ------------------------------------------------------------------
+// 실시간 시계
+// ------------------------------------------------------------------
+function tickClock() {
+  const el = document.getElementById('liveClock');
+  if (el) el.textContent = new Date().toLocaleTimeString('ko-KR', { hour12: true });
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// ------------------------------------------------------------------
+// 카드 정렬
+// ------------------------------------------------------------------
+let sortMode = 'name';
+function setSortMode(mode) {
+  sortMode = mode;
+  document.getElementById('sortHpBtn').classList.toggle('active', mode === 'hp');
+  document.getElementById('sortRoleBtn').classList.toggle('active', mode === 'role');
+  document.getElementById('sortNameBtn').classList.toggle('active', mode === 'name');
+  renderCards();
+}
+function sortedCards(all) {
+  const arr = all.slice();
+  if (sortMode === 'hp') arr.sort((a, b) => a.current_hp - b.current_hp);
+  else if (sortMode === 'role') arr.sort((a, b) => (a.role || '').localeCompare(b.role || '') || a.name.localeCompare(b.name));
+  else arr.sort((a, b) => a.name.localeCompare(b.name));
+  return arr;
+}
+
+function renderBattle(battle) {
+  const teamsEl = document.getElementById('teams');
+  if (!battle) {
+    document.getElementById('formatLabel').textContent = '(전투 시작 전)';
+    document.getElementById('roundInfo').textContent = '-';
+    roundDeadlineAt = null;
+    tickTimer();
+    teamsEl.innerHTML = '';
+    lastAllForCards = [];
+    renderGrid(null, []);
+    return;
+  }
+  document.getElementById('formatLabel').textContent = `${battle.format_label} {{ battle_type_label }}`;
+  document.getElementById('roundInfo').textContent = battle.finished
+    ? `종료 - ${battle.winner ? battle.winner + ' 승리' : '무승부'}`
+    : `Round ${battle.round_no} · ${battle.current_turn_team === battle.round_first_team ? '선공' : '후공'}`;
+  roundDeadlineAt = battle.finished ? null : battle.round_deadline_at;
+  tickTimer();
+
+  const control = myControlInfo(battle);
+  const seesAll = control.scope === 'all';
+  const myTeam = control.scope === 'character' ? control.character.team : null;
+
+  const all = [...battle.team_a.map(c => ({...c, teamLabel:'A'})), ...battle.team_b.map(c => ({...c, teamLabel:'B'}))];
+  lastAllForCards = all;
+  lastCanSeeStats = seesAll || myTeam !== null;
+  lastMyTeam = myTeam;
+  lastSeesAll = seesAll;
+  lastForcedTarget = battle.forced_target;
+  renderCards();
+  updateAvatarDots(battle);
+
+  renderGrid(battle, all);
+}
+
+function renderCards() {
+  document.getElementById('teams').innerHTML = sortedCards(lastAllForCards).map(c => renderCardHtml(c)).join('');
+  const slot = document.getElementById('multiSkillSlot');
+  if (slot) slot.innerHTML = renderMultiSkillTrigger();
+}
+
+let lastAllForCards = [];
+let lastMyTeam = null;
+let lastSeesAll = false;
+let lastForcedTarget = null;
+
+function roleColorVar(role) {
+  return `var(--role-${role}, #9aa0a6)`;
+}
+
+function renderCardHtml(c) {
+  const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
+  const isTarget = selectedTargetName === c.name;
+  const isMine = myControlInfo(lastBattleForPanel).scope === 'character' && myControlInfo(lastBattleForPanel).character.name === c.name;
+  const statusTag = c.status === 'fleeing' ? ' *도주' : (c.dodging_this_round ? ' *회피' : '');
+  const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
+  const badges = [];
+  if (lastForcedTarget === c.name) badges.push(`🎯 어그로`);
+  if (c.defense_count) badges.push(`🛡 보호${c.defense_count}`);
+  if (c.shield_hp) badges.push(`🔷 막${c.shield_hp}`);
+  if (c.polarize_active) badges.push(`🛡 편광중`);
+  if (c.has_leech_buff) badges.push(`🩸 흡수`);
+
+  return `<div class="char-card team-${c.teamLabel} ${isTarget ? 'selected-target' : ''}" onclick="onCardClick('${c.name}')">
+    <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
+    <div class="row1">
+      <div>
+        <div class="cname">${c.name}${isMine ? ' <span style="color:var(--accent-blue); font-size:11px;">(나)</span>' : ''}</div>
+        <div class="crole" style="color:${roleColorVar(c.role)}">${c.role}${(c.skill && BATTLE_TYPE === 'mass_raid') ? ' 【' + c.skill + '】' : ''}<span class="cstatus-tag">${statusTag}</span></div>
+      </div>
+      <div class="cavatar" style="background:${c.color || '#4a4a4e'};"></div>
+    </div>
+    <div class="cbadges">${badges.join('&nbsp;&nbsp;')}</div>
+    <div class="hpbar-wrap">
+      <div class="hpbar-track"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
+      <div class="hpnum">${c.current_hp}/${c.max_hp}</div>
+    </div>
+  </div>`;
+}
+
+// ------------------------------------------------------------------
+// 카드 클릭 → 대상 지정 → 행동 팝업 (기존 격자 팝업과 동일한 필터링 로직을 카드에 적용)
+// ------------------------------------------------------------------
+let selectedTargetName = null;
+let pendingMultiLabel = null;   // 환류처럼 여러 명을 순서대로 지정해야 하는 스킬
+let pendingMultiTargets = [];
+
+function myActorName(battle) {
+  const control = myControlInfo(battle);
+  if (control.scope === 'character') return control.character.name;
+  if (control.scope === 'all') {
+    if (!actionPanelActorName || !lastAllForCards.find(c => c.name === actionPanelActorName)) {
+      actionPanelActorName = lastAllForCards[0] ? lastAllForCards[0].name : null;
+    }
+    return actionPanelActorName;
+  }
+  return null;
+}
+
+function onCardClick(name) {
+  const battle = lastBattleForPanel;
+  if (!battle) return;
+  const control = myControlInfo(battle);
+  if (control.scope === 'none') return;
+
+  if (pendingMultiLabel) {
+    // 환류 등 다중 지정 스킬 진행 중 - 클릭할 때마다 대상 목록에 추가합니다.
+    const actor = myActorName(battle);
+    const actorChar = lastAllForCards.find(c => c.name === actor);
+    if (actorChar && name !== actor && actorChar.team === lastAllForCards.find(c => c.name === name).team) {
+      if (!pendingMultiTargets.includes(name)) pendingMultiTargets.push(name);
+    }
+    renderMultiPopup();
+    return;
+  }
+
+  selectedTargetName = (selectedTargetName === name) ? null : name;
+  renderCards();
+  renderActionPopup();
+}
+
+function closeActionPopup() {
+  selectedTargetName = null;
+  pendingMultiLabel = null;
+  pendingMultiTargets = [];
+  document.getElementById('actionPopup').style.display = 'none';
+  renderCards();
+}
+
+function renderActionPopup() {
+  const popup = document.getElementById('actionPopup');
+  const battle = lastBattleForPanel;
+  if (!battle || !selectedTargetName) { popup.style.display = 'none'; return; }
+  const actorName = myActorName(battle);
+  const actor = lastAllForCards.find(c => c.name === actorName);
+  const target = lastAllForCards.find(c => c.name === selectedTargetName);
+  if (!actor || !target) { popup.style.display = 'none'; return; }
+
+  const isSelf = actor.name === target.name;
+  const isEnemy = actor.teamLabel !== target.teamLabel;
+  const allowedLabels = isEnemy ? ENEMY_TARGET_ACTIONS
+    : isSelf ? new Set([...ALLY_TARGET_ACTIONS, ...SELF_ONLY_ACTIONS])
+    : ALLY_TARGET_ACTIONS;
+
+  const labels = actor.available_actions.filter(l => l !== '이동' && l !== '시간초과' && allowedLabels.has(l) && !MULTI_TARGET_ACTIONS[l]);
+  const targetLabel = isSelf ? '본인' : target.name;
+  const buttons = labels.map(label =>
+    `<button class="ap-btn" onclick="commitAction('${label}','${actor.name}','${target.name}')">${label}</button>`
+  ).join('');
+
+  popup.innerHTML = `
+    <div class="ap-head">선택: <b>${actor.name}</b> → <b>${targetLabel}</b></div>
+    <div class="ap-grid">${buttons || '<i style="color:var(--muted); font-size:12px;">이 대상에게 가능한 행동이 없습니다</i>'}</div>
+    <button class="ap-close" onclick="closeActionPopup()">닫기 ✕</button>
+  `;
+  popup.style.display = 'block';
+}
+
+function startMultiAction(label) {
+  pendingMultiLabel = label;
+  pendingMultiTargets = [];
+  selectedTargetName = null;
+  document.getElementById('actionPopup').style.display = 'none';
+  renderMultiPopup();
+}
+
+function renderMultiPopup() {
+  const popup = document.getElementById('actionPopup');
+  if (!pendingMultiLabel) { popup.style.display = 'none'; return; }
+  const need = MULTI_TARGET_ACTIONS[pendingMultiLabel];
+  const actorName = myActorName(lastBattleForPanel);
+  popup.innerHTML = `
+    <div class="ap-head"><b>${pendingMultiLabel}</b> - 아군 ${need}명을 카드에서 순서대로 클릭하세요 (${pendingMultiTargets.length}/${need})</div>
+    <div style="font-size:12px; color:var(--text); margin-bottom:8px;">${pendingMultiTargets.join(', ') || '(아직 없음)'}</div>
+    <div class="ap-grid">
+      <button class="ap-btn" ${pendingMultiTargets.length === need ? '' : 'disabled style="opacity:.4;"'}
+        onclick="commitMultiAction('${pendingMultiLabel}','${actorName}')">실행</button>
+      <button class="ap-btn" onclick="closeActionPopup()">취소</button>
+    </div>
+  `;
+  popup.style.display = 'block';
+}
+
+function commitMultiAction(label, actorName) {
+  const type = ACTION_LABELS[label];
+  doActionThenAnnounce(type, { name: actorName, targets: pendingMultiTargets.slice() },
+    actorName, label, pendingMultiTargets.join(', '));
+  closeActionPopup();
+}
+
+// 마지막으로 팝업에서 고른 행동 (아직 "커맨드 전송"을 누르지 않은 상태) - 카드 팝업 버튼을
+// 누르면 바로 실행되므로, "커맨드 전송" 버튼은 보조 안내용으로만 동작합니다.
+function commitAction(label, actorName, targetName) {
+  const type = ACTION_LABELS[label];
+  const payloadBuilders = {
+    attack: () => ({ attacker: actorName, target: targetName }),
+    self_defend: () => ({ name: actorName }),
+    defend: () => ({ tanker: actorName, target: targetName || actorName }),
+    taunt: () => ({ tanker: actorName, target: targetName || actorName }),
+    dodge: () => ({ name: actorName }),
+    heal: () => ({ healer: actorName, target: targetName }),
+    timeout: () => ({ name: actorName }),
+    flee: () => ({ name: actorName }),
+    defense_settle: () => ({ name: actorName }),
+    command: () => ({ guardian: actorName, target: targetName || actorName }),
+    swap: () => ({ medic: actorName, target: targetName }),
+    collapse: () => ({ attacker: actorName, target: targetName }),
+    emission: () => ({ attacker: actorName }),
+    shield: () => ({ name: actorName, target: targetName || actorName }),
+    polarize: () => ({ name: actorName }),
+    restore: () => ({ name: actorName, target: targetName || null }),
+  };
+  const payload = payloadBuilders[type] ? payloadBuilders[type]() : { name: actorName, target: targetName };
+  doActionThenAnnounce(type, payload, actorName, label, targetName === actorName ? '본인' : targetName);
+  closeActionPopup();
+}
+
+// 행동을 실행하고, 서버가 짧은 시간 안에 action_error를 보내지 않으면(=성공한 것으로 보고)
+// "[스킬: 이름] [대상: 이름]" 형식으로 커맨드 창(채팅)에 남깁니다. 실패한 행동은 채팅에 남지 않습니다.
+function doActionThenAnnounce(type, payload, actorName, label, targetLabel) {
+  let failed = false;
+  const onErr = () => { failed = true; };
+  socket.once('action_error', onErr);
+  doAction(type, payload);
+  setTimeout(() => {
+    socket.off('action_error', onErr);
+    if (!failed) socket.emit('chat_message', { text: `[스킬: ${label}] [대상: ${targetLabel}]` });
+  }, 400);
+}
+
+// 팝업이 이미 열려 있고 마지막으로 커서를 올린 행동이 있다면 그걸 실행하라는 안내 - 별도
+// 선택 없이 눌렀을 때는 팝업을 열어 안내합니다.
+function onCommandSendClick() {
+  if (pendingMultiLabel) {
+    if (pendingMultiTargets.length === MULTI_TARGET_ACTIONS[pendingMultiLabel]) {
+      commitMultiAction(pendingMultiLabel, myActorName(lastBattleForPanel));
+    }
+    return;
+  }
+  if (!selectedTargetName) {
+    showError('먼저 카드를 클릭해 대상을 지정해주세요.');
+    return;
+  }
+  renderActionPopup();
+}
+
+let selectedGridChar = null;  // 지도에서 선택된 "행동하는" 캐릭터 (범위 미리보기 대상)
+let selectedGridTargetName = null;  // 범위 내에서 클릭해 지정한 대상 (본인 포함)
+const GRID_CELL_PX = 36;
+// GM이 '전조 출력'으로 공개한 격자 칸. 곧 그 칸에 무조건 피해가 발생한다는 시각적 경고입니다.
+let telegraphRevealedCells = new Set();
+
+function cellLabel(x, y) {
+  let col = '';
+  let n = x;
+  do {
+    col = String.fromCharCode(65 + (n % 26)) + col;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return `${col}${y + 1}`;
+}
+
+function crossPlusNeighbors(px, py, crossLen, includeDiagonal) {
+  const cells = new Set();
+  for (let d = 1; d <= crossLen; d++) {
+    cells.add(`${px + d},${py}`); cells.add(`${px - d},${py}`);
+    cells.add(`${px},${py + d}`); cells.add(`${px},${py - d}`);
+  }
+  if (includeDiagonal) {
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue;
+        cells.add(`${px + dx},${py + dy}`);
+      }
+    }
+  }
+  cells.delete(`${px},${py}`);
+  return cells;
+}
+
+function computeHighlightCells(character, showActionRange) {
+  const [px, py] = character.grid_pos;
+  if (showActionRange) {
+    return crossPlusNeighbors(px, py, 3, true);
+  }
+  const agi = (character.stats && character.stats['민첩']) || 0;
+  return crossPlusNeighbors(px, py, character.move_range || 0, agi > 0);
+}
+
+function onGridActorClick(name) {
+  selectedGridChar = name;
+  selectedGridTargetName = null;
+  renderGrid(lastBattleForPanel, lastAllForCards);
+}
+
+function onGridTargetClick(actorName, targetName) {
+  selectedGridChar = actorName;
+  selectedGridTargetName = targetName;
+  renderGrid(lastBattleForPanel, lastAllForCards);
+}
+
+function onGridMoveClick(x, y) {
+  if (!selectedGridChar) return;
+  const name = selectedGridChar;
+  selectedGridChar = null;
+  selectedGridTargetName = null;
+  doAction('move', { name, x, y });
+}
+
+function renderGrid(battle, all) {
+  const section = document.getElementById('gridSection');
+  const el = document.getElementById('gridMap');
+  const gridWidth = battle ? battle.grid_width : (GRID_SIZE > 0 ? GRID_SIZE : null);
+  const gridHeight = battle ? battle.grid_height : (GRID_SIZE > 0 ? GRID_SIZE : null);
+  if (!gridWidth) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const posMap = {};
+  all.forEach(c => { if (c.grid_pos) posMap[`${c.grid_pos[0]},${c.grid_pos[1]}`] = c; });
+
+  let highlightCells = new Set();
+  let highlightIsAction = false;
+  let selChar = null;
+  const isEnemyTurn = !!(battle && battle.current_turn_team && battle.current_turn_team !== '1팀');
+  if (selectedGridChar) {
+    selChar = all.find(c => c.name === selectedGridChar);
+    if (selChar && selChar.grid_pos) {
+      if (!isEnemyTurn) {
+        highlightIsAction = selChar.teamLabel === 'B' ? !selChar.has_acted : !!selChar.moved_this_round;
+        highlightCells = computeHighlightCells(selChar, highlightIsAction);
+      }
+    } else {
+      selectedGridChar = null;
+    }
+  }
+
+  let html = '<table style="border-collapse:separate; border-spacing:0;">';
+  for (let y = 0; y < gridHeight; y++) {
+    html += '<tr>';
+    for (let x = 0; x < gridWidth; x++) {
+      const key = `${x},${y}`;
+      const c = posMap[key];
+      let bg = '#222';
+      let borderStyle = 'border:2px solid #444;';
+      let cursor = 'default';
+      let onclick = '';
+      if (c) {
+        const canTargetNow = !!(selectedGridChar && highlightIsAction);
+        const isSelectedActor = selectedGridChar && c.name === selectedGridChar;
+        const actorIgnoresRange = selChar && selChar.available_actions.some(l => RANGE_IGNORING_ACTIONS.has(l));
+        const inRangeOrExempt = highlightCells.has(key) || (actorIgnoresRange && c.teamLabel === selChar.teamLabel);
+        const isTargetable = canTargetNow && !isSelectedActor && inRangeOrExempt;
+        const isSelfTargetable = canTargetNow && isSelectedActor;
+        const baseColor = c.teamLabel === 'A' ? '#888' : '#a44';
+        if (c.has_acted) {
+          borderStyle = 'border:2px solid #fff;';
+        } else if (c.moved_this_round) {
+          borderStyle = `border-top:2px solid ${baseColor}; border-left:2px solid ${baseColor}; border-right:2px solid ${baseColor}; border-bottom:2px solid #fff;`;
+        } else {
+          borderStyle = `border:2px solid ${baseColor};`;
+        }
+        if (c.teamLabel === 'A') {
+          bg = c.moved_this_round ? '#666' : '#555';
+          cursor = 'pointer';
+          onclick = (isSelfTargetable || isTargetable)
+            ? `onclick="onGridTargetClick('${selectedGridChar}','${c.name}')"`
+            : `onclick="onGridActorClick('${c.name}')"`;
+        } else {
+          bg = c.moved_this_round ? '#a83a3a' : '#7a2a2a';
+          cursor = 'pointer';
+          onclick = (isSelfTargetable || isTargetable)
+            ? `onclick="onGridTargetClick('${selectedGridChar}','${c.name}')"`
+            : `onclick="onGridActorClick('${c.name}')"`;
+        }
+      } else if (highlightCells.has(key) && !highlightIsAction) {
+        cursor = 'pointer';
+        onclick = `onclick="onGridMoveClick(${x},${y})"`;
+      }
+      if (highlightCells.has(key)) {
+        borderStyle = `border:2px solid ${highlightIsAction ? ACTION_RANGE_COLOR : (ROLE_MOVE_COLOR[selChar.role] || '#4ad0ff')};`;
+      }
+      if (selChar && selChar.grid_pos && selChar.grid_pos[0] === x && selChar.grid_pos[1] === y) {
+        borderStyle = 'border:3px solid #4dff4d;';
+      }
+      const glow = telegraphRevealedCells.has(key) ? 'box-shadow: inset 0 0 10px 3px rgba(255,120,120,0.4);' : '';
+      const label = c ? c.name.slice(0, 2) : '';
+      const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
+      const telegraphText = telegraphRevealedCells.has(key) ? ' · 🔮 전조(곧 피해)' : '';
+      const title = c ? `${c.name} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
+      html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; ${borderStyle} background:${bg}; ${glow} text-align:center; font-size:12px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</table>';
+  el.innerHTML = html;
+
+  const legend = document.getElementById('gridLegend');
+  if (legend) {
+    legend.textContent = isEnemyTurn
+      ? '🔒 적 턴에는 이동/사거리 범위가 표시되지 않습니다. 내 턴이 되면 다시 확인할 수 있어요.'
+      : (selChar
+        ? (highlightIsAction
+            ? `선택: ${selChar.name} — ⚪ 사거리(십자3+주변8) 표시 중 · 범위 내 아군/적군(본인 포함)을 클릭하면 대상을 지정해 행동을 고를 수 있어요.`
+            : `선택: ${selChar.name} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 가능 범위 표시 중 · 먼저 이동할 칸을 클릭하세요 (이동을 마쳐야 행동할 수 있어요).`)
+        : '아군을 클릭하면 이동 범위가 표시돼요(스트라이커 🔴 · 가디언 🔵 · 메딕 🟡). 이동을 마치면 사거리(⚪)가 표시되고, 그 범위 내 캐릭터(본인 포함)를 클릭해 대상을 정하면 행동 팝업이 뜹니다.');
+  }
+
+  renderGridActionPopup(battle, all);
+}
+
+function renderGridActionPopup(battle, all) {
+  const popup = document.getElementById('gridActionPopup');
+  if (!popup) return;
+  if (!battle || !selectedGridChar || !selectedGridTargetName) { popup.style.display = 'none'; return; }
+  const control = myControlInfo(battle);
+  const canAct = control.scope === 'all' || (control.scope === 'character' && control.character.name === selectedGridChar);
+  if (!canAct) { popup.style.display = 'none'; return; }
+  const actor = all.find(c => c.name === selectedGridChar);
+  const target = all.find(c => c.name === selectedGridTargetName);
+  if (!actor || !target) { popup.style.display = 'none'; return; }
+
+  const isSelf = actor.name === target.name;
+  const isEnemy = actor.teamLabel !== target.teamLabel;
+  const allowedLabels = isEnemy ? ENEMY_TARGET_ACTIONS
+    : isSelf ? new Set([...ALLY_TARGET_ACTIONS, ...SELF_ONLY_ACTIONS])
+    : ALLY_TARGET_ACTIONS;
+
+  const buttons = actor.available_actions.filter(label => allowedLabels.has(label)).map(label => {
+    const type = ACTION_LABELS[label];
+    if (NEEDS_TARGET.has(type)) {
+      return `<button onclick="quickAction('${type}','${actor.name}','${target.name}'); closeGridSelection();">${label}</button>`;
+    }
+    return `<button onclick="quickAction('${type}','${actor.name}'); closeGridSelection();">${label}</button>`;
+  }).join(' ');
+
+  const targetLabel = isSelf ? '본인' : target.name;
+  popup.innerHTML = `<b>${actor.name}</b> → <b>${targetLabel}</b> 행동 선택 : ${buttons || '<i>이 대상에게 가능한 행동이 없습니다</i>'} <button onclick="closeGridSelection()" style="float:right;">닫기</button>`;
+  popup.style.display = 'block';
+}
+
+function closeGridSelection() {
+  selectedGridChar = null;
+  selectedGridTargetName = null;
+  renderGrid(lastBattleForPanel, lastAllForCards);
+}
+
+function tickTimer() {
+  const el = document.getElementById('roundTimer');
+  if (roundDeadlineAt == null) {
+    el.textContent = '--:--';
+    el.style.color = '';
+    return;
+  }
+  const remain = Math.max(0, Math.round(roundDeadlineAt - Date.now() / 1000));
+  const m = String(Math.floor(remain / 60)).padStart(2, '0');
+  const s = String(remain % 60).padStart(2, '0');
+  el.textContent = `${m}:${s}`;
+  el.style.color = remain <= 30 ? '#ff8080' : '';
+}
+setInterval(tickTimer, 1000);
+
+const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round']);
+const LOG_TAG_ICON = {
+  round: '📍', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
+  heal: '✚', crit: '✦', system: '·', hp: '❤', formula: '', summary: '📊',
+};
+function formatLogHtml(lines) {
+  return (lines || []).map(l => {
+    const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
+    const icon = LOG_TAG_ICON[l.tag] || '';
+    return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${l.text}</div>`;
+  }).join('');
+}
+
+function renderPubLog(log) {
+  const el = document.getElementById('pubLog');
+  el.innerHTML = formatLogHtml(log);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setChatFilter(filter) {
+  chatFilter = filter;
+  document.getElementById('chatTabAll').classList.toggle('active', filter === 'all');
+  document.getElementById('chatTabPlayer').classList.toggle('active', filter === 'player');
+  document.getElementById('chatTabSpectator').classList.toggle('active', filter === 'spectator');
+  renderChatFiltered();
+}
+setChatFilter('all');
+
+function matchesFilter(entry) {
+  if (chatFilter === 'all') return true;
+  if (entry.category === 'system') return true;
+  if (chatFilter === 'player') return entry.category === 'player' || entry.category === 'operator';
+  if (chatFilter === 'spectator') return entry.category === 'spectator';
+  return true;
+}
+
+function renderChat(chat) {
+  lastChat = chat;
+  renderChatFiltered();
+}
+
+function renderChatFiltered() {
+  const el = document.getElementById('chatLog');
+  el.innerHTML = lastChat.filter(matchesFilter).map(fmtChat).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function nicknameDotColor(nickname) {
+  const c = lastAllForCards.find(x => x.name === nickname);
+  if (c) return c.color || roleColorVar(c.role);
+  let hash = 0;
+  for (let i = 0; i < (nickname || '').length; i++) hash = (hash * 31 + nickname.charCodeAt(i)) % 360;
+  return `hsl(${hash}, 55%, 55%)`;
+}
+
+function fmtChat(entry) {
+  const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:');
+  const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
+  return `<div class="chat-line ${cls}">
+    <div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>
+    <div class="chat-body"><b>${entry.nickname}</b><span class="time">${entry.time}</span><br>
+    <span class="chat-text">${entry.text}</span></div>
+  </div>`;
+}
+
+function appendChat(entry) {
+  lastChat.push(entry);
+  if (!matchesFilter(entry)) return;
+  const el = document.getElementById('chatLog');
+  el.innerHTML += fmtChat(entry);
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  if (!input.value.trim()) return;
+  socket.emit('chat_message', { text: input.value });
+  input.value = '';
+}
+
+function doAction(type, payload) {
+  socket.emit('battle_action', { type, payload });
+}
+
+function myControlInfo(battle) {
+  const nick = (MY_NICKNAME || '').trim();
+  if (nick.toLowerCase() === 'gm') return { scope: 'all' };
+  if (!battle) return { scope: 'none' };
+  const all = [...battle.team_a, ...battle.team_b];
+  const mine = all.find(c => c.name === nick);
+  if (mine) return { scope: 'character', character: mine };
+  return { scope: 'none' };
+}
+
+// 카드 팝업에서 다중 지정 스킬(환류 등) 버튼을 노출하기 위해, 본인 캐릭터의 available_actions에서
+// 그런 스킬이 있으면 사이드 패널 위 카드 그리드 상단에 별도 버튼을 하나 더 그립니다.
+function renderMultiSkillTrigger() {
+  const battle = lastBattleForPanel;
+  if (!battle) return '';
+  const actorName = myActorName(battle);
+  const actor = lastAllForCards.find(c => c.name === actorName);
+  if (!actor) return '';
+  const label = actor.available_actions.find(l => MULTI_TARGET_ACTIONS[l]);
+  if (!label) return '';
+  return `<button class="sort-btn" onclick="startMultiAction('${label}')">${label} 사용</button>`;
+}
+
+function quickAction(type, actorName, targetName) {
+  const payloadBuilders = {
+    attack: () => ({ attacker: actorName, target: targetName }),
+    self_defend: () => ({ name: actorName }),
+    defend: () => ({ tanker: actorName, target: targetName || actorName }),
+    taunt: () => ({ tanker: actorName, target: targetName || actorName }),
+    dodge: () => ({ name: actorName }),
+    heal: () => ({ healer: actorName, target: targetName }),
+    timeout: () => ({ name: actorName }),
+    flee: () => ({ name: actorName }),
+    defense_settle: () => ({ name: actorName }),
+    command: () => ({ guardian: actorName, target: targetName || actorName }),
+    swap: () => ({ medic: actorName, target: targetName }),
+    collapse: () => ({ attacker: actorName, target: targetName }),
+    emission: () => ({ attacker: actorName }),
+    shield: () => ({ name: actorName, target: targetName || actorName }),
+    polarize: () => ({ name: actorName }),
+    restore: () => ({ name: actorName, target: targetName || null }),
+  };
+  doAction(type, payloadBuilders[type]());
+}
+
+function quickMultiAction(type, actorName, count) {
+  const targets = [];
+  for (let i = 0; i < count; i++) {
+    const v = document.getElementById(`qaMulti_${type}_${i}`).value;
+    if (v) targets.push(v);
+  }
+  doAction(type, { name: actorName, targets });
+}
+
+// ------------------------------------------------------------------
+// 배경음악 (유튜브/mp3, 서버 시각 기준으로 방 전체 동기화)
+// ------------------------------------------------------------------
+let musicState = null;
+let musicKey = null;
+let serverTimeOffset = 0;
+let ytPlayer = null;
+let ytApiReady = false;
+
+(function loadYouTubeApi() {
+  if (window.YT && window.YT.Player) { ytApiReady = true; return; }
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+  window.onYouTubeIframeAPIReady = () => { ytApiReady = true; };
+})();
+
+function renderMusic(music, serverNow) {
+  if (serverNow) serverTimeOffset = serverNow - Date.now() / 1000;
+  const key = music ? `${music.type}:${music.src}:${music.started_at}` : null;
+  if (key === musicKey) return;
+  musicKey = key;
+  musicState = music;
+  stopLocalPlayback();
+  const statusEl = document.getElementById('musicStatus');
+  const btn = document.getElementById('musicSyncBtn');
+  if (!music) {
+    statusEl.textContent = '음악 없음';
+    btn.style.display = 'none';
+    return;
+  }
+  statusEl.textContent = `${music.title || (music.type === 'youtube' ? '유튜브' : 'mp3')} 재생 중`;
+  btn.style.display = 'none';
+  startMusicPlayback();
+}
+
+function stopLocalPlayback() {
+  const audio = document.getElementById('mp3Player');
+  if (audio) { audio.pause(); audio.removeAttribute('src'); audio.style.display = 'none'; }
+  if (ytPlayer) { try { ytPlayer.stopVideo(); } catch (e) {} }
+  const holder = document.getElementById('youtubePlayerHolder');
+  if (holder) holder.style.display = 'none';
+}
+
+function currentElapsedSeconds() {
+  const nowServer = Date.now() / 1000 + serverTimeOffset;
+  return Math.max(0, nowServer - musicState.started_at);
+}
+
+function startMusicPlayback() {
+  if (!musicState) return;
+  document.getElementById('musicSyncBtn').style.display = 'none';
+
+  if (musicState.type === 'mp3') {
+    const audio = document.getElementById('mp3Player');
+    audio.src = musicState.src;
+    audio.loop = true;
+    audio.style.display = '';
+    const seekAndPlay = () => {
+      const dur = audio.duration || 0;
+      const elapsed = currentElapsedSeconds();
+      audio.currentTime = dur > 0 ? (elapsed % dur) : 0;
+      audio.play().catch(() => {
+        document.getElementById('musicSyncBtn').style.display = '';
+      });
+    };
+    if (audio.readyState >= 1) seekAndPlay();
+    else audio.addEventListener('loadedmetadata', seekAndPlay, { once: true });
+  } else if (musicState.type === 'youtube') {
+    const elapsed = currentElapsedSeconds();
+    const create = () => {
+      if (ytPlayer) {
+        ytPlayer.loadVideoById({ videoId: musicState.src, startSeconds: elapsed });
+      } else {
+        ytPlayer = new YT.Player('youtubePlayer', {
+          width: 200, height: 113,
+          videoId: musicState.src,
+          playerVars: { autoplay: 1, loop: 1, playlist: musicState.src, start: Math.floor(elapsed) },
+          events: {
+            onReady: (e) => {
+              e.target.playVideo();
+              setTimeout(() => {
+                if (ytPlayer.getPlayerState() !== 1) {
+                  document.getElementById('musicSyncBtn').style.display = '';
+                }
+              }, 1200);
+            },
+            onStateChange: (e) => {
+              if (e.data === YT.PlayerState.ENDED) {
+                ytPlayer.seekTo(0, true);
+                ytPlayer.playVideo();
+              }
+            },
+          },
+        });
+      }
+    };
+    if (ytApiReady) create();
+    else {
+      const check = setInterval(() => {
+        if (ytApiReady) { clearInterval(check); create(); }
+      }, 200);
+    }
+  }
+}
+</script>
+</body>
+</html>

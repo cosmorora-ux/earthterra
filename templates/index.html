@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PvP 전투 관리 (프로토타입)</title>
+<style>
+  body { font-family: sans-serif; max-width: 480px; margin: 60px auto; text-align: center; background: #1e1e1e; color: #eee; }
+  .type-option { display: block; text-align: left; border: 1px solid #444; border-radius: 6px; padding: 10px; margin: 8px 0; cursor: pointer; }
+  .type-option small { display: block; opacity: 0.7; margin-top: 2px; }
+</style>
+</head>
+<body>
+  <h1>PvP 전투 관리 - 웹 프로토타입</h1>
+  <p>못생겼지만 기능은 다 됩니다. 전투 유형을 고르고 방을 만들면 운영진 화면으로 이동하고,
+     참가자 공유 링크가 그 화면에 표시됩니다.</p>
+  <form method="post" action="/create_room">
+    <label class="type-option">
+      <input type="radio" name="battle_type" value="pvp" checked>
+      <b>PVP</b> — 러너 vs 러너
+      <small>양쪽 팀 모두 참가자가 각자 캐릭터를 조작합니다.</small>
+    </label>
+    <label class="type-option">
+      <input type="radio" name="battle_type" value="siege">
+      <b>점령전</b> — GM vs 러너 5~6인
+      <small>GM이 상대편(적)을 조작하고, 러너들이 5~6인 팀으로 맞섭니다.</small>
+    </label>
+    <label class="type-option">
+      <input type="radio" name="battle_type" value="raid">
+      <b>레이드</b> — GM vs 러너 다인 (10~30인)
+      <small>GM이 보스/적을 조작하고, 다수의 러너가 각자 캐릭터로 맞섭니다.</small>
+    </label>
+    <label class="type-option">
+      <input type="radio" name="battle_type" value="mass_raid">
+      <b>마스 레이드</b> — GM vs 러너 다인 (격자 이동)
+      <small>격자 지도 위에 몹은 중앙, 러너 최대 30인은 나머지 칸에 배치됩니다.
+      매 라운드 행동 전에 민첩에 따라 1~6칸 이동을 먼저 선언할 수 있습니다.</small>
+    </label>
+    <button type="submit" style="font-size: 18px; padding: 10px 20px; margin-top: 12px;">방 만들기</button>
+  </form>
+</body>
+</html>
