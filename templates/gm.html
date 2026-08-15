@@ -58,6 +58,8 @@
   .topbar .spacer { flex:1; }
   .topbar .whoami { display:flex; align-items:center; gap:10px; }
   .topbar .whoami .label { color: var(--muted); font-size:13px; }
+  .room-name-input { background:transparent; border:1px solid transparent; color: var(--text); font-weight:600; font-size:14px; padding:2px 6px; border-radius:6px; min-width:80px; }
+  .room-name-input:hover, .room-name-input:focus { border-color: var(--card-border); background:#0c0c0d; outline:none; }
   .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; padding: 0 4px; }
   .breadcrumb { color: var(--muted); font-size:13px; }
   .breadcrumb b { color: var(--text); }
@@ -106,6 +108,7 @@
   .chat-tabs button.active { color:#fff; border-color: var(--accent-blue); }
   .chat-line { display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; }
   .chat-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; margin-top:2px; }
+  .chat-dot.chat-star { background:transparent; display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:15px; }
   .chat-body b { font-weight:700; }
   .chat-body .time { color: var(--muted); font-size:11px; margin-left:6px; }
   .chat-line.is-command .chat-text { color:#9fc3ff; font-family: ui-monospace, monospace; font-size:12px; }
@@ -153,8 +156,9 @@
   </div>
   <div class="row">
     <button onclick="stopMusic()">⏹ 정지</button>
-    <span id="musicStatus" class="hint">음악 없음</span>
-    <button id="musicSyncBtn" onclick="startMusicPlayback()" style="display:none;">🔊 음악 재생 (동기화)</button>
+    <span id="musicStatus" class="hint">재생 없음</span>
+    <span class="hint">내 음량:</span>
+    <input type="range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" title="내 음량 (나에게만 적용)">
   </div>
   <div id="youtubePlayerHolder" style="display:none; margin-top:6px;"><div id="youtubePlayer"></div></div>
   <audio id="mp3Player" style="display:none; margin-top:6px;" controls></audio>
@@ -229,7 +233,11 @@
 </div>
 
 <div class="topbar panel">
-  <div class="seg">🆔 방 {{ room_id }}</div>
+  <div class="seg">
+    <input id="roomNameInput" class="room-name-input" value="{{ room_id }}"
+           oninput="onRoomNameInput(this.value)" onblur="onRoomNameBlur()"
+           onkeydown="if(event.key==='Enter') this.blur();" title="방 이름 (클릭해서 수정)">
+  </div>
   <span class="sep">▶</span>
   <div class="seg" id="formatLabel"></div>
   <span class="sep">▶</span>
@@ -250,7 +258,7 @@
 </div>
 {% endif %}
 
-{% if battle_type in ('siege', 'raid') %}
+{% if battle_type == 'siege' %}
 <div id="pendingRevealBanner" style="display:none; background:#3a2410; padding:10px 14px; border-radius:10px; margin-bottom:12px;">
   ⏸ 적 행동 미리보기 대기 중 — 운영진 로그에서 결과를 확인하세요.
   <button onclick="revealPendingAction()">📢 공개하기 (러너 채팅에 알림)</button>
@@ -309,9 +317,9 @@
     <div class="panel-head">
       <b>채팅</b>
       <span class="chat-tabs">
-        <button id="chatTabAll" onclick="setChatFilter('all')">전체 표시</button>
         <button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button>
         <button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button>
+        <button id="chatTabEntry" onclick="setChatFilter('entry')">입장 기록</button>
       </span>
     </div>
     <div id="chatLog" style="height:280px; overflow-y:auto; padding:12px 18px; font-size:13px;"></div>
@@ -332,6 +340,17 @@ const BATTLE_TYPE = "{{ battle_type }}";
 const GRID_SIZE = {{ grid_size }};
 
 const socket = io();
+
+let roomNameSaveTimer = null;
+function onRoomNameInput(value) {
+  clearTimeout(roomNameSaveTimer);
+  roomNameSaveTimer = setTimeout(() => socket.emit('set_room_name', { name: value }), 500);
+}
+function onRoomNameBlur() {
+  clearTimeout(roomNameSaveTimer);
+  socket.emit('set_room_name', { name: document.getElementById('roomNameInput').value });
+}
+
 let lastState = null;
 let joined = false;
 let logView = 'operator';
@@ -444,6 +463,10 @@ socket.on('register_result', (d) => {
 
 socket.on('gm_state', (state) => {
   lastState = state;
+  const roomNameInput = document.getElementById('roomNameInput');
+  if (roomNameInput && document.activeElement !== roomNameInput && state.room_name) {
+    roomNameInput.value = state.room_name;
+  }
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
   renderTelegraphControls();
   renderRoster(state.roster);
@@ -1050,9 +1073,9 @@ function renderGrid(battle, all) {
   if (legend) {
     legend.textContent = selChar
       ? (highlightIsAction
-          ? `선택: ${selChar.name} — ⚪ 사거리(십자3+주변8) 표시 중 · 범위 내 아군/적군(본인 포함)을 클릭하면 대상을 지정해 행동을 고를 수 있어요.`
-          : `선택: ${selChar.name} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 가능 범위 표시 중 · 먼저 이동할 칸을 클릭하세요 (이동을 마쳐야 행동할 수 있어요).`)
-      : '아군을 클릭하면 이동 범위가 표시돼요(스트라이커 🔴 · 가디언 🔵 · 메딕 🟡). 이동을 마치면 사거리(⚪)가 표시되고, 그 범위 내 캐릭터(본인 포함)를 클릭해 대상을 정하면 행동 팝업이 뜹니다.';
+          ? `선택: ${selChar.name} — ⚪ 사거리 표시 중. 범위 내 대상을 클릭해 행동을 고르세요.`
+          : `선택: ${selChar.name} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 범위 표시 중. 이동할 칸을 클릭하세요.`)
+      : '캐릭터를 클릭하면 이동/사거리 범위가 표시돼요. (🔴스트라이커 🔵가디언 🟡메딕)';
   }
 
   renderGridActionPopup(battle, all);
@@ -1115,7 +1138,7 @@ function setLogView(view) {
 
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round']);
 const LOG_TAG_ICON = {
-  round: '📍', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
+  round: '✶', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
   heal: '✚', crit: '✦', system: '·', hp: '❤', formula: '', summary: '📊',
 };
 function formatLogHtml(lines) {
@@ -1137,19 +1160,18 @@ setLogView('operator');
 
 function setChatFilter(filter) {
   chatFilter = filter;
-  document.getElementById('chatTabAll').classList.toggle('active', filter === 'all');
   document.getElementById('chatTabPlayer').classList.toggle('active', filter === 'player');
   document.getElementById('chatTabSpectator').classList.toggle('active', filter === 'spectator');
+  document.getElementById('chatTabEntry').classList.toggle('active', filter === 'entry');
   renderChatFiltered();
 }
-setChatFilter('all');
+setChatFilter('player');
 
 function matchesFilter(entry) {
-  if (chatFilter === 'all') return true;
-  if (entry.category === 'system') return true;
+  if (chatFilter === 'entry') return entry.category === 'presence';
   if (chatFilter === 'player') return entry.category === 'player' || entry.category === 'operator';
   if (chatFilter === 'spectator') return entry.category === 'spectator';
-  return true;
+  return false;
 }
 
 function renderChat(chat) {
@@ -1171,12 +1193,27 @@ function nicknameDotColor(nickname) {
   return `hsl(${hash}, 55%, 55%)`;
 }
 
+function formatChatTime(timeStr) {
+  // timeStr: 서버가 보내는 "HH:MM:SS"(24시간제) 문자열을 "오후 3:07"처럼 초 없이 표시합니다.
+  const parts = (timeStr || '').split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parts[1] || '00';
+  if (isNaN(h)) return timeStr;
+  const period = h < 12 ? '오전' : '오후';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${period} ${h12}:${m}`;
+}
+
 function fmtChat(entry) {
   const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:');
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
+  const isStar = entry.role === 'system' || entry.role === 'gm';
+  const dot = isStar
+    ? `<div class="chat-dot chat-star">✶</div>`
+    : `<div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>`;
   return `<div class="chat-line ${cls}">
-    <div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>
-    <div class="chat-body"><b>${entry.nickname}</b><span class="time">${entry.time}</span><br>
+    ${dot}
+    <div class="chat-body"><b>${entry.nickname}</b><span class="time">${formatChatTime(entry.time)}</span><br>
     <span class="chat-text">${entry.text}</span></div>
   </div>`;
 }
@@ -1311,6 +1348,25 @@ let serverTimeOffset = 0;
 let ytPlayer = null;
 let ytApiReady = false;
 
+// 음량은 서버와 동기화하지 않고, 이 브라우저(개인)에만 적용/저장됩니다.
+let musicVolume = parseInt(localStorage.getItem('musicVolume') || '70', 10);
+(function initVolumeSlider() {
+  const slider = document.getElementById('musicVolumeSlider');
+  if (slider) slider.value = musicVolume;
+})();
+
+function onVolumeChange(value) {
+  musicVolume = parseInt(value, 10);
+  localStorage.setItem('musicVolume', musicVolume);
+  applyVolume();
+}
+
+function applyVolume() {
+  const audio = document.getElementById('mp3Player');
+  if (audio) audio.volume = musicVolume / 100;
+  if (ytPlayer && ytPlayer.setVolume) { try { ytPlayer.setVolume(musicVolume); } catch (e) {} }
+}
+
 (function loadYouTubeApi() {
   if (window.YT && window.YT.Player) { ytApiReady = true; return; }
   const tag = document.createElement('script');
@@ -1318,6 +1374,22 @@ let ytApiReady = false;
   document.head.appendChild(tag);
   window.onYouTubeIframeAPIReady = () => { ytApiReady = true; };
 })();
+
+function updateMusicStatusText() {
+  const statusEl = document.getElementById('musicStatus');
+  if (!statusEl) return;
+  if (!musicState) { statusEl.textContent = '⏸ 재생 없음'; return; }
+  const audio = document.getElementById('mp3Player');
+  let playing = false;
+  if (musicState.type === 'mp3') {
+    playing = !!(audio && audio.src && !audio.paused && !audio.ended);
+  } else if (musicState.type === 'youtube') {
+    playing = !!(ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1);
+  }
+  const title = musicState.title || (musicState.type === 'youtube' ? '유튜브' : 'mp3');
+  statusEl.textContent = playing ? `▶ ${title} 재생 중` : `⏹ 멈춤 (${title})`;
+}
+setInterval(updateMusicStatusText, 1000);
 
 function playYoutubeMusic() {
   const url = document.getElementById('musicYoutubeUrl').value.trim();
@@ -1353,15 +1425,12 @@ function renderMusic(music, serverNow) {
   musicKey = key;
   musicState = music;
   stopLocalPlayback();
-  const statusEl = document.getElementById('musicStatus');
-  const btn = document.getElementById('musicSyncBtn');
   if (!music) {
-    statusEl.textContent = '음악 없음';
-    btn.style.display = 'none';
+    updateMusicStatusText();
     return;
   }
-  statusEl.textContent = `🎵 ${music.title || (music.type === 'youtube' ? '유튜브' : 'mp3')} 재생 중`;
-  btn.style.display = '';
+  startMusicPlayback();
+  updateMusicStatusText();
 }
 
 function stopLocalPlayback() {
@@ -1370,6 +1439,7 @@ function stopLocalPlayback() {
   if (ytPlayer) { try { ytPlayer.stopVideo(); } catch (e) {} }
   const holder = document.getElementById('youtubePlayerHolder');
   if (holder) holder.style.display = 'none';
+  updateMusicStatusText();
 }
 
 function currentElapsedSeconds() {
@@ -1379,7 +1449,6 @@ function currentElapsedSeconds() {
 
 function startMusicPlayback() {
   if (!musicState) return;
-  document.getElementById('musicSyncBtn').style.display = 'none';
 
   if (musicState.type === 'mp3') {
     const audio = document.getElementById('mp3Player');
@@ -1390,8 +1459,9 @@ function startMusicPlayback() {
       const dur = audio.duration || 0;
       const elapsed = currentElapsedSeconds();
       audio.currentTime = dur > 0 ? (elapsed % dur) : 0;
-      audio.play().catch(() => {
-        document.getElementById('musicSyncBtn').style.display = '';
+      applyVolume();
+      audio.play().then(updateMusicStatusText).catch(() => {
+        updateMusicStatusText();
       });
     };
     if (audio.readyState >= 1) seekAndPlay();
@@ -1402,13 +1472,14 @@ function startMusicPlayback() {
     const create = () => {
       if (ytPlayer) {
         ytPlayer.loadVideoById({ videoId: musicState.src, startSeconds: elapsed });
+        applyVolume();
       } else {
         ytPlayer = new YT.Player('youtubePlayer', {
           width: 200, height: 113,
           videoId: musicState.src,
           playerVars: { autoplay: 1, loop: 1, playlist: musicState.src, start: Math.floor(elapsed) },
           events: {
-            onReady: (e) => { e.target.playVideo(); },
+            onReady: (e) => { e.target.playVideo(); applyVolume(); updateMusicStatusText(); },
             // loop+playlist 파라미터만으로는 영상이 끝난 뒤 다시 재생되지 않는 경우가 있어,
             // 재생 종료(ENDED=0)를 직접 감지해서 처음부터 다시 재생합니다.
             onStateChange: (e) => {
@@ -1416,6 +1487,7 @@ function startMusicPlayback() {
                 ytPlayer.seekTo(0, true);
                 ytPlayer.playVideo();
               }
+              updateMusicStatusText();
             },
           },
         });

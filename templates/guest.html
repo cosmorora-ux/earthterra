@@ -56,21 +56,48 @@
   .breadcrumb { color: var(--muted); font-size:13px; }
   .breadcrumb b { color: var(--text); }
   .bgm-label { color: var(--muted); font-size:13px; display:flex; align-items:center; gap:6px; }
+  .bgm-label button { background:transparent; border:1px solid var(--card-border); color: var(--text); border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer; }
+  .bgm-label input[type="range"] { width:70px; accent-color: var(--accent-blue); }
 
-  /* ---------- 메인 그리드 (좌측 패널 + 카드) ---------- */
+  /* ---------- 메인 그리드 (좌측 패널/격자 + 카드) ---------- */
   .main-grid { display:grid; grid-template-columns: 300px 1fr; gap:16px; margin-bottom:16px; align-items:start; }
+  .main-grid.with-grid-map { grid-template-columns: 540px 1fr; }
+  #gridSection { width: 540px; box-sizing: border-box; }
+  #gridSection #gridLegend { width: 100%; box-sizing: border-box; }
   .side-panel { padding: 26px 22px; display:flex; flex-direction:column; gap:14px; min-height: 320px; }
   .side-panel .sun-icon { font-size:26px; opacity:0.85; }
   .side-panel h3 { margin:0; font-size:20px; }
   .side-panel .sub { color: var(--muted); font-size:13px; margin-top:-8px; }
   .side-panel .grow { flex:1; }
   .side-panel .btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; }
+  #gridSection { padding:16px 18px; }
 
   .sort-row { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
   .sort-btn { background:#0c0c0d; border:1px solid var(--card-border); color: var(--muted); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; }
   .sort-btn.active { color:#fff; border-color: var(--accent-blue); background:#132038; }
 
+  /* 거점 상태 헤더 카드 (점령전 전용) */
+  .site-card { border:1px solid var(--card-border); border-radius:14px; padding:14px 16px; margin-bottom:14px; }
+  .site-card .site-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .site-card .site-title { font-size:18px; font-weight:700; }
+  .site-card .site-hp { color: var(--muted); font-size:13px; white-space:nowrap; }
+  .site-card .site-sub { color: var(--muted); font-size:12px; margin-top:2px; }
+
+  /* 마스 레이드 : 컴팩트 3열 리스트 */
+  .card-grid.compact-list { grid-template-columns: repeat(3, 1fr); gap:10px 22px; }
+  .compact-card { display:flex; flex-direction:column; gap:5px; cursor:pointer; position:relative; }
+  .compact-card .crow { display:flex; align-items:center; gap:8px; }
+  .compact-card .cavatar-sm { width:16px; height:16px; border-radius:50%; flex-shrink:0; background:#4a4a4e; }
+  .compact-card .cname-sm { font-size:13px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .compact-card .chp-sm { font-size:12px; color: var(--muted); white-space:nowrap; }
+  .compact-card .hpbar-track-sm { height:4px; border-radius:3px; background:#2a2a2e; overflow:hidden; }
+  .compact-card .hpbar-fill-sm { height:100%; background:#d8d8dc; }
+  .compact-card .hpbar-fill-sm.low { background: var(--accent-red); }
+  .compact-card.selected-target { outline:1px solid var(--accent-blue); border-radius:6px; }
+
   .card-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+  .card-group-label { grid-column: 1 / -1; font-size:12px; color: var(--muted); font-weight:700; letter-spacing:.02em; margin-top:10px; padding-top:10px; border-top:1px solid var(--card-border); }
+  .card-group-label:first-child { margin-top:0; padding-top:0; border-top:none; }
   .char-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px; cursor:pointer; position:relative; transition: border-color .12s; }
   .char-card:hover { border-color:#444; }
   .char-card.selected-target { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue); }
@@ -113,6 +140,7 @@
   #chatLog { flex:1; overflow-y:auto; padding:12px 18px; font-size:13px; }
   .chat-line { display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; }
   .chat-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; margin-top:2px; }
+  .chat-dot.chat-star { background:transparent; display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:15px; }
   .chat-body b { font-weight:700; }
   .chat-body .time { color: var(--muted); font-size:11px; margin-left:6px; }
   .chat-line.is-command .chat-text { color:#9fc3ff; font-family: ui-monospace, monospace; font-size:12px; }
@@ -170,7 +198,7 @@
 <input type="color" id="myColorInput" value="#4a90ff" style="position:fixed; opacity:0; pointer-events:none; width:0; height:0;" onchange="onMyColorChange(this.value)">
 
 <div class="topbar panel">
-  <div class="seg">🆔 {{ room_id }}</div>
+  <div class="seg" id="roomNameLabel">{{ room_id }}</div>
   <span class="sep">▶</span>
   <div class="seg" id="formatLabel">-</div>
   <span class="sep">▶</span>
@@ -186,10 +214,21 @@
 
 <div class="breadcrumb-row">
   <div class="breadcrumb"><b>전투 화면</b> ◢ {{ battle_type_label }}</div>
-  <div class="bgm-label">🎵 <span id="musicStatus">음악 없음</span></div>
+  <div class="bgm-label">
+    🎵 <span id="musicStatus">재생 없음</span>
+    <input type="range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" title="내 음량 (나에게만 적용)">
+  </div>
 </div>
 
-<div class="main-grid">
+<div class="main-grid {% if grid_size %}with-grid-map{% endif %}">
+  {% if grid_size %}
+  <div id="gridSection" class="panel">
+    <b>🗺 격자 지도</b>
+    <div id="gridLegend" style="font-size:12px; opacity:0.8; margin:6px 0;"></div>
+    <div id="gridMap" style="overflow-x:auto;"></div>
+    <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
+  </div>
+  {% else %}
   <div class="side-panel panel">
     <div class="sun-icon">☀</div>
     <h3 id="sideTitle">{{ battle_type_label }}</h3>
@@ -202,23 +241,18 @@
     <div class="grow"></div>
     <button class="btn" onclick="toggleHelp()">⚙ 질문/건의</button>
   </div>
+  {% endif %}
 
   <div>
+    <div id="siteStatusCard" class="site-card panel" style="display:none;"></div>
     <div class="sort-row">
-      <button class="sort-btn" id="sortHpBtn" onclick="setSortMode('hp')">체력 적은 순</button>
+      <button class="sort-btn" id="sortHpBtn" onclick="setSortMode('hp')">체력 순</button>
       <button class="sort-btn" id="sortRoleBtn" onclick="setSortMode('role')">포지션 순</button>
-      <button class="sort-btn active" id="sortNameBtn" onclick="setSortMode('name')">가나다 순</button>
+      <button class="sort-btn active" id="sortNameBtn" onclick="setSortMode('name')">가나다 순 ▲</button>
       <span id="multiSkillSlot"></span>
     </div>
-    <div id="teams" class="card-grid"></div>
+    <div id="teams" class="card-grid {% if battle_type == 'mass_raid' %}compact-list{% endif %}"></div>
   </div>
-</div>
-
-<div id="gridSection" class="panel" style="display:none;">
-  <b>🗺 격자 지도</b>
-  <div id="gridLegend" style="font-size:12px; opacity:0.8; margin:6px 0;"></div>
-  <div id="gridMap" style="overflow-x:auto;"></div>
-  <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
 </div>
 
 <div class="bottom-grid">
@@ -238,9 +272,9 @@
     <div id="chatPanelBody">
       <div style="padding:8px 18px 0;">
         <span class="chat-tabs">
-          <button id="chatTabAll" onclick="setChatFilter('all')">전체 표시</button>
           <button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button>
           <button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button>
+          <button id="chatTabEntry" onclick="setChatFilter('entry')">입장 기록</button>
         </span>
       </div>
       <div id="chatLog"></div>
@@ -255,12 +289,10 @@
   </div>
 </div>
 
-<section class="panel" style="padding:14px 18px; margin-top:16px;">
-  <h2 style="margin:0 0 8px; font-size:14px;">🎵 배경음악</h2>
-  <button id="musicSyncBtn" class="btn-plain" onclick="startMusicPlayback()" style="display:none;">🔊 음악 재생 (동기화)</button>
-  <div id="youtubePlayerHolder" style="display:none; margin-top:6px;"><div id="youtubePlayer"></div></div>
-  <audio id="mp3Player" style="display:none; margin-top:6px;" controls></audio>
-</section>
+<div style="display:none;">
+  <div id="youtubePlayerHolder"><div id="youtubePlayer"></div></div>
+  <audio id="mp3Player"></audio>
+</div>
 
 </div>
 
@@ -277,6 +309,7 @@ let chatFilter = 'all';
 let lastChat = [];
 let lastBattleForPanel = null;
 let actionPanelActorName = null;
+let lastRoster = [];  // 캐릭터 데이터베이스에 등록된 전체 이름 목록 (전투 참여 여부와 무관)
 
 const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "행운"];
 const ACTION_LABELS = {
@@ -302,11 +335,49 @@ function updateChatVisibility() {
   document.getElementById('chatInputRow').style.display = explicitlyJoined ? '' : 'none';
 }
 
+const SAVED_NAME_KEY = 'joinedName_' + ROOM_ID;
+
 function silentJoin() {
   // 페이지에 들어오면 일단 '익명'으로 관전만 가능하게 조용히 접속합니다.
   // 실제 캐릭터로 입장하려면 상단 아바타 동그라미를 클릭해야 합니다.
   MY_NICKNAME = '익명';
   socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+}
+
+// 새로고침해도 로그인이 유지되도록, 저장된 캐릭터 이름이 있으면 그걸로 바로 재입장을 시도합니다.
+function autoRejoinOrSilentJoin() {
+  const saved = localStorage.getItem(SAVED_NAME_KEY);
+  if (saved) {
+    attemptCharacterJoin(saved, null, () => {
+      localStorage.removeItem(SAVED_NAME_KEY);
+      silentJoin();
+    });
+  } else {
+    silentJoin();
+  }
+}
+
+function attemptCharacterJoin(name, onSuccess, onFail) {
+  MY_NICKNAME = name;
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+  // 서버가 join → public_state 순으로 응답하는 짧은 시간을 기다린 뒤, 이 이름이 실제 전투에
+  // 참여 중인 캐릭터거나(전투 시작 전이어도) 캐릭터 데이터베이스에 등록되어 있는지 확인합니다.
+  setTimeout(() => {
+    const control = myControlInfo(lastBattleForPanel);
+    const inBattle = control.scope === 'character' || control.scope === 'all';
+    const inRoster = lastRoster.includes(name);
+    if (inBattle || inRoster) {
+      explicitlyJoined = true;
+      updateChatVisibility();
+      document.getElementById('myNicknameLabel').textContent = MY_NICKNAME;
+      localStorage.setItem(SAVED_NAME_KEY, MY_NICKNAME);
+      renderCards();
+      updateAvatarDots();
+      if (onSuccess) onSuccess();
+    } else if (onFail) {
+      onFail();
+    }
+  }, 350);
 }
 
 // ------------------------------------------------------------------
@@ -328,6 +399,7 @@ function onInputAvatarDotDblClick() {
 }
 
 function logout() {
+  localStorage.removeItem(SAVED_NAME_KEY);
   MY_NICKNAME = '익명';
   socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
   explicitlyJoined = false;
@@ -360,24 +432,10 @@ function submitJoinModal() {
     document.getElementById('joinModalError').textContent = '캐릭터 이름을 입력해주세요.';
     return;
   }
-  MY_NICKNAME = name;
-  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
-  // 서버가 join → public_state 순으로 응답하는 짧은 시간을 기다린 뒤, 이 이름이 실제
-  // 전투에 참여 중인 캐릭터와 일치하는지 확인합니다 (전투 시작 전에는 항상 실패합니다).
-  setTimeout(() => {
-    const control = myControlInfo(lastBattleForPanel);
-    if (control.scope === 'character' || control.scope === 'all') {
-      explicitlyJoined = true;
-      updateChatVisibility();
-      document.getElementById('myNicknameLabel').textContent = MY_NICKNAME;
-      closeJoinModal();
-      renderCards();
-      updateAvatarDots();
-    } else {
-      document.getElementById('joinModalError').textContent =
-        '캐릭터 이름이 일치하지 않습니다. 전투가 시작된 뒤 정확한 이름을 입력해주세요.';
-    }
-  }, 350);
+  attemptCharacterJoin(name, closeJoinModal, () => {
+    document.getElementById('joinModalError').textContent =
+      '캐릭터 이름이 일치하지 않습니다. 전투가 시작된 뒤 정확한 이름을 입력해주세요.';
+  });
 }
 
 function onMyColorChange(hex) {
@@ -400,7 +458,7 @@ function updateAvatarDots(battle) {
 }
 
 socket.on('connect', () => {
-  silentJoin();
+  autoRejoinOrSilentJoin();
 });
 
 socket.on('joined', () => {
@@ -419,6 +477,10 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 socket.on('public_state', (state) => {
+  const roomNameEl = document.getElementById('roomNameLabel');
+  if (roomNameEl && state.room_name) roomNameEl.textContent = state.room_name;
+  lastRoster = state.roster || [];
+  lastSiteDice = state.site_dice || null;
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
   renderBattle(state.battle);
   renderPubLog(state.log);
@@ -454,19 +516,59 @@ tickClock();
 // 카드 정렬
 // ------------------------------------------------------------------
 let sortMode = 'name';
+let sortDesc = false;
+const SORT_BTN_LABELS = { hp: '체력 순', role: '포지션 순', name: '가나다 순' };
+const SORT_BTN_IDS = { hp: 'sortHpBtn', role: 'sortRoleBtn', name: 'sortNameBtn' };
+
 function setSortMode(mode) {
-  sortMode = mode;
-  document.getElementById('sortHpBtn').classList.toggle('active', mode === 'hp');
-  document.getElementById('sortRoleBtn').classList.toggle('active', mode === 'role');
-  document.getElementById('sortNameBtn').classList.toggle('active', mode === 'name');
+  if (sortMode === mode) {
+    sortDesc = !sortDesc;  // 같은 버튼을 다시 누르면 역순으로 전환
+  } else {
+    sortMode = mode;
+    sortDesc = false;
+  }
+  Object.keys(SORT_BTN_IDS).forEach(m => {
+    const btn = document.getElementById(SORT_BTN_IDS[m]);
+    const active = sortMode === m;
+    btn.classList.toggle('active', active);
+    btn.textContent = SORT_BTN_LABELS[m] + (active ? (sortDesc ? ' ▼' : ' ▲') : '');
+  });
   renderCards();
 }
+
 function sortedCards(all) {
   const arr = all.slice();
   if (sortMode === 'hp') arr.sort((a, b) => a.current_hp - b.current_hp);
   else if (sortMode === 'role') arr.sort((a, b) => (a.role || '').localeCompare(b.role || '') || a.name.localeCompare(b.name));
   else arr.sort((a, b) => a.name.localeCompare(b.name));
+  if (sortDesc) arr.reverse();
   return arr;
+}
+
+function renderSiteStatusCard(battle) {
+  const el = document.getElementById('siteStatusCard');
+  if (!el) return;
+  if (BATTLE_TYPE !== 'siege' || !battle || !battle.team_b || !battle.team_b[0]) {
+    el.style.display = 'none';
+    return;
+  }
+  const site = battle.team_b[0];
+  const hpRatio = site.max_hp > 0 ? site.current_hp / site.max_hp : 0;
+  const dice = lastSiteDice;
+  const diceText = (dice && dice.value) ? ` (${dice.used}/${dice.value})` : '';
+  const badges = [];
+  if (site.defense_count) badges.push(`🛡 보호${site.defense_count}`);
+  if (site.shield_hp) badges.push(`🔷 막${site.shield_hp}`);
+  if (site.has_leech_buff) badges.push(`🩸 흡수`);
+  el.innerHTML = `
+    <div class="site-head">
+      <div class="site-title">${site.name}${diceText}</div>
+      <div class="site-hp">${site.current_hp}/${site.max_hp}</div>
+    </div>
+    <div class="hpbar-track" style="margin-top:8px;"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
+    ${badges.length ? `<div class="cbadges" style="margin-top:8px;">${badges.join('&nbsp;&nbsp;')}</div>` : ''}
+  `;
+  el.style.display = '';
 }
 
 function renderBattle(battle) {
@@ -478,6 +580,7 @@ function renderBattle(battle) {
     tickTimer();
     teamsEl.innerHTML = '';
     lastAllForCards = [];
+    renderSiteStatusCard(null);
     renderGrid(null, []);
     return;
   }
@@ -499,21 +602,52 @@ function renderBattle(battle) {
   lastSeesAll = seesAll;
   lastForcedTarget = battle.forced_target;
   renderCards();
+  renderSiteStatusCard(battle);
   updateAvatarDots(battle);
 
   renderGrid(battle, all);
 }
 
 function renderCards() {
-  document.getElementById('teams').innerHTML = sortedCards(lastAllForCards).map(c => renderCardHtml(c)).join('');
+  const useCompact = BATTLE_TYPE === 'mass_raid';
+  const renderOne = useCompact ? renderCompactCardHtml : renderCardHtml;
+  let html;
+  if (BATTLE_TYPE === 'siege') {
+    // 거점(몹)은 위쪽 거점 상태 카드에 이미 표시하므로, 목록에는 러너만 넣어 섞이지 않게 합니다.
+    const runners = lastAllForCards.filter(c => c.teamLabel === 'A');
+    html = sortedCards(runners).map(renderOne).join('');
+  } else if (BATTLE_TYPE === 'mass_raid') {
+    // 러너와 몹을 절대 섞이지 않도록 구역을 나눠서 표시합니다.
+    const runners = lastAllForCards.filter(c => c.teamLabel === 'A');
+    const mobs = lastAllForCards.filter(c => c.teamLabel === 'B');
+    html = sortedCards(runners).map(renderOne).join('')
+      + (mobs.length ? `<div class="card-group-label">몹</div>` + sortedCards(mobs).map(renderOne).join('') : '');
+  } else {
+    html = sortedCards(lastAllForCards).map(renderOne).join('');
+  }
+  document.getElementById('teams').innerHTML = html;
   const slot = document.getElementById('multiSkillSlot');
   if (slot) slot.innerHTML = renderMultiSkillTrigger();
+}
+
+function renderCompactCardHtml(c) {
+  const isTarget = selectedTargetName === c.name;
+  const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
+  return `<div class="compact-card ${isTarget ? 'selected-target' : ''}" onclick="onCardClick('${c.name}')" title="${c.name} · ${c.role} · ${c.current_hp}/${c.max_hp}">
+    <div class="crow">
+      <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};"></div>
+      <div class="cname-sm">${c.name}</div>
+      <div class="chp-sm">${c.current_hp}/${c.max_hp}</div>
+    </div>
+    <div class="hpbar-track-sm"><div class="hpbar-fill-sm ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
+  </div>`;
 }
 
 let lastAllForCards = [];
 let lastMyTeam = null;
 let lastSeesAll = false;
 let lastForcedTarget = null;
+let lastSiteDice = null;  // 점령전 : { round_no, value, used, stale }
 
 function roleColorVar(role) {
   return `var(--role-${role}, #9aa0a6)`;
@@ -867,12 +1001,12 @@ function renderGrid(battle, all) {
   const legend = document.getElementById('gridLegend');
   if (legend) {
     legend.textContent = isEnemyTurn
-      ? '🔒 적 턴에는 이동/사거리 범위가 표시되지 않습니다. 내 턴이 되면 다시 확인할 수 있어요.'
+      ? '🔒 적 턴에는 범위가 안 보여요. 내 턴에 다시 확인하세요.'
       : (selChar
         ? (highlightIsAction
-            ? `선택: ${selChar.name} — ⚪ 사거리(십자3+주변8) 표시 중 · 범위 내 아군/적군(본인 포함)을 클릭하면 대상을 지정해 행동을 고를 수 있어요.`
-            : `선택: ${selChar.name} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 가능 범위 표시 중 · 먼저 이동할 칸을 클릭하세요 (이동을 마쳐야 행동할 수 있어요).`)
-        : '아군을 클릭하면 이동 범위가 표시돼요(스트라이커 🔴 · 가디언 🔵 · 메딕 🟡). 이동을 마치면 사거리(⚪)가 표시되고, 그 범위 내 캐릭터(본인 포함)를 클릭해 대상을 정하면 행동 팝업이 뜹니다.');
+            ? `선택: ${selChar.name} — ⚪ 사거리 표시 중. 범위 내 대상을 클릭해 행동을 고르세요.`
+            : `선택: ${selChar.name} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 범위 표시 중. 이동할 칸을 클릭하세요.`)
+        : '캐릭터를 클릭하면 이동/사거리 범위가 표시돼요. (🔴스트라이커 🔵가디언 🟡메딕)');
   }
 
   renderGridActionPopup(battle, all);
@@ -931,7 +1065,7 @@ setInterval(tickTimer, 1000);
 
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round']);
 const LOG_TAG_ICON = {
-  round: '📍', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
+  round: '✶', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
   heal: '✚', crit: '✦', system: '·', hp: '❤', formula: '', summary: '📊',
 };
 function formatLogHtml(lines) {
@@ -950,19 +1084,18 @@ function renderPubLog(log) {
 
 function setChatFilter(filter) {
   chatFilter = filter;
-  document.getElementById('chatTabAll').classList.toggle('active', filter === 'all');
   document.getElementById('chatTabPlayer').classList.toggle('active', filter === 'player');
   document.getElementById('chatTabSpectator').classList.toggle('active', filter === 'spectator');
+  document.getElementById('chatTabEntry').classList.toggle('active', filter === 'entry');
   renderChatFiltered();
 }
-setChatFilter('all');
+setChatFilter('player');
 
 function matchesFilter(entry) {
-  if (chatFilter === 'all') return true;
-  if (entry.category === 'system') return true;
+  if (chatFilter === 'entry') return entry.category === 'presence';
   if (chatFilter === 'player') return entry.category === 'player' || entry.category === 'operator';
   if (chatFilter === 'spectator') return entry.category === 'spectator';
-  return true;
+  return false;
 }
 
 function renderChat(chat) {
@@ -984,12 +1117,27 @@ function nicknameDotColor(nickname) {
   return `hsl(${hash}, 55%, 55%)`;
 }
 
+function formatChatTime(timeStr) {
+  // timeStr: 서버가 보내는 "HH:MM:SS"(24시간제) 문자열을 "오후 3:07"처럼 초 없이 표시합니다.
+  const parts = (timeStr || '').split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parts[1] || '00';
+  if (isNaN(h)) return timeStr;
+  const period = h < 12 ? '오전' : '오후';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${period} ${h12}:${m}`;
+}
+
 function fmtChat(entry) {
   const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:');
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
+  const isStar = entry.role === 'system' || entry.role === 'gm';
+  const dot = isStar
+    ? `<div class="chat-dot chat-star">✶</div>`
+    : `<div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>`;
   return `<div class="chat-line ${cls}">
-    <div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>
-    <div class="chat-body"><b>${entry.nickname}</b><span class="time">${entry.time}</span><br>
+    ${dot}
+    <div class="chat-body"><b>${entry.nickname}</b><span class="time">${formatChatTime(entry.time)}</span><br>
     <span class="chat-text">${entry.text}</span></div>
   </div>`;
 }
@@ -1076,6 +1224,25 @@ let serverTimeOffset = 0;
 let ytPlayer = null;
 let ytApiReady = false;
 
+// 음량은 서버와 동기화하지 않고, 이 브라우저(개인)에만 적용/저장됩니다.
+let musicVolume = parseInt(localStorage.getItem('musicVolume') || '70', 10);
+(function initVolumeSlider() {
+  const slider = document.getElementById('musicVolumeSlider');
+  if (slider) slider.value = musicVolume;
+})();
+
+function onVolumeChange(value) {
+  musicVolume = parseInt(value, 10);
+  localStorage.setItem('musicVolume', musicVolume);
+  applyVolume();
+}
+
+function applyVolume() {
+  const audio = document.getElementById('mp3Player');
+  if (audio) audio.volume = musicVolume / 100;
+  if (ytPlayer && ytPlayer.setVolume) { try { ytPlayer.setVolume(musicVolume); } catch (e) {} }
+}
+
 (function loadYouTubeApi() {
   if (window.YT && window.YT.Player) { ytApiReady = true; return; }
   const tag = document.createElement('script');
@@ -1084,6 +1251,22 @@ let ytApiReady = false;
   window.onYouTubeIframeAPIReady = () => { ytApiReady = true; };
 })();
 
+function updateMusicStatusText() {
+  const statusEl = document.getElementById('musicStatus');
+  if (!statusEl) return;
+  if (!musicState) { statusEl.textContent = '⏸ 재생 없음'; return; }
+  const audio = document.getElementById('mp3Player');
+  let playing = false;
+  if (musicState.type === 'mp3') {
+    playing = !!(audio && audio.src && !audio.paused && !audio.ended);
+  } else if (musicState.type === 'youtube') {
+    playing = !!(ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1);
+  }
+  const title = musicState.title || (musicState.type === 'youtube' ? '유튜브' : 'mp3');
+  statusEl.textContent = playing ? `▶ ${title} 재생 중` : `⏹ 멈춤 (${title})`;
+}
+setInterval(updateMusicStatusText, 1000);
+
 function renderMusic(music, serverNow) {
   if (serverNow) serverTimeOffset = serverNow - Date.now() / 1000;
   const key = music ? `${music.type}:${music.src}:${music.started_at}` : null;
@@ -1091,24 +1274,19 @@ function renderMusic(music, serverNow) {
   musicKey = key;
   musicState = music;
   stopLocalPlayback();
-  const statusEl = document.getElementById('musicStatus');
-  const btn = document.getElementById('musicSyncBtn');
   if (!music) {
-    statusEl.textContent = '음악 없음';
-    btn.style.display = 'none';
+    updateMusicStatusText();
     return;
   }
-  statusEl.textContent = `${music.title || (music.type === 'youtube' ? '유튜브' : 'mp3')} 재생 중`;
-  btn.style.display = 'none';
   startMusicPlayback();
+  updateMusicStatusText();
 }
 
 function stopLocalPlayback() {
   const audio = document.getElementById('mp3Player');
-  if (audio) { audio.pause(); audio.removeAttribute('src'); audio.style.display = 'none'; }
+  if (audio) { audio.pause(); audio.removeAttribute('src'); }
   if (ytPlayer) { try { ytPlayer.stopVideo(); } catch (e) {} }
-  const holder = document.getElementById('youtubePlayerHolder');
-  if (holder) holder.style.display = 'none';
+  updateMusicStatusText();
 }
 
 function currentElapsedSeconds() {
@@ -1118,20 +1296,17 @@ function currentElapsedSeconds() {
 
 function startMusicPlayback() {
   if (!musicState) return;
-  document.getElementById('musicSyncBtn').style.display = 'none';
 
   if (musicState.type === 'mp3') {
     const audio = document.getElementById('mp3Player');
     audio.src = musicState.src;
     audio.loop = true;
-    audio.style.display = '';
     const seekAndPlay = () => {
       const dur = audio.duration || 0;
       const elapsed = currentElapsedSeconds();
       audio.currentTime = dur > 0 ? (elapsed % dur) : 0;
-      audio.play().catch(() => {
-        document.getElementById('musicSyncBtn').style.display = '';
-      });
+      applyVolume();
+      audio.play().then(updateMusicStatusText).catch(updateMusicStatusText);
     };
     if (audio.readyState >= 1) seekAndPlay();
     else audio.addEventListener('loadedmetadata', seekAndPlay, { once: true });
@@ -1140,6 +1315,7 @@ function startMusicPlayback() {
     const create = () => {
       if (ytPlayer) {
         ytPlayer.loadVideoById({ videoId: musicState.src, startSeconds: elapsed });
+        applyVolume();
       } else {
         ytPlayer = new YT.Player('youtubePlayer', {
           width: 200, height: 113,
@@ -1148,17 +1324,15 @@ function startMusicPlayback() {
           events: {
             onReady: (e) => {
               e.target.playVideo();
-              setTimeout(() => {
-                if (ytPlayer.getPlayerState() !== 1) {
-                  document.getElementById('musicSyncBtn').style.display = '';
-                }
-              }, 1200);
+              applyVolume();
+              setTimeout(updateMusicStatusText, 1200);
             },
             onStateChange: (e) => {
               if (e.data === YT.PlayerState.ENDED) {
                 ytPlayer.seekTo(0, true);
                 ytPlayer.playVideo();
               }
+              updateMusicStatusText();
             },
           },
         });

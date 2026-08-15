@@ -238,8 +238,9 @@ def build_public_state(room):
     if battle_payload is not None:
         battle_payload["round_deadline_at"] = room.round_deadline
         battle_payload["round_limit_seconds"] = config.ROUND_TIME_LIMIT_SECONDS
-    return {
+    payload = {
         "room_id": room.id,
+        "room_name": room.name,
         "battle": battle_payload,
         "log": battle.public_log if battle else [],
         "chat": room.chat_log[-200:],
@@ -248,6 +249,14 @@ def build_public_state(room):
         "telegraph_cells": room.telegraph_cells,
         "server_now": time.time(),
     }
+    if room.battle_type == "siege":
+        payload["site_dice"] = {
+            "round_no": room.site_dice_round_no,
+            "value": room.site_dice_value,
+            "used": room.site_dice_used,
+            "stale": battle is not None and room.site_dice_round_no != battle.round_no,
+        }
+    return payload
 
 
 def build_gm_state(room):
@@ -260,14 +269,6 @@ def build_gm_state(room):
         for name in room.game.db.all_names_by_position()
     ]
     payload["pending_reveal"] = room.pending_reveal
-    if room.battle_type == "siege":
-        battle = room.game.battle
-        payload["site_dice"] = {
-            "round_no": room.site_dice_round_no,
-            "value": room.site_dice_value,
-            "used": room.site_dice_used,
-            "stale": battle is not None and room.site_dice_round_no != battle.round_no,
-        }
     return payload
 
 
@@ -354,15 +355,17 @@ def on_join(data):
     if role == "gm":
         join_room(room_channel(room_id, "gm"))
 
-    entry = {
-        "time": time.strftime("%H:%M:%S"),
-        "nickname": "system",
-        "role": "system",
-        "category": "system",
-        "text": f"{nickname}님이 입장했습니다 ({'운영진' if role == 'gm' else '참가자'})",
-    }
-    room.chat_log.append(entry)
-    socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
+    # 익명(조용히 관전만 하는 접속)은 입장/퇴장 알림을 남기지 않습니다 - 로그인한 이름만 표시합니다.
+    if nickname != "익명":
+        entry = {
+            "time": time.strftime("%H:%M:%S"),
+            "nickname": "system",
+            "role": "system",
+            "category": "presence",
+            "text": f"{nickname}님이 입장했습니다 ({'운영진' if role == 'gm' else '참가자'})",
+        }
+        room.chat_log.append(entry)
+        socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
 
     emit("joined", {"role": role, "room_id": room_id})
     if role == "gm":
@@ -379,15 +382,16 @@ def on_disconnect():
     room = get_room(info["room_id"])
     if room is None:
         return
-    entry = {
-        "time": time.strftime("%H:%M:%S"),
-        "nickname": "system",
-        "role": "system",
-        "category": "system",
-        "text": f"{info['nickname']}님이 퇴장했습니다",
-    }
-    room.chat_log.append(entry)
-    socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
+    if info["nickname"] != "익명":
+        entry = {
+            "time": time.strftime("%H:%M:%S"),
+            "nickname": "system",
+            "role": "system",
+            "category": "presence",
+            "text": f"{info['nickname']}님이 퇴장했습니다",
+        }
+        room.chat_log.append(entry)
+        socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
 
 
 @socketio.on("chat_message")
@@ -718,6 +722,17 @@ def on_telegraph_clear(data):
     broadcast_state(room)
 
 
+@socketio.on("set_room_name")
+def on_set_room_name(data):
+    room = _require_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    name = (data.get("name") or "").strip()[:30]
+    room.name = name or room.id
+    broadcast_state(room)
+
+
 @socketio.on("set_music")
 def on_set_music(data):
     room = _require_gm(request.sid)
@@ -849,7 +864,7 @@ def on_battle_action(data):
 
     should_preview = (
         info["role"] == "gm"
-        and room.battle_type in ("siege", "raid")
+        and room.battle_type == "siege"
         and actor_char is not None
         and actor_char.team == "B"
         and action_type not in ("advance_turn", "undo")

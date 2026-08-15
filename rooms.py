@@ -14,16 +14,14 @@ from battle import GameManager
 ROOMS = {}
 
 BATTLE_TYPE_LABELS = {
-    "pvp": "PVP (러너 vs 러너)",
-    "siege": "점령전 (GM vs 러너)",
-    "raid": "레이드 (GM vs 러너 다인)",
-    "mass_raid": "마스 레이드 (격자 이동)",
+    "pvp": "PVP",
+    "siege": "점령전",
+    "mass_raid": "마스 레이드",
 }
 # 전투 유형별 팀 인원 기본값 : (1팀/러너팀 기본 인원, 2팀/GM팀 기본 인원)
 BATTLE_TYPE_DEFAULTS = {
     "pvp": (3, 3),
     "siege": (5, 1),
-    "raid": (15, 1),
     "mass_raid": (30, 5),
 }
 # 마스 레이드 격자 크기 (가로, 세로)
@@ -40,6 +38,7 @@ GRID_SIZES = {
 class RoomState:
     def __init__(self, room_id: str, battle_type: str = "pvp"):
         self.id = room_id
+        self.name = room_id  # 화면에 표시되는 방 이름 - GM이 바꾸기 전까지는 방 ID와 같습니다.
         self.gm_key = secrets.token_urlsafe(8)
         self.guest_key = secrets.token_urlsafe(8)
         self.game = GameManager()
