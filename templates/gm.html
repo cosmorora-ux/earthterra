@@ -230,6 +230,7 @@
 
 <div class="breadcrumb-row">
   <div class="breadcrumb"><b>3. 전투 화면</b> ◢ {{ battle_type_label }}</div>
+  <button id="fullscreenBtn" style="padding:4px 10px; font-size:12px;" onclick="toggleFullscreen()" title="전체화면으로 크게 보기">⛶ 전체화면</button>
 </div>
 
 <div class="topbar panel">
@@ -340,6 +341,18 @@ const BATTLE_TYPE = "{{ battle_type }}";
 const GRID_SIZE = {{ grid_size }};
 
 const socket = io();
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  const btn = document.getElementById('fullscreenBtn');
+  if (btn) btn.textContent = document.fullscreenElement ? '⛶ 전체화면 종료' : '⛶ 전체화면';
+});
 
 let roomNameSaveTimer = null;
 function onRoomNameInput(value) {
@@ -774,7 +787,7 @@ function renderCardHtml(c) {
     ? (c.moved_this_round ? 'border:2px solid #fff;' : 'border:2px solid #888;')
     : '';
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
-  const shieldText = c.shield_hp ? ` 🔷${c.shield_hp}` : '';
+  const shieldText = c.shield_hp ? ` 🔷보호막${c.shield_hp}` : '';
   const badges = [];
   if (c.has_acted) badges.push('✅ 행동완료');
   if (c.polarize_active) badges.push('🛡 편광중');

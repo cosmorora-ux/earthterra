@@ -82,6 +82,10 @@
   .site-card .site-title { font-size:18px; font-weight:700; }
   .site-card .site-hp { color: var(--muted); font-size:13px; white-space:nowrap; }
   .site-card .site-sub { color: var(--muted); font-size:12px; margin-top:2px; }
+  .site-card .site-nav { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:10px; }
+  .site-card .site-nav button { background:#0c0c0d; border:1px solid var(--card-border); color: var(--text); border-radius:6px; width:28px; height:28px; cursor:pointer; font-size:15px; line-height:1; }
+  .site-card .site-nav button:hover { border-color:#444; }
+  .site-card .site-nav span { color: var(--muted); font-size:12px; min-width:44px; text-align:center; }
 
   /* 마스 레이드 : 컴팩트 3열 리스트 */
   .card-grid.compact-list { grid-template-columns: repeat(3, 1fr); gap:10px 22px; }
@@ -94,10 +98,9 @@
   .compact-card .hpbar-fill-sm { height:100%; background:#d8d8dc; }
   .compact-card .hpbar-fill-sm.low { background: var(--accent-red); }
   .compact-card.selected-target { outline:1px solid var(--accent-blue); border-radius:6px; }
+  .compact-card .cbadges-sm { display:flex; gap:6px; font-size:10px; color: var(--muted); min-height:13px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 
   .card-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
-  .card-group-label { grid-column: 1 / -1; font-size:12px; color: var(--muted); font-weight:700; letter-spacing:.02em; margin-top:10px; padding-top:10px; border-top:1px solid var(--card-border); }
-  .card-group-label:first-child { margin-top:0; padding-top:0; border-top:none; }
   .char-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px; cursor:pointer; position:relative; transition: border-color .12s; }
   .char-card:hover { border-color:#444; }
   .char-card.selected-target { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue); }
@@ -217,6 +220,7 @@
   <div class="bgm-label">
     🎵 <span id="musicStatus">재생 없음</span>
     <input type="range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" title="내 음량 (나에게만 적용)">
+    <button class="btn-plain" id="fullscreenBtn" style="padding:4px 10px; font-size:12px; margin-left:10px;" onclick="toggleFullscreen()" title="전체화면으로 크게 보기">⛶ 전체화면</button>
   </div>
 </div>
 
@@ -545,21 +549,34 @@ function sortedCards(all) {
   return arr;
 }
 
+let mobCarouselIndex = 0;
+
 function renderSiteStatusCard(battle) {
   const el = document.getElementById('siteStatusCard');
   if (!el) return;
-  if (BATTLE_TYPE !== 'siege' || !battle || !battle.team_b || !battle.team_b[0]) {
+  const isSiege = BATTLE_TYPE === 'siege';
+  const isMassRaid = BATTLE_TYPE === 'mass_raid';
+  if ((!isSiege && !isMassRaid) || !battle || !battle.team_b || !battle.team_b.length) {
     el.style.display = 'none';
     return;
   }
-  const site = battle.team_b[0];
+  const mobs = battle.team_b;
+  if (mobCarouselIndex >= mobs.length) mobCarouselIndex = 0;
+  const site = isMassRaid ? mobs[mobCarouselIndex] : mobs[0];
   const hpRatio = site.max_hp > 0 ? site.current_hp / site.max_hp : 0;
   const dice = lastSiteDice;
-  const diceText = (dice && dice.value) ? ` (${dice.used}/${dice.value})` : '';
+  const diceText = (isSiege && dice && dice.value) ? ` (${dice.used}/${dice.value})` : '';
   const badges = [];
   if (site.defense_count) badges.push(`🛡 보호${site.defense_count}`);
-  if (site.shield_hp) badges.push(`🔷 막${site.shield_hp}`);
+  if (site.shield_hp) badges.push(`🔷 보호막${site.shield_hp}`);
   if (site.has_leech_buff) badges.push(`🩸 흡수`);
+  const navHtml = (isMassRaid && mobs.length > 1)
+    ? `<div class="site-nav">
+        <button onclick="shiftMobCarousel(-1)" aria-label="이전 몹">‹</button>
+        <span>${mobCarouselIndex + 1} / ${mobs.length}</span>
+        <button onclick="shiftMobCarousel(1)" aria-label="다음 몹">›</button>
+      </div>`
+    : '';
   el.innerHTML = `
     <div class="site-head">
       <div class="site-title">${site.name}${diceText}</div>
@@ -567,8 +584,17 @@ function renderSiteStatusCard(battle) {
     </div>
     <div class="hpbar-track" style="margin-top:8px;"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
     ${badges.length ? `<div class="cbadges" style="margin-top:8px;">${badges.join('&nbsp;&nbsp;')}</div>` : ''}
+    ${navHtml}
   `;
   el.style.display = '';
+}
+
+function shiftMobCarousel(delta) {
+  const battle = lastBattleForPanel;
+  if (!battle || !battle.team_b || !battle.team_b.length) return;
+  const len = battle.team_b.length;
+  mobCarouselIndex = (mobCarouselIndex + delta + len) % len;
+  renderSiteStatusCard(battle);
 }
 
 function renderBattle(battle) {
@@ -612,16 +638,11 @@ function renderCards() {
   const useCompact = BATTLE_TYPE === 'mass_raid';
   const renderOne = useCompact ? renderCompactCardHtml : renderCardHtml;
   let html;
-  if (BATTLE_TYPE === 'siege') {
-    // 거점(몹)은 위쪽 거점 상태 카드에 이미 표시하므로, 목록에는 러너만 넣어 섞이지 않게 합니다.
+  if (BATTLE_TYPE === 'siege' || BATTLE_TYPE === 'mass_raid') {
+    // 몹은 위쪽 상태 카드(거점전은 카드 1개, 마스 레이드는 슬라이드)에 이미 표시하므로,
+    // 목록에는 러너만 넣어 섞이지 않게 합니다.
     const runners = lastAllForCards.filter(c => c.teamLabel === 'A');
     html = sortedCards(runners).map(renderOne).join('');
-  } else if (BATTLE_TYPE === 'mass_raid') {
-    // 러너와 몹을 절대 섞이지 않도록 구역을 나눠서 표시합니다.
-    const runners = lastAllForCards.filter(c => c.teamLabel === 'A');
-    const mobs = lastAllForCards.filter(c => c.teamLabel === 'B');
-    html = sortedCards(runners).map(renderOne).join('')
-      + (mobs.length ? `<div class="card-group-label">몹</div>` + sortedCards(mobs).map(renderOne).join('') : '');
   } else {
     html = sortedCards(lastAllForCards).map(renderOne).join('');
   }
@@ -633,6 +654,11 @@ function renderCards() {
 function renderCompactCardHtml(c) {
   const isTarget = selectedTargetName === c.name;
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
+  const badges = [];
+  if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
+  if (c.defense_count) badges.push(`🛡 보호${c.defense_count}`);
+  if (c.polarize_active) badges.push(`🛡 편광중`);
+  if (c.has_leech_buff) badges.push(`🩸 흡수`);
   return `<div class="compact-card ${isTarget ? 'selected-target' : ''}" onclick="onCardClick('${c.name}')" title="${c.name} · ${c.role} · ${c.current_hp}/${c.max_hp}">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};"></div>
@@ -640,6 +666,7 @@ function renderCompactCardHtml(c) {
       <div class="chp-sm">${c.current_hp}/${c.max_hp}</div>
     </div>
     <div class="hpbar-track-sm"><div class="hpbar-fill-sm ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
+    <div class="cbadges-sm">${badges.join('&nbsp;&nbsp;')}</div>
   </div>`;
 }
 
@@ -662,7 +689,7 @@ function renderCardHtml(c) {
   const badges = [];
   if (lastForcedTarget === c.name) badges.push(`🎯 어그로`);
   if (c.defense_count) badges.push(`🛡 보호${c.defense_count}`);
-  if (c.shield_hp) badges.push(`🔷 막${c.shield_hp}`);
+  if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
 
@@ -1230,6 +1257,18 @@ let musicVolume = parseInt(localStorage.getItem('musicVolume') || '70', 10);
   const slider = document.getElementById('musicVolumeSlider');
   if (slider) slider.value = musicVolume;
 })();
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  const btn = document.getElementById('fullscreenBtn');
+  if (btn) btn.textContent = document.fullscreenElement ? '⛶ 전체화면 종료' : '⛶ 전체화면';
+});
 
 function onVolumeChange(value) {
   musicVolume = parseInt(value, 10);
