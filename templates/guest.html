@@ -271,16 +271,13 @@
   <div class="panel" style="position:relative;">
     <div class="panel-head">
       <b>커맨드 창</b><span class="hint">회의는 회의 DM방에서, 이쪽은 커맨드 위주</span>
-      <span class="gear">⚙</span>
+      <span class="chat-tabs">
+        <button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button>
+        <button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button>
+        <button id="chatTabEntry" onclick="setChatFilter('entry')">입장 기록</button>
+      </span>
     </div>
     <div id="chatPanelBody">
-      <div style="padding:8px 18px 0;">
-        <span class="chat-tabs">
-          <button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button>
-          <button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button>
-          <button id="chatTabEntry" onclick="setChatFilter('entry')">입장 기록</button>
-        </span>
-      </div>
       <div id="chatLog"></div>
       <div class="input-row" id="chatInputRow" style="display:none;">
         <div class="avatar-dot" id="inputAvatarDot" title="더블클릭해서 색상 변경" ondblclick="onInputAvatarDotDblClick()"></div>
