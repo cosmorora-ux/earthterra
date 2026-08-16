@@ -116,6 +116,12 @@ ACTION_MOVE = "이동"  # 마스 레이드(격자) 전용 - 이번 라운드 행
 ACTION_COMMAND = "지휘"  # 가디언 전용(마스 레이드) - 공격유도와 같은 어그로 강제이지만, 방어 부여 효과는 없습니다.
 ACTION_SWAP = "배치"  # 메딕 전용(마스 레이드) - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 사정거리 제한 없음.
 
+# 메딕 전용 표시명 - 스트라이커의 "본인방어"/"힐"과 동일한 행동이지만 메딕 화면에는 이 이름으로
+# 보여줍니다. "방어"는 가디언의 능동 방어 부여 행동(ACTION_DEFEND)과 글자는 같지만 서로 다른
+# 행동이라, 클라이언트가 행동자 직군(메딕 vs 가디언)으로 구분해서 처리합니다.
+ACTION_SELF_DEFEND_MEDIC = "방어"
+ACTION_HEAL_MEDIC = "회복"
+
 ROLE_ACTIONS = {
     ROLE_TANKER: [ACTION_ATTACK, ACTION_DEFEND, ACTION_TAUNT],
     ROLE_DEALER: [ACTION_ATTACK, ACTION_SELF_DEFEND, ACTION_DODGE],

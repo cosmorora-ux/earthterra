@@ -30,13 +30,13 @@
 
   #globalError { display:none; position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:1000;
                  background:#2a2a30; border:1px solid #4a4a52; color:#fff; align-items:center; gap:8px;
-                 padding:10px 16px; border-radius:10px; font-weight:600; font-size:13px; max-width:90vw;
+                 padding:10px 16px; border-radius:10px; font-weight:600; font-size:15px; max-width:90vw;
                  box-shadow:0 10px 30px rgba(0,0,0,.55); }
   #globalError.show { display:flex; }
   #globalError .err-icon { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
-                 border-radius:50%; background:#4a90ff; color:#0b0b0d; font-size:11px; font-weight:800; flex-shrink:0; font-style:normal; }
+                 border-radius:50%; background:#4a90ff; color:#0b0b0d; font-size:13px; font-weight:800; flex-shrink:0; font-style:normal; }
 
-  input, select, textarea, button { font-family: inherit; font-size: 13px; }
+  input, select, textarea, button { font-family: inherit; font-size:15px; }
   input, select, textarea { background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:6px 9px; }
   textarea { width:100%; min-height:90px; resize:vertical; }
   button { background:#232327; color:var(--text); border:1px solid var(--card-border); border-radius:8px; padding:7px 14px; cursor:pointer; font-weight:600; }
@@ -44,29 +44,29 @@
   .btn-primary { background: var(--accent-blue); color:#fff; border:none; }
   hr { border:none; border-top:1px solid var(--panel-border); margin:12px 0; }
 
-  .hint { color: var(--muted); font-size:12px; font-weight:400; }
+  .hint { color: var(--muted); font-size:14px; font-weight:400; }
   .ok { color:#7ee787; }
   .err { color: var(--accent-red); }
   .row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0; }
 
   .setup-panel { padding: 16px 20px; margin-bottom: 14px; }
-  .setup-panel h2 { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:14px; }
+  .setup-panel h2 { display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:16px; }
 
-  .roster-chip { display:inline-flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--card-border); border-radius:8px; padding:5px 10px; margin:3px; font-size:12px; }
-  .roster-chip button { padding:2px 8px; font-size:11px; }
-  .info-icon { cursor:help; opacity:0.75; border:1px solid var(--card-border); border-radius:50%; padding:0 5px; font-size:11px; color: var(--muted); }
+  .roster-chip { display:inline-flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--card-border); border-radius:8px; padding:5px 10px; margin:3px; font-size:14px; }
+  .roster-chip button { padding:2px 8px; font-size:13px; }
+  .info-icon { cursor:help; opacity:0.75; border:1px solid var(--card-border); border-radius:50%; padding:0 5px; font-size:13px; color: var(--muted); }
 
   /* ---------- 상단바 / 브레드크럼 ---------- */
-  .topbar { display:flex; align-items:center; gap:18px; padding:14px 22px; margin-bottom:14px; font-size:14px; flex-wrap:wrap; }
+  .topbar { display:flex; align-items:center; gap:18px; padding:14px 22px; margin-bottom:14px; font-size:16px; flex-wrap:wrap; }
   .topbar .seg { display:flex; align-items:center; gap:10px; font-weight:600; }
   .topbar .sep { color:#3a3a3e; }
   .topbar .spacer { flex:1; }
   .topbar .whoami { display:flex; align-items:center; gap:10px; }
-  .topbar .whoami .label { color: var(--muted); font-size:13px; }
-  .room-name-input { background:transparent; border:1px solid transparent; color: var(--text); font-weight:600; font-size:14px; padding:2px 6px; border-radius:6px; min-width:80px; }
+  .topbar .label { color: var(--muted); font-size:15px; }
+  .room-name-input { background:transparent; border:1px solid transparent; color: var(--text); font-weight:600; font-size:16px; padding:2px 6px; border-radius:6px; min-width:80px; }
   .room-name-input:hover, .room-name-input:focus { border-color: var(--card-border); background:#0c0c0d; outline:none; }
   .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; padding: 0 4px; }
-  .breadcrumb { color: var(--muted); font-size:13px; }
+  .breadcrumb { color: var(--muted); font-size:15px; }
   .breadcrumb b { color: var(--text); }
 
   .avatar-dot { width:30px; height:30px; border-radius:50%; background:#4a4a4e; flex-shrink:0; cursor:pointer; }
@@ -75,7 +75,7 @@
   /* ---------- 입장 모달 ---------- */
   .modal-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); align-items:center; justify-content:center; }
   .modal-box { width:300px; padding:20px; }
-  .modal-box .modal-title { font-size:15px; font-weight:700; margin-bottom:12px; }
+  .modal-box .modal-title { font-size:18px; font-weight:700; margin-bottom:12px; }
   .modal-box input { width:100%; }
   .modal-box .row { justify-content:flex-end; margin-top:10px; }
 
@@ -86,43 +86,43 @@
   .char-card.team-A { border-left: 3px solid var(--accent-blue); }
   .char-card.team-B { border-left: 3px solid var(--accent-red); }
   .char-card .row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
-  .char-card .cname { font-weight:700; font-size:14px; }
-  .char-card .crole { font-size:12px; font-weight:600; margin-top:3px; }
-  .char-card .cbadges { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color: var(--muted); margin-top:6px; min-height:14px; }
+  .char-card .cname { font-weight:700; font-size:16px; }
+  .char-card .crole { font-size:14px; font-weight:600; margin-top:3px; }
+  .char-card .cbadges { display:flex; flex-wrap:wrap; gap:8px; font-size:13px; color: var(--muted); margin-top:6px; min-height:14px; }
   .hpbar-wrap { display:flex; align-items:center; gap:8px; margin-top:8px; }
   .hpbar-track { flex:1; height:6px; border-radius:4px; background:#2a2a2e; overflow:hidden; }
   .hpbar-fill { height:100%; background:#d8d8dc; }
   .hpbar-fill.low { background: var(--accent-red); }
-  .hpnum { font-size:11px; color: var(--muted); white-space:nowrap; }
-  .card-detail { margin-top:8px; font-size:11px; color: var(--muted); border-top:1px solid var(--card-border); padding-top:6px; }
+  .hpnum { font-size:13px; color: var(--muted); white-space:nowrap; }
+  .card-detail { margin-top:8px; font-size:13px; color: var(--muted); border-top:1px solid var(--card-border); padding-top:6px; }
 
   /* ---------- 로그 / 채팅 ---------- */
   .bottom-grid { display:grid; grid-template-columns: 1fr 1.35fr; gap:16px; }
   .panel-head { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--panel-border); }
-  .panel-head b { font-size:14px; }
+  .panel-head b { font-size:16px; }
   .logline { color: var(--text); opacity:.92; }
   .logline .li { margin-right:6px; opacity:.85; }
   .logline.group-start { margin-top:10px; font-weight:600; }
   .logline.group-start:first-child { margin-top:0; }
   .logline.tag-crit { color:#fff; font-weight:700; }
-  .logline.tag-system { color: var(--muted); font-size:12px; }
+  .logline.tag-system { color: var(--muted); font-size:14px; }
   .logline.tag-round { color:#7fb0ff; font-weight:700; margin-top:14px; }
 
   .chat-tabs { display:flex; gap:6px; margin-left:auto; }
-  .chat-tabs button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:6px; padding:3px 8px; font-size:11px; }
+  .chat-tabs button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:6px; padding:3px 8px; font-size:13px; }
   .chat-tabs button.active { color:#fff; border-color: var(--accent-blue); }
   .chat-line { display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; }
   .chat-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; margin-top:2px; }
-  .chat-dot.chat-star { background:transparent; display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:15px; }
+  .chat-dot.chat-star { background:transparent; display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:18px; }
   .chat-body b { font-weight:700; }
-  .chat-body .time { color: var(--muted); font-size:11px; margin-left:6px; }
-  .chat-line.is-command .chat-text { color:#9fc3ff; font-family: ui-monospace, monospace; font-size:12px; }
+  .chat-body .time { color: var(--muted); font-size:13px; margin-left:6px; }
+  .chat-line.is-command .chat-text { color:#9fc3ff; font-family: ui-monospace, monospace; font-size:14px; }
   .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
 
   .input-row { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--panel-border); align-items:center; }
   .input-row input { flex:1; }
 
-  #gridSection b { font-size:14px; }
+  #gridSection b { font-size:16px; }
 </style>
 </head>
 <body>
@@ -235,7 +235,7 @@
 
 <div class="breadcrumb-row">
   <div class="breadcrumb"><b>3. 전투 화면</b> ◢ {{ battle_type_label }}</div>
-  <button id="fullscreenBtn" style="padding:4px 10px; font-size:12px;" onclick="toggleFullscreen()" title="전체화면으로 크게 보기">⛶ 전체화면</button>
+  <button id="fullscreenBtn" style="padding:4px 10px; font-size:14px;" onclick="toggleFullscreen()" title="전체화면으로 크게 보기">⛶ 전체화면</button>
 </div>
 
 <div class="topbar panel">
@@ -248,9 +248,9 @@
   <div class="seg" id="formatLabel"></div>
   <span class="sep">▶</span>
   <div class="seg" id="roundInfo"></div>
+  <span class="label">⏱ <span id="roundTimer">--:--</span></span>
   <div class="spacer"></div>
   <div class="whoami">
-    <span class="label">⏱ <span id="roundTimer">--:--</span></span>
     <div class="avatar-dot" id="myAvatarDot" title="클릭해서 닉네임으로 입장" onclick="onAvatarDotClick()" ondblclick="onAvatarDotDblClick()"></div>
     <span class="label" id="myNicknameLabel">미입장</span>
   </div>
@@ -273,7 +273,7 @@
 {% endif %}
 
 <div id="gridSection" class="panel" style="display:none; padding:16px 18px; margin-bottom:12px;">
-  <b>🗺 격자 지도</b>
+  <b>🗺 마스 맵</b>
   <div class="row">
     <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">🔮 전조 출력</button>
     <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;">📢 전조 공개 (러너에게 표시)</button>
@@ -281,7 +281,7 @@
     <span id="telegraphStatus" class="hint"></span>
   </div>
   <div id="gridLegend" class="hint" style="margin:4px 0;"></div>
-  <div id="gridMap" style="overflow-x:auto;"></div>
+  <div id="gridMap" style="overflow-x:auto; display:flex; justify-content:center;"></div>
   <div id="gridActionPopup" style="display:none; margin-top:8px; padding:10px; border:1px solid var(--accent-blue); border-radius:10px; background:#0c0c0d;"></div>
 </div>
 
@@ -316,7 +316,7 @@
         <button id="logBtnPub" onclick="setLogView('public')">러너 로그</button>
       </span>
     </div>
-    <div id="opLog" style="height:420px; overflow-y:auto; padding:12px 18px; font-size:13px; line-height:1.65;"></div>
+    <div id="opLog" style="height:420px; overflow-y:auto; padding:12px 18px; font-size:15px; line-height:1.65;"></div>
   </div>
 
   <div class="panel" style="position:relative;">
@@ -328,7 +328,7 @@
         <button id="chatTabEntry" onclick="setChatFilter('entry')">입장 기록</button>
       </span>
     </div>
-    <div id="chatLog" style="height:280px; overflow-y:auto; padding:12px 18px; font-size:13px;"></div>
+    <div id="chatLog" style="height:280px; overflow-y:auto; padding:12px 18px; font-size:15px;"></div>
     <div id="actionPanel" style="padding:8px 18px; border-top:1px solid var(--panel-border);"></div>
     <div class="input-row">
       <input id="chatInput" placeholder="메시지 입력" onkeydown="if(event.key==='Enter') sendChat()">
@@ -382,13 +382,21 @@ let chatFilter = 'all';
 let lastChat = [];
 
 const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "행운"];
+// "방어"는 가디언의 능동 방어 부여(아군 지정 가능, type "defend")와 메딕의 "본인방어"를 대신하는
+// 표시명(자기 자신만, type "self_defend")이 글자만 같고 서로 다른 행동입니다. ACTION_LABELS는
+// 평면 맵이라 같은 글자를 두 값에 매핑할 수 없으므로, resolveActionType()에서 행동자 직군을 보고
+// "방어"를 구분해서 풀어줍니다.
 const ACTION_LABELS = {
   "공격": "attack", "본인방어": "self_defend", "방어": "defend",
-  "회피": "dodge", "힐": "heal", "시간초과": "timeout", "도주": "flee",
+  "회피": "dodge", "힐": "heal", "회복": "heal", "시간초과": "timeout", "도주": "flee",
   "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
   "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
   "환류": "reflux", "복원": "restore",
 };
+function resolveActionType(label, actorRole) {
+  if (label === '방어' && actorRole === '메딕') return 'self_defend';
+  return ACTION_LABELS[label];
+}
 const TYPE_TO_LABEL = Object.fromEntries(Object.entries(ACTION_LABELS).map(([label, type]) => [type, label]));
 const NEEDS_TARGET = new Set(["attack", "defend", "heal", "command", "swap", "collapse", "shield", "restore"]);
 // 역할별 마스 레이드 스킬 2종 (캐릭터 등록/수정 화면의 스킬 드롭다운용)
@@ -572,7 +580,7 @@ function renderFormulaFields() {
       <label>${f.label} :
         <input id="f_${f.key}" type="number" step="${f.type === 'float' ? '0.01' : '1'}" value="${f.value}" style="width:100px;">
       </label>
-      <div style="font-size:11px; opacity:0.7;">${f.desc}</div>
+      <div style="font-size:13px; opacity:0.7;">${f.desc}</div>
     </div>
   `).join('');
 }
@@ -734,7 +742,7 @@ function refreshActTypeOptions() {
   const prevType = typeSel.value;
   typeSel.innerHTML = actor.available_actions
     .filter(label => label !== '이동')  // 이동은 지도 클릭으로만 처리합니다.
-    .map(label => `<option value="${ACTION_LABELS[label]}">${label}</option>`)
+    .map(label => `<option value="${resolveActionType(label, actor.role)}">${label}</option>`)
     .join('');
   if ([...typeSel.options].some(o => o.value === prevType)) typeSel.value = prevType;
   refreshActTargetOptions();
@@ -823,9 +831,9 @@ function renderCardHtml(c) {
 let selectedGridChar = null;  // 지도에서 선택된 "행동하는" 캐릭터 (범위 미리보기 대상)
 let selectedGridTargetName = null;  // 범위 내에서 클릭해 지정한 대상 (본인 포함)
 const GRID_CELL_PX = 36;
-const ALLY_TARGET_ACTIONS = new Set(["방어", "힐", "지휘", "배치", "차폐", "복원"]);
+const ALLY_TARGET_ACTIONS = new Set(["방어", "힐", "회복", "지휘", "배치", "차폐", "복원"]);
 const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴"]);
-const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산", "방출", "편광"]);
+const SELF_ONLY_ACTIONS = new Set(["본인방어", "방어", "회피", "도주", "방어 정산", "방출", "편광"]);
 const RANGE_IGNORING_ACTIONS = new Set(["배치"]);  // 사정거리 제한 없이 아무 아군이나 대상 지정 가능
 const MULTI_TARGET_ACTIONS = { "환류": 3 };  // 지정 인원 수가 고정된 스킬 (행동 실행 패널 전용 UI)
 const ROLE_MOVE_COLOR = {
@@ -1082,7 +1090,7 @@ function renderGrid(battle, all) {
       const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
       const telegraphText = telegraphRevealedCells.has(key) ? ' · 🔮 전조(곧 피해)' : (telegraphSelectedCells.has(key) ? ' · 전조 선택됨(미공개)' : '');
       const title = c ? `${c.name} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
-      html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; ${borderStyle} background:${bg}; ${glow} text-align:center; font-size:12px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
+      html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; ${borderStyle} background:${bg}; ${glow} text-align:center; font-size:14px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
     }
     html += '</tr>';
   }
@@ -1111,12 +1119,15 @@ function renderGridActionPopup(battle, all) {
 
   const isSelf = actor.name === target.name;
   const isEnemy = actor.teamLabel !== target.teamLabel;
-  const allowedLabels = isEnemy ? ENEMY_TARGET_ACTIONS
-    : isSelf ? new Set([...ALLY_TARGET_ACTIONS, ...SELF_ONLY_ACTIONS])
+  const allyTargetLabels = actor.role === '메딕'
+    ? new Set([...ALLY_TARGET_ACTIONS].filter(l => l !== '방어'))
     : ALLY_TARGET_ACTIONS;
+  const allowedLabels = isEnemy ? ENEMY_TARGET_ACTIONS
+    : isSelf ? new Set([...allyTargetLabels, ...SELF_ONLY_ACTIONS])
+    : allyTargetLabels;
 
   const buttons = actor.available_actions.filter(label => allowedLabels.has(label)).map(label => {
-    const type = ACTION_LABELS[label];
+    const type = resolveActionType(label, actor.role);
     if (NEEDS_TARGET.has(type)) {
       return `<button onclick="quickAction('${type}','${actor.name}','${target.name}'); closeGridSelection();">${label}</button>`;
     }
@@ -1271,7 +1282,7 @@ function renderActionPanel(battle) {
   const actorOpts = all.map(c => `<option value="${c.name}" ${c.name === actionPanelActorName ? 'selected' : ''}>${c.name} (${c.role})</option>`).join('');
 
   const buttons = character.available_actions.map(label => {
-    const type = ACTION_LABELS[label];
+    const type = resolveActionType(label, character.role);
     if (type === 'move') {
       return '';  // 이동은 지도(🗺 격자 지도)에서 아군을 클릭한 뒤 이동 가능 범위 칸을 클릭해서 처리합니다.
     }

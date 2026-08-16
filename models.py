@@ -156,6 +156,13 @@ class Character:
             base = list(self.forced_actions)
         else:
             base = list(config.ROLE_ACTIONS.get(self.role, [])) + list(config.COMMON_ACTIONS)
+        if self.role == config.ROLE_HEALER:
+            # 메딕 화면에는 "본인방어"/"힐" 대신 "방어"/"회복"으로 표시합니다(동일한 행동).
+            rename = {
+                config.ACTION_SELF_DEFEND: config.ACTION_SELF_DEFEND_MEDIC,
+                config.ACTION_HEAL: config.ACTION_HEAL_MEDIC,
+            }
+            base = [rename.get(a, a) for a in base]
         if self.can_move and not self.moved_this_round:
             base = [config.ACTION_MOVE] + base
         return base
