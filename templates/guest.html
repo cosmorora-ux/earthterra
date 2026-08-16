@@ -28,8 +28,13 @@
   .panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; }
   a { color: inherit; }
 
-  #globalError { display:none; position:sticky; top:0; z-index:50; background:#4a1f1f; color:#ffcccc;
-                 padding:10px 14px; border-radius:10px; margin-bottom:12px; font-weight:bold; }
+  #globalError { display:none; position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:1000;
+                 background:#2a2a30; border:1px solid #4a4a52; color:#fff; align-items:center; gap:8px;
+                 padding:10px 16px; border-radius:10px; font-weight:600; font-size:13px; max-width:90vw;
+                 box-shadow:0 10px 30px rgba(0,0,0,.55); }
+  #globalError.show { display:flex; }
+  #globalError .err-icon { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
+                 border-radius:50%; background:#4a90ff; color:#0b0b0d; font-size:11px; font-weight:800; flex-shrink:0; font-style:normal; }
 
   .btn { background: var(--accent-blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:14px; cursor:pointer; font-weight:600; }
 
@@ -43,6 +48,10 @@
   .avatar-dot:hover { box-shadow: 0 0 0 2px var(--card-border); }
   .whoami { display:flex; align-items:center; gap:10px; }
   .whoami .label { color: var(--muted); font-size:13px; }
+  .whoami .label#roundTimerLabel {
+    color: var(--text); font-size:20px; font-weight:800; font-variant-numeric: tabular-nums;
+    background:#1c2530; border:1px solid #3a4a5c; padding:4px 14px; border-radius:8px;
+  }
 
   /* ---------- 캐릭터 입장 / 색상 선택 모달 ---------- */
   .modal-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); align-items:center; justify-content:center; }
@@ -91,7 +100,7 @@
   .card-grid.compact-list { grid-template-columns: repeat(3, 1fr); gap:10px 22px; }
   .compact-card { display:flex; flex-direction:column; gap:5px; cursor:pointer; position:relative; }
   .compact-card .crow { display:flex; align-items:center; gap:8px; }
-  .compact-card .cavatar-sm { width:16px; height:16px; border-radius:50%; flex-shrink:0; background:#4a4a4e; }
+  .compact-card .cavatar-sm { width:16px; height:16px; border-radius:50%; flex-shrink:0; background:#4a4a4e; position:relative; }
   .compact-card .cname-sm { font-size:13px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .compact-card .chp-sm { font-size:12px; color: var(--muted); white-space:nowrap; }
   .compact-card .hpbar-track-sm { height:4px; border-radius:3px; background:#2a2a2e; overflow:hidden; }
@@ -105,9 +114,10 @@
   .char-card:hover { border-color:#444; }
   .char-card.selected-target { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue); }
   .char-card.team-B { }
+  .char-card.ally { border-left: 3px solid #fff; }
   .char-card .row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
   .char-card .cname { font-weight:700; font-size:15px; }
-  .char-card .cavatar { width:26px; height:26px; border-radius:50%; background:#4a4a4e; flex-shrink:0; }
+  .char-card .cavatar { width:26px; height:26px; border-radius:50%; background:#4a4a4e; flex-shrink:0; position:relative; }
   .char-card .crole { font-size:12px; font-weight:600; margin-top:4px; }
   .char-card .cstatus-tag { font-size:11px; color: var(--muted); margin-left:4px; }
   .char-card .cbadges { display:flex; gap:10px; font-size:11px; color: var(--muted); margin-top:6px; min-height:14px; }
@@ -116,9 +126,10 @@
   .hpbar-fill { height:100%; background:#d8d8dc; }
   .hpbar-fill.low { background: var(--accent-red); }
   .hpnum { font-size:11px; color: var(--muted); white-space:nowrap; }
-  .stat-tip { position:absolute; z-index:30; top:-42px; left:0; background:#0c0c0d; border:1px solid var(--card-border);
+  .stat-tip { position:absolute; z-index:30; bottom:calc(100% + 8px); right:0; background:#0c0c0d; border:1px solid var(--card-border);
               border-radius:10px; padding:8px 12px; font-size:12px; white-space:nowrap; display:none; box-shadow:0 6px 18px rgba(0,0,0,.5); }
-  .char-card:hover .stat-tip { display:block; }
+  .cavatar-sm .stat-tip { right:auto; left:0; }
+  .cavatar:hover .stat-tip, .cavatar-sm:hover .stat-tip { display:block; }
 
   /* ---------- 하단 그리드 (로그 / 커맨드) ---------- */
   .bottom-grid { display:grid; grid-template-columns: 1fr 1.35fr; gap:16px; }
@@ -132,7 +143,7 @@
   .logline .li { margin-right:6px; opacity:.85; }
   .logline.group-start { margin-top:10px; font-weight:600; }
   .logline.group-start:first-child { margin-top:0; }
-  .logline.tag-crit { color:#ffd166; font-weight:700; }
+  .logline.tag-crit { color:#fff; font-weight:700; }
   .logline.tag-system { color: var(--muted); font-size:12px; }
   .logline.tag-round { color:#7fb0ff; font-weight:700; margin-top:14px; }
 
@@ -185,7 +196,7 @@
 <body>
 <div class="shell">
 
-<div id="globalError"></div>
+<div id="globalError"><span class="err-icon">i</span><span id="globalErrorText"></span></div>
 
 <div id="joinModal" class="modal-overlay">
   <div class="modal-box panel">
@@ -218,7 +229,7 @@
 <div class="breadcrumb-row">
   <div class="breadcrumb"><b>전투 화면</b> ◢ {{ battle_type_label }}</div>
   <div class="bgm-label">
-    🎵 <span id="musicStatus">재생 없음</span>
+    <span id="musicStatus">재생 없음</span>
     <input type="range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" title="내 음량 (나에게만 적용)">
     <button class="btn-plain" id="fullscreenBtn" style="padding:4px 10px; font-size:12px; margin-left:10px;" onclick="toggleFullscreen()" title="전체화면으로 크게 보기">⛶ 전체화면</button>
   </div>
@@ -227,7 +238,7 @@
 <div class="main-grid {% if grid_size %}with-grid-map{% endif %}">
   {% if grid_size %}
   <div id="gridSection" class="panel">
-    <b>🗺 격자 지도</b>
+    <b>격자 지도</b>
     <div id="gridLegend" style="font-size:12px; opacity:0.8; margin:6px 0;"></div>
     <div id="gridMap" style="overflow-x:auto;"></div>
     <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
@@ -250,9 +261,11 @@
   <div>
     <div id="siteStatusCard" class="site-card panel" style="display:none;"></div>
     <div class="sort-row">
+      {% if battle_type != 'pvp' %}
       <button class="sort-btn" id="sortHpBtn" onclick="setSortMode('hp')">체력 순</button>
       <button class="sort-btn" id="sortRoleBtn" onclick="setSortMode('role')">포지션 순</button>
-      <button class="sort-btn active" id="sortNameBtn" onclick="setSortMode('name')">가나다 순 ▲</button>
+      <button class="sort-btn active" id="sortNameBtn" onclick="setSortMode('name')">가나다 순</button>
+      {% endif %}
       <span id="multiSkillSlot"></span>
     </div>
     <div id="teams" class="card-grid {% if battle_type == 'mass_raid' %}compact-list{% endif %}"></div>
@@ -314,15 +327,15 @@ let lastRoster = [];  // 캐릭터 데이터베이스에 등록된 전체 이름
 
 const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "행운"];
 const ACTION_LABELS = {
-  "공격": "attack", "본인방어": "self_defend", "방어": "defend", "공격유도": "taunt",
+  "공격": "attack", "본인방어": "self_defend", "방어": "defend",
   "회피": "dodge", "힐": "heal", "시간초과": "timeout", "도주": "flee",
   "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
   "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
   "환류": "reflux", "복원": "restore",
 };
-const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap", "collapse", "shield", "restore"]);
+const NEEDS_TARGET = new Set(["attack", "defend", "heal", "command", "swap", "collapse", "shield", "restore"]);
 const MULTI_TARGET_ACTIONS = { "환류": 3 };
-const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐", "지휘", "배치", "차폐", "복원"]);
+const ALLY_TARGET_ACTIONS = new Set(["방어", "힐", "지휘", "배치", "차폐", "복원"]);
 const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴"]);
 const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산", "방출", "편광"]);
 const RANGE_IGNORING_ACTIONS = new Set(["배치"]);
@@ -468,10 +481,10 @@ socket.on('joined', () => {
 
 function showError(msg) {
   const el = document.getElementById('globalError');
-  el.textContent = '⚠ ' + msg;
-  el.style.display = 'block';
+  document.getElementById('globalErrorText').textContent = msg;
+  el.classList.add('show');
   clearTimeout(showError._t);
-  showError._t = setTimeout(() => { el.style.display = 'none'; }, 6000);
+  showError._t = setTimeout(() => { el.classList.remove('show'); }, 6000);
 }
 
 socket.on('error', (d) => showError(d.message));
@@ -508,7 +521,13 @@ function toggleHelp() {
 // ------------------------------------------------------------------
 function tickClock() {
   const el = document.getElementById('liveClock');
-  if (el) el.textContent = new Date().toLocaleTimeString('ko-KR', { hour12: true });
+  if (!el) return;
+  const now = new Date();
+  const yy = String(now.getFullYear() % 100).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const timeStr = now.toLocaleTimeString('ko-KR', { hour12: true });
+  el.textContent = `${yy}.${mm}.${dd} ${timeStr}`;
 }
 setInterval(tickClock, 1000);
 tickClock();
@@ -532,7 +551,7 @@ function setSortMode(mode) {
     const btn = document.getElementById(SORT_BTN_IDS[m]);
     const active = sortMode === m;
     btn.classList.toggle('active', active);
-    btn.textContent = SORT_BTN_LABELS[m] + (active ? (sortDesc ? ' ▼' : ' ▲') : '');
+    btn.textContent = SORT_BTN_LABELS[m];
   });
   renderCards();
 }
@@ -610,7 +629,7 @@ function renderBattle(battle) {
   document.getElementById('formatLabel').textContent = `${battle.format_label} {{ battle_type_label }}`;
   document.getElementById('roundInfo').textContent = battle.finished
     ? `종료 - ${battle.winner ? battle.winner + ' 승리' : '무승부'}`
-    : `Round ${battle.round_no} · ${battle.current_turn_team === battle.round_first_team ? '선공' : '후공'}`;
+    : `Round ${battle.round_no} · ${battle.current_turn_team === battle.round_first_team ? '선공' : '후공'} · ${battle.current_turn_team} 행동`;
   roundDeadlineAt = battle.finished ? null : battle.round_deadline_at;
   tickTimer();
 
@@ -623,7 +642,7 @@ function renderBattle(battle) {
   lastCanSeeStats = seesAll || myTeam !== null;
   lastMyTeam = myTeam;
   lastSeesAll = seesAll;
-  lastForcedTarget = battle.forced_target;
+  lastForcedTargetNames = new Set((battle.forced_targets || []).map(f => f.target));
   renderCards();
   renderSiteStatusCard(battle);
   updateAvatarDots(battle);
@@ -640,6 +659,9 @@ function renderCards() {
     // 목록에는 러너만 넣어 섞이지 않게 합니다.
     const runners = lastAllForCards.filter(c => c.teamLabel === 'A');
     html = sortedCards(runners).map(renderOne).join('');
+  } else if (BATTLE_TYPE === 'pvp') {
+    // 정렬 버튼이 없으므로 가나다순으로 섞지 않고, 1팀이 윗줄 · 2팀이 아랫줄에 오도록 팀 순서 그대로 표시합니다.
+    html = lastAllForCards.map(renderOne).join('');
   } else {
     html = sortedCards(lastAllForCards).map(renderOne).join('');
   }
@@ -650,15 +672,18 @@ function renderCards() {
 
 function renderCompactCardHtml(c) {
   const isTarget = selectedTargetName === c.name;
+  const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
   if (c.defense_count) badges.push(`🛡 보호${c.defense_count}`);
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
-  return `<div class="compact-card ${isTarget ? 'selected-target' : ''}" onclick="onCardClick('${c.name}')" title="${c.name} · ${c.role} · ${c.current_hp}/${c.max_hp}">
+  return `<div class="compact-card ${isTarget ? 'selected-target' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
-      <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};"></div>
+      <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
+        <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
+      </div>
       <div class="cname-sm">${c.name}</div>
       <div class="chp-sm">${c.current_hp}/${c.max_hp}</div>
     </div>
@@ -670,7 +695,7 @@ function renderCompactCardHtml(c) {
 let lastAllForCards = [];
 let lastMyTeam = null;
 let lastSeesAll = false;
-let lastForcedTarget = null;
+let lastForcedTargetNames = new Set();
 let lastSiteDice = null;  // 점령전 : { round_no, value, used, stale }
 
 function roleColorVar(role) {
@@ -679,25 +704,27 @@ function roleColorVar(role) {
 
 function renderCardHtml(c) {
   const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
+  const isAlly = lastMyTeam !== null && c.team === lastMyTeam;
   const isTarget = selectedTargetName === c.name;
   const isMine = myControlInfo(lastBattleForPanel).scope === 'character' && myControlInfo(lastBattleForPanel).character.name === c.name;
   const statusTag = c.status === 'fleeing' ? ' *도주' : (c.dodging_this_round ? ' *회피' : '');
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
-  if (lastForcedTarget === c.name) badges.push(`🎯 어그로`);
+  if (lastForcedTargetNames.has(c.name)) badges.push(`🎯 어그로`);
   if (c.defense_count) badges.push(`🛡 보호${c.defense_count}`);
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
 
-  return `<div class="char-card team-${c.teamLabel} ${isTarget ? 'selected-target' : ''}" onclick="onCardClick('${c.name}')">
-    <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
+  return `<div class="char-card team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">
       <div>
         <div class="cname">${c.name}${isMine ? ' <span style="color:var(--accent-blue); font-size:11px;">(나)</span>' : ''}</div>
         <div class="crole" style="color:${roleColorVar(c.role)}">${c.role}${(c.skill && BATTLE_TYPE === 'mass_raid') ? ' 【' + c.skill + '】' : ''}<span class="cstatus-tag">${statusTag}</span></div>
       </div>
-      <div class="cavatar" style="background:${c.color || '#4a4a4e'};"></div>
+      <div class="cavatar" style="background:${c.color || '#4a4a4e'};">
+        <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
+      </div>
     </div>
     <div class="cbadges">${badges.join('&nbsp;&nbsp;')}</div>
     <div class="hpbar-wrap">
@@ -825,7 +852,6 @@ function commitAction(label, actorName, targetName) {
     attack: () => ({ attacker: actorName, target: targetName }),
     self_defend: () => ({ name: actorName }),
     defend: () => ({ tanker: actorName, target: targetName || actorName }),
-    taunt: () => ({ tanker: actorName, target: targetName || actorName }),
     dodge: () => ({ name: actorName }),
     heal: () => ({ healer: actorName, target: targetName }),
     timeout: () => ({ name: actorName }),
@@ -845,7 +871,9 @@ function commitAction(label, actorName, targetName) {
 }
 
 // 행동을 실행하고, 서버가 짧은 시간 안에 action_error를 보내지 않으면(=성공한 것으로 보고)
-// "[스킬: 이름] [대상: 이름]" 형식으로 커맨드 창(채팅)에 남깁니다. 실패한 행동은 채팅에 남지 않습니다.
+// "[행동: 이름] [대상: 이름]" 형식으로 커맨드 창(채팅)에 남깁니다. 실패한 행동은 채팅에 남지 않습니다.
+// as_character로 실제 행동한 캐릭터 이름을 함께 보내서, GM이 다른 캐릭터를 대신 조작한 경우에도
+// 로그에는 GM이 아니라 그 캐릭터의 이름/색상으로 표시되게 합니다(서버가 권한을 재검증합니다).
 function doActionThenAnnounce(type, payload, actorName, label, targetLabel) {
   let failed = false;
   const onErr = () => { failed = true; };
@@ -853,7 +881,7 @@ function doActionThenAnnounce(type, payload, actorName, label, targetLabel) {
   doAction(type, payload);
   setTimeout(() => {
     socket.off('action_error', onErr);
-    if (!failed) socket.emit('chat_message', { text: `[스킬: ${label}] [대상: ${targetLabel}]` });
+    if (!failed) socket.emit('chat_message', { text: `[행동: ${label}] [대상: ${targetLabel}]`, as_character: actorName });
   }, 400);
 }
 
@@ -939,6 +967,7 @@ function onGridMoveClick(x, y) {
 function renderGrid(battle, all) {
   const section = document.getElementById('gridSection');
   const el = document.getElementById('gridMap');
+  if (!section || !el) return;  // PVP처럼 격자 지도가 없는 전투 유형은 이 섹션 자체가 DOM에 없음
   const gridWidth = battle ? battle.grid_width : (GRID_SIZE > 0 ? GRID_SIZE : null);
   const gridHeight = battle ? battle.grid_height : (GRID_SIZE > 0 ? GRID_SIZE : null);
   if (!gridWidth) { section.style.display = 'none'; return; }
@@ -1013,7 +1042,7 @@ function renderGrid(battle, all) {
       const glow = telegraphRevealedCells.has(key) ? 'box-shadow: inset 0 0 10px 3px rgba(255,120,120,0.4);' : '';
       const label = c ? c.name.slice(0, 2) : '';
       const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
-      const telegraphText = telegraphRevealedCells.has(key) ? ' · 🔮 전조(곧 피해)' : '';
+      const telegraphText = telegraphRevealedCells.has(key) ? ' · 전조(곧 피해)' : '';
       const title = c ? `${c.name} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
       html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; ${borderStyle} background:${bg}; ${glow} text-align:center; font-size:12px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
     }
@@ -1090,13 +1119,14 @@ setInterval(tickTimer, 1000);
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round']);
 const LOG_TAG_ICON = {
   round: '✶', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
-  heal: '✚', crit: '✦', system: '·', hp: '❤', formula: '', summary: '📊',
+  heal: '✚', crit: '✦', system: '·', hp: '❤', formula: '', summary: '',
 };
 function formatLogHtml(lines) {
   return (lines || []).map(l => {
     const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
     const icon = LOG_TAG_ICON[l.tag] || '';
-    return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${l.text}</div>`;
+    const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${l.text}</span>` : l.text;
+    return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${body}</div>`;
   }).join('');
 }
 
@@ -1153,9 +1183,9 @@ function formatChatTime(timeStr) {
 }
 
 function fmtChat(entry) {
-  const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:');
+  const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:') || (entry.text || '').startsWith('[행동:');
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
-  const isStar = entry.role === 'system' || entry.role === 'gm';
+  const isStar = entry.role === 'system' || entry.role === 'gm' || (entry.nickname || '').trim().toLowerCase() === 'gm';
   const dot = isStar
     ? `<div class="chat-dot chat-star">✶</div>`
     : `<div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>`;
@@ -1213,7 +1243,6 @@ function quickAction(type, actorName, targetName) {
     attack: () => ({ attacker: actorName, target: targetName }),
     self_defend: () => ({ name: actorName }),
     defend: () => ({ tanker: actorName, target: targetName || actorName }),
-    taunt: () => ({ tanker: actorName, target: targetName || actorName }),
     dodge: () => ({ name: actorName }),
     heal: () => ({ healer: actorName, target: targetName }),
     timeout: () => ({ name: actorName }),

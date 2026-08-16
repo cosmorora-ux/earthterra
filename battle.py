@@ -112,6 +112,11 @@ class Battle:
         self.history = []       # 되돌리기(undo)용 스냅샷 스택
         self._round_summarized = False
 
+        # PVP 전용 규칙 : 같은 라운드에 한 대상을 3명 전부가 몰아서 공격할 수 없고, 최대 2명까지만
+        # 공격할 수 있습니다(집중 공격 제한). 점령전/마스 레이드는 다인원이 거점·몹을 공격하는 게
+        # 핵심 메커닉이라 이 제한을 적용하지 않습니다(site_auto_defense로 구분).
+        self._attacks_on_target_this_round = {}
+
         if forced_first_team is not None:
             first_team = forced_first_team
             explain_lines = [(f"[규칙] {first_team}이 항상 선공입니다.", "system")]
@@ -122,10 +127,11 @@ class Battle:
         self.round_first_team = first_team
         self.current_turn_team = first_team
 
-        # 공격유도(어그로) 상태 - 상대의 다음 공격 N회를 강제할 대상 (라운드 경계와 무관하게 유지됨)
-        self.forced_target = None       # 강제 지목된 캐릭터 (Character)
-        self.forced_target_team = None  # 이 강제 지목을 적용받는 "공격하는 팀"
-        self.forced_target_count = 0    # 아직 소모되지 않은 강제 공격 횟수
+        # 공격유도/지휘(어그로) 상태 - "공격하는 팀"별로 독립적으로 유지됩니다. 양 팀이 각자
+        # 어그로를 걸면 서로 다른 강제 지목이 동시에 존재할 수 있습니다(한쪽이 걸었다고 다른 쪽
+        # 효과가 사라지지 않음). 라운드 경계와 무관하게 유지됨.
+        # {team_label: {"target": Character, "count": int, "grantor": Character}}
+        self.forced_targets = {}
         self._forced_turn_had_attack = False  # 강제 대상팀이 이번 턴(세그먼트)에 공격을 사용했는지
 
         self.finished = False
@@ -164,20 +170,26 @@ class Battle:
     # ------------------------------------------------------------------
     # 로그 유틸리티
     # ------------------------------------------------------------------
-    def _log(self, text: str, tag: str = "normal"):
+    def _log_entry(self, text: str, tag: str, role: str = None):
+        entry = {"text": text, "tag": tag}
+        if role:
+            entry["role"] = role  # 크리티컬로 강조할 때만 채워짐 - 클라이언트가 직군별 색상을 입힙니다.
+        return entry
+
+    def _log(self, text: str, tag: str = "normal", role: str = None):
         """운영자 로그 + 러너 공유 로그에 동일하게 기록합니다."""
-        self.operator_log.append({"text": text, "tag": tag})
-        self.public_log.append({"text": text, "tag": tag})
+        self.operator_log.append(self._log_entry(text, tag, role))
+        self.public_log.append(self._log_entry(text, tag, role))
 
     def log_event(self, text: str, tag: str = "system"):
         """외부(웹 서버 등)에서 전투 규칙 관련 안내를 로그에 남기기 위한 공개 메서드입니다."""
         self._log(text, tag=tag)
 
-    def _log_operator_only(self, text: str, tag: str = "normal"):
-        self.operator_log.append({"text": text, "tag": tag})
+    def _log_operator_only(self, text: str, tag: str = "normal", role: str = None):
+        self.operator_log.append(self._log_entry(text, tag, role))
 
-    def _log_public_only(self, text: str, tag: str = "normal"):
-        self.public_log.append({"text": text, "tag": tag})
+    def _log_public_only(self, text: str, tag: str = "normal", role: str = None):
+        self.public_log.append(self._log_entry(text, tag, role))
 
     # ------------------------------------------------------------------
     # 유틸리티
@@ -210,6 +222,39 @@ class Battle:
 
     def _team_key(self, team_label: str):
         return "A" if team_label == self.TEAM_A else "B"
+
+    # ------------------------------------------------------------------
+    # 공격유도/지휘(어그로) 강제 지목 - 팀별로 독립적인 상태를 다룹니다.
+    # ------------------------------------------------------------------
+    def _forced_for(self, team_label: str):
+        """team_label 팀이 지금 강제로 공격해야 하는 대상 정보. 대상이 죽었으면 자동 해제합니다."""
+        forced = self.forced_targets.get(team_label)
+        if forced is not None and not forced["target"].is_alive:
+            del self.forced_targets[team_label]
+            return None
+        return forced
+
+    def _register_forced_target(self, grantor: Character, target: Character, forced_team: str) -> int:
+        """grantor가 target에게 어그로를 걸어, forced_team의 다음 공격을 강제합니다.
+        같은 대상에게 다시 걸면 남은 강제 횟수가 누적되고, 다른 대상으로 걸면 그 팀 몫만 교체됩니다
+        (다른 팀에 걸려 있는 강제 지목에는 영향을 주지 않습니다)."""
+        existing = self.forced_targets.get(forced_team)
+        if existing is not None and existing["target"] is target:
+            existing["count"] += 1
+        else:
+            self.forced_targets[forced_team] = {"target": target, "count": 1, "grantor": grantor}
+        return self.forced_targets[forced_team]["count"]
+
+    def _consume_forced_target(self, attacker_team_label: str, log_text: str):
+        """attacker_team_label 팀이 강제 대상을 공격해서 강제 횟수를 1 소모합니다."""
+        forced = self.forced_targets.get(attacker_team_label)
+        if forced is None:
+            return
+        self._forced_turn_had_attack = True
+        forced["count"] -= 1
+        self._log(log_text.format(count=forced["count"]), tag="system")
+        if forced["count"] <= 0:
+            del self.forced_targets[attacker_team_label]
 
     def _check_actor_turn(self, actor: Character, allow_free_turn: bool = False):
         """
@@ -260,12 +305,14 @@ class Battle:
             "current_turn_team": self.current_turn_team,
             "finished": self.finished,
             "winner": self.winner,
-            "forced_target": self.forced_target.name if self.forced_target else None,
-            "forced_target_team": self.forced_target_team,
-            "forced_target_count": self.forced_target_count,
+            "forced_targets": {
+                team: {"target": f["target"].name, "count": f["count"], "grantor": f["grantor"].name}
+                for team, f in self.forced_targets.items()
+            },
             "forced_turn_had_attack": self._forced_turn_had_attack,
             "round_start_hp": dict(self.round_start_hp),
             "round_summarized": self._round_summarized,
+            "attacks_on_target_this_round": dict(self._attacks_on_target_this_round),
             "chars": chars,
             "op_len": len(self.operator_log),
             "pub_len": len(self.public_log),
@@ -292,12 +339,18 @@ class Battle:
         self.current_turn_team = snap["current_turn_team"]
         self.finished = snap["finished"]
         self.winner = snap["winner"]
-        self.forced_target = self.find_character(snap["forced_target"])
-        self.forced_target_team = snap["forced_target_team"]
-        self.forced_target_count = snap["forced_target_count"]
+        self.forced_targets = {
+            team: {
+                "target": self.find_character(f["target"]),
+                "count": f["count"],
+                "grantor": self.find_character(f["grantor"]),
+            }
+            for team, f in snap.get("forced_targets", {}).items()
+        }
         self._forced_turn_had_attack = snap["forced_turn_had_attack"]
         self.round_start_hp = dict(snap["round_start_hp"])
         self._round_summarized = snap["round_summarized"]
+        self._attacks_on_target_this_round = dict(snap.get("attacks_on_target_this_round", {}))
         self.turn_op_start = snap["turn_op_start"]
         self.turn_pub_start = snap["turn_pub_start"]
 
@@ -377,12 +430,18 @@ class Battle:
                 f"(방어를 부여한 사람이 탱커가 아니므로 방어 크리티컬이 발생하지 않습니다)", tag="formula",
             )
 
-        # 요청 12 : 방어 값(총합)은 러너 공유 로그에도 표시합니다.
-        self._log_public_only(f"방어 값 {dfs['total']}", tag="defend")
+        # 요청 12 : 방어 값(총합)은 러너 공유 로그에도 표시합니다. 크리티컬이면 방어를 부여한
+        # 캐릭터의 직군 색으로 강조합니다.
+        if dfs["is_crit"]:
+            grantor = self.find_character(dfs.get("grantor_name"))
+            self._log_public_only(
+                f"방어 값 {dfs['total']}", tag="defend", role=grantor.role if grantor else None,
+            )
+        else:
+            self._log_public_only(f"방어 값 {dfs['total']}", tag="defend")
 
         self._log(f"피해량 {result['damage']}", tag="damage")
-        self._log(f"{target.name} HP", tag="hp")
-        self._log(f"{result['hp_before']} → {result['hp_after']}", tag="hp")
+        self._log(f"{target.name} HP {result['hp_before']} → {result['hp_after']}", tag="hp")
 
         if target.status == Character.STATUS_DOWNED:
             self._log(
@@ -572,23 +631,23 @@ class Battle:
         if target.team == attacker.team:
             raise BattleError("아군은 공격할 수 없습니다.")
 
-        # 강제 대상이 죽거나 도주해 더 이상 유효하지 않다면 정리합니다.
-        if self.forced_target is not None and not self.forced_target.is_alive:
-            self.forced_target = None
-            self.forced_target_team = None
-            self.forced_target_count = 0
-
         attacker_team_label = self.team_label_of(attacker)
-        forced_active = (
-            self.forced_target is not None
-            and self.forced_target_team == attacker_team_label
-        )
-        if forced_active and target is not self.forced_target:
+        forced = self._forced_for(attacker_team_label)
+        if forced is not None and target is not forced["target"]:
             raise BattleError(
-                "현재 공격유도 효과가 적용 중입니다.\n"
-                f"이번 공격은 반드시 {self.forced_target.name}을(를) 대상으로 해야 합니다. "
-                f"(남은 강제 횟수 {self.forced_target_count}회)"
+                "현재 공격유도/지휘 효과가 적용 중입니다.\n"
+                f"이번 공격은 반드시 {forced['target'].name}을(를) 대상으로 해야 합니다. "
+                f"(남은 강제 횟수 {forced['count']}회)"
             )
+
+        if not self.site_auto_defense:
+            focus_count = self._attacks_on_target_this_round.get(target.name, 0)
+            if focus_count >= 2:
+                raise BattleError(
+                    f"{target.name}은(는) 이번 라운드에 이미 2명에게 공격받았습니다. "
+                    "한 대상은 라운드당 최대 2명까지만 공격할 수 있습니다."
+                )
+            self._attacks_on_target_this_round[target.name] = focus_count + 1
 
         self._push_history()
 
@@ -600,7 +659,12 @@ class Battle:
 
         self._log(f"{attacker.name} 공격 → {target.name}", tag="action")
         # 요청 1 : 공격 수치는 정산(HP 반영) 여부와 무관하게 즉시 알 수 있어야 합니다.
-        self._log(f"공격 수치 {atk['total']}", tag="damage")
+        # 크리티컬 안내는 수치보다 먼저 보이도록 하고, 크리티컬이 뜬 수치는 공격자 직군 색으로 강조합니다.
+        if atk["is_crit"]:
+            self._log_public_only("크리티컬!", tag="crit")
+            self._log(f"공격 수치 {atk['total']}", tag="damage", role=attacker.role)
+        else:
+            self._log(f"공격 수치 {atk['total']}", tag="damage")
         self._log_operator_only(
             f"공격 굴림 : 다이스(1~{atk['dice_sides']}, {atk['dice_count']}개, "
             f"재굴림 기준치 {atk['mental_threshold']} 이하) "
@@ -613,7 +677,6 @@ class Battle:
                 f"→ 크리티컬! (확률 {atk['crit_chance']}%) ×{atk['crit_mult']} = {atk['total']}",
                 tag="crit",
             )
-            self._log_public_only("크리티컬!", tag="crit")
         elif not atk["position_match"]:
             self._log_operator_only(
                 f"({attacker.name}은(는) 딜러가 아니므로 크리티컬이 발생하지 않습니다)", tag="formula",
@@ -636,22 +699,13 @@ class Battle:
             resolved_target.pending_attacks.append({
                 "attacker_name": attacker.name, "atk": atk, "defense_stat_mult": def_mult,
             })
-            self._log(
-                f"{resolved_target.name} 판정 대기중 (피격자의 행동 대응 후 피해값이 정산됩니다)", tag="system",
-            )
 
         self._maybe_trigger_leech(attacker)
 
-        if forced_active:
-            self._forced_turn_had_attack = True
-            self.forced_target_count -= 1
-            self._log(
-                f"공격 대상 변경 (공격유도 효과, 남은 강제 횟수 {self.forced_target_count}회)", tag="system",
+        if forced is not None:
+            self._consume_forced_target(
+                attacker_team_label, "공격 대상 변경 (공격유도/지휘 효과, 남은 강제 횟수 {count}회)",
             )
-            if self.forced_target_count <= 0:
-                self.forced_target = None
-                self.forced_target_team = None
-                self.forced_target_count = 0
 
         self._check_finish()
         return atk
@@ -674,17 +728,13 @@ class Battle:
         if target.team == attacker.team:
             raise BattleError("아군은 공격할 수 없습니다.")
 
-        if self.forced_target is not None and not self.forced_target.is_alive:
-            self.forced_target = None
-            self.forced_target_team = None
-            self.forced_target_count = 0
         attacker_team_label = self.team_label_of(attacker)
-        forced_active = self.forced_target is not None and self.forced_target_team == attacker_team_label
-        if forced_active and target is not self.forced_target:
+        forced = self._forced_for(attacker_team_label)
+        if forced is not None and target is not forced["target"]:
             raise BattleError(
                 "현재 공격유도/지휘 효과가 적용 중입니다.\n"
-                f"이번 공격은 반드시 {self.forced_target.name}을(를) 대상으로 해야 합니다. "
-                f"(남은 강제 횟수 {self.forced_target_count}회)"
+                f"이번 공격은 반드시 {forced['target'].name}을(를) 대상으로 해야 합니다. "
+                f"(남은 강제 횟수 {forced['count']}회)"
             )
 
         self._push_history()
@@ -711,9 +761,11 @@ class Battle:
 
         for i, atk in enumerate(hits, 1):
             note = " (강제 크리티컬 적용)" if forced_crit_applied and i == 2 else ""
-            self._log(f"[붕괴 {i}/2] 공격 수치 {atk['total']}{note}", tag="damage")
             if atk["is_crit"]:
                 self._log_public_only("크리티컬!", tag="crit")
+                self._log(f"[붕괴 {i}/2] 공격 수치 {atk['total']}{note}", tag="damage", role=attacker.role)
+            else:
+                self._log(f"[붕괴 {i}/2] 공격 수치 {atk['total']}{note}", tag="damage")
             if resolved_target.has_acted:
                 result = AttackSkill.resolve(
                     atk, resolved_target, overrides=self.formula_overrides,
@@ -724,20 +776,13 @@ class Battle:
                 resolved_target.pending_attacks.append({
                     "attacker_name": attacker.name, "atk": atk, "defense_stat_mult": def_mult,
                 })
-                self._log(f"{resolved_target.name} 판정 대기중 ({i}/2)", tag="system")
 
         self._maybe_trigger_leech(attacker)
 
-        if forced_active:
-            self._forced_turn_had_attack = True
-            self.forced_target_count -= 1
-            self._log(
-                f"공격 대상 변경 (공격유도/지휘 효과, 남은 강제 횟수 {self.forced_target_count}회)", tag="system",
+        if forced is not None:
+            self._consume_forced_target(
+                attacker_team_label, "공격 대상 변경 (공격유도/지휘 효과, 남은 강제 횟수 {count}회)",
             )
-            if self.forced_target_count <= 0:
-                self.forced_target = None
-                self.forced_target_team = None
-                self.forced_target_count = 0
 
         self._check_finish()
 
@@ -759,13 +804,9 @@ class Battle:
         if not enemies:
             raise BattleError("공격할 적이 없습니다.")
 
-        if self.forced_target is not None and not self.forced_target.is_alive:
-            self.forced_target = None
-            self.forced_target_team = None
-            self.forced_target_count = 0
         attacker_team_label = self.team_label_of(attacker)
         # 방출은 광역 공격이라 강제 대상도 어차피 맞으므로, 대상 지정 자체는 막지 않습니다.
-        forced_active = self.forced_target is not None and self.forced_target_team == attacker_team_label
+        forced = self._forced_for(attacker_team_label)
 
         self._push_history()
         self._resolve_pending_attacks(attacker)
@@ -786,9 +827,11 @@ class Battle:
             def_mult = resolved_target.polarize_ally_count if resolved_target.polarize_active else 1.0
             for i in range(1, 3):
                 atk = self.attack_skill.roll(attacker, overrides=merged)
-                self._log(f"[방출 → {enemy.name} {i}/2] 공격 수치 {atk['total']}", tag="damage")
                 if atk["is_crit"]:
                     self._log_public_only("크리티컬!", tag="crit")
+                    self._log(f"[방출 → {enemy.name} {i}/2] 공격 수치 {atk['total']}", tag="damage", role=attacker.role)
+                else:
+                    self._log(f"[방출 → {enemy.name} {i}/2] 공격 수치 {atk['total']}", tag="damage")
                 if resolved_target.has_acted:
                     result = AttackSkill.resolve(
                         atk, resolved_target, overrides=self.formula_overrides,
@@ -799,21 +842,14 @@ class Battle:
                     resolved_target.pending_attacks.append({
                         "attacker_name": attacker.name, "atk": atk, "defense_stat_mult": def_mult,
                     })
-                    self._log(f"{resolved_target.name} 판정 대기중 ({i}/2)", tag="system")
 
         self._maybe_trigger_leech(attacker)
 
-        if forced_active:
-            self._forced_turn_had_attack = True
-            self.forced_target_count -= 1
-            self._log(
-                f"강제 대상도 방출 범위에 포함됨 (공격유도/지휘 효과, 남은 강제 횟수 {self.forced_target_count}회)",
-                tag="system",
+        if forced is not None:
+            self._consume_forced_target(
+                attacker_team_label,
+                "강제 대상도 방출 범위에 포함됨 (공격유도/지휘 효과, 남은 강제 횟수 {count}회)",
             )
-            if self.forced_target_count <= 0:
-                self.forced_target = None
-                self.forced_target_team = None
-                self.forced_target_count = 0
 
         self._check_finish()
 
@@ -891,19 +927,14 @@ class Battle:
         tanker.has_acted = True
 
         enemy_label = self.enemy_team_label(self.team_label_of(tanker))
-        if self.forced_target is target:
-            self.forced_target_count += 1  # 같은 대상에게 다시 걸면 강제 횟수가 누적됩니다.
-        else:
-            self.forced_target = target
-            self.forced_target_team = enemy_label
-            self.forced_target_count = 1
+        count = self._register_forced_target(tanker, target, enemy_label)
 
         if target is tanker:
             self._log(f"{tanker.name} 공격유도 (본인) - 능동 방어도 함께 부여됩니다", tag="taunt")
         else:
             self._log(f"{tanker.name} 공격유도 → {target.name}", tag="taunt")
         self._log(
-            f"→ {enemy_label}의 다음 공격 {self.forced_target_count}회가 {target.name}을(를) 대상으로 강제됩니다.",
+            f"→ {enemy_label}의 다음 공격 {count}회가 {target.name}을(를) 대상으로 강제됩니다.",
             tag="system",
         )
         self._check_finish()
@@ -932,19 +963,14 @@ class Battle:
         guardian.has_acted = True
 
         enemy_label = self.enemy_team_label(self.team_label_of(guardian))
-        if self.forced_target is target:
-            self.forced_target_count += 1  # 같은 대상에게 다시 걸면 강제 횟수가 누적됩니다.
-        else:
-            self.forced_target = target
-            self.forced_target_team = enemy_label
-            self.forced_target_count = 1
+        count = self._register_forced_target(guardian, target, enemy_label)
 
         if target is guardian:
-            self._log(f"{guardian.name} 지휘 (본인)", tag="taunt")
+            self._log(f"{guardian.name} 지휘 (본인) - 능동 방어도 함께 부여됩니다", tag="taunt")
         else:
-            self._log(f"{guardian.name} 지휘 → {target.name}", tag="taunt")
+            self._log(f"{guardian.name} 지휘 → {target.name} (능동 방어도 함께 부여됩니다)", tag="taunt")
         self._log(
-            f"→ {enemy_label}의 다음 공격 {self.forced_target_count}회가 {target.name}을(를) 대상으로 강제됩니다.",
+            f"→ {enemy_label}의 다음 공격 {count}회가 {target.name}을(를) 대상으로 강제됩니다.",
             tag="system",
         )
         self._check_finish()
@@ -1077,9 +1103,11 @@ class Battle:
                 f"({healer.name}은(는) 힐러가 아니므로 크리티컬이 발생하지 않습니다)", tag="formula",
             )
 
-        self._log(f"회복 {heal['total']}", tag="heal")
-        self._log(f"{target.name} HP", tag="hp")
-        self._log(f"{result['hp_before']} → {result['hp_after']}", tag="hp")
+        if heal["is_crit"]:
+            self._log(f"회복 {heal['total']}", tag="heal", role=healer.role)
+        else:
+            self._log(f"회복 {heal['total']}", tag="heal")
+        self._log(f"{target.name} HP {result['hp_before']} → {result['hp_after']}", tag="hp")
 
         if target_was_downed and target.status == Character.STATUS_ALIVE:
             self._log(f"{target.name} 위기를 넘기고 전투에 복귀했습니다!", tag="system")
@@ -1352,38 +1380,30 @@ class Battle:
 
     def _check_aggro_release(self):
         """
-        공격유도 대상팀의 턴이 끝나는데, 그 팀이 이번 턴에 단 한 번도 공격을 사용하지 않았다면
-        공격유도 효과가 자동으로 해제됩니다. (요청 10)
+        공격유도/지휘 대상팀의 턴이 끝나는데, 그 팀이 이번 턴에 단 한 번도 공격을 사용하지 않았다면
+        그 팀에 걸려있던 강제 지목만 해제됩니다 (다른 팀에 걸린 강제 지목은 독립적이라 영향 없음).
         """
-        if (
-            self.forced_target is not None
-            and self.forced_target_team == self.current_turn_team
-            and not self._forced_turn_had_attack
-        ):
+        forced = self.forced_targets.get(self.current_turn_team)
+        if forced is not None and not self._forced_turn_had_attack:
             self._log(
-                f"⚠ 공격유도 효과가 해제되었습니다 ({self.current_turn_team}이(가) 이번 턴에 "
+                f"⚠ 공격유도/지휘 효과가 해제되었습니다 ({self.current_turn_team}이(가) 이번 턴에 "
                 f"공격을 사용하지 않았습니다).",
                 tag="system",
             )
-            self.forced_target = None
-            self.forced_target_team = None
-            self.forced_target_count = 0
+            del self.forced_targets[self.current_turn_team]
         self._forced_turn_had_attack = False
 
     def _log_aggro_reminder_if_needed(self, team_about_to_act: str):
         """
-        공격유도 효과가 아직 남아있고, 지금 턴을 받는 팀이 그 강제 대상을 공격해야 하는 팀이라면
+        공격유도/지휘 효과가 아직 남아있고, 지금 턴을 받는 팀이 그 강제 대상을 공격해야 하는 팀이라면
         라운드/턴 개시 문구보다 먼저 안내합니다. (라운드 경계를 넘어서도 유지됩니다)
         """
-        if (
-            self.forced_target is not None
-            and self.forced_target.is_alive
-            and self.forced_target_team == team_about_to_act
-        ):
+        forced = self._forced_for(team_about_to_act)
+        if forced is not None:
             self._forced_turn_had_attack = False  # 이번 턴에는 아직 공격을 사용하지 않았습니다.
             self._log(
-                f"⚠ 공격유도 효과가 남아있습니다 : {team_about_to_act}의 다음 공격 "
-                f"{self.forced_target_count}회는 반드시 {self.forced_target.name}을(를) 대상으로 해야 합니다.",
+                f"⚠ 공격유도/지휘 효과가 남아있습니다 : {team_about_to_act}의 다음 공격 "
+                f"{forced['count']}회는 반드시 {forced['target'].name}을(를) 대상으로 해야 합니다.",
                 tag="system",
             )
 
@@ -1391,16 +1411,18 @@ class Battle:
         self.round_no += 1
         self.round_first_team = self.enemy_team_label(self.round_first_team)
         self.current_turn_team = self.round_first_team
+        self._attacks_on_target_this_round = {}
 
         for c in self.team_a + self.team_b:
             c.reset_for_new_round()
 
-        # 요청 16 : 공격유도(본인)로 부여된 능동 방어는 그 어그로가 아직 소모되지 않은 만큼
+        # 요청 16 : 공격유도/지휘로 부여된 능동 방어는 그 어그로가 아직 소모되지 않은 만큼
         # 라운드 경계를 넘어서도 함께 유지되어야 합니다. reset_for_new_round()가 방어 계층을
-        # 비우므로, 남아있는 강제 횟수만큼 다시 채워 넣습니다.
-        if self.forced_target is not None and self.forced_target_count > 0:
-            self.forced_target.defended_this_round = True
-            self.forced_target.defense_grants = [self.forced_target] * self.forced_target_count
+        # 비우므로, 남아있는 강제 횟수만큼 다시 채워 넣습니다. (양 팀에 걸린 강제 지목 모두 해당)
+        for forced in self.forced_targets.values():
+            if forced["count"] > 0:
+                forced["target"].defended_this_round = True
+                forced["target"].defense_grants = [forced["grantor"]] * forced["count"]
 
         # 차폐(가디언) 임시 보호막 만료 처리 (전투 시작 시 붙는 영구 보호막은 만료되지 않습니다)
         for c in self.team_a + self.team_b:

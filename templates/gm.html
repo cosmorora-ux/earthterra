@@ -28,8 +28,13 @@
   .panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; }
   a { color: inherit; }
 
-  #globalError { display:none; position:sticky; top:0; z-index:50; background:#4a1f1f; color:#ffcccc;
-                 padding:10px 14px; border-radius:10px; margin-bottom:12px; font-weight:bold; }
+  #globalError { display:none; position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:1000;
+                 background:#2a2a30; border:1px solid #4a4a52; color:#fff; align-items:center; gap:8px;
+                 padding:10px 16px; border-radius:10px; font-weight:600; font-size:13px; max-width:90vw;
+                 box-shadow:0 10px 30px rgba(0,0,0,.55); }
+  #globalError.show { display:flex; }
+  #globalError .err-icon { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
+                 border-radius:50%; background:#4a90ff; color:#0b0b0d; font-size:11px; font-weight:800; flex-shrink:0; font-style:normal; }
 
   input, select, textarea, button { font-family: inherit; font-size: 13px; }
   input, select, textarea { background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:6px 9px; }
@@ -99,7 +104,7 @@
   .logline .li { margin-right:6px; opacity:.85; }
   .logline.group-start { margin-top:10px; font-weight:600; }
   .logline.group-start:first-child { margin-top:0; }
-  .logline.tag-crit { color:#ffd166; font-weight:700; }
+  .logline.tag-crit { color:#fff; font-weight:700; }
   .logline.tag-system { color: var(--muted); font-size:12px; }
   .logline.tag-round { color:#7fb0ff; font-weight:700; margin-top:14px; }
 
@@ -123,7 +128,7 @@
 <body>
 <div class="shell">
 
-<div id="globalError"></div>
+<div id="globalError"><span class="err-icon">i</span><span id="globalErrorText"></span></div>
 
 <div id="joinModal" class="modal-overlay">
   <div class="modal-box panel">
@@ -140,7 +145,7 @@
   <h2>참가자 공유 링크</h2>
   <div class="row">
     <input id="guestLink" readonly value="{{ guest_url }}" style="flex:1;">
-    <button onclick="copyGuestLink()">복사</button>
+    <button onclick="copyGuestLink()">복사 + 새 창 열기</button>
   </div>
 </section>
 
@@ -378,14 +383,14 @@ let lastChat = [];
 
 const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "행운"];
 const ACTION_LABELS = {
-  "공격": "attack", "본인방어": "self_defend", "방어": "defend", "공격유도": "taunt",
+  "공격": "attack", "본인방어": "self_defend", "방어": "defend",
   "회피": "dodge", "힐": "heal", "시간초과": "timeout", "도주": "flee",
   "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
   "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
   "환류": "reflux", "복원": "restore",
 };
 const TYPE_TO_LABEL = Object.fromEntries(Object.entries(ACTION_LABELS).map(([label, type]) => [type, label]));
-const NEEDS_TARGET = new Set(["attack", "defend", "taunt", "heal", "command", "swap", "collapse", "shield", "restore"]);
+const NEEDS_TARGET = new Set(["attack", "defend", "heal", "command", "swap", "collapse", "shield", "restore"]);
 // 역할별 마스 레이드 스킬 2종 (캐릭터 등록/수정 화면의 스킬 드롭다운용)
 const SKILL_OPTIONS = { "가디언": ["차폐", "편광"], "스트라이커": ["붕괴", "방출"], "메딕": ["환류", "복원"] };
 
@@ -395,10 +400,10 @@ function roleColorVar(role) {
 
 function showError(msg) {
   const el = document.getElementById('globalError');
-  el.textContent = '⚠ ' + msg;
-  el.style.display = 'block';
+  document.getElementById('globalErrorText').textContent = msg;
+  el.classList.add('show');
   clearTimeout(showError._t);
-  showError._t = setTimeout(() => { el.style.display = 'none'; }, 6000);
+  showError._t = setTimeout(() => { el.classList.remove('show'); }, 6000);
 }
 
 let MY_NICKNAME = 'GM';
@@ -527,6 +532,7 @@ function copyGuestLink() {
   const el = document.getElementById('guestLink');
   el.select();
   document.execCommand('copy');
+  window.open(el.value, '_blank');
 }
 
 function registerCharacters() {
@@ -817,7 +823,7 @@ function renderCardHtml(c) {
 let selectedGridChar = null;  // 지도에서 선택된 "행동하는" 캐릭터 (범위 미리보기 대상)
 let selectedGridTargetName = null;  // 범위 내에서 클릭해 지정한 대상 (본인 포함)
 const GRID_CELL_PX = 36;
-const ALLY_TARGET_ACTIONS = new Set(["방어", "공격유도", "힐", "지휘", "배치", "차폐", "복원"]);
+const ALLY_TARGET_ACTIONS = new Set(["방어", "힐", "지휘", "배치", "차폐", "복원"]);
 const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴"]);
 const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산", "방출", "편광"]);
 const RANGE_IGNORING_ACTIONS = new Set(["배치"]);  // 사정거리 제한 없이 아무 아군이나 대상 지정 가능
@@ -982,6 +988,7 @@ function onGridMoveClick(x, y) {
 function renderGrid(battle, all) {
   const section = document.getElementById('gridSection');
   const el = document.getElementById('gridMap');
+  if (!section || !el) return;  // PVP처럼 격자 지도가 없는 전투 유형은 이 섹션 자체가 DOM에 없음
   const gridWidth = battle ? battle.grid_width : (GRID_SIZE > 0 ? GRID_SIZE : null);
   const gridHeight = battle ? battle.grid_height : (GRID_SIZE > 0 ? GRID_SIZE : null);
   if (!gridWidth) { section.style.display = 'none'; return; }
@@ -1152,13 +1159,14 @@ function setLogView(view) {
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round']);
 const LOG_TAG_ICON = {
   round: '✶', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
-  heal: '✚', crit: '✦', system: '·', hp: '❤', formula: '', summary: '📊',
+  heal: '✚', crit: '✦', system: '·', hp: '❤', formula: '', summary: '',
 };
 function formatLogHtml(lines) {
   return (lines || []).map(l => {
     const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
     const icon = LOG_TAG_ICON[l.tag] || '';
-    return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${l.text}</div>`;
+    const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${l.text}</span>` : l.text;
+    return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${body}</div>`;
   }).join('');
 }
 
@@ -1218,9 +1226,9 @@ function formatChatTime(timeStr) {
 }
 
 function fmtChat(entry) {
-  const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:');
+  const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:') || (entry.text || '').startsWith('[행동:');
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
-  const isStar = entry.role === 'system' || entry.role === 'gm';
+  const isStar = entry.role === 'system' || entry.role === 'gm' || (entry.nickname || '').trim().toLowerCase() === 'gm';
   const dot = isStar
     ? `<div class="chat-dot chat-star">✶</div>`
     : `<div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>`;
@@ -1295,7 +1303,6 @@ function quickAction(type, actorName, targetName) {
     attack: () => ({ attacker: actorName, target: targetName }),
     self_defend: () => ({ name: actorName }),
     defend: () => ({ tanker: actorName, target: targetName || actorName }),
-    taunt: () => ({ tanker: actorName, target: targetName || actorName }),
     dodge: () => ({ name: actorName }),
     heal: () => ({ healer: actorName, target: targetName }),
     timeout: () => ({ name: actorName }),
@@ -1330,7 +1337,6 @@ function submitAction() {
     attack: { attacker: actor, target },
     self_defend: { name: actor },
     defend: { tanker: actor, target: target || actor },
-    taunt: { tanker: actor, target: target || actor },
     dodge: { name: actor },
     heal: { healer: actor, target },
     timeout: { name: actor },

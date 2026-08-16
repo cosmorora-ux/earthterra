@@ -219,9 +219,11 @@ def build_battle_common(battle):
         "format_label": f"{len(battle.team_a)}:{len(battle.team_b)}",
         "finished": battle.finished,
         "winner": battle.winner,
-        "forced_target": battle.forced_target.name if battle.forced_target else None,
-        "forced_target_team": battle.forced_target_team,
-        "forced_target_count": battle.forced_target_count,
+        # 팀별로 독립적인 강제 지목(공격유도/지휘) 목록 - 양 팀에 동시에 걸려 있을 수 있습니다.
+        "forced_targets": [
+            {"team": team, "target": f["target"].name, "count": f["count"]}
+            for team, f in battle.forced_targets.items()
+        ],
         "can_advance_turn": battle.can_advance_turn(),
         "unacted_members": battle.unacted_members(),
         "grid_width": battle.grid_width,
@@ -407,10 +409,34 @@ def on_chat_message(data):
         return
     control = resolve_control(room, info)
     category = {"all": "operator", "character": "player", "none": "spectator"}[control["scope"]]
+    nickname = info["nickname"]
+    role = info["role"]
+
+    # GM(scope "all")이 다른 캐릭터를 대신 조작해 행동을 알릴 때는, 로그에 "GM"이 아니라
+    # 실제로 행동한 캐릭터의 이름/색으로 표시되도록 as_character를 검증 후 신원을 덮어씁니다.
+    # 조작 권한이 없는 캐릭터 이름으로 스푸핑하지 못하도록, scope가 그 캐릭터를 실제로
+    # 조작할 수 있는 경우에만(all, 또는 본인 캐릭터) 허용합니다.
+    as_character = (data.get("as_character") or "").strip()
+    if as_character and control["scope"] in ("all", "character"):
+        if control["scope"] == "character" and control["name"] != as_character:
+            as_character = ""
+        else:
+            battle = room.game.battle
+            live = battle.find_character(as_character) if battle is not None else None
+            if live is None:
+                as_character = ""
+    else:
+        as_character = ""
+
+    if as_character:
+        nickname = as_character
+        role = "guest"
+        category = "player"
+
     entry = {
         "time": time.strftime("%H:%M:%S"),
-        "nickname": info["nickname"],
-        "role": info["role"],
+        "nickname": nickname,
+        "role": role,
         "category": category,
         "text": text[:500],
     }
@@ -642,6 +668,15 @@ def on_start_battle(data):
             # 차폐(가디언) 스킬을 선택한 캐릭터는 마스 레이드 전투 시작 시에만 영구 보호막을 자동으로 얻습니다.
             if c.skill == config.SKILL_SHIELD:
                 c.shield_permanent = config.SKILL_SHIELD_INITIAL
+
+    # PVP/점령전 가디언 : 어그로 강제 행동을 마스 레이드의 '지휘'와 같은 이름으로 통일합니다
+    # (기존 '공격유도'는 본인 지정 시 능동 방어가 함께 붙는 차이만 있을 뿐 같은 어그로 강제
+    # 메커닉이라, 웹 버전에서는 이름과 동작을 '지휘'(CommandSkill) 하나로 합칩니다).
+    # 레거시 데스크톱 버전(gui.py)은 이 오버라이드를 거치지 않으므로 기존 '공격유도' 그대로입니다.
+    if room.battle_type != "mass_raid":
+        for c in room.game.battle.team_a + room.game.battle.team_b:
+            if c.role == config.ROLE_TANKER:
+                c.forced_actions = [config.ACTION_ATTACK, config.ACTION_DEFEND, config.ACTION_COMMAND] + config.COMMON_ACTIONS
 
     # 격자 전투(마스 레이드/점령전) : 중앙에 몹(거점)을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
     if is_grid_battle:

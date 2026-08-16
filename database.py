@@ -217,31 +217,35 @@ class CharacterDatabase:
     # ------------------------------------------------------------------
     # 더미 데이터 생성
     # ------------------------------------------------------------------
-    def generate_dummy_characters(self, count: int, name_prefix: str = "extra",
-                                    roles: list = None, stat_range: tuple = None):
+    def generate_dummy_characters(self, count: int, roles: list = None, stat_range: tuple = None):
         """
         테스트/연습용 더미 캐릭터를 자동 생성합니다.
-        name_prefix + 번호 형태로 이름을 붙이며, 기존 이름과 겹치지 않도록 번호를 이어서 매깁니다.
+        이름은 영문 2글자 조합(AA, AB, ... AZ, BA, ...)으로 붙입니다. 마스 레이드 격자 칸에는
+        이름 앞 2글자만 표시되므로(config의 격자 라벨 규칙), "extra1", "extra2"처럼 접두사가
+        같으면 칸 위에서 전부 "ex"로 겹쳐 보여 구분이 안 됩니다. 2글자 자체를 이름으로 쓰면
+        격자 라벨과 이름이 항상 일치해서 식별하기 쉽습니다.
+        기존 이름과 겹치지 않도록 다음 코드부터 이어서 매깁니다.
         roles가 주어지면 그 목록에서 순환 배정하고, 없으면 무작위 배정합니다.
         stat_range가 주어지면 (최소, 최대) 범위 안에서 무작위 배분하고, 없으면 0~각 스탯 최대치 사이에서
         무작위로 자유 배분합니다.
         반환값: 새로 생성된 이름 리스트
         """
         import random as _random
+        import string as _string
 
-        # 기존 "prefix + 숫자" 이름들과 겹치지 않도록 다음 번호를 찾습니다.
-        existing_nums = []
-        for existing in self.characters.keys():
-            if existing.startswith(name_prefix):
-                suffix = existing[len(name_prefix):]
-                if suffix.isdigit():
-                    existing_nums.append(int(suffix))
-        next_num = (max(existing_nums) + 1) if existing_nums else 1
+        def code_at(index):
+            first, second = divmod(index, 26)
+            return _string.ascii_uppercase[first % 26] + _string.ascii_uppercase[second]
 
+        existing = set(self.characters.keys())
         role_cycle = roles if roles else None
         created = []
+        idx = 0
         for i in range(count):
-            name = f"{name_prefix}{next_num + i}"
+            while code_at(idx) in existing:
+                idx += 1
+            name = code_at(idx)
+            idx += 1
             role = role_cycle[i % len(role_cycle)] if role_cycle else _random.choice(config.ROLES)
             stats = {}
             for key in config.STAT_KEYS:
@@ -252,6 +256,7 @@ class CharacterDatabase:
                 else:
                     stats[key] = _random.randint(0, cap)  # 자유 배분(스탯 각각 독립적으로 무작위)
             self.characters[name] = {"role": role, "stats": stats}
+            existing.add(name)
             created.append(name)
 
         if created:

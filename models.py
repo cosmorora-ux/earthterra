@@ -341,13 +341,15 @@ class HealSkill(Skill):
 
 class CommandSkill(Skill):
     """
-    가디언 전용(마스 레이드) '지휘' - 지정 아군 1인에게 어그로 1회를 부여합니다.
-    공격유도와 달리, 본인을 지정해도 추가 방어 효과는 붙지 않는 순수 어그로 강제입니다.
+    가디언 전용 '지휘' - 지정 아군 1인(본인 포함)에게 어그로 1회를 부여함과 동시에,
+    그 대상에게 능동 방어도 함께 부여합니다.
     """
     name = "지휘"
     allowed_roles = [config.ROLE_TANKER]
 
     def execute(self, actor: Character, target: Character):
+        target.defended_this_round = True
+        target.defense_grants.append(actor)
         return {}
 
 

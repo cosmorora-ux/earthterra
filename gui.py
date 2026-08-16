@@ -900,10 +900,7 @@ class BattleFrame(tk.Frame):
 
         members = self.battle.team_members(team_label)
         is_current_team = self.battle.current_turn_team == team_label
-        is_forced_team = (
-            self.battle.forced_target is not None
-            and self.battle.forced_target_team == team_label
-        )
+        forced_for_team = self.battle.forced_targets.get(team_label)
 
         for c in members:
             row = tk.Frame(panel, bg=COLORS["bg_panel_alt"], padx=10, pady=8)
@@ -933,8 +930,8 @@ class BattleFrame(tk.Frame):
             if c.status == "downed":
                 tk.Label(name_row, text=" ☠ 빈사", font=FONT_SMALL,
                           bg=COLORS["bg_panel_alt"], fg=COLORS["downed"]).pack(side="left")
-            if self.battle.forced_target is c:
-                tk.Label(name_row, text=f" 🎯 어그로×{self.battle.forced_target_count}", font=FONT_SMALL,
+            if forced_for_team is not None and forced_for_team["target"] is c:
+                tk.Label(name_row, text=f" 🎯 어그로×{forced_for_team['count']}", font=FONT_SMALL,
                           bg=COLORS["bg_panel_alt"], fg=COLORS["aggro"]).pack(side="left")
             if c.defense_grants:
                 tk.Label(name_row, text=f" 🛡×{len(c.defense_grants)}", font=FONT_SMALL,
@@ -947,8 +944,8 @@ class BattleFrame(tk.Frame):
                           bg=COLORS["bg_panel_alt"], fg=COLORS["hp_full"]).pack(side="right")
 
             # 강제 대상(어그로) 경고
-            if is_forced_team and self.battle.forced_target is c:
-                tk.Label(row, text=f"⚠ 상대의 다음 공격 {self.battle.forced_target_count}회가 강제되는 대상입니다",
+            if forced_for_team is not None and forced_for_team["target"] is c:
+                tk.Label(row, text=f"⚠ 상대의 다음 공격 {forced_for_team['count']}회가 강제되는 대상입니다",
                           font=FONT_TINY, bg=COLORS["bg_panel_alt"], fg=COLORS["danger"]).pack(anchor="w")
             if c.protecting_ally:
                 tk.Label(row, text=f"🛡 {c.protecting_ally} 방어 중", font=FONT_TINY,
