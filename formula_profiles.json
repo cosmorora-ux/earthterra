@@ -35,5 +35,8 @@
     "HEAL_CRIT_AGI_MULT": 0.04,
     "HEAL_CRIT_ABILITY_MULT": 0.02,
     "ROUND_TIME_LIMIT_SECONDS": 300
+  },
+  "mass_raid": {
+    "ROUND_TIME_LIMIT_SECONDS": 600
   }
 }

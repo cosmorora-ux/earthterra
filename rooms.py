@@ -68,6 +68,15 @@ class RoomState:
         self.telegraph_cells = []
         self.telegraph_round_no = None  # 마스 레이드 : 이번 라운드에 전조를 공개했는지 (라운드 번호로 기록)
 
+        # 마스 레이드 전용 : 라운드 제한시간이 5분/2분/1분 남았을 때 미행동자 안내를 한 번씩만
+        # 보내기 위한 추적 상태. 라운드가 바뀌면 reminders_sent를 비웁니다.
+        self.reminders_round_no = None
+        self.reminders_sent = set()  # 이번 라운드에 이미 보낸 임계값(초) 집합, 예: {300, 120}
+
+        # 전투 시작 전 "무작위 배치" 미리보기 - {"team_a": [이름...], "team_b": [이름...]} 또는 None.
+        # 전투가 실제로 시작되면(room.game.battle이 생기면) 더 이상 쓰이지 않습니다.
+        self.preview_teams = None
+
 
 def create_room(battle_type: str = "pvp") -> RoomState:
     room_id = secrets.token_urlsafe(4)

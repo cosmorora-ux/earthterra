@@ -547,6 +547,8 @@ class Battle:
 
         if not actor.is_alive:
             raise BattleError("지금은 이동할 수 없는 상태입니다.")
+        if actor.boss_group:
+            raise BattleError("BOSS는 개별적으로 이동할 수 없습니다 (전원 행동 완료 시 자동으로 이동합니다).")
         if not actor.can_move or actor.grid_pos is None:
             raise BattleError("이 전투는 격자 이동을 지원하지 않습니다.")
         if actor.moved_this_round:
@@ -598,6 +600,8 @@ class Battle:
             raise BattleError("배치 대상은 같은 팀의 캐릭터여야 합니다.")
         if target is actor:
             raise BattleError("본인과는 위치를 교환할 수 없습니다.")
+        if target.boss_group:
+            raise BattleError("BOSS와는 위치를 교환할 수 없습니다.")
 
         self._push_history()
         self._resolve_pending_attacks(actor)
@@ -1511,24 +1515,42 @@ class GameManager:
         self.battle = None
 
     # ------------------------------------------------------------------
-    def build_character(self, name: str, formula_overrides: dict = None) -> Character:
+    def build_character(self, name: str, formula_overrides: dict = None,
+                         boss_group: str = None, boss_section: str = None) -> Character:
         """데이터베이스에서 이름으로 캐릭터를 찾아 전투용 Character 인스턴스를 생성합니다."""
         data = self.db.get(name)
         if data is None:
             raise BattleError("존재하지 않는 캐릭터입니다.")
-        return Character(
+        c = Character(
             name, data["role"], data["stats"], data.get("color"),
             formula_overrides=formula_overrides, skill=data.get("skill"),
         )
+        c.boss_group = boss_group
+        c.boss_section = boss_section
+        return c
 
     def build_team(self, names: list, formula_overrides: dict = None) -> list:
-        """이름 리스트(3개)로 팀(Character 리스트)을 생성합니다."""
+        """이름 리스트로 팀(Character 리스트)을 생성합니다. 이름이 정확히 "BOSS"이면
+        4부위(북동/북서/남동/남서) 캐릭터로 확장됩니다(build_boss_section 참고)."""
         team = []
-        for name in names:
+        for i, name in enumerate(names):
             name = (name or "").strip()
             if not name:
                 raise BattleError("캐릭터 이름을 모두 입력해주세요.")
-            team.append(self.build_character(name, formula_overrides=formula_overrides))
+            if name == config.BOSS_NAME:
+                group_id = f"{config.BOSS_NAME}#{i}"
+                for section in config.BOSS_SECTIONS:
+                    section_char = self.build_character(
+                        name, formula_overrides=formula_overrides,
+                        boss_group=group_id, boss_section=section,
+                    )
+                    # 4부위 모두 데이터베이스에는 "BOSS"로 등록돼 있지만, name이 같으면
+                    # find_character 등 이름 기반 조회가 전부 첫 번째 매치만 찾게 되므로
+                    # 부위별로 구분되는 이름을 실제로 부여합니다(표시에도 그대로 쓰입니다).
+                    section_char.name = f"{config.BOSS_NAME}-{section}"
+                    team.append(section_char)
+            else:
+                team.append(self.build_character(name, formula_overrides=formula_overrides))
         return team
 
     def start_battle(self, team_a_names: list, team_b_names: list, forced_first_team: str = None,
