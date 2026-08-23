@@ -49,8 +49,18 @@
   .whoami { display:flex; align-items:center; gap:10px; }
   .whoami .label { color: var(--muted); font-size:15px; }
   #roundTimerLabel {
-    color: var(--text); font-size:26px; font-weight:800; font-variant-numeric: tabular-nums;
-    background:#1c2530; border:1px solid #3a4a5c; padding:4px 14px; border-radius:8px;
+    color: var(--text); font-size:26px; font-weight:400; font-variant-numeric: tabular-nums;
+    background: var(--card); border:1px solid var(--card-border); padding:4px 14px; border-radius:8px;
+  }
+
+  /* ---------- 다크모드 툴팁 (title 속성 대신 data-tip 사용, 스탯 툴팁과 같은 스타일) ---------- */
+  [data-tip] { position:relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%);
+    background:#0c0c0d; border:1px solid var(--card-border); color:var(--text);
+    border-radius:10px; padding:8px 12px; font-size:14px; white-space:nowrap;
+    box-shadow:0 6px 18px rgba(0,0,0,.5); z-index:60; pointer-events:none;
   }
 
   /* ---------- 캐릭터 입장 / 색상 선택 모달 ---------- */
@@ -72,8 +82,12 @@
   /* 좌측 패널(격자 지도 포함)은 항상 우측 카드 영역 높이에 맞춰 늘어납니다(grid 기본 stretch).
      격자 지도는 늘어난 패널 안에서 세로 중앙 정렬됩니다(#gridMap flex:1 + align-items:center). */
   .main-grid { display:grid; grid-template-columns: 300px 1fr; gap:16px; margin-bottom:16px; }
-  .main-grid.with-grid-map { grid-template-columns: 540px 1fr; }
-  #gridSection { width: 540px; box-sizing: border-box; display:flex; flex-direction:column; }
+  /* 격자 지도 폭은 JS가 실제 렌더된 표 크기를 재서 #gridSection에 인라인으로 지정합니다
+     (고정폭이면 배율/DPI에 따라 1px 남짓 넘쳐서 스크롤바가 생기는 문제가 있었습니다).
+     auto 트랙은 그 인라인 width를 그대로 존중합니다. 세로로는 우측 카드 목록 높이에 맞춰
+     늘어나고(grid 기본 stretch), 격자 지도는 그 안에서 세로 중앙 정렬됩니다. */
+  .main-grid.with-grid-map { grid-template-columns: auto 1fr; }
+  #gridSection { box-sizing: border-box; display:flex; flex-direction:column; }
   #gridSection #gridLegend { width: 100%; box-sizing: border-box; min-height:40px; }
   .side-panel { padding: 26px 22px; display:flex; flex-direction:column; gap:14px; }
   .side-panel .sun-icon { font-size:34px; opacity:0.85; }
@@ -110,14 +124,12 @@
   .compact-card .hpbar-fill-sm.low { background: var(--accent-red); }
   .compact-card.selected-target { outline:1px solid var(--accent-blue); border-radius:6px; }
   .compact-card .cbadges-sm { display:flex; gap:6px; font-size:12px; color: var(--muted); min-height:13px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-  .compact-card.gone { opacity:0.4; filter:grayscale(70%); }
-  .compact-card .cgone-tag { color: var(--muted); font-size:12px; }
+  .char-card.is-defeated, .compact-card.is-defeated, .site-card.is-defeated { filter: grayscale(1) brightness(.75); opacity:.55; }
 
   .card-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
   .char-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px; cursor:pointer; position:relative; transition: border-color .12s; }
   .char-card:hover { border-color:#444; }
   .char-card.selected-target { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue); }
-  .char-card.gone { opacity:0.4; filter:grayscale(70%); }
   .char-card.team-B { }
   .char-card.ally { border-left: 3px solid #fff; }
   .char-card .row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
@@ -141,7 +153,9 @@
   .panel-head { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--panel-border); }
   .panel-head b { font-size:16px; }
   .panel-head .hint { color: var(--muted); font-size:14px; }
-  .panel-head .gear { margin-left:auto; opacity:.6; }
+  .panel-head .gear { background:none; border:none; color:inherit; font-size:16px; opacity:.6; cursor:pointer; padding:0; }
+  .panel-head .gear:hover { opacity:1; }
+  #logViewTabs { margin-left:auto; }
 
   #pubLog { height: 420px; overflow-y:auto; padding: 12px 18px; font-size:15px; line-height:1.65; }
   .logline { color: var(--text); opacity:.92; }
@@ -188,6 +202,11 @@
   .ap-close { display:block; color: var(--muted); font-size:14px; cursor:pointer; background:none; border:none; flex-shrink:0; }
   .ap-multi-select { width:100%; margin-bottom:6px; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:6px; padding:5px; font-size:14px; }
 
+  /* ---------- GM(비밀번호 입장) 전용 행동 실행 패널 - PVP/점령전 ---------- */
+  .gm-act-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 14px; margin-bottom:10px; }
+  .gm-act-row select { background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:6px; padding:6px 8px; font-size:14px; max-width:180px; }
+  .gm-act-row .btn-primary { padding:6px 14px; font-size:14px; }
+
   /* ---------- 격자 지도 (PVP 외 전투용, 톤만 맞춤) ---------- */
   #gridSection.panel { padding:16px 18px; margin-bottom:16px; }
   #gridSection b { font-size:16px; }
@@ -206,7 +225,8 @@
 <div id="joinModal" class="modal-overlay">
   <div class="modal-box panel">
     <div class="modal-title">캐릭터 이름으로 입장</div>
-    <input id="joinNameInput" placeholder="캐릭터 이름을 정확히 입력" onkeydown="if(event.key==='Enter') submitJoinModal()">
+    <input id="joinNameInput" placeholder="캐릭터 이름을 정확히 입력" oninput="onJoinNameInput()" onkeydown="if(event.key==='Enter') submitJoinModal()">
+    <input id="joinPasswordInput" type="password" placeholder="비밀번호" style="display:none; margin-top:8px;" onkeydown="if(event.key==='Enter') submitJoinModal()">
     <div id="joinModalError" class="err"></div>
     <div class="row">
       <button class="btn-plain" onclick="closeJoinModal()">취소</button>
@@ -222,11 +242,11 @@
   <div class="seg" id="formatLabel">-</div>
   <span class="sep">▶</span>
   <div class="seg" id="roundInfo">-</div>
-  <span class="label" id="roundTimerLabel">⏱ <span id="roundTimer">--:--</span></span>
+  <span class="label" id="roundTimerLabel"><span id="roundTimer">--:--</span></span>
   <div class="spacer"></div>
   <div class="clock" id="liveClock">--:--:--</div>
   <div class="whoami">
-    <div class="avatar-dot" id="myAvatarDot" title="클릭해서 캐릭터로 입장" onclick="onAvatarDotClick()" ondblclick="onAvatarDotDblClick()"></div>
+    <div class="avatar-dot" id="myAvatarDot" data-tip="클릭해서 입장/로그아웃" onclick="onAvatarDotClick()"></div>
     <span class="label" id="myNicknameLabel">미입장</span>
   </div>
 </div>
@@ -235,8 +255,8 @@
   <div class="breadcrumb"><b>전투 화면</b> ◢ {{ battle_type_label }}</div>
   <div class="bgm-label">
     <span id="musicStatus">재생 없음</span>
-    <input type="range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" title="내 음량 (나에게만 적용)">
-    <button class="btn-plain" id="fullscreenBtn" style="padding:4px 10px; font-size:14px; margin-left:10px;" onclick="toggleFullscreen()" title="전체화면으로 크게 보기">⛶ 전체화면</button>
+    <input type="range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
+    <button class="btn-plain" id="fullscreenBtn" style="padding:4px 10px; font-size:14px; margin-left:10px;" onclick="toggleFullscreen()" data-tip="전체화면으로 크게 보기">⛶ 전체화면</button>
   </div>
 </div>
 
@@ -245,7 +265,7 @@
   <div id="gridSection" class="panel">
     <b>마스 맵</b>
     <div id="gridLegend" style="font-size:14px; opacity:0.8; margin:6px 0;"></div>
-    <div id="gridMap" style="overflow-x:auto; display:flex; justify-content:center; align-items:center; flex:1;"></div>
+    <div id="gridMap" style="display:flex; justify-content:center; align-items:center; flex:1;"></div>
     <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
   </div>
   {% else %}
@@ -265,6 +285,30 @@
 
   <div>
     <div id="siteStatusCard" class="site-card panel" style="display:none;"></div>
+    <div id="gmControlPanel" class="gm-act-row panel" style="display:none;">
+      <button onclick="doAction('advance_turn', {})">▶ 다음 턴</button>
+      <button onclick="doAction('timeout_unacted_runners', {})">⏱ 시간 초과</button>
+      {% if battle_type == 'siege' %}
+      <button onclick="rollSiteDice()">🎲 다이스 굴리기</button>
+      <span id="siteDiceStatusGm" class="hint"></span>
+      {% endif %}
+      {% if battle_type == 'mass_raid' %}
+      <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">🔮 전조 출력</button>
+      <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;">📢 전조 공개</button>
+      <button onclick="clearTelegraph()" id="telegraphClearBtn" style="display:none;">✖ 전조 해제</button>
+      <span id="telegraphStatus" class="hint"></span>
+      {% endif %}
+    </div>
+    <div id="gmActPanel" class="gm-act-row panel" style="display:none;">
+      <select id="gmActActor" onchange="refreshGmActTypeOptions()"></select>
+      <select id="gmActType" onchange="refreshGmActTargetOptions()"></select>
+      <select id="gmActTarget"></select>
+      <span id="gmActTargetMultiWrap" style="display:none;">
+        <select id="gmActTarget2"></select>
+        <select id="gmActTarget3"></select>
+      </span>
+      <button class="btn-primary" onclick="submitGmAct()">실행</button>
+    </div>
     <div class="sort-row">
       {% if battle_type != 'pvp' %}
       <button class="sort-btn" id="sortHpBtn" onclick="setSortMode('hp')">체력 순</button>
@@ -280,8 +324,19 @@
 <div class="bottom-grid">
   <div class="panel">
     <div class="panel-head">
-      <b>출력 창</b><span class="hint">러너 전용 로그</span>
-      <span class="gear">⚙</span>
+      <b>출력 창</b><span class="hint" id="pubLogHint">러너 전용 로그</span>
+      <span class="chat-tabs" id="logViewTabs" style="display:none;">
+        <button id="logTabPublic" class="active" onclick="setLogView('public')">러너 로그</button>
+        <button id="logTabOperator" onclick="setLogView('operator')">운영진 로그</button>
+      </span>
+      <button class="gear" id="formulaGearBtn" style="display:none;" onclick="toggleFormulaPanel()" data-tip="전투 수식 설정">⚙</button>
+    </div>
+    <div id="formulaPanel" style="display:none; padding:14px 18px; border-bottom:1px solid var(--panel-border);">
+      <div id="formulaFields" style="max-height:260px; overflow-y:auto;"></div>
+      <div class="row" style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+        <button class="btn-primary" onclick="saveFormulas()">저장</button>
+        <span id="formulaSaveMsg" class="ok"></span>
+      </div>
     </div>
     <div id="pubLog"></div>
   </div>
@@ -298,7 +353,7 @@
     <div id="chatPanelBody">
       <div id="chatLog"></div>
       <div class="input-row" id="chatInputRow" style="display:none;">
-        <div class="avatar-dot" id="inputAvatarDot" title="더블클릭해서 색상 변경" ondblclick="onInputAvatarDotDblClick()"></div>
+        <div class="avatar-dot" id="inputAvatarDot" data-tip="더블클릭해서 색상 변경" ondblclick="onInputAvatarDotDblClick()"></div>
         <input id="chatInput" placeholder="대사를 입력해 주세요." onkeydown="if(event.key==='Enter') sendChat()">
         <button class="btn-plain" onclick="sendChat()">채팅 전송</button>
         <button class="btn-primary" onclick="onCommandSendClick()">커맨드 전송</button>
@@ -375,7 +430,9 @@ function silentJoin() {
 function autoRejoinOrSilentJoin() {
   const saved = localStorage.getItem(SAVED_NAME_KEY);
   if (saved) {
-    attemptCharacterJoin(saved, null, () => {
+    // 저장된 이름이 "GM"이었더라도 비밀번호는 저장하지 않으므로, 새로고침 후에는
+    // 다시 비밀번호를 입력해야 합니다(권한 우회 방지) - 실패하면 조용히 관전으로 전환합니다.
+    attemptCharacterJoin(saved, null, null, () => {
       localStorage.removeItem(SAVED_NAME_KEY);
       silentJoin();
     });
@@ -384,12 +441,25 @@ function autoRejoinOrSilentJoin() {
   }
 }
 
-function attemptCharacterJoin(name, onSuccess, onFail) {
+function attemptCharacterJoin(name, password, onSuccess, onFail) {
+  const prevNickname = MY_NICKNAME;
   MY_NICKNAME = name;
-  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+  // "GM" + 비밀번호 오류는 서버가 join을 거부하고 error 이벤트만 보냅니다(닉네임이 실제로
+  // bind되지 않음) - myControlInfo는 MY_NICKNAME 문자열만 보고 'all'을 반환하므로, 그것만으로는
+  // 서버가 실제로 승인했는지 알 수 없습니다. 짧은 시간 동안 error를 감시해서 구분합니다.
+  let rejected = false;
+  const onErr = () => { rejected = true; };
+  socket.once('error', onErr);
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, gm_password: password || undefined });
   // 서버가 join → public_state 순으로 응답하는 짧은 시간을 기다린 뒤, 이 이름이 실제 전투에
   // 참여 중인 캐릭터거나(전투 시작 전이어도) 캐릭터 데이터베이스에 등록되어 있는지 확인합니다.
   setTimeout(() => {
+    socket.off('error', onErr);
+    if (rejected) {
+      MY_NICKNAME = prevNickname;
+      if (onFail) onFail();
+      return;
+    }
     const control = myControlInfo(lastBattleForPanel);
     const inBattle = control.scope === 'character' || control.scope === 'all';
     const inRoster = lastRoster.includes(name);
@@ -400,6 +470,9 @@ function attemptCharacterJoin(name, onSuccess, onFail) {
       localStorage.setItem(SAVED_NAME_KEY, MY_NICKNAME);
       renderCards();
       updateAvatarDots();
+      refreshGmActPanelVisibility();
+      refreshGmControlPanelVisibility();
+      refreshLogViewControls();
       if (onSuccess) onSuccess();
     } else if (onFail) {
       onFail();
@@ -408,16 +481,14 @@ function attemptCharacterJoin(name, onSuccess, onFail) {
 }
 
 // ------------------------------------------------------------------
-// 캐릭터 이름으로 입장 (아바타 동그라미 클릭 → 모달)
+// 캐릭터 이름으로 입장/로그아웃 (아바타 동그라미 한 번 클릭으로 둘 다 처리)
 // ------------------------------------------------------------------
 function onAvatarDotClick() {
-  if (isMatchedCharacter()) return;  // 이미 캐릭터로 입장한 상태면 클릭은 무시(더블클릭하면 로그아웃)
-  openJoinModal();
-}
-
-function onAvatarDotDblClick() {
-  if (!isMatchedCharacter()) return;
-  if (confirm('로그아웃 하시겠습니까?')) logout();
+  if (isMatchedCharacter()) {
+    if (confirm('로그아웃 하시겠습니까?')) logout();
+  } else {
+    openJoinModal();
+  }
 }
 
 function onInputAvatarDotDblClick() {
@@ -434,6 +505,9 @@ function logout() {
   document.getElementById('myNicknameLabel').textContent = '미입장';
   updateAvatarDots();
   renderCards();
+  refreshGmActPanelVisibility();
+  refreshGmControlPanelVisibility();
+  refreshLogViewControls();
 }
 
 function isMatchedCharacter(battle) {
@@ -445,6 +519,8 @@ function isMatchedCharacter(battle) {
 function openJoinModal() {
   document.getElementById('joinModalError').textContent = '';
   document.getElementById('joinNameInput').value = '';
+  document.getElementById('joinPasswordInput').value = '';
+  document.getElementById('joinPasswordInput').style.display = 'none';
   document.getElementById('joinModal').style.display = 'flex';
   document.getElementById('joinNameInput').focus();
 }
@@ -453,15 +529,28 @@ function closeJoinModal() {
   document.getElementById('joinModal').style.display = 'none';
 }
 
+// 이름 입력칸에 "GM"을 입력하면 비밀번호 입력칸을 추가로 보여줍니다.
+function onJoinNameInput() {
+  const name = document.getElementById('joinNameInput').value.trim();
+  document.getElementById('joinPasswordInput').style.display = name.toLowerCase() === 'gm' ? '' : 'none';
+}
+
 function submitJoinModal() {
   const name = document.getElementById('joinNameInput').value.trim();
   if (!name) {
     document.getElementById('joinModalError').textContent = '캐릭터 이름을 입력해주세요.';
     return;
   }
-  attemptCharacterJoin(name, closeJoinModal, () => {
-    document.getElementById('joinModalError').textContent =
-      '캐릭터 이름이 일치하지 않습니다. 전투가 시작된 뒤 정확한 이름을 입력해주세요.';
+  const isGm = name.toLowerCase() === 'gm';
+  const password = isGm ? document.getElementById('joinPasswordInput').value : null;
+  if (isGm && !password) {
+    document.getElementById('joinModalError').textContent = '비밀번호를 입력해주세요.';
+    return;
+  }
+  attemptCharacterJoin(name, password, closeJoinModal, () => {
+    document.getElementById('joinModalError').textContent = isGm
+      ? '비밀번호가 올바르지 않습니다.'
+      : '캐릭터 이름이 일치하지 않습니다. 전투가 시작된 뒤 정확한 이름을 입력해주세요.';
   });
 }
 
@@ -508,12 +597,18 @@ socket.on('public_state', (state) => {
   if (roomNameEl && state.room_name) roomNameEl.textContent = state.room_name;
   lastRoster = state.roster || [];
   lastSiteDice = state.site_dice || null;
+  lastPreviewTeams = state.preview_teams || null;
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
   renderBattle(state.battle);
   renderPubLog(state.log);
   renderChat(state.chat);
   lastBattleForPanel = state.battle;
   renderMusic(state.music, state.server_now);
+});
+
+socket.on('battle_starting', () => {
+  document.getElementById('formatLabel').textContent = '전투 시작...';
+  document.getElementById('roundInfo').textContent = '선후공 다이스를 굴리는 중...';
 });
 
 socket.on('chat_message', (entry) => appendChat(entry));
@@ -608,13 +703,14 @@ function renderSiteStatusCard(battle) {
     : '';
   el.innerHTML = `
     <div class="site-head">
-      <div class="site-title">${site.name}${diceText}</div>
+      <div class="site-title">${displayNameOf(site)}${diceText}${statusTagFor(site)}</div>
       <div class="site-hp">${site.current_hp}/${site.max_hp}</div>
     </div>
     <div class="hpbar-track" style="margin-top:8px;"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
     ${badges.length ? `<div class="cbadges" style="margin-top:8px;">${badges.join('&nbsp;&nbsp;')}</div>` : ''}
     ${navHtml}
   `;
+  el.classList.toggle('is-defeated', isDefeatedStatus(site));
   el.style.display = '';
 }
 
@@ -626,14 +722,31 @@ function shiftMobCarousel(delta) {
   renderSiteStatusCard(battle);
 }
 
+let lastPreviewTeams = null;  // 전투 시작 전 "무작위 배치" 미리보기 - {"team_a":[...], "team_b":[...]} 또는 null
+
+function renderPreviewCards(previewTeams) {
+  // 실제 전투 화면과 완전히 같은 카드 렌더러를 재사용합니다(마스 레이드는 컴팩트,
+  // 그 외는 일반 카드) - 그래야 "미리보기"와 "전투 시작 후" 카드 UI가 절대 어긋나지 않습니다.
+  const all = [
+    ...(previewTeams.team_a || []).map(c => ({ ...c, teamLabel: 'A' })),
+    ...(previewTeams.team_b || []).map(c => ({ ...c, teamLabel: 'B' })),
+  ];
+  const renderOne = BATTLE_TYPE === 'mass_raid' ? renderCompactCardHtml : renderCardHtml;
+  document.getElementById('teams').innerHTML = all.map(renderOne).join('');
+}
+
 function renderBattle(battle) {
   const teamsEl = document.getElementById('teams');
   if (!battle) {
     document.getElementById('formatLabel').textContent = '(전투 시작 전)';
-    document.getElementById('roundInfo').textContent = '-';
+    document.getElementById('roundInfo').textContent = lastPreviewTeams ? '팀 편성 미리보기' : '-';
     roundDeadlineAt = null;
     tickTimer();
-    teamsEl.innerHTML = '';
+    if (lastPreviewTeams) {
+      renderPreviewCards(lastPreviewTeams);
+    } else {
+      teamsEl.innerHTML = '';
+    }
     lastAllForCards = [];
     renderSiteStatusCard(null);
     renderGrid(null, []);
@@ -659,6 +772,9 @@ function renderBattle(battle) {
   renderCards();
   renderSiteStatusCard(battle);
   updateAvatarDots(battle);
+  refreshGmActPanelVisibility();
+  refreshGmControlPanelVisibility();
+  refreshLogViewControls();
 
   renderGrid(battle, all);
 }
@@ -683,11 +799,21 @@ function renderCards() {
   if (slot) slot.innerHTML = renderMultiSkillTrigger();
 }
 
+// 사망/도주(완료·시도 중) 상태는 카드 전체를 무채색으로 흐리게 처리하고, 이름 옆에
+// 상태 표시를 남깁니다. 다운(HP 0이지만 사망 미확정)은 아직 복귀 가능하므로 제외합니다.
+function isDefeatedStatus(c) {
+  return c.status === 'dead' || c.status === 'fled' || c.status === 'fleeing';
+}
+function statusTagFor(c) {
+  if (c.status === 'dead') return ' *사망';
+  if (c.status === 'fled' || c.status === 'fleeing') return ' *도주';
+  if (c.dodging_this_round) return ' *회피';
+  return '';
+}
+
 function renderCompactCardHtml(c) {
   const isTarget = selectedTargetName === c.name;
   const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
-  const isGone = c.status === 'dead' || c.status === 'fled';
-  const goneTag = c.status === 'dead' ? '☠사망' : (c.status === 'fled' ? '💨도주' : '');
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
@@ -695,12 +821,12 @@ function renderCompactCardHtml(c) {
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
-  return `<div class="compact-card ${isTarget ? 'selected-target' : ''} ${isGone ? 'gone' : ''}" onclick="onCardClick('${c.name}')">
+  return `<div class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
         <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
       </div>
-      <div class="cname-sm">${c.name}${goneTag ? ` <span class="cgone-tag">${goneTag}</span>` : ''}</div>
+      <div class="cname-sm">${displayNameOf(c)}${statusTagFor(c)}</div>
       <div class="chp-sm">${c.current_hp}/${c.max_hp}</div>
     </div>
     <div class="hpbar-track-sm"><div class="hpbar-fill-sm ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
@@ -718,13 +844,17 @@ function roleColorVar(role) {
   return `var(--role-${role}, #9aa0a6)`;
 }
 
+function displayNameOf(c) {
+  if (!c) return '';
+  return c.boss_section ? `BOSS [${c.boss_section}]` : c.name;
+}
+
 function renderCardHtml(c) {
   const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
   const isAlly = lastMyTeam !== null && c.team === lastMyTeam;
   const isTarget = selectedTargetName === c.name;
   const isMine = myControlInfo(lastBattleForPanel).scope === 'character' && myControlInfo(lastBattleForPanel).character.name === c.name;
-  const isGone = c.status === 'dead' || c.status === 'fled';
-  const statusTag = c.status === 'dead' ? ' ☠사망' : (c.status === 'fled' ? ' 💨도주' : (c.status === 'fleeing' ? ' *도주 시도' : (c.dodging_this_round ? ' *회피' : '')));
+  const statusTag = statusTagFor(c);
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
   if (lastForcedTargetNames.has(c.name)) badges.push(`🎯 어그로`);
@@ -734,10 +864,10 @@ function renderCardHtml(c) {
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
 
-  return `<div class="char-card team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isGone ? 'gone' : ''}" onclick="onCardClick('${c.name}')">
+  return `<div class="char-card team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">
       <div>
-        <div class="cname">${c.name}${isMine ? ' <span style="color:var(--accent-blue); font-size:13px;">(나)</span>' : ''}</div>
+        <div class="cname">${displayNameOf(c)}${isMine ? ' <span style="color:var(--accent-blue); font-size:13px;">(나)</span>' : ''}</div>
         <div class="crole" style="color:${roleColorVar(c.role)}">${c.role}${(c.skill && BATTLE_TYPE === 'mass_raid') ? ' 【' + c.skill + '】' : ''}<span class="cstatus-tag">${statusTag}</span></div>
       </div>
       <div class="cavatar" style="background:${c.color || '#4a4a4e'};">
@@ -822,13 +952,13 @@ function renderActionPopup() {
     : allyTargetLabels;
 
   const labels = actor.available_actions.filter(l => l !== '이동' && l !== '시간초과' && allowedLabels.has(l) && !MULTI_TARGET_ACTIONS[l]);
-  const targetLabel = isSelf ? '본인' : target.name;
+  const targetLabel = isSelf ? '본인' : displayNameOf(target);
   const buttons = labels.map(label =>
     `<button class="ap-btn" onclick="commitAction('${label}','${actor.name}','${target.name}')">${label}</button>`
   ).join('');
 
   popup.innerHTML = `
-    <div class="ap-head"><span>선택: <b>${actor.name}</b> → <b>${targetLabel}</b></span><button class="ap-close" onclick="closeActionPopup()">닫기 ✕</button></div>
+    <div class="ap-head"><span>선택: <b>${displayNameOf(actor)}</b> → <b>${targetLabel}</b></span><button class="ap-close" onclick="closeActionPopup()">닫기 ✕</button></div>
     <div class="ap-grid">${buttons || '<i style="color:var(--muted); font-size:14px;">이 대상에게 가능한 행동이 없습니다</i>'}</div>
   `;
   popup.style.display = 'block';
@@ -996,16 +1126,22 @@ function renderGrid(battle, all) {
   if (!gridWidth) { section.style.display = 'none'; return; }
   section.style.display = '';
   const posMap = {};
+  // 사망/도주(완료)한 캐릭터는 격자에 그리지 않습니다(칸을 그대로 차지한 것처럼 보이면 혼동됨).
   all.forEach(c => { if (c.grid_pos && c.status !== 'dead' && c.status !== 'fled') posMap[`${c.grid_pos[0]},${c.grid_pos[1]}`] = c; });
 
   let highlightCells = new Set();
   let highlightIsAction = false;
   let selChar = null;
   const isEnemyTurn = !!(battle && battle.current_turn_team && battle.current_turn_team !== '1팀');
+  // 메딕은 라운드가 후공 페이즈에 들어서면(엔진의 allow_free_turn 규칙과 동일) 상대 턴이라도
+  // 힐/환류/복원으로 행동할 수 있으므로, 이 경우에는 적 턴 잠금을 풀어줍니다.
+  const isSecondPhase = !!(battle && battle.current_turn_team && battle.current_turn_team !== battle.round_first_team);
+  let medicFreeTurn = false;
   if (selectedGridChar) {
     selChar = all.find(c => c.name === selectedGridChar);
     if (selChar && selChar.grid_pos) {
-      if (!isEnemyTurn) {
+      medicFreeTurn = selChar.role === '메딕' && isSecondPhase;
+      if (!isEnemyTurn || medicFreeTurn) {
         highlightIsAction = selChar.teamLabel === 'B' ? !selChar.has_acted : !!selChar.moved_this_round;
         highlightCells = computeHighlightCells(selChar, highlightIsAction);
       }
@@ -1060,28 +1196,39 @@ function renderGrid(battle, all) {
         borderStyle = `border:2px solid ${highlightIsAction ? ACTION_RANGE_COLOR : (ROLE_MOVE_COLOR[selChar.role] || '#4ad0ff')};`;
       }
       if (selChar && selChar.grid_pos && selChar.grid_pos[0] === x && selChar.grid_pos[1] === y) {
-        borderStyle = 'border:3px solid #4dff4d;';
+        borderStyle = 'border:3px solid var(--accent-blue);';
       }
       const glow = telegraphRevealedCells.has(key) ? 'box-shadow: inset 0 0 10px 3px rgba(255,120,120,0.4);' : '';
-      const label = c ? c.name.slice(0, 2) : '';
+      const label = c ? (c.boss_section || c.name.slice(0, 2)) : '';
       const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
       const telegraphText = telegraphRevealedCells.has(key) ? ' · 전조(곧 피해)' : '';
-      const title = c ? `${c.name} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
-      html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; ${borderStyle} background:${bg}; ${glow} text-align:center; font-size:14px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
+      const title = c ? `${displayNameOf(c)} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
+      html += `<td ${onclick} data-tip="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; ${borderStyle} background:${bg}; ${glow} text-align:center; font-size:14px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
     }
     html += '</tr>';
   }
   html += '</table>';
   el.innerHTML = html;
 
+  // 표의 실제 렌더 폭을 재서 #gridSection 자체를 딱 그만큼(+padding/border)만 차지하게
+  // 만듭니다 - 고정폭을 미리 계산해두면 배율/DPI에 따라 1px 정도 어긋나 스크롤바가
+  // 생기곤 했는데, 실측값을 쓰면 항상 정확히 맞습니다.
+  const tableEl = el.querySelector('table');
+  if (tableEl) {
+    const cs = getComputedStyle(section);
+    const overhead = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
+      + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+    section.style.width = Math.ceil(tableEl.getBoundingClientRect().width + overhead) + 'px';
+  }
+
   const legend = document.getElementById('gridLegend');
   if (legend) {
-    legend.textContent = isEnemyTurn
+    legend.textContent = (isEnemyTurn && !medicFreeTurn)
       ? '🔒 적 턴에는 범위가 안 보여요. 내 턴에 다시 확인하세요.'
       : (selChar
         ? (highlightIsAction
-            ? `선택: ${selChar.name} — ⚪ 사거리 표시 중. 범위 내 대상을 클릭해 행동을 고르세요.`
-            : `선택: ${selChar.name} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 범위 표시 중. 이동할 칸을 클릭하세요.`)
+            ? `선택: ${displayNameOf(selChar)} — ⚪ 사거리 표시 중. 범위 내 대상을 클릭해 행동을 고르세요.`
+            : `선택: ${displayNameOf(selChar)} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 범위 표시 중. 이동할 칸을 클릭하세요.`)
         : '캐릭터를 클릭하면 이동/사거리 범위가 표시돼요. (🔴스트라이커 🔵가디언 🟡메딕)');
   }
 
@@ -1116,8 +1263,8 @@ function renderGridActionPopup(battle, all) {
     return `<button onclick="quickAction('${type}','${actor.name}'); closeGridSelection();">${label}</button>`;
   }).join(' ');
 
-  const targetLabel = isSelf ? '본인' : target.name;
-  popup.innerHTML = `<b>${actor.name}</b> → <b>${targetLabel}</b> 행동 선택 : ${buttons || '<i>이 대상에게 가능한 행동이 없습니다</i>'} <button onclick="closeGridSelection()" style="float:right;">닫기</button>`;
+  const targetLabel = isSelf ? '본인' : displayNameOf(target);
+  popup.innerHTML = `<b>${displayNameOf(actor)}</b> → <b>${targetLabel}</b> 행동 선택 : ${buttons || '<i>이 대상에게 가능한 행동이 없습니다</i>'} <button onclick="closeGridSelection()" style="float:right;">닫기</button>`;
   popup.style.display = 'block';
 }
 
@@ -1156,11 +1303,89 @@ function formatLogHtml(lines) {
   }).join('');
 }
 
+let lastPublicLog = [];
+let lastOperatorLog = [];
+let logView = 'public';  // 'public' | 'operator' - GM(비밀번호 입장)만 전환 가능
+
 function renderPubLog(log) {
+  lastPublicLog = log || [];
+  renderCurrentLog();
+}
+
+function renderCurrentLog() {
   const el = document.getElementById('pubLog');
+  const log = logView === 'operator' ? lastOperatorLog : lastPublicLog;
   el.innerHTML = formatLogHtml(log);
   el.scrollTop = el.scrollHeight;
 }
+
+function setLogView(view) {
+  logView = view;
+  document.getElementById('logTabPublic').classList.toggle('active', view === 'public');
+  document.getElementById('logTabOperator').classList.toggle('active', view === 'operator');
+  renderCurrentLog();
+}
+
+// GM(비밀번호 입장)일 때만 로그 전환 탭 + 수식 설정 톱니를 보여줍니다. 일반 러너 화면에는
+// 둘 다 표시되지 않습니다.
+function refreshLogViewControls() {
+  const show = myControlInfo(lastBattleForPanel).scope === 'all';
+  const tabs = document.getElementById('logViewTabs');
+  const gear = document.getElementById('formulaGearBtn');
+  if (tabs) tabs.style.display = show ? '' : 'none';
+  if (gear) gear.style.display = show ? '' : 'none';
+  if (!show) {
+    logView = 'public';
+    document.getElementById('formulaPanel').style.display = 'none';
+  }
+}
+
+let formulaFields = [];
+
+function toggleFormulaPanel() {
+  const el = document.getElementById('formulaPanel');
+  const opening = el.style.display === 'none';
+  el.style.display = opening ? '' : 'none';
+  if (opening) socket.emit('get_formulas', {});
+}
+
+function renderFormulaFields() {
+  const el = document.getElementById('formulaFields');
+  el.innerHTML = formulaFields.map(f => `
+    <div style="margin-bottom:8px;">
+      <label>${f.label} :
+        <input id="f_${f.key}" type="number" step="${f.type === 'float' ? '0.01' : '1'}" value="${f.value}" style="width:100px;">
+      </label>
+      <div style="font-size:13px; opacity:0.7;">${f.desc}</div>
+    </div>
+  `).join('');
+}
+
+function saveFormulas() {
+  const values = {};
+  formulaFields.forEach(f => {
+    const input = document.getElementById('f_' + f.key);
+    if (input) values[f.key] = input.value;
+  });
+  socket.emit('save_formulas', { values });
+}
+
+socket.on('formulas', (d) => {
+  formulaFields = d.fields;
+  renderFormulaFields();
+});
+
+socket.on('formulas_saved', (d) => {
+  const el = document.getElementById('formulaSaveMsg');
+  el.textContent = d.message;
+  setTimeout(() => { el.textContent = ''; }, 4000);
+});
+
+socket.on('gm_state', (state) => {
+  lastOperatorLog = state.operator_log || [];
+  if (logView === 'operator') renderCurrentLog();
+  refreshLogViewControls();
+});
 
 function setChatFilter(filter) {
   chatFilter = filter;
@@ -1249,6 +1474,227 @@ function myControlInfo(battle) {
   const mine = all.find(c => c.name === nick);
   if (mine) return { scope: 'character', character: mine };
   return { scope: 'none' };
+}
+
+// ------------------------------------------------------------------
+// GM(비밀번호로 입장) 전용 진행 컨트롤 - 다음 턴/시간 초과는 모든 전투 유형 공통이고,
+// 다이스 굴리기(점령전)/전조 출력(마스 레이드)은 전투 유형에 맞는 것만 표시됩니다.
+// ------------------------------------------------------------------
+function refreshGmControlPanelVisibility() {
+  const panel = document.getElementById('gmControlPanel');
+  if (!panel) return;
+  const control = myControlInfo(lastBattleForPanel);
+  const show = !!lastBattleForPanel && control.scope === 'all';
+  panel.style.display = show ? '' : 'none';
+  if (show) {
+    renderSiteDiceStatusGm(lastSiteDice);
+    renderTelegraphControls();
+  }
+}
+
+function rollSiteDice() {
+  socket.emit('roll_site_dice', {});
+}
+
+function renderSiteDiceStatusGm(siteDice) {
+  const el = document.getElementById('siteDiceStatusGm');
+  if (!el) return;
+  if (!siteDice || siteDice.value == null || siteDice.stale) {
+    el.textContent = '아직 굴리지 않았습니다';
+    return;
+  }
+  const remaining = siteDice.value - siteDice.used;
+  el.textContent = `이번 라운드 ${siteDice.value}회 중 ${siteDice.used}회 사용 (남음 ${remaining}회)`;
+}
+
+let telegraphMode = false;               // GM이 칸을 고르는 중인지
+let telegraphSelectedCells = new Set();  // GM이 고른 칸 (아직 미공개, "x,y")
+
+function toggleTelegraphMode() {
+  telegraphMode = !telegraphMode;
+  if (!telegraphMode) telegraphSelectedCells.clear();
+  renderTelegraphControls();
+  renderGrid(lastBattleForPanel, lastAllForCards);
+}
+
+function currentGridDims() {
+  const battle = lastBattleForPanel;
+  return {
+    width: battle ? battle.grid_width : GRID_SIZE,
+    height: battle ? battle.grid_height : GRID_SIZE,
+  };
+}
+
+function toggleTelegraphRow(y) {
+  const { width } = currentGridDims();
+  const keys = [];
+  for (let x = 0; x < width; x++) keys.push(`${x},${y}`);
+  const allSelected = keys.every(k => telegraphSelectedCells.has(k));
+  keys.forEach(k => { if (allSelected) telegraphSelectedCells.delete(k); else telegraphSelectedCells.add(k); });
+}
+
+function toggleTelegraphColumn(x) {
+  const { height } = currentGridDims();
+  const keys = [];
+  for (let y = 0; y < height; y++) keys.push(`${x},${y}`);
+  const allSelected = keys.every(k => telegraphSelectedCells.has(k));
+  keys.forEach(k => { if (allSelected) telegraphSelectedCells.delete(k); else telegraphSelectedCells.add(k); });
+}
+
+function onTelegraphCellClick(x, y, evt) {
+  // Shift+왼쪽 클릭 : 가로 한 줄 전체를 일괄 선택/해제
+  if (evt && evt.shiftKey) {
+    toggleTelegraphRow(y);
+  } else {
+    const key = `${x},${y}`;
+    if (telegraphSelectedCells.has(key)) telegraphSelectedCells.delete(key);
+    else telegraphSelectedCells.add(key);
+  }
+  renderTelegraphControls();
+  renderGrid(lastBattleForPanel, lastAllForCards);
+}
+
+function onTelegraphCellRightClick(x, y, evt) {
+  // Shift+오른쪽 클릭 : 세로 한 줄 전체를 일괄 선택/해제
+  if (evt) evt.preventDefault();
+  if (evt && evt.shiftKey) {
+    toggleTelegraphColumn(x);
+    renderTelegraphControls();
+    renderGrid(lastBattleForPanel, lastAllForCards);
+  }
+  return false;
+}
+
+function revealTelegraph() {
+  const cells = [...telegraphSelectedCells].map(k => k.split(',').map(Number));
+  socket.emit('telegraph_reveal', { cells });
+  telegraphMode = false;
+  telegraphSelectedCells.clear();
+  renderTelegraphControls();
+}
+
+function clearTelegraph() {
+  socket.emit('telegraph_clear', {});
+}
+
+function renderTelegraphControls() {
+  const modeBtn = document.getElementById('telegraphModeBtn');
+  if (!modeBtn) return;
+  const revealBtn = document.getElementById('telegraphRevealBtn');
+  const clearBtn = document.getElementById('telegraphClearBtn');
+  const status = document.getElementById('telegraphStatus');
+  modeBtn.textContent = telegraphMode ? '🔮 전조 출력 중 (칸을 클릭해 선택)' : '🔮 전조 출력';
+  revealBtn.style.display = telegraphMode ? '' : 'none';
+  clearBtn.style.display = telegraphRevealedCells.size > 0 ? '' : 'none';
+  status.textContent = telegraphMode
+    ? `선택된 칸 ${telegraphSelectedCells.size}개 · Shift+좌클릭 가로 일괄, Shift+우클릭 세로 일괄`
+    : (telegraphRevealedCells.size > 0 ? `공개된 전조 ${telegraphRevealedCells.size}칸` : '');
+}
+
+// ------------------------------------------------------------------
+// GM(비밀번호로 입장) 전용 행동 실행 패널 - PVP/점령전에서는 격자가 없어 카드 클릭만으로는
+// "누구로 행동할지"를 고를 수 없으므로, 행동자/행동/대상을 직접 드롭다운으로 지정합니다.
+// ------------------------------------------------------------------
+function refreshGmActPanelVisibility() {
+  const panel = document.getElementById('gmActPanel');
+  if (!panel) return;
+  const control = myControlInfo(lastBattleForPanel);
+  const show = !!lastBattleForPanel && control.scope === 'all' && (BATTLE_TYPE === 'pvp' || BATTLE_TYPE === 'siege');
+  panel.style.display = show ? '' : 'none';
+  if (show) refreshGmActorOptions();
+}
+
+function refreshGmActorOptions() {
+  const sel = document.getElementById('gmActActor');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = lastAllForCards.map(c => `<option value="${c.name}">${displayNameOf(c)} (${c.teamLabel}팀 ${c.role || '몹'})</option>`).join('');
+  if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+  refreshGmActTypeOptions();
+}
+
+function refreshGmActTypeOptions() {
+  const typeSel = document.getElementById('gmActType');
+  if (!typeSel) return;
+  const actor = lastAllForCards.find(c => c.name === document.getElementById('gmActActor').value);
+  if (!actor) { typeSel.innerHTML = ''; refreshGmActTargetOptions(); return; }
+  const prevType = typeSel.value;
+  typeSel.innerHTML = actor.available_actions
+    .filter(label => label !== '이동')
+    .map(label => `<option value="${label}">${label}</option>`)
+    .join('');
+  if ([...typeSel.options].some(o => o.value === prevType)) typeSel.value = prevType;
+  refreshGmActTargetOptions();
+}
+
+function refreshGmActTargetOptions() {
+  const targetSel = document.getElementById('gmActTarget');
+  const multiWrap = document.getElementById('gmActTargetMultiWrap');
+  if (!targetSel || !multiWrap) return;
+  const actor = lastAllForCards.find(c => c.name === document.getElementById('gmActActor').value);
+  const label = document.getElementById('gmActType').value;
+  if (!actor || !label) {
+    targetSel.innerHTML = '<option value="">-</option>';
+    multiWrap.style.display = 'none';
+    return;
+  }
+  const multiCount = MULTI_TARGET_ACTIONS[label];
+  let pool;
+  if (ENEMY_TARGET_ACTIONS.has(label)) {
+    pool = lastAllForCards.filter(c => c.teamLabel !== actor.teamLabel);
+  } else if (ALLY_TARGET_ACTIONS.has(label) || multiCount) {
+    pool = lastAllForCards.filter(c => c.teamLabel === actor.teamLabel);
+  } else {
+    pool = [actor];
+  }
+  const optsHtml = '<option value="">-</option>' + pool.map(c => `<option value="${c.name}">${displayNameOf(c)}</option>`).join('');
+
+  if (multiCount === 3) {
+    multiWrap.style.display = '';
+    [targetSel, document.getElementById('gmActTarget2'), document.getElementById('gmActTarget3')].forEach(sel => {
+      const prev = sel.value;
+      sel.innerHTML = optsHtml;
+      if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+    });
+    return;
+  }
+  multiWrap.style.display = 'none';
+  const prevTarget = targetSel.value;
+  targetSel.innerHTML = optsHtml;
+  if ([...targetSel.options].some(o => o.value === prevTarget)) targetSel.value = prevTarget;
+}
+
+function submitGmAct() {
+  const actor = document.getElementById('gmActActor').value;
+  const actorChar = lastAllForCards.find(c => c.name === actor);
+  const label = document.getElementById('gmActType').value;
+  const type = resolveActionType(label, actorChar ? actorChar.role : null);
+  const target = document.getElementById('gmActTarget').value;
+  if (!type) return;
+
+  const payloadMap = {
+    attack: { attacker: actor, target },
+    self_defend: { name: actor },
+    defend: { tanker: actor, target: target || actor },
+    dodge: { name: actor },
+    heal: { healer: actor, target },
+    timeout: { name: actor },
+    flee: { name: actor },
+    defense_settle: { name: actor },
+    command: { guardian: actor, target: target || actor },
+    swap: { medic: actor, target },
+    collapse: { attacker: actor, target },
+    emission: { attacker: actor },
+    shield: { name: actor, target: target || actor },
+    polarize: { name: actor },
+    restore: { name: actor, target: target || null },
+    reflux: {
+      name: actor,
+      targets: [target, document.getElementById('gmActTarget2').value, document.getElementById('gmActTarget3').value]
+        .filter(Boolean),
+    },
+  };
+  doAction(type, payloadMap[type]);
 }
 
 // 카드 팝업에서 다중 지정 스킬(환류 등) 버튼을 노출하기 위해, 본인 캐릭터의 available_actions에서

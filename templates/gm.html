@@ -83,7 +83,6 @@
   .card-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap:14px; }
   .char-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 12px 14px; cursor:pointer; position:relative; transition: border-color .12s; }
   .char-card:hover { border-color:#444; }
-  .char-card.gone { opacity:0.4; filter:grayscale(70%); }
   .char-card.team-A { border-left: 3px solid var(--accent-blue); }
   .char-card.team-B { border-left: 3px solid var(--accent-red); }
   .char-card .row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
@@ -96,6 +95,7 @@
   .hpbar-fill.low { background: var(--accent-red); }
   .hpnum { font-size:13px; color: var(--muted); white-space:nowrap; }
   .card-detail { margin-top:8px; font-size:13px; color: var(--muted); border-top:1px solid var(--card-border); padding-top:6px; }
+  .char-card.is-defeated { filter: grayscale(1) brightness(.75); opacity:.55; }
 
   /* ---------- 로그 / 채팅 ---------- */
   .bottom-grid { display:grid; grid-template-columns: 1fr 1.35fr; gap:16px; }
@@ -409,6 +409,11 @@ function roleColorVar(role) {
   return `var(--role-${role}, #9aa0a6)`;
 }
 
+function displayNameOf(c) {
+  if (!c) return '';
+  return c.boss_section ? `BOSS [${c.boss_section}]` : c.name;
+}
+
 function showError(msg) {
   const el = document.getElementById('globalError');
   document.getElementById('globalErrorText').textContent = msg;
@@ -488,6 +493,11 @@ socket.on('register_result', (d) => {
   if (d.registered.length) el.innerHTML += `<div class="ok">등록됨: ${d.registered.join(', ')}</div>`;
   d.errors.forEach(e => el.innerHTML += `<div class="err">${e}</div>`);
   if (d.errors.length) showError(d.errors[0]);
+});
+
+socket.on('battle_starting', () => {
+  document.getElementById('formatLabel').textContent = '전투 시작...';
+  document.getElementById('roundInfo').textContent = '선후공 다이스를 굴리는 중...';
 });
 
 socket.on('gm_state', (state) => {
@@ -682,8 +692,12 @@ function randomAssign() {
     return;
   }
   const shuffled = shuffle(lastRoster);
-  document.getElementById('teamAList').value = shuffled.slice(0, na).join('\n');
-  document.getElementById('teamBList').value = shuffled.slice(na, na + nb).join('\n');
+  const team_a = shuffled.slice(0, na);
+  const team_b = shuffled.slice(na, na + nb);
+  document.getElementById('teamAList').value = team_a.join('\n');
+  document.getElementById('teamBList').value = team_b.join('\n');
+  // 아직 전투를 시작하진 않지만, 참가자 화면에 배정 결과를 카드로 미리 보여줍니다.
+  socket.emit('preview_teams', { team_a, team_b });
 }
 
 function startBattle() {
@@ -728,7 +742,7 @@ function renderBattle(battle) {
   lastAllForCards = all;
   teamsEl.innerHTML = all.map(c => renderCardHtml(c)).join('');
 
-  const opts = all.map(c => `<option value="${c.name}">${c.name} (${c.teamLabel}팀)</option>`).join('');
+  const opts = all.map(c => `<option value="${c.name}">${displayNameOf(c)} (${c.teamLabel}팀)</option>`).join('');
   const prevActor = actorSel.value;
   actorSel.innerHTML = opts;
   if ([...actorSel.options].some(o => o.value === prevActor)) actorSel.value = prevActor;
@@ -772,7 +786,7 @@ function refreshActTargetOptions() {
   } else {
     pool = [actor];  // 본인방어/회피/도주/시간초과/방어 정산/방출/편광 등 대상이 필요 없는 행동
   }
-  const optsHtml = '<option value="">-</option>' + pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  const optsHtml = '<option value="">-</option>' + pool.map(c => `<option value="${c.name}">${displayNameOf(c)}</option>`).join('');
 
   if (multiCount === 3) {
     multiWrap.style.display = '';
@@ -797,6 +811,18 @@ function toggleCard(name) {
   document.getElementById('teams').innerHTML = lastAllForCards.map(c => renderCardHtml(c)).join('');
 }
 
+// 사망/도주(완료·시도 중) 상태는 카드 전체를 무채색으로 흐리게 처리하고, 이름 옆에
+// 상태 표시를 남깁니다. 다운(HP 0이지만 사망 미확정)은 아직 복귀 가능하므로 제외합니다.
+function isDefeatedStatus(c) {
+  return c.status === 'dead' || c.status === 'fled' || c.status === 'fleeing';
+}
+function statusTagFor(c) {
+  if (c.status === 'dead') return ' *사망';
+  if (c.status === 'fled' || c.status === 'fleeing') return ' *도주';
+  if (c.dodging_this_round) return ' *회피';
+  return '';
+}
+
 function renderCardHtml(c) {
   const expanded = expandedCards.has(c.name);
   const isAllyGrid = c.grid_pos && c.teamLabel === 'A';
@@ -805,19 +831,17 @@ function renderCardHtml(c) {
     : '';
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const shieldText = c.shield_hp ? ` 🔷보호막${c.shield_hp}` : '';
-  const isGone = c.status === 'dead' || c.status === 'fled';
-  const goneTag = c.status === 'dead' ? ' ☠사망' : (c.status === 'fled' ? ' 💨도주' : '');
   const badges = [];
   if (c.has_acted) badges.push('✅ 행동완료');
   if (c.polarize_active) badges.push('🛡 편광중');
   if (c.has_leech_buff) badges.push('🩸 흡수버프');
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
 
-  return `<div class="char-card team-${c.teamLabel} ${isGone ? 'gone' : ''}" style="${gridBorder}" onclick="toggleCard('${c.name}')">
+  return `<div class="char-card team-${c.teamLabel} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" style="${gridBorder}" onclick="toggleCard('${c.name}')">
     <div class="row1">
       <div>
-        <div class="cname">${c.name}${goneTag}</div>
-        <div class="crole" style="color:${roleColorVar(c.role)}">${c.role}${c.skill ? ' 【' + c.skill + '】' : ''}</div>
+        <div class="cname">${displayNameOf(c)}</div>
+        <div class="crole" style="color:${roleColorVar(c.role)}">${c.role}${c.skill ? ' 【' + c.skill + '】' : ''}${statusTagFor(c)}</div>
       </div>
       <span class="info-icon" title="${statsTitle(c)}">ⓘ</span>
     </div>
@@ -1007,6 +1031,7 @@ function renderGrid(battle, all) {
   if (!gridWidth) { section.style.display = 'none'; return; }
   section.style.display = '';
   const posMap = {};
+  // 사망/도주(완료)한 캐릭터는 격자에 그리지 않습니다(칸을 그대로 차지한 것처럼 보이면 혼동됨).
   all.forEach(c => { if (c.grid_pos && c.status !== 'dead' && c.status !== 'fled') posMap[`${c.grid_pos[0]},${c.grid_pos[1]}`] = c; });
 
   let highlightCells = new Set();
@@ -1078,7 +1103,7 @@ function renderGrid(battle, all) {
         borderStyle = `border:2px solid ${highlightIsAction ? ACTION_RANGE_COLOR : (ROLE_MOVE_COLOR[selChar.role] || '#4ad0ff')};`;
       }
       if (selChar && selChar.grid_pos && selChar.grid_pos[0] === x && selChar.grid_pos[1] === y) {
-        borderStyle = 'border:3px solid #4dff4d;';
+        borderStyle = 'border:3px solid var(--accent-blue);';
       }
       // 전조는 테두리(이동범위/사거리 등 기존 표시)를 가리지 않도록 은은한 안쪽 글로우로만 표시합니다.
       let glow = '';
@@ -1091,10 +1116,10 @@ function renderGrid(battle, all) {
         cursor = 'pointer';
         onclick = `onclick="onTelegraphCellClick(${x},${y},event)" oncontextmenu="onTelegraphCellRightClick(${x},${y},event); return false;"`;
       }
-      const label = c ? c.name.slice(0, 2) : '';
+      const label = c ? (c.boss_section || c.name.slice(0, 2)) : '';
       const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
       const telegraphText = telegraphRevealedCells.has(key) ? ' · 🔮 전조(곧 피해)' : (telegraphSelectedCells.has(key) ? ' · 전조 선택됨(미공개)' : '');
-      const title = c ? `${c.name} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
+      const title = c ? `${displayNameOf(c)} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
       html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; ${borderStyle} background:${bg}; ${glow} text-align:center; font-size:14px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
     }
     html += '</tr>';
@@ -1106,8 +1131,8 @@ function renderGrid(battle, all) {
   if (legend) {
     legend.textContent = selChar
       ? (highlightIsAction
-          ? `선택: ${selChar.name} — ⚪ 사거리 표시 중. 범위 내 대상을 클릭해 행동을 고르세요.`
-          : `선택: ${selChar.name} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 범위 표시 중. 이동할 칸을 클릭하세요.`)
+          ? `선택: ${displayNameOf(selChar)} — ⚪ 사거리 표시 중. 범위 내 대상을 클릭해 행동을 고르세요.`
+          : `선택: ${displayNameOf(selChar)} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 범위 표시 중. 이동할 칸을 클릭하세요.`)
       : '캐릭터를 클릭하면 이동/사거리 범위가 표시돼요. (🔴스트라이커 🔵가디언 🟡메딕)';
   }
 
@@ -1139,8 +1164,8 @@ function renderGridActionPopup(battle, all) {
     return `<button onclick="quickAction('${type}','${actor.name}'); closeGridSelection();">${label}</button>`;
   }).join(' ');
 
-  const targetLabel = isSelf ? '본인' : target.name;
-  popup.innerHTML = `<b>${actor.name}</b> → <b>${targetLabel}</b> 행동 선택 : ${buttons || '<i>이 대상에게 가능한 행동이 없습니다</i>'} <button onclick="closeGridSelection()" style="float:right;">닫기</button>`;
+  const targetLabel = isSelf ? '본인' : displayNameOf(target);
+  popup.innerHTML = `<b>${displayNameOf(actor)}</b> → <b>${targetLabel}</b> 행동 선택 : ${buttons || '<i>이 대상에게 가능한 행동이 없습니다</i>'} <button onclick="closeGridSelection()" style="float:right;">닫기</button>`;
   popup.style.display = '';
 }
 
@@ -1284,7 +1309,7 @@ function renderActionPanel(battle) {
     actionPanelActorName = all[0].name;
   }
   const character = all.find(c => c.name === actionPanelActorName);
-  const actorOpts = all.map(c => `<option value="${c.name}" ${c.name === actionPanelActorName ? 'selected' : ''}>${c.name} (${c.role})</option>`).join('');
+  const actorOpts = all.map(c => `<option value="${c.name}" ${c.name === actionPanelActorName ? 'selected' : ''}>${displayNameOf(c)} (${c.role})</option>`).join('');
 
   const buttons = character.available_actions.map(label => {
     const type = resolveActionType(label, character.role);
@@ -1294,7 +1319,7 @@ function renderActionPanel(battle) {
     if (MULTI_TARGET_ACTIONS[label]) {
       // 환류처럼 지정 인원이 여럿인 스킬 - 대상 드롭다운을 인원수만큼 나열합니다.
       const pool = all.filter(c => c.team === character.team);
-      const opts = pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      const opts = pool.map(c => `<option value="${c.name}">${displayNameOf(c)}</option>`).join('');
       const n = MULTI_TARGET_ACTIONS[label];
       const selects = Array.from({ length: n }, (_, i) =>
         `<select id="qaMulti_${type}_${i}">${opts}</select>`).join(' ');
@@ -1304,7 +1329,7 @@ function renderActionPanel(battle) {
       const pool = ENEMY_TARGET_ACTIONS.has(label)
         ? all.filter(c => c.team !== character.team)
         : all.filter(c => c.team === character.team);  // 아군 대상 행동 (본인 포함)
-      const targetOpts = pool.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      const targetOpts = pool.map(c => `<option value="${c.name}">${displayNameOf(c)}</option>`).join('');
       return `<button onclick="quickAction('${type}','${character.name}',document.getElementById('qaTarget_${type}').value)">${label}</button>
               <select id="qaTarget_${type}">${targetOpts}</select>`;
     }

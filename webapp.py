@@ -17,11 +17,11 @@ import time
 import uuid
 
 from flask import Flask, request, render_template, redirect, url_for, abort, jsonify
-from flask_socketio import SocketIO, join_room, emit
+from flask_socketio import SocketIO, join_room, leave_room, emit
 
 import config
 from battle import Battle, BattleError
-from rooms import create_room, get_room, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES
+from rooms import create_room, get_room, ROOMS, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -33,6 +33,11 @@ os.makedirs(MUSIC_DIR, exist_ok=True)
 
 # socket id -> {"room_id", "role", "nickname"}
 CONNECTIONS = {}
+
+# 참가자(guest) 링크에서 닉네임을 "GM"으로 입력해 전체 조작 권한("all")을 얻으려면
+# 이 비밀번호가 필요합니다. 운영진(gm) 링크 자체는 gm_key만으로 이미 전체 권한을 가지므로
+# 영향받지 않습니다.
+GM_GUEST_PASSWORD = "Nexus**0010"
 
 
 @app.after_request
@@ -172,6 +177,38 @@ def build_character_public(c):
         "defense_count": len(c.defense_grants),
         "polarize_active": c.polarize_active,
         "has_leech_buff": c.leech_buff_expires_round is not None,
+        "boss_group": c.boss_group,
+        "boss_section": c.boss_section,
+    }
+
+
+def _first_team_display_name(room, battle):
+    """전투 시작 안내 메시지용 - 선공 팀을 화면에 쓰는 이름으로 바꿉니다.
+    PVP는 카드가 위/아래 줄로 고정 표시되므로 어느 줄인지도 함께 알려줍니다."""
+    is_team_a = battle.round_first_team == Battle.TEAM_A
+    if room.battle_type == "pvp":
+        return f"{battle.round_first_team}({'윗줄' if is_team_a else '아랫줄'})"
+    return "러너팀" if is_team_a else "GM팀"
+
+
+def build_preview_character(room, name):
+    """전투 시작 전 '무작위 배치' 미리보기용 - 로스터에서 카드에 필요한 최소 정보만 뽑습니다.
+    아직 전투가 없으므로 HP는 항상 최대치로 표시됩니다."""
+    data = room.game.db.get(name)
+    if not data:
+        return None
+    stats = data.get("stats", {})
+    overrides = config.load_profile_overrides(room.battle_type)
+    max_hp = config.calculate_max_hp(stats, overrides=overrides)
+    return {
+        "name": name,
+        "role": data.get("role") or "몹",
+        "color": data.get("color"),
+        "skill": data.get("skill"),
+        "current_hp": max_hp,
+        "max_hp": max_hp,
+        "stats": dict(stats),
+        "stat_total": sum(stats.values()) if stats else 0,
     }
 
 
@@ -205,7 +242,9 @@ def sync_round_timer(room):
         room.last_round_no = battle.round_no
         room.round_deadline = None
     if room.round_deadline is None and not telegraph_pending(room, battle):
-        room.round_deadline = time.time() + config.ROUND_TIME_LIMIT_SECONDS
+        room.round_deadline = time.time() + config.get_value(
+            "ROUND_TIME_LIMIT_SECONDS", config.load_profile_overrides(room.battle_type)
+        )
 
 
 def build_battle_common(battle):
@@ -239,7 +278,19 @@ def build_public_state(room):
     battle_payload = build_battle_common(battle)
     if battle_payload is not None:
         battle_payload["round_deadline_at"] = room.round_deadline
-        battle_payload["round_limit_seconds"] = config.ROUND_TIME_LIMIT_SECONDS
+        battle_payload["round_limit_seconds"] = config.get_value(
+            "ROUND_TIME_LIMIT_SECONDS", config.load_profile_overrides(room.battle_type)
+        )
+    preview_teams = None
+    if battle is None and room.preview_teams:
+        preview_teams = {
+            "team_a": [c for c in (
+                build_preview_character(room, n) for n in room.preview_teams.get("team_a", [])
+            ) if c],
+            "team_b": [c for c in (
+                build_preview_character(room, n) for n in room.preview_teams.get("team_b", [])
+            ) if c],
+        }
     payload = {
         "room_id": room.id,
         "room_name": room.name,
@@ -249,6 +300,7 @@ def build_public_state(room):
         "roster": room.game.db.all_names_by_position(),
         "music": room.music,
         "telegraph_cells": room.telegraph_cells,
+        "preview_teams": preview_teams,
         "server_now": time.time(),
     }
     if room.battle_type == "siege":
@@ -284,6 +336,20 @@ def _require_gm(sid):
     if info is None or info["role"] != "gm":
         return None
     return get_room(info["room_id"])
+
+
+def _require_gm_or_guest_gm(sid):
+    """운영진(gm_key) 접속뿐 아니라, 참가자 링크에서 닉네임 "GM" + 비밀번호로 전체 조작
+    권한을 얻은 접속도 허용합니다. 비밀번호 검증은 on_join에서 이미 끝났으므로(그때만
+    닉네임이 "gm"으로 저장됨) 여기서는 다시 검사하지 않습니다."""
+    info = CONNECTIONS.get(sid)
+    if info is None:
+        return None
+    if info["role"] == "gm":
+        return get_room(info["room_id"])
+    if info["role"] == "guest" and (info.get("nickname") or "").strip().lower() == "gm":
+        return get_room(info["room_id"])
+    return None
 
 
 def resolve_control(room, info):
@@ -352,13 +418,37 @@ def on_join(data):
         emit("error", {"message": "잘못된 접속 키입니다."})
         return
 
+    # 참가자 링크로 닉네임을 "GM"으로 입력해 전체 조작 권한을 얻으려면 비밀번호가 맞아야 합니다.
+    if role == "guest" and nickname.lower() == "gm":
+        if (data.get("gm_password") or "") != GM_GUEST_PASSWORD:
+            emit("error", {"message": "비밀번호가 올바르지 않습니다."})
+            return
+
+    previous = CONNECTIONS.get(request.sid)
+    previous_nickname = previous["nickname"] if previous else None
+
     CONNECTIONS[request.sid] = {"room_id": room_id, "role": role, "nickname": nickname}
     join_room(room_channel(room_id, "all"))
-    if role == "gm":
+    # 참가자 링크에서 닉네임 "GM"으로 (비밀번호 인증까지 마치고) 입장한 경우도 운영진 로그/수식이
+    # 필요하므로 gm 채널에 넣어줍니다. 다른 이름으로 재입장(로그아웃 포함)하면 다시 빠집니다.
+    if role == "gm" or nickname.lower() == "gm":
         join_room(room_channel(room_id, "gm"))
+    elif role == "guest":
+        leave_room(room_channel(room_id, "gm"))
 
     # 익명(조용히 관전만 하는 접속)은 입장/퇴장 알림을 남기지 않습니다 - 로그인한 이름만 표시합니다.
-    if nickname != "익명":
+    # 아바타 동그라미를 눌러 로그아웃하면(이름 있음 → 익명으로 재입장) 퇴장 알림을 남깁니다.
+    if previous_nickname and previous_nickname != "익명" and nickname == "익명":
+        entry = {
+            "time": time.strftime("%H:%M:%S"),
+            "nickname": "system",
+            "role": "system",
+            "category": "presence",
+            "text": f"{previous_nickname}님이 퇴장했습니다",
+        }
+        room.chat_log.append(entry)
+        socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
+    elif nickname != "익명":
         entry = {
             "time": time.strftime("%H:%M:%S"),
             "nickname": "system",
@@ -370,10 +460,9 @@ def on_join(data):
         socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
 
     emit("joined", {"role": role, "room_id": room_id})
-    if role == "gm":
+    emit("public_state", build_public_state(room))
+    if role == "gm" or nickname.lower() == "gm":
         emit("gm_state", build_gm_state(room))
-    else:
-        emit("public_state", build_public_state(room))
 
 
 @socketio.on("disconnect")
@@ -571,7 +660,7 @@ def _formula_fields_payload(battle_type: str = "pvp"):
 
 @socketio.on("get_formulas")
 def on_get_formulas(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "운영진만 전투 수식을 열람할 수 있습니다."})
         return
@@ -580,7 +669,7 @@ def on_get_formulas(data):
 
 @socketio.on("save_formulas")
 def on_save_formulas(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "운영진만 전투 수식을 수정할 수 있습니다."})
         return
@@ -599,22 +688,78 @@ def health():
     return "ok"
 
 
+def _find_empty_2x2_anchor(width, height, occupied, near):
+    """width×height 격자에서 2x2로 통째로 비어있는 자리의 북서(anchor) 좌표를 찾습니다.
+    near에 가장 가까운 자리를 우선합니다. 그런 자리가 전혀 없으면 None."""
+    candidates = []
+    for x in range(width - 1):
+        for y in range(height - 1):
+            block = {(x, y), (x + 1, y), (x, y + 1), (x + 1, y + 1)}
+            if block & occupied:
+                continue
+            candidates.append((x, y))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda a: (a[0] + 0.5 - near[0]) ** 2 + (a[1] + 0.5 - near[1]) ** 2)
+    return candidates[0]
+
+
 def assign_mass_raid_positions(battle, width, height):
-    """몹(2팀)은 격자 중앙 부근에 뭉쳐서, 러너(1팀)는 나머지 칸에 무작위로 배치합니다."""
+    """몹(2팀)은 격자 중앙 부근에 뭉쳐서, 러너(1팀)는 나머지 칸에 무작위로 배치합니다.
+    "BOSS"(4부위, boss_group이 같은 캐릭터들)는 2x2 한 덩이로 중앙 부근에 먼저 배치됩니다."""
     cells = [(x, y) for x in range(width) for y in range(height)]
     center = ((width - 1) / 2, (height - 1) / 2)
     cells.sort(key=lambda c: (c[0] - center[0]) ** 2 + (c[1] - center[1]) ** 2)
 
     used = set()
+    all_members = battle.team_a + battle.team_b
+
+    seen_groups = set()
+    for c in all_members:
+        if not c.boss_group or c.boss_group in seen_groups:
+            continue
+        seen_groups.add(c.boss_group)
+        anchor = _find_empty_2x2_anchor(width, height, used, near=center)
+        if anchor is None:
+            continue  # 격자가 너무 작아 2x2 자리가 없으면 건너뜁니다(개별 배치로는 넘기지 않음).
+        for member in all_members:
+            if member.boss_group != c.boss_group:
+                continue
+            ox, oy = config.BOSS_SECTION_OFFSETS.get(member.boss_section, (0, 0))
+            pos = (anchor[0] + ox, anchor[1] + oy)
+            member.grid_pos = pos
+            used.add(pos)
+
     for c in battle.team_b:
-        pos = cells[len(used)]
+        if c.boss_group:
+            continue
+        pos = next(cell for cell in cells if cell not in used)
         c.grid_pos = pos
         used.add(pos)
 
     remaining = [c for c in cells if c not in used]
     random.shuffle(remaining)
-    for i, c in enumerate(battle.team_a):
-        c.grid_pos = remaining[i]
+    idx = 0
+    for c in battle.team_a:
+        if c.boss_group:
+            continue
+        c.grid_pos = remaining[idx]
+        idx += 1
+
+
+@socketio.on("preview_teams")
+def on_preview_teams(data):
+    """전투 시작 전 "무작위 배치"를 누르면, 실제로 전투를 시작하지 않고도 배정된 팀을
+    참가자 화면에 카드로 미리 보여줍니다."""
+    room = _require_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    room.preview_teams = {
+        "team_a": data.get("team_a", []),
+        "team_b": data.get("team_b", []),
+    }
+    broadcast_state(room)
 
 
 @socketio.on("start_battle")
@@ -690,12 +835,30 @@ def on_start_battle(data):
     room.pending_reveal = None
     room.telegraph_cells = []
     room.telegraph_round_no = None
+    room.preview_teams = None
+
+    # 선후공은 이미 결정됐지만(room.game.start_battle 내부), 화면에는 "다이스 굴리는 중"
+    # 서스펜스를 잠깐 보여준 뒤에 결과와 함께 라운드 제한시간을 시작시킵니다.
+    socketio.emit("battle_starting", {}, room=room_channel(room.id, "all"))
+    socketio.sleep(1.5)
+
+    first_team_label = _first_team_display_name(room, room.game.battle)
+    entry = {
+        "time": time.strftime("%H:%M:%S"),
+        "nickname": "GM",
+        "role": "gm",
+        "category": "operator",
+        "text": f"전투가 시작됩니다. 선공 팀은 {first_team_label}입니다. 제한시간 내 행동해 주세요.",
+    }
+    room.chat_log.append(entry)
+    socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
+
     broadcast_state(room)
 
 
 @socketio.on("roll_site_dice")
 def on_roll_site_dice(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -723,7 +886,7 @@ def on_telegraph_reveal(data):
     공개된 칸은 모두의 화면에서 밝게 표시되며, 곧 그 칸에 무조건 피해가 발생한다는
     시각적 경고일 뿐입니다. 실제 피해 판정(공격 행동)은 별도로 이루어집니다.
     """
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -749,7 +912,7 @@ def on_telegraph_reveal(data):
 
 @socketio.on("telegraph_clear")
 def on_telegraph_clear(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -828,6 +991,113 @@ ACTION_HANDLERS = {
 }
 
 SITE_TURN_ACTIONS = ("attack", "heal", "defense_settle")
+
+# 마스 레이드 전용 : 라운드 제한시간이 이만큼(초) 남았을 때 미행동자 안내를 커맨드 창에 남깁니다.
+MASS_RAID_REMINDER_THRESHOLDS = (300, 120, 60)  # 5분 / 2분 / 1분
+
+
+def _post_mass_raid_reminder(room, battle, threshold):
+    unacted = battle.unacted_members()
+    living = [c for c in battle.team_a + battle.team_b if c.is_alive]
+    acted_count = len(living) - len(unacted)
+    minutes = threshold // 60
+    names = ", ".join(unacted) if unacted else "없음"
+    entry = {
+        "time": time.strftime("%H:%M:%S"),
+        "nickname": "system",
+        "role": "system",
+        "category": "system",
+        "text": f"제한시간 {minutes}분 남았습니다 ({acted_count}/{len(living)}명 행동 완료) · 미완료: {names}",
+    }
+    room.chat_log.append(entry)
+    socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
+
+
+def _mass_raid_round_reminder_check(room):
+    battle = room.game.battle
+    if battle is None or battle.finished:
+        return
+    sync_round_timer(room)
+    if room.round_deadline is None:
+        return
+    if room.reminders_round_no != battle.round_no:
+        room.reminders_round_no = battle.round_no
+        room.reminders_sent = set()
+    remaining = room.round_deadline - time.time()
+    for threshold in MASS_RAID_REMINDER_THRESHOLDS:
+        if remaining <= threshold and threshold not in room.reminders_sent:
+            room.reminders_sent.add(threshold)
+            _post_mass_raid_reminder(room, battle, threshold)
+
+
+def _round_reminder_loop():
+    """마스 레이드 방들을 주기적으로 훑어보며 제한시간 임계값(5분/2분/1분) 안내를 보냅니다."""
+    while True:
+        socketio.sleep(5)
+        for room in list(ROOMS.values()):
+            if room.battle_type != "mass_raid":
+                continue
+            try:
+                _mass_raid_round_reminder_check(room)
+            except Exception as e:
+                print(f"[round_reminder_loop] room {room.id} error: {e}")
+
+
+def _maybe_auto_advance_turn(room, battle):
+    """PVP/점령전 : 이번 턴에 행동해야 할 팀원이 전원 행동을 마치면(can_advance_turn), 커맨드
+    창에 안내를 남기고 GM이 "다음 턴"을 누르지 않아도 자동으로 턴을 넘깁니다. 메딕은
+    battle.can_advance_turn()이 이미 후공 페이즈까지 자동으로 봐주므로(엔진 규칙) 여기서
+    따로 처리할 필요가 없습니다 - 메딕이 실제로 행동(또는 후공 페이즈 도달)하기 전까지는
+    can_advance_turn()이 False로 유지됩니다.
+    마스 레이드는 이 자동 진행 대상이 아닙니다(별도의 시간 기반 안내를 사용합니다)."""
+    if room.battle_type not in ("pvp", "siege"):
+        return
+    if battle.finished or not battle.can_advance_turn():
+        return
+    entry = {
+        "time": time.strftime("%H:%M:%S"),
+        "nickname": "system",
+        "role": "system",
+        "category": "system",
+        "text": f"{battle.current_turn_team} 전원 행동 완료 — 자동으로 다음 턴으로 넘어갑니다.",
+    }
+    room.chat_log.append(entry)
+    socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
+    try:
+        battle.advance_turn()
+    except BattleError:
+        pass
+
+
+def _maybe_relocate_boss(battle, actor_char):
+    """마스 레이드 : BOSS(4부위) 중 한 부위가 행동을 마쳐서 그 결과 4부위 전원이 이번
+    라운드 행동을 끝냈다면, 격자에 다른 빈 2x2 자리가 있으면 4부위를 통째로 그쪽으로
+    옮깁니다("행동이 끝나면... 아무 위치나 4칸이 비어있으면 그쪽으로 이동" 요청).
+    빈 자리가 없거나(또는 지금 자리가 이미 최선이면) 제자리에 그대로 둡니다."""
+    if actor_char is None or not actor_char.boss_group or battle.grid_width is None:
+        return
+    siblings = [c for c in battle.team_a + battle.team_b if c.boss_group == actor_char.boss_group]
+    if not siblings or not all((not c.is_alive) or c.has_acted for c in siblings):
+        return
+
+    nw = next((c for c in siblings if c.boss_section == "NW"), siblings[0])
+    if nw.grid_pos is None:
+        return
+    current_anchor = tuple(nw.grid_pos)
+
+    occupied = {
+        tuple(c.grid_pos) for c in battle.team_a + battle.team_b
+        if c.boss_group != actor_char.boss_group and c.is_alive and c.grid_pos
+    }
+    center = ((battle.grid_width - 1) / 2, (battle.grid_height - 1) / 2)
+    anchor = _find_empty_2x2_anchor(battle.grid_width, battle.grid_height, occupied, near=center)
+    if anchor is None or anchor == current_anchor:
+        return
+
+    for c in siblings:
+        ox, oy = config.BOSS_SECTION_OFFSETS.get(c.boss_section, (0, 0))
+        c.grid_pos = (anchor[0] + ox, anchor[1] + oy)
+    battle.log_event("BOSS 전원 행동 완료 — 새로운 자리로 이동했습니다.", tag="system")
 
 
 @socketio.on("battle_action")
@@ -938,6 +1208,8 @@ def on_battle_action(data):
             else:
                 battle.log_event("거점의 이번 라운드 행동이 모두 끝났습니다.", tag="system")
 
+    _maybe_relocate_boss(battle, actor_char)
+    _maybe_auto_advance_turn(room, battle)
     broadcast_state(room)
 
 
@@ -957,7 +1229,7 @@ def on_reveal_pending_action(data):
     summary = " · ".join(l["text"] for l in new_lines if l.get("tag") != "hp") or "(결과 없음)"
     entry = {
         "time": time.strftime("%H:%M:%S"),
-        "nickname": "🔮 적",
+        "nickname": "적",
         "role": "system",
         "category": "system",
         "text": summary,
@@ -983,4 +1255,5 @@ def on_reveal_pending_action(data):
 
 
 if __name__ == "__main__":
+    socketio.start_background_task(_round_reminder_loop)
     socketio.run(app, host="0.0.0.0", port=5000, debug=False, allow_unsafe_werkzeug=True)

@@ -70,6 +70,13 @@ class Character:
         # 환류(메딕) 전용 - 이 캐릭터가 흡수 버프를 받고 있으면, 공격/방어/힐을 할 때마다 자동으로 발동됩니다.
         self.leech_buff_expires_round = None
 
+        # "BOSS" 전용(마스 레이드) : 이름이 정확히 "BOSS"인 캐릭터는 전투 시작 시 4개의
+        # 부위(북동/북서/남동/남서)로 나뉘어 격자 2x2 칸을 함께 차지합니다. 부위마다 체력/행동이
+        # 독립적이지만(각각 보통 캐릭터처럼 동작), boss_group이 같은 부위들은 이동만은 한 덩이로
+        # 함께 취급됩니다(전원 행동 완료 시 자동으로 빈 2x2 자리를 찾아 다 같이 옮겨갑니다).
+        self.boss_group = None   # 같은 BOSS 개체를 묶는 식별자(문자열) 또는 None
+        self.boss_section = None  # "NE"/"NW"/"SE"/"SW" 또는 None
+
     # ------------------------------------------------------------------
     @property
     def is_alive(self) -> bool:
@@ -163,7 +170,7 @@ class Character:
                 config.ACTION_HEAL: config.ACTION_HEAL_MEDIC,
             }
             base = [rename.get(a, a) for a in base]
-        if self.can_move and not self.moved_this_round:
+        if self.can_move and not self.moved_this_round and not self.boss_group:
             base = [config.ACTION_MOVE] + base
         return base
 
