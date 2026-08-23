@@ -69,12 +69,12 @@
   .bgm-label input[type="range"] { width:70px; accent-color: var(--accent-blue); }
 
   /* ---------- 메인 그리드 (좌측 패널/격자 + 카드) ---------- */
-  /* PVP(격자 없음)는 좌측 패널 높이를 우측 카드 영역 높이에 맞춰 늘어나거나 줄어들게(stretch) 둡니다.
-     격자 지도가 있는 점령전/마스 레이드는 기존처럼 각자 필요한 높이만 차지합니다(align-items:start). */
+  /* 좌측 패널(격자 지도 포함)은 항상 우측 카드 영역 높이에 맞춰 늘어납니다(grid 기본 stretch).
+     격자 지도는 늘어난 패널 안에서 세로 중앙 정렬됩니다(#gridMap flex:1 + align-items:center). */
   .main-grid { display:grid; grid-template-columns: 300px 1fr; gap:16px; margin-bottom:16px; }
-  .main-grid.with-grid-map { grid-template-columns: 540px 1fr; align-items:start; }
-  #gridSection { width: 540px; box-sizing: border-box; }
-  #gridSection #gridLegend { width: 100%; box-sizing: border-box; }
+  .main-grid.with-grid-map { grid-template-columns: 540px 1fr; }
+  #gridSection { width: 540px; box-sizing: border-box; display:flex; flex-direction:column; }
+  #gridSection #gridLegend { width: 100%; box-sizing: border-box; min-height:40px; }
   .side-panel { padding: 26px 22px; display:flex; flex-direction:column; gap:14px; }
   .side-panel .sun-icon { font-size:34px; opacity:0.85; }
   .side-panel h3 { margin:0; font-size:26px; }
@@ -110,11 +110,14 @@
   .compact-card .hpbar-fill-sm.low { background: var(--accent-red); }
   .compact-card.selected-target { outline:1px solid var(--accent-blue); border-radius:6px; }
   .compact-card .cbadges-sm { display:flex; gap:6px; font-size:12px; color: var(--muted); min-height:13px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .compact-card.gone { opacity:0.4; filter:grayscale(70%); }
+  .compact-card .cgone-tag { color: var(--muted); font-size:12px; }
 
   .card-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
   .char-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 16px; cursor:pointer; position:relative; transition: border-color .12s; }
   .char-card:hover { border-color:#444; }
   .char-card.selected-target { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue); }
+  .char-card.gone { opacity:0.4; filter:grayscale(70%); }
   .char-card.team-B { }
   .char-card.ally { border-left: 3px solid #fff; }
   .char-card .row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
@@ -242,7 +245,7 @@
   <div id="gridSection" class="panel">
     <b>마스 맵</b>
     <div id="gridLegend" style="font-size:14px; opacity:0.8; margin:6px 0;"></div>
-    <div id="gridMap" style="overflow-x:auto; display:flex; justify-content:center;"></div>
+    <div id="gridMap" style="overflow-x:auto; display:flex; justify-content:center; align-items:center; flex:1;"></div>
     <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
   </div>
   {% else %}
@@ -683,18 +686,21 @@ function renderCards() {
 function renderCompactCardHtml(c) {
   const isTarget = selectedTargetName === c.name;
   const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
+  const isGone = c.status === 'dead' || c.status === 'fled';
+  const goneTag = c.status === 'dead' ? '☠사망' : (c.status === 'fled' ? '💨도주' : '');
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
   if (c.defense_count) badges.push(`🛡 보호${c.defense_count}`);
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
-  return `<div class="compact-card ${isTarget ? 'selected-target' : ''}" onclick="onCardClick('${c.name}')">
+  if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
+  return `<div class="compact-card ${isTarget ? 'selected-target' : ''} ${isGone ? 'gone' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
         <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
       </div>
-      <div class="cname-sm">${c.name}</div>
+      <div class="cname-sm">${c.name}${goneTag ? ` <span class="cgone-tag">${goneTag}</span>` : ''}</div>
       <div class="chp-sm">${c.current_hp}/${c.max_hp}</div>
     </div>
     <div class="hpbar-track-sm"><div class="hpbar-fill-sm ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
@@ -717,7 +723,8 @@ function renderCardHtml(c) {
   const isAlly = lastMyTeam !== null && c.team === lastMyTeam;
   const isTarget = selectedTargetName === c.name;
   const isMine = myControlInfo(lastBattleForPanel).scope === 'character' && myControlInfo(lastBattleForPanel).character.name === c.name;
-  const statusTag = c.status === 'fleeing' ? ' *도주' : (c.dodging_this_round ? ' *회피' : '');
+  const isGone = c.status === 'dead' || c.status === 'fled';
+  const statusTag = c.status === 'dead' ? ' ☠사망' : (c.status === 'fled' ? ' 💨도주' : (c.status === 'fleeing' ? ' *도주 시도' : (c.dodging_this_round ? ' *회피' : '')));
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
   if (lastForcedTargetNames.has(c.name)) badges.push(`🎯 어그로`);
@@ -725,8 +732,9 @@ function renderCardHtml(c) {
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
+  if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
 
-  return `<div class="char-card team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''}" onclick="onCardClick('${c.name}')">
+  return `<div class="char-card team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isGone ? 'gone' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">
       <div>
         <div class="cname">${c.name}${isMine ? ' <span style="color:var(--accent-blue); font-size:13px;">(나)</span>' : ''}</div>
@@ -988,7 +996,7 @@ function renderGrid(battle, all) {
   if (!gridWidth) { section.style.display = 'none'; return; }
   section.style.display = '';
   const posMap = {};
-  all.forEach(c => { if (c.grid_pos) posMap[`${c.grid_pos[0]},${c.grid_pos[1]}`] = c; });
+  all.forEach(c => { if (c.grid_pos && c.status !== 'dead' && c.status !== 'fled') posMap[`${c.grid_pos[0]},${c.grid_pos[1]}`] = c; });
 
   let highlightCells = new Set();
   let highlightIsAction = false;
