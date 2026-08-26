@@ -281,12 +281,14 @@
 
 <div id="gridSection" class="panel" style="display:none; padding:16px 18px; margin-bottom:12px;">
   <b>🗺 마스 맵</b>
+  {% if battle_type == 'mass_raid' %}
   <div class="row">
     <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">🔮 전조 출력</button>
     <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;">📢 전조 공개 (러너에게 표시)</button>
     <button onclick="clearTelegraph()" id="telegraphClearBtn" style="display:none;">✖ 전조 해제</button>
     <span id="telegraphStatus" class="hint"></span>
   </div>
+  {% endif %}
   <div id="gridLegend" class="hint" style="margin:4px 0;"></div>
   <div id="gridMap" style="overflow-x:auto; display:flex; justify-content:center;"></div>
   <div id="gridActionPopup" style="display:none; margin-top:8px; padding:10px; border:1px solid var(--accent-blue); border-radius:10px; background:#0c0c0d;"></div>

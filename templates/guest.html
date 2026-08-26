@@ -81,15 +81,16 @@
   .bgm-label input[type="range"] { width:70px; accent-color: var(--accent-blue); }
 
   /* ---------- 메인 그리드 (좌측 패널/격자 + 카드) ---------- */
-  /* PVP(격자 없음)는 좌측 패널 높이를 우측 카드 영역 높이에 맞춰 늘어나거나 줄어들게(stretch) 둡니다.
-     격자 지도가 있는 점령전/마스 레이드는 기존처럼 각자 필요한 높이만 차지합니다(align-items:start). */
+  /* 좌측 패널(격자 지도 포함)은 항상 우측 카드 영역 높이에 맞춰 늘어납니다(grid 기본 stretch).
+     격자 지도는 늘어난 패널 안에서 세로 중앙 정렬됩니다(#gridMap flex:1 + align-items:center). */
   .main-grid { display:grid; grid-template-columns: 300px 1fr; gap:16px; margin-bottom:16px; }
   /* 격자 지도 폭은 JS가 실제 렌더된 표 크기를 재서 #gridSection에 인라인으로 지정합니다
      (고정폭이면 배율/DPI에 따라 1px 남짓 넘쳐서 스크롤바가 생기는 문제가 있었습니다).
-     auto 트랙은 그 인라인 width를 그대로 존중합니다. */
-  .main-grid.with-grid-map { grid-template-columns: auto 1fr; align-items:start; }
-  #gridSection { box-sizing: border-box; }
-  #gridSection #gridLegend { width: 100%; box-sizing: border-box; }
+     auto 트랙은 그 인라인 width를 그대로 존중합니다. 세로로는 우측 카드 목록 높이에 맞춰
+     늘어나고(grid 기본 stretch), 격자 지도는 그 안에서 세로 중앙 정렬됩니다. */
+  .main-grid.with-grid-map { grid-template-columns: auto 1fr; }
+  #gridSection { box-sizing: border-box; display:flex; flex-direction:column; }
+  #gridSection #gridLegend { width: 100%; box-sizing: border-box; min-height:40px; }
   .side-panel { padding: 26px 22px; display:flex; flex-direction:column; gap:14px; }
   .side-panel .sun-icon { font-size:34px; opacity:0.85; }
   .side-panel h3 { margin:0; font-size:26px; }
@@ -284,7 +285,7 @@
   <div id="gridSection" class="panel">
     <b>마스 맵</b>
     <div id="gridLegend" style="font-size:14px; opacity:0.8; margin:6px 0;"></div>
-    <div id="gridMap" style="display:flex; justify-content:center;"></div>
+    <div id="gridMap" style="display:flex; justify-content:center; align-items:center; flex:1;"></div>
     <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
   </div>
   {% else %}
