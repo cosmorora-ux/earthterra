@@ -38,6 +38,11 @@ class Character:
         self.slot = None   # "A"/"B"/"C" - 팀 내 자리(선택적으로 사용)
 
         self.status = self.STATUS_ALIVE
+        # 다운(HP 0) 상태에서 회복(힐 등)으로 살아남는 것은 전투당 1회만 허용됩니다. 한 번
+        # 쓰고 나면 이후 다시 다운되었을 때 회복해도(현재 HP가 양수여도) 다운 상태를 벗어나지
+        # 못하고, 라운드가 끝나면 결국 사망 처리됩니다. 라운드가 아닌 전투 단위라 새 라운드
+        # 시작 시에도 초기화하지 않습니다.
+        self.revived_once = False
         self.has_acted = False            # 이번 라운드에 행동을 완료했는지 여부
         self.defended_this_round = False  # 이번 라운드에 한 번이라도 방어를 받았는지 여부 (표시용)
         # 이번 라운드에 이 캐릭터에게 부여된 능동 방어 목록(부여자 Character, 부여된 순서).
@@ -47,6 +52,10 @@ class Character:
         self.dodging_this_round = False   # 이번 라운드에 회피를 선언했는지 여부(딜러 전용)
         self.pending_attacks = []         # 아직 정산되지 않은 공격(피해 보류) 목록
         self.fleeing_watch_key = None     # 도주 시도 중, 이 팀 키("A"/"B")의 턴이 끝나면 도주가 확정됩니다.
+        # 1라운드 선공팀 힐러 전용 - "후공" 버튼으로 이번 라운드 행동을 후공 페이즈까지
+        # 미루겠다고 선언했는지 여부. 이게 True여야만 (1) 아직 행동 안 해도 선공→후공 전환을
+        # 막지 않고, (2) 상대 턴(후공 페이즈)에도 힐을 쓸 수 있습니다. 매 라운드 시작 시 초기화됩니다.
+        self.deferred_this_round = False
 
         # 마스 레이드(격자) 전용. can_move가 True인 전투에서만 의미가 있습니다.
         self.grid_pos = None          # (x, y) 또는 None(격자를 쓰지 않는 전투)
@@ -136,8 +145,9 @@ class Character:
         if self.status not in (self.STATUS_ALIVE, self.STATUS_DOWNED, self.STATUS_FLEEING):
             return
         self.current_hp = min(self.max_hp, self.current_hp + amount)
-        if self.status == self.STATUS_DOWNED and self.current_hp > 0:
-            self.status = self.STATUS_ALIVE  # 다운 상태에서 회복되어 다시 전투 가능
+        if self.status == self.STATUS_DOWNED and self.current_hp > 0 and not self.revived_once:
+            self.status = self.STATUS_ALIVE  # 다운 상태에서 회복되어 다시 전투 가능 (전투당 1회만)
+            self.revived_once = True
 
     def reset_for_new_round(self):
         """새 라운드 시작 시 행동 여부 / 방어·회피 상태를 초기화합니다."""
@@ -151,6 +161,7 @@ class Character:
         self.dodging_this_round = False
         self.pending_attacks = []
         self.moved_this_round = False
+        self.deferred_this_round = False
 
     def hp_ratio(self) -> float:
         if self.max_hp <= 0:

@@ -72,6 +72,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/yacht")
+def yacht_page():
+    return render_template("yacht.html")
+
+
 @app.route("/create_room", methods=["POST"])
 def create_room_route():
     battle_type = request.form.get("battle_type", "pvp")
@@ -179,6 +184,7 @@ def build_character_public(c):
         "has_leech_buff": c.leech_buff_expires_round is not None,
         "boss_group": c.boss_group,
         "boss_section": c.boss_section,
+        "deferred_this_round": c.deferred_this_round,
     }
 
 
@@ -393,6 +399,7 @@ ACTOR_FIELD = {
     "polarize": "name",
     "reflux": "name",
     "restore": "name",
+    "declare_defer": "name",
 }
 
 
@@ -988,6 +995,7 @@ ACTION_HANDLERS = {
     "restore": lambda battle, p: battle.perform_restore(p["name"], p.get("target")),
     "advance_turn": lambda battle, p: battle.advance_turn(),
     "undo": lambda battle, p: battle.undo_last(),
+    "declare_defer": lambda battle, p: battle.perform_declare_defer(p["name"]),
 }
 
 SITE_TURN_ACTIONS = ("attack", "heal", "defense_settle")
@@ -1256,4 +1264,5 @@ def on_reveal_pending_action(data):
 
 if __name__ == "__main__":
     socketio.start_background_task(_round_reminder_loop)
-    socketio.run(app, host="0.0.0.0", port=5000, debug=False, allow_unsafe_werkzeug=True)
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)

@@ -66,6 +66,8 @@
   /* ---------- 캐릭터 입장 / 색상 선택 모달 ---------- */
   .modal-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); align-items:center; justify-content:center; }
   .modal-box { width:300px; padding:20px; }
+  .modal-box.wide { width:440px; max-height:80vh; display:flex; flex-direction:column; }
+  .modal-box.wide #formulaFields { overflow-y:auto; flex:1 1 auto; min-height:0; }
   .modal-box .modal-title { font-size:18px; font-weight:700; margin-bottom:12px; }
   .modal-box input { width:100%; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:9px 12px; font-size:16px; }
   .modal-box .row { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:10px; }
@@ -158,7 +160,7 @@
 
   #pubLog { height: 420px; overflow-y:auto; padding: 12px 18px; font-size:15px; line-height:1.65; }
   .logline { color: var(--text); opacity:.92; }
-  .logline .li { margin-right:6px; opacity:.85; }
+  .logline .li { display:inline-block; width:20px; text-align:center; margin-right:4px; opacity:.85; }
   .logline.group-start { margin-top:10px; font-weight:600; }
   .logline.group-start:first-child { margin-top:0; }
   .logline.tag-crit { color:#fff; font-weight:700; }
@@ -169,6 +171,12 @@
   .chat-tabs { display:flex; gap:6px; margin-left:auto; }
   .chat-tabs button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:6px; padding:3px 8px; font-size:13px; cursor:pointer; }
   .chat-tabs button.active { color:#fff; border-color: var(--accent-blue); }
+  .chat-tabs .tab-wrap { position:relative; display:inline-block; }
+  .chat-tabs .unread-dot {
+    display:none; position:absolute; top:-3px; right:-3px; width:8px; height:8px;
+    border-radius:50%; background: var(--accent-red); border:1.5px solid var(--panel);
+  }
+  .chat-tabs .unread-dot.show { display:block; }
   #chatLog { flex:1; overflow-y:auto; padding:12px 18px; font-size:15px; }
   .chat-line { display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; }
   .chat-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; margin-top:2px; }
@@ -213,7 +221,6 @@
   /* ---------- 배경음악 ---------- */
   #musicExtra { margin-top:4px; }
 
-  .help-box { font-size:14px; color: var(--muted); line-height:1.6; background:#0c0c0d; border:1px solid var(--card-border); border-radius:10px; padding:10px 12px; display:none; }
 </style>
 </head>
 <body>
@@ -230,6 +237,19 @@
     <div class="row">
       <button class="btn-plain" onclick="closeJoinModal()">취소</button>
       <button class="btn-primary" onclick="submitJoinModal()">입장</button>
+    </div>
+  </div>
+</div>
+<div id="formulaModal" class="modal-overlay">
+  <div class="modal-box wide panel">
+    <div class="modal-title">전투 수식 설정</div>
+    <div id="formulaFields" style="margin-top:4px;"></div>
+    <div class="row" style="justify-content:space-between;">
+      <span id="formulaSaveMsg" class="ok"></span>
+      <span style="display:flex; gap:8px;">
+        <button class="btn-plain" onclick="closeFormulaPanel()">닫기</button>
+        <button class="btn-primary" onclick="saveFormulas()">저장</button>
+      </span>
     </div>
   </div>
 </div>
@@ -269,16 +289,10 @@
   </div>
   {% else %}
   <div class="side-panel panel">
-    <div class="sun-icon">☀</div>
+    <div class="sun-icon">✶</div>
     <h3 id="sideTitle">{{ battle_type_label }}</h3>
     <div class="sub">방 {{ room_id }}</div>
-    <div id="helpBox" class="help-box">
-      <b>대사</b>: 역할극 대사만 채팅으로 보냅니다.<br>
-      <b>캐릭터 카드 클릭</b>: 대상을 지정해 행동을 선택합니다.<br>
-      <b>커맨드 전송</b>: 선택한 행동을 실제로 실행하고, 요약을 채팅에 남깁니다.
-    </div>
     <div class="grow"></div>
-    <button class="btn" onclick="toggleHelp()">⚙ 질문/건의</button>
   </div>
   {% endif %}
 
@@ -286,6 +300,7 @@
     <div id="siteStatusCard" class="site-card panel" style="display:none;"></div>
     <div id="gmControlPanel" class="gm-act-row panel" style="display:none;">
       <button onclick="doAction('advance_turn', {})">▶ 다음 턴</button>
+      <button onclick="doAction('undo', {})">↩ 되돌리기</button>
       <button onclick="doAction('timeout_unacted_runners', {})">⏱ 시간 초과</button>
       {% if battle_type == 'siege' %}
       <button onclick="rollSiteDice()">🎲 다이스 굴리기</button>
@@ -330,13 +345,6 @@
       </span>
       <button class="gear" id="formulaGearBtn" style="display:none;" onclick="toggleFormulaPanel()" data-tip="전투 수식 설정">⚙</button>
     </div>
-    <div id="formulaPanel" style="display:none; padding:14px 18px; border-bottom:1px solid var(--panel-border);">
-      <div id="formulaFields" style="max-height:260px; overflow-y:auto;"></div>
-      <div class="row" style="margin-top:8px; display:flex; align-items:center; gap:8px;">
-        <button class="btn-primary" onclick="saveFormulas()">저장</button>
-        <span id="formulaSaveMsg" class="ok"></span>
-      </div>
-    </div>
     <div id="pubLog"></div>
   </div>
 
@@ -344,8 +352,8 @@
     <div class="panel-head">
       <b>커맨드 창</b><span class="hint">회의는 회의 DM방에서, 이쪽은 커맨드 위주</span>
       <span class="chat-tabs">
-        <button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button>
-        <button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button>
+        <span class="tab-wrap"><button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button><span class="unread-dot" id="unreadDotPlayer"></span></span>
+        <span class="tab-wrap"><button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button><span class="unread-dot" id="unreadDotSpectator"></span></span>
         <button id="chatTabEntry" onclick="setChatFilter('entry')">입장 기록</button>
       </span>
     </div>
@@ -394,7 +402,7 @@ const ACTION_LABELS = {
   "회피": "dodge", "힐": "heal", "회복": "heal", "시간초과": "timeout", "도주": "flee",
   "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
   "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
-  "환류": "reflux", "복원": "restore",
+  "환류": "reflux", "복원": "restore", "후공": "declare_defer",
 };
 function resolveActionType(label, actorRole) {
   if (label === '방어' && actorRole === '메딕') return 'self_defend';
@@ -598,10 +606,10 @@ socket.on('public_state', (state) => {
   lastSiteDice = state.site_dice || null;
   lastPreviewTeams = state.preview_teams || null;
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
+  lastBattleForPanel = state.battle;
   renderBattle(state.battle);
   renderPubLog(state.log);
   renderChat(state.chat);
-  lastBattleForPanel = state.battle;
   renderMusic(state.music, state.server_now);
 });
 
@@ -616,11 +624,6 @@ function statsTitle(c) {
   const parts = STAT_KEYS.map(k => `${k} ${c.stats[k]}`);
   parts.push(`총합 ${c.stat_total}`);
   return parts.join('   ');
-}
-
-function toggleHelp() {
-  const el = document.getElementById('helpBox');
-  el.style.display = el.style.display === 'block' ? 'none' : 'block';
 }
 
 // ------------------------------------------------------------------
@@ -806,6 +809,7 @@ function isDefeatedStatus(c) {
 function statusTagFor(c) {
   if (c.status === 'dead') return ' *사망';
   if (c.status === 'fled' || c.status === 'fleeing') return ' *도주';
+  if (c.status === 'downed') return ' *기절';
   if (c.dodging_this_round) return ' *회피';
   return '';
 }
@@ -1335,17 +1339,20 @@ function refreshLogViewControls() {
   if (gear) gear.style.display = show ? '' : 'none';
   if (!show) {
     logView = 'public';
-    document.getElementById('formulaPanel').style.display = 'none';
+    closeFormulaPanel();
   }
 }
 
 let formulaFields = [];
 
 function toggleFormulaPanel() {
-  const el = document.getElementById('formulaPanel');
-  const opening = el.style.display === 'none';
-  el.style.display = opening ? '' : 'none';
-  if (opening) socket.emit('get_formulas', {});
+  if (myControlInfo(lastBattleForPanel).scope !== 'all') return;
+  document.getElementById('formulaModal').style.display = 'flex';
+  socket.emit('get_formulas', {});
+}
+
+function closeFormulaPanel() {
+  document.getElementById('formulaModal').style.display = 'none';
 }
 
 function renderFormulaFields() {
@@ -1386,11 +1393,26 @@ socket.on('gm_state', (state) => {
   refreshLogViewControls();
 });
 
+// 참여/관전 탭에 새 채팅이 쌓이면(지금 보고 있는 탭이 아닐 때) 탭 모서리에 빨간 점으로 표시합니다.
+// 입장 기록 탭은 대상에서 제외합니다.
+let unreadChat = { player: false, spectator: false };
+function chatTabFor(entry) {
+  if (entry.category === 'player' || entry.category === 'operator') return 'player';
+  if (entry.category === 'spectator') return 'spectator';
+  return null;
+}
+function updateUnreadBadges() {
+  document.getElementById('unreadDotPlayer').classList.toggle('show', unreadChat.player);
+  document.getElementById('unreadDotSpectator').classList.toggle('show', unreadChat.spectator);
+}
+
 function setChatFilter(filter) {
   chatFilter = filter;
   document.getElementById('chatTabPlayer').classList.toggle('active', filter === 'player');
   document.getElementById('chatTabSpectator').classList.toggle('active', filter === 'spectator');
   document.getElementById('chatTabEntry').classList.toggle('active', filter === 'entry');
+  if (filter === 'player' || filter === 'spectator') unreadChat[filter] = false;
+  updateUnreadBadges();
   renderChatFiltered();
 }
 setChatFilter('player');
@@ -1448,6 +1470,11 @@ function fmtChat(entry) {
 
 function appendChat(entry) {
   lastChat.push(entry);
+  const tab = chatTabFor(entry);
+  if (tab && tab !== chatFilter) {
+    unreadChat[tab] = true;
+    updateUnreadBadges();
+  }
   if (!matchesFilter(entry)) return;
   const el = document.getElementById('chatLog');
   el.innerHTML += fmtChat(entry);
@@ -1618,10 +1645,9 @@ function refreshGmActTypeOptions() {
   const actor = lastAllForCards.find(c => c.name === document.getElementById('gmActActor').value);
   if (!actor) { typeSel.innerHTML = ''; refreshGmActTargetOptions(); return; }
   const prevType = typeSel.value;
-  typeSel.innerHTML = actor.available_actions
-    .filter(label => label !== '이동')
-    .map(label => `<option value="${label}">${label}</option>`)
-    .join('');
+  const labels = actor.available_actions.filter(label => label !== '이동');
+  if (canDeclareDefer(lastBattleForPanel, actor)) labels.push('후공');
+  typeSel.innerHTML = labels.map(label => `<option value="${label}">${label}</option>`).join('');
   if ([...typeSel.options].some(o => o.value === prevType)) typeSel.value = prevType;
   refreshGmActTargetOptions();
 }
@@ -1687,6 +1713,7 @@ function submitGmAct() {
     shield: { name: actor, target: target || actor },
     polarize: { name: actor },
     restore: { name: actor, target: target || null },
+    declare_defer: { name: actor },
     reflux: {
       name: actor,
       targets: [target, document.getElementById('gmActTarget2').value, document.getElementById('gmActTarget3').value]
@@ -1711,19 +1738,24 @@ function renderMultiSkillTrigger() {
   return html;
 }
 
-// 메딕은 자기 팀의 선공 단계에서는 행동을 안 해도 다음 턴 진행을 막지 않고, 후공 단계까지
-// 힐을 미룰 수 있습니다(엔진이 이미 그렇게 허용함). "후공" 버튼은 실제 행동을 하는 게 아니라,
-// "지금 안 하고 후공까지 미루겠다"는 걸 팀원들에게 알리는 선언용 채팅만 남깁니다.
-function renderDeferButton(battle, actor) {
-  if (actor.role !== '메딕' || actor.has_acted) return '';
+// 1라운드 선공팀 힐러만 "후공" 버튼으로 이번 라운드 행동을 후공 페이즈까지 미루겠다고
+// 선언할 수 있습니다(서버가 실제로 상태를 기록함 - perform_declare_defer 참고). 이 선언을
+// 해야만 (1) 아직 행동 안 해도 턴 전환이 막히지 않고, (2) 후공 페이즈(상대 턴)에도 힐을
+// 쓸 수 있습니다. 2라운드부터는 선공팀이 고정되어 있으므로 이 버튼 자체가 뜨지 않습니다.
+function canDeclareDefer(battle, actor) {
+  if (actor.role !== '메딕' || actor.has_acted || actor.deferred_this_round) return false;
+  if (battle.round_no !== 1) return false;
   const myTeamKr = actor.teamLabel === 'A' ? '1팀' : '2팀';
-  const isOwnFirstPhase = battle.current_turn_team === myTeamKr && battle.current_turn_team === battle.round_first_team;
-  if (!isOwnFirstPhase) return '';
+  return battle.current_turn_team === myTeamKr && battle.current_turn_team === battle.round_first_team;
+}
+
+function renderDeferButton(battle, actor) {
+  if (!canDeclareDefer(battle, actor)) return '';
   return `<button class="sort-btn" onclick="declareDefer('${actor.name}')">후공</button>`;
 }
 
 function declareDefer(actorName) {
-  socket.emit('chat_message', { text: '[행동: 후공]', as_character: actorName });
+  doAction('declare_defer', { name: actorName });
 }
 
 function quickAction(type, actorName, targetName) {

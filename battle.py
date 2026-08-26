@@ -260,17 +260,46 @@ class Battle:
         """
         지금 이 캐릭터가 행동할 수 있는 타이밍인지 검사합니다.
         자기 팀의 턴이면 언제나 가능합니다.
-        allow_free_turn=True 인 경우에 한해(=힐 행동에서만), 힐러(FREE_TURN_ROLES)는
-        이번 라운드가 "후공 페이즈"에 들어섰다면 자기 팀 턴이 아니어도 행동할 수 있습니다.
+        allow_free_turn=True 인 경우에 한해(=힐 행동에서만), "후공" 버튼으로 미리 선언한
+        힐러(deferred_this_round)는 이번 라운드가 "후공 페이즈"에 들어섰다면 자기 팀 턴이
+        아니어도 행동할 수 있습니다. 이 선언은 1라운드 선공팀 힐러만 할 수 있으므로
+        (perform_declare_defer 참고), 2라운드부터는 이 예외 자체가 발생하지 않습니다.
         (힐러라도 공격/방어/시간초과/도주 등 힐 이외의 행동은 이 예외가 적용되지 않고,
         반드시 자기 팀 턴에만 사용할 수 있습니다)
         """
         if actor.team == self._team_key(self.current_turn_team):
             return
         is_second_phase = self.current_turn_team != self.round_first_team
-        if allow_free_turn and actor.acts_on_any_turn() and is_second_phase:
+        if allow_free_turn and actor.acts_on_any_turn() and is_second_phase and actor.deferred_this_round:
             return
         raise BattleError("지금은 해당 캐릭터의 턴이 아닙니다.")
+
+    # ------------------------------------------------------------------
+    # 행동 : 후공 선언 (1라운드 선공팀 힐러 전용) - 실제 행동을 하는 게 아니라, 이번 라운드
+    # 행동을 후공 페이즈까지 미루겠다고 선언합니다. has_acted는 소모하지 않으며, 이 선언을
+    # 해야만 (1) 아직 행동 안 해도 선공→후공 전환이 막히지 않고, (2) 상대 턴(후공 페이즈)에도
+    # 힐을 쓸 수 있습니다. 1라운드 선공팀 힐러의 최초 행동에만 쓸 수 있는 예외이므로, 2라운드
+    # 부터는(선공팀이 고정되어 있으므로) 이 선언 자체가 불가능합니다.
+    # ------------------------------------------------------------------
+    def perform_declare_defer(self, name: str):
+        actor = self.find_character(name)
+        if actor is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        if not actor.is_alive:
+            raise BattleError("지금은 후공을 선언할 수 없는 상태입니다.")
+        if not actor.acts_on_any_turn():
+            raise BattleError("후공 선언은 힐러만 할 수 있습니다.")
+        if actor.has_acted:
+            raise BattleError("이미 행동을 마쳤습니다.")
+        if self.round_no != 1:
+            raise BattleError("후공 선언은 1라운드에서만 할 수 있습니다.")
+        if self.current_turn_team != self.round_first_team or actor.team != self._team_key(self.current_turn_team):
+            raise BattleError("지금은 후공을 선언할 수 없습니다.")
+        if actor.deferred_this_round:
+            raise BattleError("이미 후공을 선언했습니다.")
+
+        actor.deferred_this_round = True
+        self._log(f"{actor.name} 이번 라운드 행동을 후공까지 미룹니다.", tag="system")
 
     # ------------------------------------------------------------------
     # 되돌리기 (undo) : 잘못 실행된 행동을 취소하고 재행동 기회를 부여합니다.
@@ -298,6 +327,7 @@ class Battle:
                 "polarize_overflow": c.polarize_overflow,
                 "polarize_ally_count": c.polarize_ally_count,
                 "leech_buff_expires_round": c.leech_buff_expires_round,
+                "deferred_this_round": c.deferred_this_round,
             }
         return {
             "round_no": self.round_no,
@@ -374,6 +404,7 @@ class Battle:
             c.polarize_overflow = cs["polarize_overflow"]
             c.polarize_ally_count = cs["polarize_ally_count"]
             c.leech_buff_expires_round = cs["leech_buff_expires_round"]
+            c.deferred_this_round = cs["deferred_this_round"]
         for c in self.team_a + self.team_b:
             grant_names = snap["chars"][c.name]["defense_grants"]
             c.defense_grants = [self.find_character(n) for n in grant_names if self.find_character(n)]
@@ -414,12 +445,13 @@ class Battle:
                 f"수동 바닥값 {dfs['passive_component']} + "
                 f"[다이스 {dfs['final_rolls']}(1차 {dfs['first_rolls']}) 합 "
                 f"{sum(dfs['final_rolls'])} + 방어{dfs['stat_val']}×{dfs['stat_mult']}] "
-                f"= 능동계층 {dfs['active_component']}  →  총 {dfs['total']}",
+                f"= 능동계층 {dfs['active_subtotal']}  →  총 {dfs['passive_component'] + dfs['active_subtotal']}",
                 tag="formula",
             )
         if dfs["is_crit"]:
             self._log_operator_only(
-                f"→ 방어 크리티컬! (확률 {dfs['crit_chance']}%) ×{dfs['crit_mult']} = {dfs['total']}",
+                f"→ 방어 크리티컬! (확률 {dfs['crit_chance']}%) 능동계층 {dfs['active_subtotal']} × "
+                f"{dfs['crit_mult']} = {dfs['active_component']}  →  총 {dfs['total']}",
                 tag="crit",
             )
             self._log_public_only("상대 방어 크리티컬!", tag="crit")
@@ -1293,9 +1325,10 @@ class Battle:
     def _blocking_members(self):
         """
         지금 '다음 턴'으로 넘어가는 것을 막고 있는(아직 행동해야 하는) 캐릭터 목록을 반환합니다.
-        라운드가 끝나는 시점(후공 팀 턴이 끝날 때)이 아니라면, 힐러는 아직 행동하지 않았더라도
-        막지 않습니다(후공 페이즈까지 기다릴 수 있으므로). 라운드가 진짜로 끝나는 시점에는
-        상대팀에 남아있는 힐러의 미행동도 함께 확인합니다.
+        "후공" 버튼으로 미리 선언한(deferred_this_round) 힐러만 후공 페이즈까지 행동을 미룰 수
+        있고(1라운드 선공팀 힐러만 선언 가능), 그 외에는 자기 팀 턴에 행동하지 않으면 그대로
+        막습니다. 라운드가 진짜로 끝나는 시점(후공 팀 턴이 끝날 때)에는 상대팀에 남아있는
+        선언한 힐러의 미행동도 함께 확인합니다.
         """
         is_ending_round = self.current_turn_team != self.round_first_team
         is_first_phase = not is_ending_round
@@ -1303,14 +1336,14 @@ class Battle:
         members = list(self.team_members(self.current_turn_team))
         if is_ending_round:
             other_team = self.enemy_team_label(self.current_turn_team)
-            members += [c for c in self.team_members(other_team) if c.acts_on_any_turn()]
+            members += [c for c in self.team_members(other_team) if c.deferred_this_round]
 
         blocking = []
         for c in members:
             if not c.is_alive or c.has_acted:
                 continue
-            if is_first_phase and c.acts_on_any_turn():
-                continue  # 힐러는 후공 페이즈까지 기다릴 수 있으므로 지금은 막지 않습니다.
+            if is_first_phase and c.acts_on_any_turn() and c.deferred_this_round:
+                continue  # 후공까지 미루겠다고 선언한 힐러는 지금은 막지 않습니다.
             blocking.append(c)
         return blocking
 
@@ -1325,11 +1358,14 @@ class Battle:
         다운 상태 캐릭터 중 "이미 자신의 행동(마지막 기회)을 사용한" 캐릭터의 생사를 확정합니다.
         아직 행동하지 않은 채 다운 상태인 캐릭터(예: 후공 페이즈를 기다리는 힐러)는 건너뛰고,
         나중에(그 캐릭터가 실제로 행동한 뒤) 확정됩니다.
+        다운 → 회복으로 살아남는 것은 전투당 1회뿐이라, 이미 한 번 썼는데도 여전히 다운
+        상태라면(revived_once가 이미 True) 현재 HP가 양수여도 이번엔 사망 처리합니다.
         """
         for c in self.team_members(team_label):
             if c.status == Character.STATUS_DOWNED and c.has_acted:
-                if c.current_hp > 0:
+                if c.current_hp > 0 and not c.revived_once:
                     c.status = Character.STATUS_ALIVE
+                    c.revived_once = True
                     self._log(f"{c.name} 위기를 넘겼습니다", tag="system")
                 else:
                     c.status = Character.STATUS_DEAD
@@ -1413,7 +1449,9 @@ class Battle:
 
     def _start_new_round(self):
         self.round_no += 1
-        self.round_first_team = self.enemy_team_label(self.round_first_team)
+        # round_first_team은 전투 시작 시 다이스(또는 강제 규칙)로 한 번 정해지면 전투 내내
+        # 유지됩니다 - 라운드마다 선후공을 바꾸지 않습니다(점령전의 "거점은 항상 후공" 규칙도
+        # 이래야 라운드가 넘어가도 계속 지켜집니다).
         self.current_turn_team = self.round_first_team
         self._attacks_on_target_this_round = {}
 

@@ -251,6 +251,9 @@ def _roll_core_dice(stats: dict, dice_count: int, overrides: dict = None) -> dic
 #    (치명타는 딜러가 공격할 때만 발생합니다)
 # ----------------------------------------------------------------------
 ATTACK_DICE_COUNT = 3
+# 스트라이커(딜러)가 아닌 사람이 공격할 때는 기본 다이스를 이 개수만큼만 굴립니다
+# (역할 없는 몹/거점도 포함 - 딜러만 정직업 화력을 다 씁니다).
+ATTACK_DICE_COUNT_NON_DEALER = 2
 ATTACK_STAT_MULTIPLIER = 12
 
 BASE_CRIT_CHANCE = 15
@@ -264,7 +267,8 @@ ABILITY_CRIT_DMG = 0.02
 
 def roll_attack(stats: dict, role: str = None, overrides: dict = None) -> dict:
     """공격 굴림을 수행합니다. 운영자 로그에 다이스 수식을 그대로 노출하기 위해 세부 항목을 모두 담습니다."""
-    core = _roll_core_dice(stats, get_value("ATTACK_DICE_COUNT", overrides), overrides)
+    dice_count_key = "ATTACK_DICE_COUNT" if role == ROLE_DEALER else "ATTACK_DICE_COUNT_NON_DEALER"
+    core = _roll_core_dice(stats, get_value(dice_count_key, overrides), overrides)
     atk_val = int(stats.get("공격", 0))
     luck = int(stats.get("행운", 0))
     agi = int(stats.get("민첩", 0))
@@ -379,6 +383,7 @@ def roll_defense(target_stats: dict, active: bool, grantor_stats: dict = None,
 
     return {
         "active": True, "passive_component": passive_component, "active_component": active_component,
+        "active_subtotal": active_subtotal,
         "grantor_name": grantor_name, "sides": core["sides"], "dice_count": core["dice_count"],
         "mental_threshold": core["mental_threshold"],
         "first_rolls": core["first_rolls"], "final_rolls": core["final_rolls"], "rerolled": core["rerolled"],
@@ -567,7 +572,9 @@ FORMULA_FIELDS = [
      "desc": "재굴림 기준치 = 정신 × 이 값. 기준치 이하로 나오면 한 번 다시 굴리고 더 높은 값을 채택합니다 (정신=안정성)",
      "type": int},
 
-    {"key": "ATTACK_DICE_COUNT", "label": "공격 시 굴리는 다이스 개수", "desc": "공격 시 기본 다이스를 굴리는 횟수", "type": int},
+    {"key": "ATTACK_DICE_COUNT", "label": "공격 시 굴리는 다이스 개수 (스트라이커)", "desc": "스트라이커가 공격할 때 기본 다이스를 굴리는 횟수", "type": int},
+    {"key": "ATTACK_DICE_COUNT_NON_DEALER", "label": "공격 시 굴리는 다이스 개수 (스트라이커 외)",
+     "desc": "스트라이커가 아닌 캐릭터(가디언/메딕/몹·거점)가 공격할 때 기본 다이스를 굴리는 횟수", "type": int},
     {"key": "ATTACK_STAT_MULTIPLIER", "label": "공격 스탯 배율 (직업 특화)",
      "desc": "공격 총합 = 기본 다이스 합 + 공격 × 배율", "type": int},
     {"key": "BASE_CRIT_CHANCE", "label": "공격 크리티컬 기본 확률(%)",

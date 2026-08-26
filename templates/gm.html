@@ -102,7 +102,7 @@
   .panel-head { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--panel-border); }
   .panel-head b { font-size:16px; }
   .logline { color: var(--text); opacity:.92; }
-  .logline .li { margin-right:6px; opacity:.85; }
+  .logline .li { display:inline-block; width:20px; text-align:center; margin-right:4px; opacity:.85; }
   .logline.group-start { margin-top:10px; font-weight:600; }
   .logline.group-start:first-child { margin-top:0; }
   .logline.tag-crit { color:#fff; font-weight:700; }
@@ -112,6 +112,12 @@
   .chat-tabs { display:flex; gap:6px; margin-left:auto; }
   .chat-tabs button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:6px; padding:3px 8px; font-size:13px; }
   .chat-tabs button.active { color:#fff; border-color: var(--accent-blue); }
+  .chat-tabs .tab-wrap { position:relative; display:inline-block; }
+  .chat-tabs .unread-dot {
+    display:none; position:absolute; top:-3px; right:-3px; width:8px; height:8px;
+    border-radius:50%; background: var(--accent-red); border:1.5px solid var(--panel);
+  }
+  .chat-tabs .unread-dot.show { display:block; }
   .chat-line { display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; }
   .chat-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; margin-top:2px; }
   .chat-dot.chat-star { background:transparent; display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:18px; }
@@ -324,8 +330,8 @@
     <div class="panel-head">
       <b>채팅</b>
       <span class="chat-tabs">
-        <button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button>
-        <button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button>
+        <span class="tab-wrap"><button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button><span class="unread-dot" id="unreadDotPlayer"></span></span>
+        <span class="tab-wrap"><button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button><span class="unread-dot" id="unreadDotSpectator"></span></span>
         <button id="chatTabEntry" onclick="setChatFilter('entry')">입장 기록</button>
       </span>
     </div>
@@ -392,11 +398,17 @@ const ACTION_LABELS = {
   "회피": "dodge", "힐": "heal", "회복": "heal", "시간초과": "timeout", "도주": "flee",
   "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
   "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
-  "환류": "reflux", "복원": "restore",
+  "환류": "reflux", "복원": "restore", "후공": "declare_defer",
 };
 function resolveActionType(label, actorRole) {
   if (label === '방어' && actorRole === '메딕') return 'self_defend';
   return ACTION_LABELS[label];
+}
+function canDeclareDefer(battle, actor) {
+  if (!battle || !actor || actor.role !== '메딕' || actor.has_acted || actor.deferred_this_round) return false;
+  if (battle.round_no !== 1) return false;
+  const myTeamKr = actor.teamLabel === 'A' ? '1팀' : '2팀';
+  return battle.current_turn_team === myTeamKr && battle.current_turn_team === battle.round_first_team;
 }
 const TYPE_TO_LABEL = Object.fromEntries(Object.entries(ACTION_LABELS).map(([label, type]) => [type, label]));
 const NEEDS_TARGET = new Set(["attack", "defend", "heal", "command", "swap", "collapse", "shield", "restore"]);
@@ -755,8 +767,9 @@ function refreshActTypeOptions() {
   const actor = lastAllForCards.find(c => c.name === document.getElementById('actActor').value);
   if (!actor) { typeSel.innerHTML = ''; refreshActTargetOptions(); return; }
   const prevType = typeSel.value;
-  typeSel.innerHTML = actor.available_actions
-    .filter(label => label !== '이동')  // 이동은 지도 클릭으로만 처리합니다.
+  const labels = actor.available_actions.filter(label => label !== '이동');  // 이동은 지도 클릭으로만 처리합니다.
+  if (canDeclareDefer(lastBattleForPanel, actor)) labels.push('후공');
+  typeSel.innerHTML = labels
     .map(label => `<option value="${resolveActionType(label, actor.role)}">${label}</option>`)
     .join('');
   if ([...typeSel.options].some(o => o.value === prevType)) typeSel.value = prevType;
@@ -817,6 +830,7 @@ function isDefeatedStatus(c) {
 function statusTagFor(c) {
   if (c.status === 'dead') return ' *사망';
   if (c.status === 'fled' || c.status === 'fleeing') return ' *도주';
+  if (c.status === 'downed') return ' *기절';
   if (c.dodging_this_round) return ' *회피';
   return '';
 }
@@ -1218,11 +1232,26 @@ function renderCurrentLog() {
 
 setLogView('operator');
 
+// 참여/관전 탭에 새 채팅이 쌓이면(지금 보고 있는 탭이 아닐 때) 탭 모서리에 빨간 점으로 표시합니다.
+// 입장 기록 탭은 대상에서 제외합니다.
+let unreadChat = { player: false, spectator: false };
+function chatTabFor(entry) {
+  if (entry.category === 'player' || entry.category === 'operator') return 'player';
+  if (entry.category === 'spectator') return 'spectator';
+  return null;
+}
+function updateUnreadBadges() {
+  document.getElementById('unreadDotPlayer').classList.toggle('show', unreadChat.player);
+  document.getElementById('unreadDotSpectator').classList.toggle('show', unreadChat.spectator);
+}
+
 function setChatFilter(filter) {
   chatFilter = filter;
   document.getElementById('chatTabPlayer').classList.toggle('active', filter === 'player');
   document.getElementById('chatTabSpectator').classList.toggle('active', filter === 'spectator');
   document.getElementById('chatTabEntry').classList.toggle('active', filter === 'entry');
+  if (filter === 'player' || filter === 'spectator') unreadChat[filter] = false;
+  updateUnreadBadges();
   renderChatFiltered();
 }
 setChatFilter('player');
@@ -1280,6 +1309,11 @@ function fmtChat(entry) {
 
 function appendChat(entry) {
   lastChat.push(entry);
+  const tab = chatTabFor(entry);
+  if (tab && tab !== chatFilter) {
+    unreadChat[tab] = true;
+    updateUnreadBadges();
+  }
   if (!matchesFilter(entry)) return;
   const el = document.getElementById('chatLog');
   el.innerHTML += fmtChat(entry);
@@ -1393,6 +1427,7 @@ function submitAction() {
       targets: [target, document.getElementById('actTarget2').value, document.getElementById('actTarget3').value]
         .filter(Boolean),
     },
+    declare_defer: { name: actor },
   };
   doAction(type, payloadMap[type]);
 }
