@@ -67,6 +67,8 @@ class RoomState:
         # [[x, y], ...] 또는 공개 전/해제 상태면 빈 리스트.
         self.telegraph_cells = []
         self.telegraph_round_no = None  # 마스 레이드 : 이번 라운드에 전조를 공개했는지 (라운드 번호로 기록)
+        # BOSS(2팀)의 후공 페이즈가 시작될 때 전조 피해를 라운드당 한 번만 발동시키기 위한 기록.
+        self.telegraph_damage_round_no = None
 
         # 마스 레이드 전용 : 라운드 제한시간이 5분/2분/1분 남았을 때 미행동자 안내를 한 번씩만
         # 보내기 위한 추적 상태. 라운드가 바뀌면 reminders_sent를 비웁니다.

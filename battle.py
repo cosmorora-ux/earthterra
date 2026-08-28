@@ -747,6 +747,50 @@ class Battle:
         return atk
 
     # ------------------------------------------------------------------
+    # 마스 레이드 전용 : 전조(GM이 격자에 미리 공개해둔 위험 칸)가 실제로 터질 때, 그 칸에
+    # 아직 남아있는 러너 전원에게 일괄로 피해를 입힙니다. attacker_name(보통 BOSS)의
+    # "일반공격" - 크리티컬 없이 다이스만 굴린 값 - 을 그대로 쓰고, 대상마다 자기 방어
+    # 상태에 따라 최종 피해가 다르게 나옵니다(걸려 있던 능동 방어는 1회 소모). 행동력
+    # (has_acted)은 소모하지 않는 수동적 피해라서 턴 체크도 하지 않습니다.
+    # ------------------------------------------------------------------
+    def apply_telegraph_damage(self, attacker_name: str, cells) -> list:
+        attacker = self.find_character(attacker_name)
+        if attacker is None:
+            return []
+        cell_set = {tuple(c) for c in cells}
+        targets = [
+            c for c in self.team_a
+            if c.is_alive and c.grid_pos and tuple(c.grid_pos) in cell_set
+        ]
+        if not targets:
+            return []
+
+        self._push_history()
+        atk = self.attack_skill.roll(attacker, overrides=self.formula_overrides)
+        atk["total"] = atk["subtotal"]  # 전조 피해는 크리티컬 없이 '일반공격' 수치만 사용합니다.
+        atk["is_crit"] = False
+
+        # 방어 굴림 세부 수식 등은 굳이 안 보여주고, 누가 맞았는지와 최종 HP 변화만 간단히
+        # 남깁니다(요청: 로그가 너무 길다).
+        attacker_label = next(
+            (p for p in config.BOSS_NAME_PREFIXES if attacker.name.startswith(p)),
+            attacker.name,
+        ) if attacker.boss_group else attacker.name
+        self._log(
+            f"전조 발동 — {attacker_label}의 공격이 표시된 구역({len(targets)}명)을 덮칩니다.",
+            tag="summary",
+        )
+        self._log(f"[{', '.join(t.name for t in targets)}]", tag="summary")
+        hit_names = []
+        for target in targets:
+            result = AttackSkill.resolve(atk, target, overrides=self.formula_overrides)
+            self._log(f"{target.name} HP {result['hp_before']} → {result['hp_after']}", tag="hp")
+            hit_names.append(target.name)
+
+        self._check_finish()
+        return hit_names
+
+    # ------------------------------------------------------------------
     # 스킬 : 붕괴 (스트라이커 전용) - 단일 적에게 다이스 ×3 배율로 2회 공격, 최소 1회 크리티컬 보장.
     # ------------------------------------------------------------------
     def perform_collapse(self, attacker_name: str, target_name: str):
@@ -1568,25 +1612,60 @@ class GameManager:
         return c
 
     def build_team(self, names: list, formula_overrides: dict = None) -> list:
-        """이름 리스트로 팀(Character 리스트)을 생성합니다. 이름이 정확히 "BOSS"이면
-        4부위(북동/북서/남동/남서) 캐릭터로 확장됩니다(build_boss_section 참고)."""
-        team = []
-        for i, name in enumerate(names):
+        """이름 리스트로 팀(Character 리스트)을 생성합니다. config.is_boss_name()에 해당하는
+        이름(예: "BOSS", "NOVA 1구역" - "BOSS"/"NOVA"로 시작하면 뒤에 뭐가 붙어도 무방)은
+        BOSS로 취급됩니다:
+        - 그런 이름이 명단에 한 줄만 있으면, 그 한 줄을 4번 조회해서 4부위(북동/북서/남동/
+          남서)를 자동 생성합니다(부위별로 "이름-부위" 형태로 개명 - 데이터베이스 조회는
+          전부 원래 이름으로 하되, 실제 name은 find_character 등이 부위를 구분할 수
+          있도록 고유하게 바꿔줍니다).
+        - 그런 이름이 명단에 정확히 네 줄 있으면, 이미 서로 다른 이름으로 등록돼 있다고
+          보고 그 네 줄을 각각 한 부위씩으로 그룹만 지어줍니다(개명하지 않음).
+        - 한 줄도 없으면 평범한 캐릭터들이고, 두세 줄이나 다섯 줄 이상이면 애매하므로
+          에러로 안내합니다.
+        """
+        cleaned = []
+        for name in names:
             name = (name or "").strip()
             if not name:
                 raise BattleError("캐릭터 이름을 모두 입력해주세요.")
-            if name == config.BOSS_NAME:
-                group_id = f"{config.BOSS_NAME}#{i}"
-                for section in config.BOSS_SECTIONS:
-                    section_char = self.build_character(
-                        name, formula_overrides=formula_overrides,
-                        boss_group=group_id, boss_section=section,
-                    )
-                    # 4부위 모두 데이터베이스에는 "BOSS"로 등록돼 있지만, name이 같으면
-                    # find_character 등 이름 기반 조회가 전부 첫 번째 매치만 찾게 되므로
-                    # 부위별로 구분되는 이름을 실제로 부여합니다(표시에도 그대로 쓰입니다).
-                    section_char.name = f"{config.BOSS_NAME}-{section}"
-                    team.append(section_char)
+            cleaned.append(name)
+
+        boss_indices = [i for i, n in enumerate(cleaned) if config.is_boss_name(n)]
+        if len(boss_indices) not in (0, 1, 4):
+            raise BattleError(
+                'BOSS로 취급되는 이름("BOSS"/"NOVA"로 시작)은 한 줄(부위 자동 생성) 또는 '
+                "정확히 네 줄(부위별 직접 지정)이어야 합니다."
+            )
+
+        expanded = [None] * len(cleaned)  # 각 줄이 만들어낼 Character 리스트(보통 1개, BOSS면 여러 개)
+
+        if len(boss_indices) == 1:
+            i = boss_indices[0]
+            name = cleaned[i]
+            base_label = name.split()[0]  # "BOSS" 또는 "NOVA" - 뒤에 붙은 글자는 개명에 안 씁니다.
+            group_id = f"{name}#{i}"
+            sections = []
+            for section in config.BOSS_SECTIONS:
+                section_char = self.build_character(
+                    name, formula_overrides=formula_overrides,
+                    boss_group=group_id, boss_section=section,
+                )
+                section_char.name = f"{base_label}-{section}"
+                sections.append(section_char)
+            expanded[i] = sections
+        elif len(boss_indices) == 4:
+            group_id = f"BOSS#{boss_indices[0]}"
+            for section, i in zip(config.BOSS_SECTIONS, boss_indices):
+                expanded[i] = [self.build_character(
+                    cleaned[i], formula_overrides=formula_overrides,
+                    boss_group=group_id, boss_section=section,
+                )]
+
+        team = []
+        for i, name in enumerate(cleaned):
+            if expanded[i] is not None:
+                team.extend(expanded[i])
             else:
                 team.append(self.build_character(name, formula_overrides=formula_overrides))
         return team

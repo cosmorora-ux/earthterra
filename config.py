@@ -544,86 +544,105 @@ def is_within_move_shape(dx: int, dy: int, move_range: int, agility: int = 0) ->
 
 
 # ----------------------------------------------------------------------
-# 9.6. "BOSS" 다부위 캐릭터 (마스 레이드 전용)
-#      이름이 정확히 "BOSS"인 캐릭터는 전투 시작 시 4부위(북동/북서/남동/남서)로 나뉘어
-#      격자 2x2 칸을 함께 차지합니다. 부위마다 체력/행동은 독립적이지만, 이동은 한 덩이로
-#      취급되어 전원 행동 완료 시 자동으로 빈 2x2 자리를 찾아 다 같이 옮겨갑니다.
+# 9.6. "BOSS" 다부위 캐릭터 (격자 전투 - 점령전/마스 레이드 공용)
+#      이름이 BOSS_NAME_PREFIXES 중 하나로 "시작하는"(뒤에 뭐가 더 붙어도 무방) 캐릭터는
+#      전투 시작 시 4부위(북동/북서/남동/남서)로 나뉘어 격자 2x2 칸을 함께 차지합니다.
+#      - 팀 명단에 그런 이름이 한 줄만 있으면: 그 한 줄을 4번 조회해서 부위 4개를 자동 생성.
+#      - 팀 명단에 그런 이름이 정확히 네 줄 있으면: 그 네 줄을 각각 한 부위씩으로 그룹지어
+#        하나의 BOSS로 취급(원래 이름은 그대로 유지 - 이미 서로 다르므로 개명 불필요).
+#      부위마다 체력/행동은 독립적이지만, 이동은 한 덩이로 취급되어 전원 행동 완료 시
+#      자동으로 빈 2x2 자리를 찾아 다 같이 옮겨갑니다. (GameManager.build_team 참고)
 # ----------------------------------------------------------------------
-BOSS_NAME = "BOSS"
+BOSS_NAME = "BOSS"  # 하위 호환용 - "이름이 정확히 BOSS인지"가 아니라 아래 프리픽스 검사를 씁니다.
+BOSS_NAME_PREFIXES = ["BOSS", "NOVA"]
 BOSS_SECTIONS = ["NW", "NE", "SW", "SE"]
 # 부위 앵커(북서 칸) 기준 상대 좌표
 BOSS_SECTION_OFFSETS = {"NW": (0, 0), "NE": (1, 0), "SW": (0, 1), "SE": (1, 1)}
 BOSS_SECTION_LABELS_KO = {"NW": "북서", "NE": "북동", "SW": "남서", "SE": "남동"}
 
 
+def is_boss_name(name: str) -> bool:
+    """이름이 BOSS 취급 접두어(BOSS_NAME_PREFIXES)로 시작하면 True. 뒤에 무엇이 더
+    붙어도(공백/숫자/한글 등) 무방합니다 - 예: "BOSS", "NOVA 1구역" 모두 True."""
+    return any((name or "").startswith(p) for p in BOSS_NAME_PREFIXES)
+
+
 # ----------------------------------------------------------------------
 # 10. 운영자가 GUI에서 직접 수정할 수 있는 "전투 수식" 항목 정의
 #     (key는 위에 정의된 전역 변수명과 반드시 일치해야 합니다)
 # ----------------------------------------------------------------------
+# 전투 수식 설정 화면에서 항목을 묶어 보여주기 위한 카테고리 (직군/역할 기준).
+# 순서가 곧 화면에 탭이 표시되는 순서입니다.
+FORMULA_CATEGORIES = [
+    {"key": "common", "label": "공통", "desc": "체력과 기본 다이스 등, 모든 행동에 공통으로 쓰이는 값"},
+    {"key": "attack", "label": "공격 · 회피", "desc": "스트라이커의 공격/치명타, 회피 관련 값"},
+    {"key": "defense", "label": "방어", "desc": "가디언의 능동 방어/치명타 관련 값"},
+    {"key": "heal", "label": "힐", "desc": "메딕의 회복/치명타 관련 값"},
+    {"key": "flow", "label": "전투 진행", "desc": "제한시간, 마스 레이드 이동 등 전투 진행 관련 값"},
+]
+
 FORMULA_FIELDS = [
-    {"key": "HP_BASE", "label": "최대 HP 기본값", "desc": "최대 HP = HP_BASE + 체력 × HP_PER_VIT", "type": int},
-    {"key": "HP_PER_VIT", "label": "체력 1당 HP 증가량", "desc": "최대 HP = HP_BASE + 체력 × HP_PER_VIT", "type": int},
+    {"key": "HP_BASE", "label": "최대 HP 기본값", "desc": "최대 HP = 기본값 + 체력 × 체력 1당 HP 증가량", "type": int, "category": "common"},
+    {"key": "HP_PER_VIT", "label": "체력 1당 HP 증가량", "desc": "최대 HP = 기본값 + 체력 × 이 값", "type": int, "category": "common"},
 
     {"key": "BASE_DICE_SIDES", "label": "기본 다이스 면수",
-     "desc": "공/방/힐 공통. 다이스 면수 = 기본 면수 + 이능 × 이능 보너스 (이능=폭발력)", "type": int},
-    {"key": "ABILITY_BONUS", "label": "이능당 다이스 면수 증가",
-     "desc": "다이스 면수 = 기본 면수 + 이능 × 이능 보너스", "type": int},
+     "desc": "공격/방어/힐 공통 기본값입니다. 다이스 면수 = 기본 면수 + 이능 × 이능당 증가량 (이능 = 폭발력)", "type": int, "category": "common"},
+    {"key": "ABILITY_BONUS", "label": "이능 1당 다이스 면수 증가",
+     "desc": "다이스 면수 = 기본 면수 + 이능 × 이 값", "type": int, "category": "common"},
     {"key": "MENTAL_FLOOR_MULTIPLIER", "label": "정신 1당 재굴림 기준치",
-     "desc": "재굴림 기준치 = 정신 × 이 값. 기준치 이하로 나오면 한 번 다시 굴리고 더 높은 값을 채택합니다 (정신=안정성)",
-     "type": int},
+     "desc": "재굴림 기준치 = 정신 × 이 값. 다이스가 기준치 이하로 나오면 한 번 다시 굴려 더 높은 값을 채택합니다 (정신 = 안정성)",
+     "type": int, "category": "common"},
+    {"key": "MIN_DAMAGE", "label": "최소 피해량", "desc": "최종 피해 = max(이 값, 공격 총합 − 방어 총합). 방어가 아무리 높아도 이 값 밑으로는 안 내려갑니다",
+     "type": int, "category": "common"},
 
-    {"key": "ATTACK_DICE_COUNT", "label": "공격 시 굴리는 다이스 개수 (스트라이커)", "desc": "스트라이커가 공격할 때 기본 다이스를 굴리는 횟수", "type": int},
-    {"key": "ATTACK_DICE_COUNT_NON_DEALER", "label": "공격 시 굴리는 다이스 개수 (스트라이커 외)",
-     "desc": "스트라이커가 아닌 캐릭터(가디언/메딕/몹·거점)가 공격할 때 기본 다이스를 굴리는 횟수", "type": int},
-    {"key": "ATTACK_STAT_MULTIPLIER", "label": "공격 스탯 배율 (직업 특화)",
-     "desc": "공격 총합 = 기본 다이스 합 + 공격 × 배율", "type": int},
-    {"key": "BASE_CRIT_CHANCE", "label": "공격 크리티컬 기본 확률(%)",
-     "desc": "확률 = 기본 확률 + 행운×배율(주 요인) + 정신×배율(부 요인) (딜러만 발생)", "type": int},
-    {"key": "LUCK_CRIT_CHANCE_MULT", "label": "공격 크리티컬 행운 배율(주 요인)", "desc": "크리티컬 확률에 더해지는 행운 배율", "type": int},
-    {"key": "MENTAL_CRIT_CHANCE_MULT", "label": "공격 크리티컬 정신 배율(부 요인)", "desc": "크리티컬 확률에 더해지는 정신 배율", "type": int},
-    {"key": "BASE_CRIT_DMG", "label": "공격 크리티컬 기본 배율",
-     "desc": "배율 = 기본 배율 + 민첩×배율(주 요인) + 이능×배율(부 요인)", "type": float},
-    {"key": "AGI_CRIT_DMG", "label": "공격 크리티컬 민첩 배율(주 요인)", "desc": "크리티컬 배율에 더해지는 민첩 가중치", "type": float},
-    {"key": "ABILITY_CRIT_DMG", "label": "공격 크리티컬 이능 배율(부 요인)", "desc": "크리티컬 배율에 더해지는 이능 가중치", "type": float},
+    {"key": "ATTACK_DICE_COUNT", "label": "공격 다이스 개수 (스트라이커)", "desc": "스트라이커가 공격할 때 기본 다이스를 굴리는 횟수", "type": int, "category": "attack"},
+    {"key": "ATTACK_DICE_COUNT_NON_DEALER", "label": "공격 다이스 개수 (스트라이커 외)",
+     "desc": "가디언/메딕/몹·거점처럼 스트라이커가 아닌 캐릭터가 공격할 때 기본 다이스를 굴리는 횟수", "type": int, "category": "attack"},
+    {"key": "ATTACK_STAT_MULTIPLIER", "label": "공격 스탯 배율",
+     "desc": "공격 총합 = 기본 다이스 합 + 공격 스탯 × 이 배율", "type": int, "category": "attack"},
+    {"key": "BASE_CRIT_CHANCE", "label": "공격 치명타 기본 확률(%)",
+     "desc": "치명타 확률 = 기본 확률 + 행운 × 배율(주 요인) + 정신 × 배율(부 요인). 스트라이커에게만 발생합니다", "type": int, "category": "attack"},
+    {"key": "LUCK_CRIT_CHANCE_MULT", "label": "공격 치명타 행운 배율 (주 요인)", "desc": "치명타 확률에 더해지는 행운 배율", "type": int, "category": "attack"},
+    {"key": "MENTAL_CRIT_CHANCE_MULT", "label": "공격 치명타 정신 배율 (부 요인)", "desc": "치명타 확률에 더해지는 정신 배율", "type": int, "category": "attack"},
+    {"key": "BASE_CRIT_DMG", "label": "공격 치명타 기본 배율",
+     "desc": "치명타 배율 = 기본 배율 + 민첩 × 배율(주 요인) + 이능 × 배율(부 요인)", "type": float, "category": "attack"},
+    {"key": "AGI_CRIT_DMG", "label": "공격 치명타 민첩 배율 (주 요인)", "desc": "치명타 배율에 더해지는 민첩 가중치", "type": float, "category": "attack"},
+    {"key": "ABILITY_CRIT_DMG", "label": "공격 치명타 이능 배율 (부 요인)", "desc": "치명타 배율에 더해지는 이능 가중치", "type": float, "category": "attack"},
+    {"key": "DODGE_BASE_CHANCE", "label": "회피 기본 확률(%)", "desc": "회피 확률 = 기본 확률 + 행운 × 배율 + 민첩 × 배율. 스트라이커 전용 행동입니다", "type": int, "category": "attack"},
+    {"key": "DODGE_LUCK_MULTIPLIER", "label": "회피 행운 배율", "desc": "회피 확률에 더해지는 행운 배율", "type": int, "category": "attack"},
+    {"key": "DODGE_AGI_MULTIPLIER", "label": "회피 민첩 배율", "desc": "회피 확률에 더해지는 민첩 배율", "type": int, "category": "attack"},
 
-    {"key": "DEFENSE_DICE_COUNT", "label": "방어 시 굴리는 다이스 개수", "desc": "능동 방어(부여자 기준) 다이스 개수", "type": int},
-    {"key": "DEFENSE_STAT_MULTIPLIER", "label": "능동 방어 스탯 배율 (직업 특화)",
-     "desc": "능동 방어 계층 = 부여자 기본 다이스 합 + 부여자 방어 × 배율", "type": int},
+    {"key": "DEFENSE_DICE_COUNT", "label": "방어 다이스 개수", "desc": "능동 방어를 부여한 사람 기준으로 굴리는 다이스 개수", "type": int, "category": "defense"},
+    {"key": "DEFENSE_STAT_MULTIPLIER", "label": "능동 방어 스탯 배율",
+     "desc": "능동 방어 계층 = 부여자 기본 다이스 합 + 부여자 방어 스탯 × 이 배율", "type": int, "category": "defense"},
     {"key": "PASSIVE_DEFENSE_STAT_MULTIPLIER", "label": "수동 방어 스탯 배율",
-     "desc": "모든 방어 총합의 바닥값. 대상 본인 방어 × 배율 (다이스 없음)", "type": int},
-    {"key": "DEFENSE_CRIT_BASE_CHANCE", "label": "방어 크리티컬 기본 확률(%)",
-     "desc": "부여자가 탱커일 때만 발생. 확률 = 기본 확률 + 부여자 행운×배율(주 요인) + 부여자 정신×배율(부 요인)", "type": int},
-    {"key": "DEFENSE_CRIT_LUCK_MULT", "label": "방어 크리티컬 행운 배율(부여자, 주 요인)", "desc": "방어 크리티컬 확률에 더해지는 부여자 행운 배율", "type": int},
-    {"key": "DEFENSE_CRIT_MENTAL_MULT", "label": "방어 크리티컬 정신 배율(부여자, 부 요인)", "desc": "방어 크리티컬 확률에 더해지는 부여자 정신 배율", "type": int},
-    {"key": "DEFENSE_CRIT_BASE_MULT", "label": "방어 크리티컬 기본 배율",
-     "desc": "배율 = 기본 배율 + 부여자 민첩×배율(주 요인) + 부여자 이능×배율(부 요인)", "type": float},
-    {"key": "DEFENSE_CRIT_AGI_MULT", "label": "방어 크리티컬 민첩 배율(부여자, 주 요인)", "desc": "방어 크리티컬 배율에 더해지는 부여자 민첩 가중치", "type": float},
-    {"key": "DEFENSE_CRIT_ABILITY_MULT", "label": "방어 크리티컬 이능 배율(부여자, 부 요인)", "desc": "방어 크리티컬 배율에 더해지는 부여자 이능 가중치", "type": float},
+     "desc": "방어를 아무도 안 걸어줬을 때도 항상 적용되는 바닥값입니다. 본인 방어 스탯 × 이 배율 (다이스 없음)", "type": int, "category": "defense"},
+    {"key": "DEFENSE_CRIT_BASE_CHANCE", "label": "방어 치명타 기본 확률(%)",
+     "desc": "치명타 확률 = 기본 확률 + 부여자 행운 × 배율(주 요인) + 부여자 정신 × 배율(부 요인). 방어를 부여한 사람이 가디언일 때만 발생합니다", "type": int, "category": "defense"},
+    {"key": "DEFENSE_CRIT_LUCK_MULT", "label": "방어 치명타 행운 배율 (부여자, 주 요인)", "desc": "방어 치명타 확률에 더해지는 부여자 행운 배율", "type": int, "category": "defense"},
+    {"key": "DEFENSE_CRIT_MENTAL_MULT", "label": "방어 치명타 정신 배율 (부여자, 부 요인)", "desc": "방어 치명타 확률에 더해지는 부여자 정신 배율", "type": int, "category": "defense"},
+    {"key": "DEFENSE_CRIT_BASE_MULT", "label": "방어 치명타 기본 배율",
+     "desc": "치명타 배율 = 기본 배율 + 부여자 민첩 × 배율(주 요인) + 부여자 이능 × 배율(부 요인)", "type": float, "category": "defense"},
+    {"key": "DEFENSE_CRIT_AGI_MULT", "label": "방어 치명타 민첩 배율 (부여자, 주 요인)", "desc": "방어 치명타 배율에 더해지는 부여자 민첩 가중치", "type": float, "category": "defense"},
+    {"key": "DEFENSE_CRIT_ABILITY_MULT", "label": "방어 치명타 이능 배율 (부여자, 부 요인)", "desc": "방어 치명타 배율에 더해지는 부여자 이능 가중치", "type": float, "category": "defense"},
 
-    {"key": "DODGE_BASE_CHANCE", "label": "회피 기본 확률(%)", "desc": "회피 확률 = 기본 + 행운×배율 + 민첩×배율 (딜러 전용)", "type": int},
-    {"key": "DODGE_LUCK_MULTIPLIER", "label": "회피 행운 배율", "desc": "회피 확률에 더해지는 행운 배율", "type": int},
-    {"key": "DODGE_AGI_MULTIPLIER", "label": "회피 민첩 배율", "desc": "회피 확률에 더해지는 민첩 배율", "type": int},
-
-    {"key": "MIN_DAMAGE", "label": "최소 피해량", "desc": "최종 피해 = max(최소 피해량, 공격 총합 - 방어 총합)", "type": int},
-
-    {"key": "HEAL_DICE_COUNT", "label": "힐 시 굴리는 다이스 개수", "desc": "힐 사용 시 기본 다이스를 굴리는 횟수", "type": int},
+    {"key": "HEAL_DICE_COUNT", "label": "힐 다이스 개수", "desc": "힐을 사용할 때 기본 다이스를 굴리는 횟수", "type": int, "category": "heal"},
     {"key": "HEAL_OUTPUT_MULTIPLIER", "label": "힐 최종 배율",
-     "desc": "회복량 = 기본 다이스 합 × 이 배율 (힐러 전체 회복력 조정용)", "type": float},
-    {"key": "HEAL_CRIT_BASE_CHANCE", "label": "힐 크리티컬 기본 확률(%)",
-     "desc": "확률 = 기본 확률 + 행운×배율(주 요인) + 정신×배율(부 요인) (힐러만 발생)", "type": int},
-    {"key": "HEAL_CRIT_LUCK_MULT", "label": "힐 크리티컬 행운 배율(주 요인)", "desc": "힐 크리티컬 확률에 더해지는 행운 배율", "type": int},
-    {"key": "HEAL_CRIT_MENTAL_MULT", "label": "힐 크리티컬 정신 배율(부 요인)", "desc": "힐 크리티컬 확률에 더해지는 정신 배율", "type": int},
-    {"key": "HEAL_CRIT_BASE_MULT", "label": "힐 크리티컬 기본 배율",
-     "desc": "배율 = 기본 배율 + 민첩×배율(주 요인) + 이능×배율(부 요인)", "type": float},
-    {"key": "HEAL_CRIT_AGI_MULT", "label": "힐 크리티컬 민첩 배율(주 요인)", "desc": "힐 크리티컬 배율에 더해지는 민첩 가중치", "type": float},
-    {"key": "HEAL_CRIT_ABILITY_MULT", "label": "힐 크리티컬 이능 배율(부 요인)", "desc": "힐 크리티컬 배율에 더해지는 이능 가중치", "type": float},
+     "desc": "회복량 = 기본 다이스 합 × 이 배율. 힐러 전체의 회복력을 한 번에 조정할 때 씁니다", "type": float, "category": "heal"},
+    {"key": "HEAL_CRIT_BASE_CHANCE", "label": "힐 치명타 기본 확률(%)",
+     "desc": "치명타 확률 = 기본 확률 + 행운 × 배율(주 요인) + 정신 × 배율(부 요인). 메딕에게만 발생합니다", "type": int, "category": "heal"},
+    {"key": "HEAL_CRIT_LUCK_MULT", "label": "힐 치명타 행운 배율 (주 요인)", "desc": "힐 치명타 확률에 더해지는 행운 배율", "type": int, "category": "heal"},
+    {"key": "HEAL_CRIT_MENTAL_MULT", "label": "힐 치명타 정신 배율 (부 요인)", "desc": "힐 치명타 확률에 더해지는 정신 배율", "type": int, "category": "heal"},
+    {"key": "HEAL_CRIT_BASE_MULT", "label": "힐 치명타 기본 배율",
+     "desc": "치명타 배율 = 기본 배율 + 민첩 × 배율(주 요인) + 이능 × 배율(부 요인)", "type": float, "category": "heal"},
+    {"key": "HEAL_CRIT_AGI_MULT", "label": "힐 치명타 민첩 배율 (주 요인)", "desc": "힐 치명타 배율에 더해지는 민첩 가중치", "type": float, "category": "heal"},
+    {"key": "HEAL_CRIT_ABILITY_MULT", "label": "힐 치명타 이능 배율 (부 요인)", "desc": "힐 치명타 배율에 더해지는 이능 가중치", "type": float, "category": "heal"},
 
-    {"key": "ROUND_TIME_LIMIT_SECONDS", "label": "라운드 제한시간(초)", "desc": "라운드마다 행동을 선언해야 하는 제한시간", "type": int},
-
+    {"key": "ROUND_TIME_LIMIT_SECONDS", "label": "라운드 제한시간(초)", "desc": "매 라운드마다 행동을 선언해야 하는 제한시간", "type": int, "category": "flow"},
     {"key": "AGILITY_MOVE_BASE", "label": "이동 가능 칸수 기본값 (마스 레이드)",
-     "desc": "이동 칸수 = 기본값 + 민첩 × 민첩당 증가량", "type": int},
+     "desc": "이동 칸수 = 기본값 + 민첩 × 민첩 1당 증가량", "type": int, "category": "flow"},
     {"key": "AGILITY_MOVE_PER_POINT", "label": "민첩 1당 이동 칸수 증가 (마스 레이드)",
-     "desc": "이동 칸수 = 기본값 + 민첩 × 민첩당 증가량", "type": int},
+     "desc": "이동 칸수 = 기본값 + 민첩 × 이 값", "type": int, "category": "flow"},
 ]
 
 

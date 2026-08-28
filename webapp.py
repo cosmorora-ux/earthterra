@@ -659,6 +659,7 @@ def _formula_fields_payload(battle_type: str = "pvp"):
             "label": f["label"],
             "desc": f["desc"],
             "type": "float" if f["type"] is float else "int",
+            "category": f.get("category", "common"),
             "value": profile_overrides.get(f["key"], config.get_formula_value(f["key"])),
         }
         for f in config.FORMULA_FIELDS
@@ -671,7 +672,11 @@ def on_get_formulas(data):
     if room is None:
         emit("action_error", {"message": "운영진만 전투 수식을 열람할 수 있습니다."})
         return
-    emit("formulas", {"battle_type": room.battle_type, "fields": _formula_fields_payload(room.battle_type)})
+    emit("formulas", {
+        "battle_type": room.battle_type,
+        "fields": _formula_fields_payload(room.battle_type),
+        "categories": config.FORMULA_CATEGORIES,
+    })
 
 
 @socketio.on("save_formulas")
@@ -687,7 +692,11 @@ def on_save_formulas(data):
         config.save_profile_overrides(room.battle_type, values)
     label = BATTLE_TYPE_LABELS.get(room.battle_type, room.battle_type)
     emit("formulas_saved", {"message": f"{label} 전용 수식으로 저장되었습니다."})
-    emit("formulas", {"battle_type": room.battle_type, "fields": _formula_fields_payload(room.battle_type)})
+    emit("formulas", {
+        "battle_type": room.battle_type,
+        "fields": _formula_fields_payload(room.battle_type),
+        "categories": config.FORMULA_CATEGORIES,
+    })
 
 
 @app.route("/health")
@@ -842,6 +851,7 @@ def on_start_battle(data):
     room.pending_reveal = None
     room.telegraph_cells = []
     room.telegraph_round_no = None
+    room.telegraph_damage_round_no = None
     room.preview_teams = None
 
     # 선후공은 이미 결정됐지만(room.game.start_battle 내부), 화면에는 "다이스 굴리는 중"
@@ -1038,6 +1048,29 @@ def _mass_raid_round_reminder_check(room):
             _post_mass_raid_reminder(room, battle, threshold)
 
 
+def _maybe_resolve_telegraph_damage(room, battle):
+    """마스 레이드 전용 : BOSS(2팀)의 후공 페이즈가 시작되는 순간, 그때까지 공개돼 있던 전조
+    칸에 아직 남아있는 러너(1팀) 전원에게 일괄로 피해를 입힙니다(battle.apply_telegraph_damage
+    참고 - BOSS의 '일반공격' 수치를 크리티컬 없이 그대로 쓰고, 대상마다 자기 방어 상태에 따라
+    최종 피해가 달라집니다). 라운드당 한 번만 발동합니다."""
+    if room.battle_type != "mass_raid" or battle.grid_width is None or battle.finished:
+        return
+    if battle.round_first_team != "1팀" or battle.current_turn_team != "2팀":
+        return
+    if not room.telegraph_cells or room.telegraph_round_no != battle.round_no:
+        return
+    if room.telegraph_damage_round_no == battle.round_no:
+        return  # 이번 라운드엔 이미 발동했습니다.
+    room.telegraph_damage_round_no = battle.round_no
+
+    attacker = next((c for c in battle.team_b if c.is_alive and c.boss_group), None)
+    if attacker is None:
+        attacker = next((c for c in battle.team_b if c.is_alive), None)
+    if attacker is None:
+        return
+    battle.apply_telegraph_damage(attacker.name, room.telegraph_cells)
+
+
 def _round_reminder_loop():
     """마스 레이드 방들을 주기적으로 훑어보며 제한시간 임계값(5분/2분/1분) 안내를 보냅니다."""
     while True:
@@ -1105,7 +1138,10 @@ def _maybe_relocate_boss(battle, actor_char):
     for c in siblings:
         ox, oy = config.BOSS_SECTION_OFFSETS.get(c.boss_section, (0, 0))
         c.grid_pos = (anchor[0] + ox, anchor[1] + oy)
-    battle.log_event("BOSS 전원 행동 완료 — 새로운 자리로 이동했습니다.", tag="system")
+    group_label = next(
+        (p for p in config.BOSS_NAME_PREFIXES if nw.name.startswith(p)), nw.name,
+    )
+    battle.log_event(f"{group_label} 전원 행동 완료 — 새로운 자리로 이동했습니다.", tag="system")
 
 
 @socketio.on("battle_action")
@@ -1218,6 +1254,7 @@ def on_battle_action(data):
 
     _maybe_relocate_boss(battle, actor_char)
     _maybe_auto_advance_turn(room, battle)
+    _maybe_resolve_telegraph_damage(room, battle)
     broadcast_state(room)
 
 
