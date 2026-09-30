@@ -69,9 +69,15 @@
   .modal-box.wide { width:440px; max-height:80vh; display:flex; flex-direction:column; }
   .modal-box.wide #formulaFields { overflow-y:auto; flex:1 1 auto; min-height:0; }
   .modal-box .modal-title { font-size:18px; font-weight:700; margin-bottom:12px; }
-  .modal-box input { width:100%; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:9px 12px; font-size:16px; }
+  .modal-box input:not([type="checkbox"]) { width:100%; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:9px 12px; font-size:16px; }
+  .modal-box input[type="checkbox"] { width:auto; margin-right:8px; vertical-align:middle; accent-color: var(--accent-blue); }
   .modal-box .row { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:10px; }
   .modal-box .err { color: var(--accent-red); font-size:14px; min-height:16px; margin-top:8px; }
+  .chat-tab-cfg-row { padding:10px 0; border-bottom:1px solid var(--card-border); }
+  .chat-tab-cfg-row:last-of-type { border-bottom:none; }
+  .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
+  .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
+  .chat-tab-cfg-row .hint { margin-top:6px; }
 
   .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding: 0 4px; }
   .breadcrumb { color: var(--muted); font-size:15px; }
@@ -256,6 +262,32 @@
     </div>
   </div>
 </div>
+<div id="chatTabSettingsModal" class="modal-overlay">
+  <div class="modal-box wide panel">
+    <div class="modal-title">채팅 탭 설정</div>
+    <div class="chat-tab-cfg-row">
+      <label><input type="checkbox" id="chatTabCfgPlayer" onchange="onChatTabConfigChange()"> 사용</label>
+      <input type="text" id="chatTabNamePlayer" maxlength="20" placeholder="탭 이름" onchange="onChatTabConfigChange()">
+      <div class="hint">실제로 참가한 인원(참가자·운영진)의 대사만 보여주는 탭입니다.</div>
+    </div>
+    <div class="chat-tab-cfg-row">
+      <label><input type="checkbox" id="chatTabCfgSpectator" onchange="onChatTabConfigChange()"> 사용</label>
+      <input type="text" id="chatTabNameSpectator" maxlength="20" placeholder="탭 이름" onchange="onChatTabConfigChange()">
+      <div class="hint">로그인하지 않고 지켜보기만 하는 인원의 채팅을 보여주는 탭입니다.</div>
+    </div>
+    <div class="chat-tab-cfg-row">
+      <label><input type="checkbox" id="chatTabCfgEntry" onchange="onChatTabConfigChange()"> 사용</label>
+      <input type="text" id="chatTabNameEntry" maxlength="20" placeholder="탭 이름" onchange="onChatTabConfigChange()">
+      <div class="hint">누가 입장/퇴장했는지 알림만 모아서 보여주는 탭입니다.</div>
+    </div>
+    <div class="chat-tab-cfg-row">
+      <label><input type="checkbox" id="chatTabCfgTeam" onchange="onChatTabConfigChange()"> 사용</label>
+      <input type="text" id="chatTabNameTeam" maxlength="20" placeholder="탭 이름" onchange="onChatTabConfigChange()">
+      <div class="hint">로그인한 캐릭터의 소속 팀에게만 보이는(상대 팀은 못 보는) 채팅 탭입니다.</div>
+    </div>
+    <div class="row"><button class="btn-plain" onclick="closeChatTabSettings()">닫기</button></div>
+  </div>
+</div>
 <input type="color" id="myColorInput" value="#4a90ff" style="position:fixed; opacity:0; pointer-events:none; width:0; height:0;" onchange="onMyColorChange(this.value)">
 
 <div class="topbar panel">
@@ -357,12 +389,14 @@
 
   <div class="panel" style="position:relative;">
     <div class="panel-head">
-      <b>커맨드 창</b><span class="hint">회의는 회의 DM방에서, 이쪽은 커맨드 위주</span>
+      <b>커맨드 창</b><span class="hint">아군 회의 탭은 우리 팀에게만 보여요</span>
       <span class="chat-tabs">
-        <span class="tab-wrap"><button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button><span class="unread-dot" id="unreadDotPlayer"></span></span>
-        <span class="tab-wrap"><button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button><span class="unread-dot" id="unreadDotSpectator"></span></span>
-        <button id="chatTabEntry" onclick="setChatFilter('entry')">입장 기록</button>
+        <span class="tab-wrap" id="chatTabWrapPlayer"><button id="chatTabPlayer" onclick="setChatFilter('player')">참여 인원만</button><span class="unread-dot" id="unreadDotPlayer"></span></span>
+        <span class="tab-wrap" id="chatTabWrapSpectator"><button id="chatTabSpectator" onclick="setChatFilter('spectator')">관전 인원만</button><span class="unread-dot" id="unreadDotSpectator"></span></span>
+        <span class="tab-wrap" id="chatTabWrapEntry"><button id="chatTabEntry" onclick="setChatFilter('entry')">입장 기록</button></span>
+        <span class="tab-wrap" id="chatTabWrapTeam"><button id="chatTabTeam" onclick="setChatFilter('team')">아군 회의</button><span class="unread-dot" id="unreadDotTeam"></span></span>
       </span>
+      <button class="gear" id="chatTabSettingsBtn" style="display:none;" onclick="toggleChatTabSettings()" data-tip="채팅 탭 설정">⚙</button>
     </div>
     <div id="chatPanelBody">
       <div id="chatLog"></div>
@@ -487,6 +521,7 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
       refreshGmActPanelVisibility();
       refreshGmControlPanelVisibility();
       refreshLogViewControls();
+      refreshChatTabSettingsVisibility();
       if (onSuccess) onSuccess();
     } else if (onFail) {
       onFail();
@@ -522,6 +557,7 @@ function logout() {
   refreshGmActPanelVisibility();
   refreshGmControlPanelVisibility();
   refreshLogViewControls();
+  refreshChatTabSettingsVisibility();
 }
 
 function isMatchedCharacter(battle) {
@@ -614,8 +650,12 @@ socket.on('public_state', (state) => {
   lastPreviewTeams = state.preview_teams || null;
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
   lastBattleForPanel = state.battle;
+  if (state.chat_tabs) chatTabsEnabled = state.chat_tabs;
+  if (state.chat_tab_labels) chatTabLabels = state.chat_tab_labels;
+  applyChatTabLabels();
+  renderChatTabVisibility();
   renderBattle(state.battle);
-  renderPubLog(state.log);
+  renderPubLog(state.log, state.log_total);
   renderChat(state.chat);
   renderMusic(state.music, state.server_now);
 });
@@ -823,6 +863,7 @@ function renderBattle(battle) {
   refreshGmActPanelVisibility();
   refreshGmControlPanelVisibility();
   refreshLogViewControls();
+  refreshChatTabSettingsVisibility();
 
   renderGrid(battle, all);
 }
@@ -1360,13 +1401,16 @@ function formatLogHtml(lines) {
 
 let lastPublicLog = [];
 let lastOperatorLog = [];
+let lastPublicLogTotal = 0;    // 서버가 실제로 갖고 있는 전체 줄 수(전송량 절약을 위해 log는 최근 일부만 옴)
+let lastOperatorLogTotal = 0;
 let logView = 'public';  // 'public' | 'operator' - GM(비밀번호 입장)만 전환 가능
 
 // 출력창에 새 로그가 한꺼번에 우르르 뜨지 않도록, 그룹(섹션) 단위로 끊어서 약간의
-// 딜레이를 두고 하나씩 표시합니다. 이미 화면에 그려둔 만큼은 logRenderedCount로 기억해서
-// 다음번엔 그 뒤에 새로 추가된 부분만 애니메이션합니다.
+// 딜레이를 두고 하나씩 표시합니다. 서버는 세션이 길어져도 전송량이 안 불어나게 최근
+// 일부 줄 + 누적 총 줄 수(log_total)만 보내므로, "이미 본 총 줄 수"를 기억해뒀다가
+// 그 이후 줄만 새로 추가된 것으로 봅니다.
 const LOG_SECTION_DELAY_MS = 180;
-let logRenderedCount = { public: 0, operator: 0 };
+let logSeenTotal = { public: 0, operator: 0 };
 let logRevealQueue = { public: [], operator: [] };
 let logRevealBusy = { public: false, operator: false };
 let logInitialized = { public: false, operator: false };
@@ -1386,33 +1430,37 @@ function splitLogIntoSections(lines) {
   return sections;
 }
 
-function renderPubLog(log) {
+function renderPubLog(log, logTotal) {
   lastPublicLog = log || [];
+  lastPublicLogTotal = logTotal != null ? logTotal : lastPublicLog.length;
   if (logView === 'public') {
-    revealNewLogLines('public', lastPublicLog);
+    revealNewLogLines('public', lastPublicLog, lastPublicLogTotal);
   } else {
-    logRenderedCount.public = lastPublicLog.length;
+    logSeenTotal.public = lastPublicLogTotal;
     logRevealQueue.public = [];
   }
 }
 
 // 처음 열었을 때/재접속처럼 그동안 쌓인 로그를 한 번에 따라잡을 때는 애니메이션 없이 바로
 // 전부 보여주고, 그 이후로 실시간으로 추가되는 부분만 섹션 단위로 딜레이를 둡니다.
-function revealNewLogLines(view, fullLog) {
+// fullLog는 서버가 보낸 "최근 일부"이고, logTotal은 서버가 실제로 갖고 있는 총 줄 수입니다.
+function revealNewLogLines(view, fullLog, logTotal) {
   if (!logInitialized[view]) {
     logInitialized[view] = true;
     renderCurrentLog();
     return;
   }
-  const already = logRenderedCount[view];
-  if (fullLog.length < already) {
-    // 되돌리기 등으로 로그가 줄어든 경우 - 처음 보여주듯 전체를 다시 그립니다.
+  const sliceStart = logTotal - fullLog.length;  // 이번에 받은 조각이 전체에서 시작하는 위치
+  const already = logSeenTotal[view];
+  if (logTotal < already || already < sliceStart) {
+    // 되돌리기로 로그가 줄었거나(logTotal < already), 안 보는 사이 너무 많이 쌓여서
+    // 받은 조각 앞부분도 처음 보는 경우(already < sliceStart) - 그냥 받은 걸 통째로 다시 그립니다.
     renderCurrentLog();
     return;
   }
-  if (fullLog.length === already) return;
-  const newLines = fullLog.slice(already);
-  logRenderedCount[view] = fullLog.length;
+  if (logTotal === already) return;  // 새 줄 없음
+  const newLines = fullLog.slice(already - sliceStart);
+  logSeenTotal[view] = logTotal;
   logRevealQueue[view].push(...splitLogIntoSections(newLines));
   processLogRevealQueue(view);
 }
@@ -1436,9 +1484,10 @@ function processLogRevealQueue(view) {
 function renderCurrentLog() {
   const el = document.getElementById('pubLog');
   const log = logView === 'operator' ? lastOperatorLog : lastPublicLog;
+  const total = logView === 'operator' ? lastOperatorLogTotal : lastPublicLogTotal;
   el.innerHTML = formatLogHtml(log);
   el.scrollTop = el.scrollHeight;
-  logRenderedCount[logView] = log.length;
+  logSeenTotal[logView] = total;
   logRevealQueue[logView] = [];
   logRevealBusy[logView] = false;
   logInitialized[logView] = true;
@@ -1505,14 +1554,23 @@ function setFormulaCategory(key) {
   renderFormulaFields();
 }
 
+function formulaFieldInputHtml(f) {
+  if (f.widget === 'select') {
+    const opts = (f.options || []).map(opt =>
+      `<option value="${opt}" ${String(opt) === String(formulaValues[f.key]) ? 'selected' : ''}>${opt}</option>`
+    ).join('');
+    return `<select id="f_${f.key}" style="width:100px;">${opts}</select>`;
+  }
+  const step = f.step != null ? f.step : (f.type === 'float' ? '0.01' : '1');
+  return `<input id="f_${f.key}" type="number" step="${step}" value="${formulaValues[f.key]}" style="width:100px;">`;
+}
+
 function renderFormulaFields() {
   const el = document.getElementById('formulaFields');
   const fields = formulaFields.filter(f => f.category === formulaActiveCategory);
   el.innerHTML = fields.map(f => `
     <div style="margin-bottom:10px;">
-      <label>${f.label} :
-        <input id="f_${f.key}" type="number" step="${f.type === 'float' ? '0.01' : '1'}" value="${formulaValues[f.key]}" style="width:100px;">
-      </label>
+      <label>${f.label} : ${formulaFieldInputHtml(f)}</label>
       <div style="font-size:13px; opacity:0.7;">${f.desc}</div>
     </div>
   `).join('');
@@ -1543,26 +1601,29 @@ socket.on('formulas_saved', (d) => {
 
 socket.on('gm_state', (state) => {
   lastOperatorLog = state.operator_log || [];
+  lastOperatorLogTotal = state.operator_log_total != null ? state.operator_log_total : lastOperatorLog.length;
   if (logView === 'operator') {
-    revealNewLogLines('operator', lastOperatorLog);
+    revealNewLogLines('operator', lastOperatorLog, lastOperatorLogTotal);
   } else {
-    logRenderedCount.operator = lastOperatorLog.length;
+    logSeenTotal.operator = lastOperatorLogTotal;
     logRevealQueue.operator = [];
   }
   refreshLogViewControls();
 });
 
-// 참여/관전 탭에 새 채팅이 쌓이면(지금 보고 있는 탭이 아닐 때) 탭 모서리에 빨간 점으로 표시합니다.
-// 입장 기록 탭은 대상에서 제외합니다.
-let unreadChat = { player: false, spectator: false };
+// 참여/관전/아군회의 탭에 새 채팅이 쌓이면(지금 보고 있는 탭이 아닐 때) 탭 모서리에 빨간
+// 점으로 표시합니다. 입장 기록 탭은 대상에서 제외합니다.
+let unreadChat = { player: false, spectator: false, team: false };
 function chatTabFor(entry) {
   if (entry.category === 'player' || entry.category === 'operator') return 'player';
   if (entry.category === 'spectator') return 'spectator';
+  if (entry.category === 'team') return 'team';
   return null;
 }
 function updateUnreadBadges() {
   document.getElementById('unreadDotPlayer').classList.toggle('show', unreadChat.player);
   document.getElementById('unreadDotSpectator').classList.toggle('show', unreadChat.spectator);
+  document.getElementById('unreadDotTeam').classList.toggle('show', unreadChat.team);
 }
 
 function setChatFilter(filter) {
@@ -1570,7 +1631,8 @@ function setChatFilter(filter) {
   document.getElementById('chatTabPlayer').classList.toggle('active', filter === 'player');
   document.getElementById('chatTabSpectator').classList.toggle('active', filter === 'spectator');
   document.getElementById('chatTabEntry').classList.toggle('active', filter === 'entry');
-  if (filter === 'player' || filter === 'spectator') unreadChat[filter] = false;
+  document.getElementById('chatTabTeam').classList.toggle('active', filter === 'team');
+  if (filter === 'player' || filter === 'spectator' || filter === 'team') unreadChat[filter] = false;
   updateUnreadBadges();
   renderChatFiltered();
 }
@@ -1580,11 +1642,81 @@ function matchesFilter(entry) {
   if (chatFilter === 'entry') return entry.category === 'presence';
   if (chatFilter === 'player') return entry.category === 'player' || entry.category === 'operator';
   if (chatFilter === 'spectator') return entry.category === 'spectator';
+  if (chatFilter === 'team') return entry.category === 'team';
   return false;
 }
 
+// 운영진이 채팅창에 어떤 탭을 보여줄지 고르는 설정 (방 전체 공통 - public_state.chat_tabs).
+let chatTabsEnabled = { player: true, spectator: true, entry: true, team: true };
+let chatTabLabels = { player: '참여 인원만', spectator: '관전 인원만', entry: '입장 기록', team: '아군 회의' };
+
+function applyChatTabLabels() {
+  document.getElementById('chatTabPlayer').textContent = chatTabLabels.player;
+  document.getElementById('chatTabSpectator').textContent = chatTabLabels.spectator;
+  document.getElementById('chatTabEntry').textContent = chatTabLabels.entry;
+  document.getElementById('chatTabTeam').textContent = chatTabLabels.team;
+}
+
+function renderChatTabVisibility() {
+  document.getElementById('chatTabWrapPlayer').style.display = chatTabsEnabled.player ? '' : 'none';
+  document.getElementById('chatTabWrapSpectator').style.display = chatTabsEnabled.spectator ? '' : 'none';
+  document.getElementById('chatTabWrapEntry').style.display = chatTabsEnabled.entry ? '' : 'none';
+  document.getElementById('chatTabWrapTeam').style.display = chatTabsEnabled.team ? '' : 'none';
+  // 지금 보고 있는 탭이 꺼졌으면 켜져 있는 다른 탭으로 전환합니다.
+  if (!chatTabsEnabled[chatFilter]) {
+    const fallback = ['player', 'spectator', 'entry', 'team'].find(k => chatTabsEnabled[k]) || 'player';
+    setChatFilter(fallback);
+  }
+}
+
+function toggleChatTabSettings() {
+  if (myControlInfo(lastBattleForPanel).scope !== 'all') return;
+  document.getElementById('chatTabCfgPlayer').checked = chatTabsEnabled.player;
+  document.getElementById('chatTabCfgSpectator').checked = chatTabsEnabled.spectator;
+  document.getElementById('chatTabCfgEntry').checked = chatTabsEnabled.entry;
+  document.getElementById('chatTabCfgTeam').checked = chatTabsEnabled.team;
+  document.getElementById('chatTabNamePlayer').value = chatTabLabels.player;
+  document.getElementById('chatTabNameSpectator').value = chatTabLabels.spectator;
+  document.getElementById('chatTabNameEntry').value = chatTabLabels.entry;
+  document.getElementById('chatTabNameTeam').value = chatTabLabels.team;
+  document.getElementById('chatTabSettingsModal').style.display = 'flex';
+}
+
+function closeChatTabSettings() {
+  document.getElementById('chatTabSettingsModal').style.display = 'none';
+}
+
+function onChatTabConfigChange() {
+  socket.emit('set_chat_tabs', {
+    tabs: {
+      player: document.getElementById('chatTabCfgPlayer').checked,
+      spectator: document.getElementById('chatTabCfgSpectator').checked,
+      entry: document.getElementById('chatTabCfgEntry').checked,
+      team: document.getElementById('chatTabCfgTeam').checked,
+    },
+    labels: {
+      player: document.getElementById('chatTabNamePlayer').value,
+      spectator: document.getElementById('chatTabNameSpectator').value,
+      entry: document.getElementById('chatTabNameEntry').value,
+      team: document.getElementById('chatTabNameTeam').value,
+    },
+  });
+}
+
+// GM(비밀번호 입장)일 때만 채팅 탭 설정 톱니를 보여줍니다.
+function refreshChatTabSettingsVisibility() {
+  const gear = document.getElementById('chatTabSettingsBtn');
+  if (gear) gear.style.display = myControlInfo(lastBattleForPanel).scope === 'all' ? '' : 'none';
+}
+
+// 아군 회의(팀 전용 채팅)는 새는 걸 막으려고 서버가 공용 스냅샷(room.chat_log)에는 안
+// 남기고 실시간 전송으로만 보냅니다 - 그래서 매 행동마다 오는 공용 스냅샷으로 lastChat을
+// 통째로 덮어쓰면 방금 받은 아군 회의 내용이 사라져버립니다. lastTeamChat에 따로 모아뒀다가
+// 매번 다시 합쳐줍니다.
+let lastTeamChat = [];
+
 function renderChat(chat) {
-  lastChat = chat;
+  lastChat = (chat || []).concat(lastTeamChat).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   renderChatFiltered();
 }
 
@@ -1620,15 +1752,23 @@ function fmtChat(entry) {
   const dot = isStar
     ? `<div class="chat-dot chat-star">✶</div>`
     : `<div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>`;
+  // GM은 양 팀 아군 회의를 같은 탭에서 같이 보므로, 어느 팀 회의인지 작게 표시해줍니다.
+  const teamTag = entry.category === 'team'
+    ? ` <span style="color:var(--muted); font-size:12px;">(${entry.team === 'A' ? '1팀' : '2팀'} 회의)</span>`
+    : '';
   return `<div class="chat-line ${cls}">
     ${dot}
-    <div class="chat-body"><b>${entry.nickname}</b><span class="time">${formatChatTime(entry.time)}</span><br>
+    <div class="chat-body"><b>${entry.nickname}</b>${teamTag}<span class="time">${formatChatTime(entry.time)}</span><br>
     <span class="chat-text">${entry.text}</span></div>
   </div>`;
 }
 
 function appendChat(entry) {
   lastChat.push(entry);
+  if (entry.category === 'team') {
+    lastTeamChat.push(entry);
+    if (lastTeamChat.length > 200) lastTeamChat.shift();
+  }
   const tab = chatTabFor(entry);
   if (tab && tab !== chatFilter) {
     unreadChat[tab] = true;
@@ -1643,7 +1783,9 @@ function appendChat(entry) {
 function sendChat() {
   const input = document.getElementById('chatInput');
   if (!input.value.trim()) return;
-  socket.emit('chat_message', { text: input.value });
+  const payload = { text: input.value };
+  if (chatFilter === 'team') payload.mode = 'team';
+  socket.emit('chat_message', payload);
   input.value = '';
 }
 

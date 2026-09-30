@@ -210,11 +210,13 @@ def calculate_max_hp(stats: dict, overrides: dict = None) -> int:
 # 3. 공통 기본 다이스 공식 (공격/방어/힐 전부 이 공식을 기반으로 합니다)
 #    - 다이스 면수(최대치) = BASE_DICE_SIDES + 이능 × ABILITY_BONUS   → 이능 = 폭발력
 #    - 재굴림 기준치 = 정신 × MENTAL_FLOOR_MULTIPLIER                → 정신 = 안정성
-#      (다이스 눈이 이 기준치 이하로 나오면 딱 한 번 다시 굴립니다)
+#      (다이스 눈이 이 기준치 이하로 나오면 MENTAL_REROLL_COUNT번 다시 굴려 그 중 가장
+#      높은 값을 채택합니다)
 # ----------------------------------------------------------------------
 BASE_DICE_SIDES = 15
 ABILITY_BONUS = 2
 MENTAL_FLOOR_MULTIPLIER = 3
+MENTAL_REROLL_COUNT = 1
 
 
 def _roll_core_dice(stats: dict, dice_count: int, overrides: dict = None) -> dict:
@@ -223,14 +225,18 @@ def _roll_core_dice(stats: dict, dice_count: int, overrides: dict = None) -> dic
     mental = int(stats.get("정신", 0))
     sides = get_value("BASE_DICE_SIDES", overrides) + ability * get_value("ABILITY_BONUS", overrides)
     threshold = mental * get_value("MENTAL_FLOOR_MULTIPLIER", overrides)
+    reroll_count = max(1, int(get_value("MENTAL_REROLL_COUNT", overrides)))
 
     first_rolls, final_rolls, rerolled = [], [], []
     for _ in range(dice_count):
         r = random.randint(1, sides)
         first_rolls.append(r)
         if r <= threshold:
-            r2 = random.randint(1, sides)  # 기준치 이하면 한 번 다시 굴리고, 더 높은 값을 채택합니다.
-            r = max(r, r2)
+            # 기준치 이하면 reroll_count번 다시 굴리고, 그 중 가장 높은 값을 채택합니다.
+            best = r
+            for _ in range(reroll_count):
+                best = max(best, random.randint(1, sides))
+            r = best
             rerolled.append(True)
         else:
             rerolled.append(False)
@@ -590,8 +596,11 @@ FORMULA_FIELDS = [
     {"key": "ABILITY_BONUS", "label": "이능 1당 다이스 면수 증가",
      "desc": "다이스 면수 = 기본 면수 + 이능 × 이 값", "type": int, "category": "common"},
     {"key": "MENTAL_FLOOR_MULTIPLIER", "label": "정신 1당 재굴림 기준치",
-     "desc": "재굴림 기준치 = 정신 × 이 값. 다이스가 기준치 이하로 나오면 한 번 다시 굴려 더 높은 값을 채택합니다 (정신 = 안정성)",
-     "type": int, "category": "common"},
+     "desc": "재굴림 기준치 = 정신 × 이 값. 다이스가 기준치 이하로 나오면 다시 굴려 더 높은 값을 채택합니다 (정신 = 안정성)",
+     "type": float, "step": 0.1, "category": "common"},
+    {"key": "MENTAL_REROLL_COUNT", "label": "재굴림 횟수",
+     "desc": "다이스가 재굴림 기준치 이하로 나왔을 때 다시 굴리는 횟수(그 중 가장 높은 값을 채택)",
+     "type": int, "widget": "select", "options": [1, 2, 3, 4, 5], "category": "common"},
     {"key": "MIN_DAMAGE", "label": "최소 피해량", "desc": "최종 피해 = max(이 값, 공격 총합 − 방어 총합). 방어가 아무리 높아도 이 값 밑으로는 안 내려갑니다",
      "type": int, "category": "common"},
 

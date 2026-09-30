@@ -535,13 +535,15 @@ socket.on('gm_state', (state) => {
   renderBattle(state.battle);
   lastOperatorLog = state.operator_log;
   lastPublicLog = state.log;
+  lastOperatorLogTotal = state.operator_log_total != null ? state.operator_log_total : lastOperatorLog.length;
+  lastPublicLogTotal = state.log_total != null ? state.log_total : lastPublicLog.length;
   if (logView === 'operator') {
-    revealNewLogLines('operator', lastOperatorLog);
-    logRenderedCount.public = lastPublicLog.length;
+    revealNewLogLines('operator', lastOperatorLog, lastOperatorLogTotal);
+    logSeenTotal.public = lastPublicLogTotal;
     logRevealQueue.public = [];
   } else {
-    revealNewLogLines('public', lastPublicLog);
-    logRenderedCount.operator = lastOperatorLog.length;
+    revealNewLogLines('public', lastPublicLog, lastPublicLogTotal);
+    logSeenTotal.operator = lastOperatorLogTotal;
     logRevealQueue.operator = [];
   }
   renderChat(state.chat);
@@ -652,14 +654,23 @@ function setFormulaCategory(key) {
   renderFormulaFields();
 }
 
+function formulaFieldInputHtml(f) {
+  if (f.widget === 'select') {
+    const opts = (f.options || []).map(opt =>
+      `<option value="${opt}" ${String(opt) === String(formulaValues[f.key]) ? 'selected' : ''}>${opt}</option>`
+    ).join('');
+    return `<select id="f_${f.key}" style="width:100px;">${opts}</select>`;
+  }
+  const step = f.step != null ? f.step : (f.type === 'float' ? '0.01' : '1');
+  return `<input id="f_${f.key}" type="number" step="${step}" value="${formulaValues[f.key]}" style="width:100px;">`;
+}
+
 function renderFormulaFields() {
   const el = document.getElementById('formulaFields');
   const fields = formulaFields.filter(f => f.category === formulaActiveCategory);
   el.innerHTML = fields.map(f => `
     <div style="margin-bottom:10px;">
-      <label>${f.label} :
-        <input id="f_${f.key}" type="number" step="${f.type === 'float' ? '0.01' : '1'}" value="${formulaValues[f.key]}" style="width:100px;">
-      </label>
+      <label>${f.label} : ${formulaFieldInputHtml(f)}</label>
       <div style="font-size:13px; opacity:0.7;">${f.desc}</div>
     </div>
   `).join('');
@@ -1278,13 +1289,16 @@ function formatLogHtml(lines) {
 }
 
 // 출력창에 새 로그가 한꺼번에 우르르 뜨지 않도록, 그룹(섹션) 단위로 끊어서 약간의 딜레이를
-// 두고 하나씩 표시합니다. 이미 화면에 그려둔 만큼은 logRenderedCount로 기억해서 다음번엔
-// 그 뒤에 새로 추가된 부분만 애니메이션합니다.
+// 두고 하나씩 표시합니다. 서버는 세션이 길어져도 전송량이 안 불어나게 최근 일부 줄 +
+// 누적 총 줄 수(log_total/operator_log_total)만 보내므로, "이미 본 총 줄 수"를 기억해뒀다가
+// 그 이후 줄만 새로 추가된 것으로 봅니다.
 const LOG_SECTION_DELAY_MS = 180;
-let logRenderedCount = { public: 0, operator: 0 };
+let logSeenTotal = { public: 0, operator: 0 };
 let logRevealQueue = { public: [], operator: [] };
 let logRevealBusy = { public: false, operator: false };
 let logInitialized = { public: false, operator: false };
+let lastPublicLogTotal = 0;
+let lastOperatorLogTotal = 0;
 
 function splitLogIntoSections(lines) {
   const sections = [];
@@ -1302,20 +1316,22 @@ function splitLogIntoSections(lines) {
 
 // 처음 열었을 때/재접속처럼 그동안 쌓인 로그를 한 번에 따라잡을 때는 애니메이션 없이 바로
 // 전부 보여주고, 그 이후로 실시간으로 추가되는 부분만 섹션 단위로 딜레이를 둡니다.
-function revealNewLogLines(view, fullLog) {
+// fullLog는 서버가 보낸 "최근 일부"이고, logTotal은 서버가 실제로 갖고 있는 총 줄 수입니다.
+function revealNewLogLines(view, fullLog, logTotal) {
   if (!logInitialized[view]) {
     logInitialized[view] = true;
     renderCurrentLog();
     return;
   }
-  const already = logRenderedCount[view];
-  if (fullLog.length < already) {
-    renderCurrentLog();  // 되돌리기 등으로 로그가 줄어든 경우 - 전체를 다시 그립니다.
+  const sliceStart = logTotal - fullLog.length;
+  const already = logSeenTotal[view];
+  if (logTotal < already || already < sliceStart) {
+    renderCurrentLog();  // 되돌리기로 줄었거나, 너무 오래 밀려서 받은 조각도 처음 보는 경우
     return;
   }
-  if (fullLog.length === already) return;
-  const newLines = fullLog.slice(already);
-  logRenderedCount[view] = fullLog.length;
+  if (logTotal === already) return;
+  const newLines = fullLog.slice(already - sliceStart);
+  logSeenTotal[view] = logTotal;
   logRevealQueue[view].push(...splitLogIntoSections(newLines));
   processLogRevealQueue(view);
 }
@@ -1338,10 +1354,11 @@ function processLogRevealQueue(view) {
 
 function renderCurrentLog() {
   const log = logView === 'operator' ? lastOperatorLog : lastPublicLog;
+  const total = logView === 'operator' ? lastOperatorLogTotal : lastPublicLogTotal;
   const el = document.getElementById('opLog');
   el.innerHTML = formatLogHtml(log);
   el.scrollTop = el.scrollHeight;
-  logRenderedCount[logView] = log.length;
+  logSeenTotal[logView] = total;
   logRevealQueue[logView] = [];
   logRevealBusy[logView] = false;
   logInitialized[logView] = true;

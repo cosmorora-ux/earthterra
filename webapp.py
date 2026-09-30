@@ -21,7 +21,10 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 
 import config
 from battle import Battle, BattleError
-from rooms import create_room, get_room, ROOMS, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES
+from rooms import (
+    create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms,
+    ROOMS, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES,
+)
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -39,6 +42,13 @@ CONNECTIONS = {}
 # 영향받지 않습니다.
 GM_GUEST_PASSWORD = "Nexus**0010"
 
+# 전투 로그(public_log/operator_log)는 방 하나가 몇 시간씩 이어지면 수천 줄까지 쌓일 수
+# 있습니다 - 매 행동마다 상태를 통째로 재전송하는 구조라, 로그를 자르지 않으면 세션이
+# 길어질수록 매 행동의 전송량이 계속 불어납니다(다인원·장시간일수록 체감 지연이 커짐).
+# 그래서 실제 배열은 자르지 않고(되돌리기/로그 복사가 인덱스를 그대로 쓰므로) 전송량만
+# 최근 이 줄 수로 제한합니다.
+LOG_SEND_CAP = 300
+
 
 @app.after_request
 def add_no_cache_headers(response):
@@ -49,6 +59,30 @@ def add_no_cache_headers(response):
 
 def room_channel(room_id: str, suffix: str) -> str:
     return f"{room_id}:{suffix}"
+
+
+def _team_channel(room_id: str, team_letter: str) -> str:
+    return room_channel(room_id, f"team_{team_letter}")
+
+
+def _sync_team_channel(room, sid: str, nickname: str, role: str):
+    """아군 회의(팀 전용 채팅)용 - 실제로 조작 가능한 캐릭터의 소속 팀 채널에만 넣어줍니다.
+    운영진/참가자링크의 "GM"은 양 팀 회의를 다 볼 수 있어야 하므로 두 채널 모두에 넣고,
+    팀이 없으면(미배정/관전) 어느 채널에도 들어가지 않습니다. 팀이 바뀔 수 있으므로
+    (재입장, 전투 재시작 등) 매번 먼저 둘 다 나갔다가 다시 판단합니다."""
+    leave_room(_team_channel(room.id, "A"), sid=sid)
+    leave_room(_team_channel(room.id, "B"), sid=sid)
+    if role == "gm" or (nickname or "").strip().lower() == "gm":
+        join_room(_team_channel(room.id, "A"), sid=sid)
+        join_room(_team_channel(room.id, "B"), sid=sid)
+        return
+    battle = room.game.battle
+    if battle is None:
+        return
+    for c in battle.team_a + battle.team_b:
+        if c.name == nickname:
+            join_room(_team_channel(room.id, c.team), sid=sid)
+            return
 
 
 def post_system_chat(room, text: str, nickname: str = "system"):
@@ -69,7 +103,19 @@ def post_system_chat(room, text: str, nickname: str = "system"):
 # ----------------------------------------------------------------------
 @app.route("/")
 def index():
-    return render_template("index.html")
+    rooms_view = [
+        {
+            "id": room.id,
+            "name": room.name,
+            "battle_type": room.battle_type,
+            "battle_type_label": BATTLE_TYPE_LABELS.get(room.battle_type, room.battle_type),
+            "gm_url": url_for("gm_page", room_id=room.id, key=room.gm_key, _external=True),
+            "guest_url": url_for("guest_page", room_id=room.id, key=room.guest_key, _external=True),
+            "gm_key": room.gm_key,
+        }
+        for room in list_rooms()
+    ]
+    return render_template("index.html", rooms=rooms_view, battle_type_labels=BATTLE_TYPE_LABELS)
 
 
 @app.route("/yacht")
@@ -80,8 +126,19 @@ def yacht_page():
 @app.route("/create_room", methods=["POST"])
 def create_room_route():
     battle_type = request.form.get("battle_type", "pvp")
-    room = create_room(battle_type)
+    room_name = request.form.get("room_name", "")
+    room = create_room(battle_type, name=room_name)
     return redirect(url_for("gm_page", room_id=room.id, key=room.gm_key))
+
+
+@app.route("/delete_room", methods=["POST"])
+def delete_room_route():
+    room_id = request.form.get("room_id", "")
+    key = request.form.get("key", "")
+    room = get_room(room_id)
+    if room is not None and key == room.gm_key:
+        delete_room(room_id)
+    return redirect(url_for("index"))
 
 
 @app.route("/room/<room_id>/gm")
@@ -297,12 +354,21 @@ def build_public_state(room):
                 build_preview_character(room, n) for n in room.preview_teams.get("team_b", [])
             ) if c],
         }
+    pub_log = battle.public_log if battle else []
     payload = {
         "room_id": room.id,
         "room_name": room.name,
         "battle": battle_payload,
-        "log": battle.public_log if battle else [],
+        # 세션이 길어지면(다인원 장시간) 로그가 수천 줄까지 쌓일 수 있어서, 매번 전체를 다
+        # 보내면 매 행동마다 전송량이 계속 불어납니다. 최근 LOG_SEND_CAP줄만 보내고
+        # log_total(누적 총 줄 수)을 같이 보내서, 클라이언트가 "새로 추가된 부분"만 골라
+        # 표시할 수 있게 합니다(battle.public_log 자체는 되돌리기/로그 복사 기능이 인덱스를
+        # 그대로 쓰므로 서버 메모리에서는 자르지 않습니다).
+        "log": pub_log[-LOG_SEND_CAP:],
+        "log_total": len(pub_log),
         "chat": room.chat_log[-200:],
+        "chat_tabs": room.chat_tabs_enabled,
+        "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
         "music": room.music,
         "telegraph_cells": room.telegraph_cells,
@@ -322,7 +388,9 @@ def build_public_state(room):
 def build_gm_state(room):
     battle = room.game.battle
     payload = build_public_state(room)
-    payload["operator_log"] = battle.operator_log if battle else []
+    op_log = battle.operator_log if battle else []
+    payload["operator_log"] = op_log[-LOG_SEND_CAP:]
+    payload["operator_log_total"] = len(op_log)
     payload["can_undo"] = battle.can_undo() if battle else False
     payload["roster_detail"] = [
         {"name": name, **room.game.db.get(name)}
@@ -442,6 +510,7 @@ def on_join(data):
         join_room(room_channel(room_id, "gm"))
     elif role == "guest":
         leave_room(room_channel(room_id, "gm"))
+    _sync_team_channel(room, request.sid, nickname, role)
 
     # 익명(조용히 관전만 하는 접속)은 입장/퇴장 알림을 남기지 않습니다 - 로그인한 이름만 표시합니다.
     # 아바타 동그라미를 눌러 로그아웃하면(이름 있음 → 익명으로 재입장) 퇴장 알림을 남깁니다.
@@ -529,6 +598,30 @@ def on_chat_message(data):
         role = "guest"
         category = "player"
 
+    # 아군 회의 : "우리 팀만" 보이는 채팅입니다. 보내는 사람(또는 GM이 as_character로 대신
+    # 보내는 경우 그 캐릭터)이 실제로 소속된 팀에만 전달합니다 - GM은 양 팀 회의 채널에
+    # 모두 들어가 있으므로(_sync_team_channel) 별도로 GM 채널에 다시 보낼 필요가 없습니다.
+    if data.get("mode") == "team":
+        battle = room.game.battle
+        speaker_name = as_character or (nickname if control["scope"] == "character" else None)
+        speaker = battle.find_character(speaker_name) if battle is not None and speaker_name else None
+        if speaker is None:
+            emit("action_error", {"message": "아군 회의는 소속 팀이 있는 캐릭터만 보낼 수 있습니다."})
+            return
+        entry = {
+            "time": time.strftime("%H:%M:%S"),
+            "nickname": nickname,
+            "role": role,
+            "category": "team",
+            "team": speaker.team,
+            "text": text[:500],
+        }
+        # 주의 : room.chat_log(공용 채팅 기록)에는 남기지 않습니다 - public_state의 "chat"
+        # 필드는 방 전체에 그대로 재전송되는 공용 스냅샷이라, 여기에 남기면 재접속/새로고침
+        # 시 상대 팀의 아군 회의 내용까지 함께 전송돼 버립니다(팀 채널로만 실시간 전달).
+        socketio.emit("chat_message", entry, room=_team_channel(info["room_id"], speaker.team))
+        return
+
     entry = {
         "time": time.strftime("%H:%M:%S"),
         "nickname": nickname,
@@ -538,6 +631,27 @@ def on_chat_message(data):
     }
     room.chat_log.append(entry)
     socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
+
+
+@socketio.on("set_chat_tabs")
+def on_set_chat_tabs(data):
+    """운영진(비밀번호 입장 GM 포함)이 참가자 화면 채팅창에 보여줄 탭과 그 이름을 고릅니다."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    values = data.get("tabs", {})
+    for key in ("player", "spectator", "entry", "team"):
+        if key in values:
+            room.chat_tabs_enabled[key] = bool(values[key])
+    labels = data.get("labels", {})
+    for key in ("player", "spectator", "entry", "team"):
+        if key in labels:
+            label = (labels[key] or "").strip()[:20]
+            if label:  # 빈 이름은 무시(기존 이름 유지) - 탭에 아무 글자도 없으면 안 되므로
+                room.chat_tab_labels[key] = label
+    save_rooms()
+    broadcast_state(room)
 
 
 @socketio.on("set_my_color")
@@ -653,8 +767,9 @@ def on_delete_character(data):
 
 def _formula_fields_payload(battle_type: str = "pvp"):
     profile_overrides = config.load_profile_overrides(battle_type)
-    return [
-        {
+    payload = []
+    for f in config.FORMULA_FIELDS:
+        entry = {
             "key": f["key"],
             "label": f["label"],
             "desc": f["desc"],
@@ -662,8 +777,14 @@ def _formula_fields_payload(battle_type: str = "pvp"):
             "category": f.get("category", "common"),
             "value": profile_overrides.get(f["key"], config.get_formula_value(f["key"])),
         }
-        for f in config.FORMULA_FIELDS
-    ]
+        if "step" in f:
+            entry["step"] = f["step"]
+        if "widget" in f:
+            entry["widget"] = f["widget"]
+        if "options" in f:
+            entry["options"] = f["options"]
+        payload.append(entry)
+    return payload
 
 
 @socketio.on("get_formulas")
@@ -805,10 +926,17 @@ def on_start_battle(data):
             formula_overrides=formula_overrides,
             site_auto_defense=site_auto_defense,
             grid_width=grid_width, grid_height=grid_height,
+            alternate_first_team=(room.battle_type == "pvp"),
         )
     except BattleError as e:
         emit("action_error", {"message": str(e)})
         return
+
+    # 전투가 방금 막 만들어져서 팀이 정해졌으므로, 이미 접속해 있던 소켓들의 아군 회의
+    # 채널 소속도 다시 계산해줍니다(전투 시작 전에는 팀이 없어서 못 넣었을 것이므로).
+    for sid, info in CONNECTIONS.items():
+        if info.get("room_id") == room.id:
+            _sync_team_channel(room, sid, info.get("nickname"), info.get("role"))
 
     # 점령전 거점 / 마스 레이드 적군(2팀) : 방어가 자동이라 역할과 무관하게 "방어 정산"/"공격"/"힐"만
     # 직접 선택합니다. 포지션이 없으므로 공격/힐 모두 치명타가 발생할 수 있습니다.
@@ -945,6 +1073,7 @@ def on_set_room_name(data):
         return
     name = (data.get("name") or "").strip()[:30]
     room.name = name or room.id
+    save_rooms()
     broadcast_state(room)
 
 
@@ -1300,6 +1429,7 @@ def on_reveal_pending_action(data):
 
 
 if __name__ == "__main__":
+    load_rooms()
     socketio.start_background_task(_round_reminder_loop)
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)

@@ -91,7 +91,8 @@ class Battle:
 
     def __init__(self, team_a: list, team_b: list, forced_first_team: str = None,
                  formula_overrides: dict = None, site_auto_defense: bool = False,
-                 grid_width: int = None, grid_height: int = None):
+                 grid_width: int = None, grid_height: int = None,
+                 alternate_first_team: bool = False):
         self.team_a = team_a
         self.team_b = team_b
         for c in team_a:
@@ -116,6 +117,11 @@ class Battle:
         # 공격할 수 있습니다(집중 공격 제한). 점령전/마스 레이드는 다인원이 거점·몹을 공격하는 게
         # 핵심 메커닉이라 이 제한을 적용하지 않습니다(site_auto_defense로 구분).
         self._attacks_on_target_this_round = {}
+
+        # PVP 전용 : 라운드마다 선후공을 서로 바꾸는 "선후공 전환제". 점령전/마스 레이드는
+        # 거점·BOSS가 항상 같은 위치(선공 또는 후공)를 지켜야 하는 규칙이 있으므로 계속
+        # False로 두고, 최초 다이스(또는 forced_first_team)로 정해진 팀을 쭉 유지합니다.
+        self.alternate_first_team = alternate_first_team
 
         if forced_first_team is not None:
             first_team = forced_first_team
@@ -1493,9 +1499,12 @@ class Battle:
 
     def _start_new_round(self):
         self.round_no += 1
-        # round_first_team은 전투 시작 시 다이스(또는 강제 규칙)로 한 번 정해지면 전투 내내
-        # 유지됩니다 - 라운드마다 선후공을 바꾸지 않습니다(점령전의 "거점은 항상 후공" 규칙도
-        # 이래야 라운드가 넘어가도 계속 지켜집니다).
+        # PVP(alternate_first_team=True)는 라운드마다 선후공을 서로 바꿉니다(선후공 전환제).
+        # 점령전/마스 레이드는 round_first_team이 전투 시작 시 한 번 정해지면 전투 내내
+        # 유지됩니다 - 거점의 "항상 후공" 같은 규칙이 라운드가 넘어가도 계속 지켜지려면
+        # 이래야 합니다.
+        if self.alternate_first_team:
+            self.round_first_team = self.enemy_team_label(self.round_first_team)
         self.current_turn_team = self.round_first_team
         self._attacks_on_target_this_round = {}
 
@@ -1672,13 +1681,15 @@ class GameManager:
 
     def start_battle(self, team_a_names: list, team_b_names: list, forced_first_team: str = None,
                       formula_overrides: dict = None, site_auto_defense: bool = False,
-                      grid_width: int = None, grid_height: int = None) -> Battle:
+                      grid_width: int = None, grid_height: int = None,
+                      alternate_first_team: bool = False) -> Battle:
         """
         선공 팀은 기본적으로 민첩 합산을 기준으로 Battle이 자동으로 결정합니다.
         forced_first_team을 지정하면(예: 점령전의 "거점은 항상 후공" 규칙) 그 팀이 무조건 선공이 됩니다.
         formula_overrides는 이 전투에 적용할 전투 유형별 수식(없으면 전역 기본값을 그대로 씁니다).
         site_auto_defense=True면 2팀은 공격을 받을 때마다 항상 자동으로 능동 방어합니다(점령전 거점 규칙).
         grid_width/grid_height를 지정하면 마스 레이드용 격자 전투가 됩니다.
+        alternate_first_team=True면(PVP 전용) 라운드마다 선후공을 서로 바꿉니다.
         """
         team_a = self.build_team(team_a_names, formula_overrides=formula_overrides)
         team_b = self.build_team(team_b_names, formula_overrides=formula_overrides)
@@ -1686,5 +1697,6 @@ class GameManager:
             team_a, team_b, forced_first_team=forced_first_team,
             formula_overrides=formula_overrides, site_auto_defense=site_auto_defense,
             grid_width=grid_width, grid_height=grid_height,
+            alternate_first_team=alternate_first_team,
         )
         return self.battle

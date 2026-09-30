@@ -2,38 +2,103 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<title>PvP 전투 관리 (프로토타입)</title>
+<title>방 목록</title>
 <style>
-  body { font-family: sans-serif; max-width: 480px; margin: 60px auto; text-align: center; background: #1e1e1e; color: #eee; }
+  body { font-family: sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; background: #1e1e1e; color: #eee; }
+  h1 { margin-bottom: 4px; }
+  .sub { color: #999; margin-top: 0; margin-bottom: 24px; }
+  .room-card {
+    display: flex; align-items: center; gap: 12px; border: 1px solid #444; border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 10px; background: #262626;
+  }
+  .room-card .info { flex: 1; text-align: left; }
+  .room-card .room-name { font-weight: bold; font-size: 16px; }
+  .room-card .room-type { color: #999; font-size: 13px; margin-top: 2px; }
+  .room-card .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .room-card .actions a, .room-card .actions button {
+    font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid #555;
+    background: #333; color: #eee; text-decoration: none; cursor: pointer;
+  }
+  .room-card .actions a:hover, .room-card .actions button:hover { background: #3a3a3a; }
+  .room-card .actions .danger { border-color: #663; color: #f88; }
+  .empty { color: #888; text-align: center; padding: 24px 0; border: 1px dashed #444; border-radius: 8px; margin-bottom: 16px; }
+
+  .new-room { border-top: 1px solid #333; margin-top: 28px; padding-top: 20px; }
   .type-option { display: block; text-align: left; border: 1px solid #444; border-radius: 6px; padding: 10px; margin: 8px 0; cursor: pointer; }
   .type-option small { display: block; opacity: 0.7; margin-top: 2px; }
+  input[type="text"] {
+    width: 100%; box-sizing: border-box; background: #111; color: #eee; border: 1px solid #444;
+    border-radius: 6px; padding: 9px 10px; font-size: 15px; margin-bottom: 10px;
+  }
 </style>
 </head>
 <body>
-  <h1>PvP 전투 관리 - 웹 프로토타입</h1>
-  <p>못생겼지만 기능은 다 됩니다. 전투 유형을 고르고 방을 만들면 운영진 화면으로 이동하고,
-     참가자 공유 링크가 그 화면에 표시됩니다.</p>
-  <form method="post" action="/create_room">
-    <label class="type-option">
-      <input type="radio" name="battle_type" value="pvp" checked>
-      <b>PVP</b> — 러너 vs 러너
-      <small>양쪽 팀 모두 참가자가 각자 캐릭터를 조작합니다.</small>
-    </label>
-    <label class="type-option">
-      <input type="radio" name="battle_type" value="siege">
-      <b>점령전</b> — GM vs 러너 5~6인
-      <small>GM이 상대편(적)을 조작하고, 러너들이 5~6인 팀으로 맞섭니다.</small>
-    </label>
-    <label class="type-option">
-      <input type="radio" name="battle_type" value="mass_raid">
-      <b>마스 레이드</b> — GM vs 러너 다인 (격자 이동)
-      <small>격자 지도 위에 몹은 중앙, 러너 최대 30인은 나머지 칸에 배치됩니다.
-      매 라운드 행동 전에 민첩에 따라 1~6칸 이동을 먼저 선언할 수 있습니다.</small>
-    </label>
-    <button type="submit" style="font-size: 18px; padding: 10px 20px; margin-top: 12px;">방 만들기</button>
-  </form>
+  <h1>방 목록</h1>
+  <p class="sub">기존 방으로 바로 들어가거나, 아래에서 새 방을 만드세요. 방은 서버를 재시작해도 계속 저장됩니다.</p>
+
+  {% if rooms %}
+    {% for room in rooms %}
+    <div class="room-card">
+      <div class="info">
+        <div class="room-name">{{ room.name }}</div>
+        <div class="room-type">{{ room.battle_type_label }}</div>
+      </div>
+      <div class="actions">
+        <a href="{{ room.gm_url }}">운영진으로 입장</a>
+        <button type="button" onclick="copyLink('{{ room.guest_url }}', this)">참가자 링크 복사</button>
+        <button type="button" class="danger" onclick="confirmDelete('{{ room.id }}', '{{ room.name }}', 'deleteForm-{{ room.id }}')">삭제</button>
+      </div>
+      <form method="post" action="/delete_room" id="deleteForm-{{ room.id }}" style="display:none;">
+        <input type="hidden" name="room_id" value="{{ room.id }}">
+        <input type="hidden" name="key" value="{{ room.gm_key }}">
+      </form>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">아직 만든 방이 없습니다. 아래에서 새 방을 만들어보세요.</div>
+  {% endif %}
+
+  <div class="new-room">
+    <h2>새 방 만들기</h2>
+    <form method="post" action="/create_room">
+      <input type="text" name="room_name" placeholder="방 이름 (비워두면 자동 생성)" maxlength="30">
+      <label class="type-option">
+        <input type="radio" name="battle_type" value="pvp" checked>
+        <b>PVP</b> — 러너 vs 러너
+        <small>양쪽 팀 모두 참가자가 각자 캐릭터를 조작합니다.</small>
+      </label>
+      <label class="type-option">
+        <input type="radio" name="battle_type" value="siege">
+        <b>점령전</b> — GM vs 러너 5~6인
+        <small>GM이 상대편(적)을 조작하고, 러너들이 5~6인 팀으로 맞섭니다.</small>
+      </label>
+      <label class="type-option">
+        <input type="radio" name="battle_type" value="mass_raid">
+        <b>마스 레이드</b> — GM vs 러너 다인 (격자 이동)
+        <small>격자 지도 위에 몹은 중앙, 러너 최대 30인은 나머지 칸에 배치됩니다.
+        매 라운드 행동 전에 민첩에 따라 1~6칸 이동을 먼저 선언할 수 있습니다.</small>
+      </label>
+      <button type="submit" style="font-size: 18px; padding: 10px 20px; margin-top: 12px;">방 만들기</button>
+    </form>
+  </div>
+
   <p style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #333;">
     <a href="/yacht" style="color: #ffd166; font-size: 16px; text-decoration: none;">🎲 요트다이스 (태블릿 돌려쓰기) 바로가기</a>
   </p>
+
+<script>
+function copyLink(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    const original = btn.textContent;
+    btn.textContent = '복사됨!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+}
+function confirmDelete(roomId, roomName, formId) {
+  if (confirm(`"${roomName}" 방을 삭제할까요? 되돌릴 수 없습니다.`)) {
+    document.getElementById(formId).submit();
+  }
+}
+</script>
 </body>
 </html>
