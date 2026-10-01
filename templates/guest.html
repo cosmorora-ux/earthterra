@@ -453,6 +453,15 @@
   .member-tabview { flex:1; min-height:0; display:none; flex-direction:column; }
   .member-tabview.active { display:flex; }
   #chatLogMountChat, #chatLogMountMeeting, #chatLogMountSpectate { display:flex; flex-direction:column; flex:1; min-height:0; }
+
+  /* 드롭다운 공통 : 기본 화살표 대신 Font Awesome caret-up 아이콘(fa-solid fa-caret-up)을 오른쪽에 둡니다. */
+  select { -webkit-appearance:none; -moz-appearance:none; appearance:none; background-color:#0c0c0d; color: var(--text); border:1px solid var(--card-border); border-radius:6px; }
+  #myPageSkillLogType { padding:5px 8px; font-size:14px; }
+  select {
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%238b8b90' d='M182.6 137.4c-12.5-12.5-32.8-12.5-45.3 0l-128 128c-9.2 9.2-11.9 22.9-6.9 34.9s16.6 19.8 29.6 19.8l256 0c12.9 0 24.6-7.8 29.6-19.8s2.2-25.7-6.9-34.9l-128-128z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important; background-position: right 12px center !important;
+    background-size: 9px auto !important; padding-right: 30px !important;
+  }
 </style>
 </head>
 <body>
@@ -529,7 +538,7 @@
     <div class="modal-title">마이페이지</div>
     <div class="mypage-portrait-wrap">
       <div class="mypage-portrait" id="myPagePortrait" data-tip="클릭해서 프로필 이미지 등록 (정사각형, 투명 배경 지원 png/webp/gif)" onclick="document.getElementById('myAvatarFileInput').click()">
-        <span class="mypage-portrait-icon" id="myPagePortraitIcon">🖼</span>
+        <span class="mypage-portrait-icon" id="myPagePortraitIcon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
       </div>
     </div>
     <input type="file" id="myAvatarFileInput" accept="image/png,image/webp,image/gif" style="display:none;" onchange="onMyAvatarFileChosen(event)">
@@ -596,7 +605,7 @@
     </div>
     <div class="mypage-sound-controls">
       <button class="btn-plain" id="myPageSoundUploadBtn" onclick="document.getElementById('mySoundFileInput').click()">업로드</button>
-      <button class="btn-plain" id="myPageSoundPreviewBtn" onclick="previewMySoundEffect()" disabled>▶ 미리듣기</button>
+      <button class="btn-plain" id="myPageSoundPreviewBtn" onclick="previewMySoundEffect()" disabled><i class="fa-solid fa-headphones"></i> 미리듣기</button>
       <input type="range" id="myPageSoundVolume" min="0" max="100" value="100" onchange="onMySoundEffectVolumeChange()" data-tip="효과음 음량 (본인에게만 들려요)">
     </div>
     <div class="hint" style="margin-top:4px;">최대 6초만 재생되고, 업로드 파일은 5MB까지 가능합니다.</div>
@@ -621,6 +630,7 @@
 <div class="breadcrumb-row">
   <div class="breadcrumb"><b>전투 화면</b> ◢ {{ battle_type_label }}</div>
   <div class="bgm-label">
+    <i class="fa-solid fa-volume-high" style="color:var(--muted);"></i>
     <span id="musicStatus">재생 없음</span>
     <input type="range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
   </div>
@@ -2935,7 +2945,7 @@ function applyVolume() {
 function updateMusicStatusText() {
   const statusEl = document.getElementById('musicStatus');
   if (!statusEl) return;
-  if (!musicState) { statusEl.textContent = '⏸ 재생 없음'; return; }
+  if (!musicState) { statusEl.textContent = '재생 없음'; return; }
   const audio = document.getElementById('mp3Player');
   let playing = false;
   if (musicState.type === 'mp3') {
@@ -2944,7 +2954,7 @@ function updateMusicStatusText() {
     playing = !!(ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1);
   }
   const title = musicState.title || (musicState.type === 'youtube' ? '유튜브' : 'mp3');
-  statusEl.textContent = playing ? `▶ ${title} 재생 중` : `⏹ 멈춤 (${title})`;
+  statusEl.textContent = playing ? `${title} 재생 중` : `멈춤 (${title})`;
 }
 setInterval(updateMusicStatusText, 1000);
 

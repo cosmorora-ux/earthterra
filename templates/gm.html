@@ -151,6 +151,15 @@
   .input-row input { flex:1; }
 
   #gridSection b { font-size:16px; }
+
+  /* 드롭다운 공통 : 기본 화살표 대신 Font Awesome caret-up 아이콘(fa-solid fa-caret-up)을 오른쪽에 둡니다. */
+  select { -webkit-appearance:none; -moz-appearance:none; appearance:none; background-color:#0c0c0d; color: var(--text); border:1px solid var(--card-border); border-radius:6px; }
+  #myPageSkillLogType { padding:5px 8px; font-size:14px; }
+  select {
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%238b8b90' d='M182.6 137.4c-12.5-12.5-32.8-12.5-45.3 0l-128 128c-9.2 9.2-11.9 22.9-6.9 34.9s16.6 19.8 29.6 19.8l256 0c12.9 0 24.6-7.8 29.6-19.8s2.2-25.7-6.9-34.9l-128-128z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important; background-position: right 12px center !important;
+    background-size: 9px auto !important; padding-right: 30px !important;
+  }
 </style>
 </head>
 <body>
