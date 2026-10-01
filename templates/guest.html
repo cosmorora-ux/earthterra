@@ -331,7 +331,7 @@
   .char-card.v2 .portrait-row { display:flex; align-items:flex-end; gap:10px; margin-top:10px; }
   .char-card.v2 .portrait {
     width:84px; height:64px; border-radius:8px; background:#0c0c0d; border:1px solid var(--card-border);
-    flex-shrink:0;
+    flex-shrink:0; background-size:cover; background-position:center;
   }
   .char-card.v2 .portrait-side { flex:1; min-width:0; }
   .char-card.v2 .hpbar-wrap { margin-top:0; }
@@ -807,7 +807,9 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
 // 캐릭터 이름으로 입장/로그아웃 (아바타 동그라미 한 번 클릭으로 둘 다 처리)
 // ------------------------------------------------------------------
 function onAvatarDotClick() {
-  if (isMatchedCharacter()) {
+  // 전투 시작 전(등록된 이름으로만 입장)이거나 전투에 없는 이름으로 입장한 경우에도
+  // 로그아웃할 수 있도록, 실제로 입장한 상태인지(explicitlyJoined)만 봅니다.
+  if (explicitlyJoined) {
     if (confirm('로그아웃 하시겠습니까?')) logout();
   } else {
     openJoinModal();
@@ -1243,7 +1245,7 @@ function renderCardHtml(c) {
     </div>
     <div class="cbadges">${badges.join('&nbsp;&nbsp;')}</div>
     <div class="portrait-row">
-      <div class="portrait" style="${c.color ? `background:${c.color};` : ''}">
+      <div class="portrait" style="${c.avatar_url ? `background-image:url('${c.avatar_url}');` : ''}">
         <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
       </div>
       <div class="portrait-side">
