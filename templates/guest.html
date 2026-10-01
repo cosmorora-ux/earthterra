@@ -6,6 +6,8 @@
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <link rel="stylesheet" as="style" crossorigin
   href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<!-- 좌측 패널 아이콘 (Font Awesome 무료 버전) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
 <style>
   :root {
     --bg: #050505;
@@ -458,12 +460,12 @@
 <div class="sidebar">
   <button class="sidebar-icon muted" disabled>🔔</button>
   <div class="sidebar-gap"></div>
-  <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()">⛶</button>
-  <button class="sidebar-icon active">🏠</button>
+  <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i></button>
+  <button class="sidebar-icon active"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" onclick="toggleUserInfoPanel()">👤</button>
-  <button class="sidebar-icon muted" disabled>🎒</button>
+  <button class="sidebar-icon muted" disabled><i class="fa-solid fa-briefcase"></i></button>
   <div class="sidebar-grow"></div>
-  <button class="sidebar-icon" onclick="openMyPage()">⚙</button>
+  <button class="sidebar-icon" onclick="openMyPage()"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon" onclick="onAvatarDotClick()">⏻</button>
 </div>
 <div class="content-area">
