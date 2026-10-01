@@ -841,19 +841,18 @@ const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "
 const ACTION_LABELS = {
   "공격": "attack", "본인방어": "self_defend", "방어": "defend",
   "회피": "dodge", "힐": "heal", "회복": "heal", "시간초과": "timeout", "도주": "flee",
-  "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
+  "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap", "수호": "guard",
   "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
   "환류": "reflux", "복원": "restore", "후공": "declare_defer",
 };
 function resolveActionType(label, actorRole) {
-  if (label === '방어' && actorRole === '메딕') return 'self_defend';
   return ACTION_LABELS[label];
 }
-const NEEDS_TARGET = new Set(["attack", "defend", "heal", "command", "swap", "collapse", "shield", "restore"]);
+const NEEDS_TARGET = new Set(["attack", "defend", "guard", "heal", "command", "swap", "collapse", "shield", "restore"]);
 const MULTI_TARGET_ACTIONS = { "환류": 3 };
-const ALLY_TARGET_ACTIONS = new Set(["방어", "힐", "회복", "지휘", "배치", "차폐", "복원"]);
-const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴"]);
-const SELF_ONLY_ACTIONS = new Set(["본인방어", "방어", "회피", "도주", "방어 정산", "방출", "편광"]);
+const ALLY_TARGET_ACTIONS = new Set(["방어", "수호", "힐", "회복", "배치", "차폐", "복원"]);
+const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴", "지휘"]);
+const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산", "방출", "편광"]);
 const RANGE_IGNORING_ACTIONS = new Set(["배치"]);
 const ROLE_MOVE_COLOR = { "스트라이커": "#ff5555", "가디언": "#4a90ff", "메딕": "#ffe066" };
 const ROLE_MOVE_EMOJI = { "스트라이커": "🔴", "가디언": "🔵", "메딕": "🟡" };
@@ -1332,6 +1331,8 @@ function renderCompactCardHtml(c) {
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
+  if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
+  if (c.commanded_by) badges.push(`🎯 지휘: ${c.commanded_by} 공격 강제`);
   return `<div class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
@@ -1390,6 +1391,8 @@ function renderCardHtml(c) {
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
+  if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
+  if (c.commanded_by) badges.push(`🎯 지휘: ${c.commanded_by} 공격 강제`);
 
   return `<div class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">
@@ -1472,11 +1475,10 @@ function actionLabelsForTarget(actor, target) {
   const isEnemy = actor.teamLabel !== target.teamLabel;
   // 메딕의 "방어"(본인방어를 대신하는 표시명)는 자기 자신에게만 쓸 수 있어서, 가디언의 아군 대상
   // "방어"(능동 방어 부여)와 달리 아군(비본인) 대상 목록에서는 빼야 합니다.
-  const allyTargetLabels = actor.role === '메딕'
-    ? new Set([...ALLY_TARGET_ACTIONS].filter(l => l !== '방어'))
-    : ALLY_TARGET_ACTIONS;
+  // '방어'는 본인 지정 = 직접 방어, 아군 지정 = 대리 방어. '수호'는 본인을 뺀 아군에게만 쓸 수 있습니다.
+  const allyTargetLabels = ALLY_TARGET_ACTIONS;
   const allowedLabels = isEnemy ? ENEMY_TARGET_ACTIONS
-    : isSelf ? new Set([...allyTargetLabels, ...SELF_ONLY_ACTIONS])
+    : isSelf ? new Set([...allyTargetLabels, ...SELF_ONLY_ACTIONS].filter(l => l !== '수호'))
     : allyTargetLabels;
   return actor.available_actions.filter(l => l !== '이동' && l !== '시간초과' && allowedLabels.has(l) && !MULTI_TARGET_ACTIONS[l]);
 }
@@ -1485,6 +1487,7 @@ function actionLabelsForTarget(actor, target) {
 function targetsForAction(actor, label) {
   if (ENEMY_TARGET_ACTIONS.has(label)) return lastAllForCards.filter(c => c.teamLabel !== actor.teamLabel);
   if (SELF_ONLY_ACTIONS.has(label)) return [actor];
+  if (label === '수호') return lastAllForCards.filter(c => c.teamLabel === actor.teamLabel && c.name !== actor.name);
   if (ALLY_TARGET_ACTIONS.has(label)) return lastAllForCards.filter(c => c.teamLabel === actor.teamLabel);
   return [actor];
 }
@@ -1586,6 +1589,7 @@ function commitAction(label, actorName, targetName) {
     attack: () => ({ attacker: actorName, target: targetName }),
     self_defend: () => ({ name: actorName }),
     defend: () => ({ tanker: actorName, target: targetName || actorName }),
+    guard: () => ({ tanker: actorName, target: targetName }),
     dodge: () => ({ name: actorName }),
     heal: () => ({ healer: actorName, target: targetName }),
     timeout: () => ({ name: actorName }),
@@ -1870,11 +1874,10 @@ function renderGridActionPopup(battle, all) {
 
   const isSelf = actor.name === target.name;
   const isEnemy = actor.teamLabel !== target.teamLabel;
-  const allyTargetLabels = actor.role === '메딕'
-    ? new Set([...ALLY_TARGET_ACTIONS].filter(l => l !== '방어'))
-    : ALLY_TARGET_ACTIONS;
+  // '방어'는 본인 지정 = 직접 방어, 아군 지정 = 대리 방어. '수호'는 본인을 뺀 아군에게만 쓸 수 있습니다.
+  const allyTargetLabels = ALLY_TARGET_ACTIONS;
   const allowedLabels = isEnemy ? ENEMY_TARGET_ACTIONS
-    : isSelf ? new Set([...allyTargetLabels, ...SELF_ONLY_ACTIONS])
+    : isSelf ? new Set([...allyTargetLabels, ...SELF_ONLY_ACTIONS].filter(l => l !== '수호'))
     : allyTargetLabels;
 
   const buttons = actor.available_actions.filter(label => allowedLabels.has(label)).map(label => {
@@ -2542,7 +2545,7 @@ function refreshGmActTargetOptions() {
   if (ENEMY_TARGET_ACTIONS.has(label)) {
     pool = lastAllForCards.filter(c => c.teamLabel !== actor.teamLabel);
   } else if (ALLY_TARGET_ACTIONS.has(label) || multiCount) {
-    pool = lastAllForCards.filter(c => c.teamLabel === actor.teamLabel);
+    pool = lastAllForCards.filter(c => c.teamLabel === actor.teamLabel && (label !== '수호' || c.name !== actor.name));
   } else {
     pool = [actor];
   }
@@ -2575,6 +2578,7 @@ function submitGmAct() {
     attack: { attacker: actor, target },
     self_defend: { name: actor },
     defend: { tanker: actor, target: target || actor },
+    guard: { tanker: actor, target },
     dodge: { name: actor },
     heal: { healer: actor, target },
     timeout: { name: actor },
@@ -2637,6 +2641,7 @@ function quickAction(type, actorName, targetName) {
     attack: () => ({ attacker: actorName, target: targetName }),
     self_defend: () => ({ name: actorName }),
     defend: () => ({ tanker: actorName, target: targetName || actorName }),
+    guard: () => ({ tanker: actorName, target: targetName }),
     dodge: () => ({ name: actorName }),
     heal: () => ({ healer: actorName, target: targetName }),
     timeout: () => ({ name: actorName }),

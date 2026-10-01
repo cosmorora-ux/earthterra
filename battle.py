@@ -30,7 +30,7 @@ import copy
 from models import (
     Character, AttackSkill, SelfDefendSkill, DefendSkill, TauntSkill,
     DodgeSkill, HealSkill, TimeoutSkill, FleeSkill, DefenseSettleSkill,
-    CommandSkill, SwapSkill,
+    CommandSkill, SwapSkill, ProxyDefendSkill, GuardSkill,
     CollapseSkill, EmissionSkill, ShieldSkill, PolarizeSkill, RefluxSkill, RestoreSkill,
 )
 from database import CharacterDatabase
@@ -170,6 +170,8 @@ class Battle:
         self.flee_skill = FleeSkill()
         self.defense_settle_skill = DefenseSettleSkill()
         self.command_skill = CommandSkill()
+        self.proxy_defend_skill = ProxyDefendSkill()
+        self.guard_skill = GuardSkill()
         self.swap_skill = SwapSkill()
         self.collapse_skill = CollapseSkill()
         self.emission_skill = EmissionSkill()
@@ -336,6 +338,8 @@ class Battle:
                 "has_acted": c.has_acted,
                 "defended_this_round": c.defended_this_round,
                 "defense_grants": [g.name for g in c.defense_grants],
+                "interceptors": [g.name for g in c.interceptors],
+                "commanded_by": c.commanded_by,
                 "protecting_ally": c.protecting_ally,
                 "dodging_this_round": c.dodging_this_round,
                 "pending_attacks": copy.deepcopy(c.pending_attacks),
@@ -428,9 +432,12 @@ class Battle:
             c.polarize_ally_count = cs["polarize_ally_count"]
             c.leech_buff_expires_round = cs["leech_buff_expires_round"]
             c.deferred_this_round = cs["deferred_this_round"]
+            c.commanded_by = cs.get("commanded_by")
         for c in self.team_a + self.team_b:
             grant_names = snap["chars"][c.name]["defense_grants"]
             c.defense_grants = [self.find_character(n) for n in grant_names if self.find_character(n)]
+            intercept_names = snap["chars"][c.name].get("interceptors", [])
+            c.interceptors = [self.find_character(n) for n in intercept_names if self.find_character(n)]
 
         del self.operator_log[snap["op_len"]:]
         del self.public_log[snap["pub_len"]:]
@@ -508,6 +515,49 @@ class Battle:
         elif target.status == Character.STATUS_DEAD:
             self._log(f"{target.name} 사망", tag="system")
 
+    def _resolve_hit(self, atk: dict, target: Character, def_mult: float = 1.0):
+        """
+        공격 1회를 실제로 정산합니다(즉시 정산/보류 정산 공용). 대상에게 '대리 방어'가 걸려 있으면
+        그 아군이 대신 맞습니다 - 대리 방어자의 능동 방어로 막고, 남은 피해도 대리 방어자가 받습니다.
+        대리 방어는 먼저 걸린 순서대로 공격 1회당 하나씩 소모됩니다.
+        """
+        hit_target = target
+        while target.interceptors:
+            defender = target.interceptors.pop(0)
+            if defender.is_alive and defender.status != Character.STATUS_FLEEING:
+                self._log(f"🛡 대리 방어 : {defender.name}이(가) {target.name} 대신 공격을 받습니다.", tag="system")
+                defender.defense_grants.insert(0, defender)
+                hit_target = defender
+                def_mult = defender.polarize_ally_count if defender.polarize_active else 1.0
+                break
+        result = AttackSkill.resolve(
+            atk, hit_target,
+            overrides=self.formula_overrides, auto_defense=self._auto_defense_for(hit_target),
+            defense_stat_mult=def_mult,
+        )
+        self._log_attack_resolution(hit_target, result)
+        return result
+
+    def _check_command_lock(self, actor: Character, attack_target: Character = None):
+        """지휘(적 가디언의 유도)에 걸린 캐릭터는 다음 행동 1회를 그 가디언 공격에만 쓸 수 있습니다."""
+        if not actor.commanded_by:
+            return
+        guardian = self.find_character(actor.commanded_by)
+        if guardian is None or not guardian.is_alive:
+            actor.commanded_by = None  # 유도한 가디언이 쓰러지면 효과도 사라집니다.
+            return
+        if attack_target is guardian:
+            return
+        raise BattleError(
+            f"지휘 효과 적용 중 : {actor.name}의 이번 행동은 반드시 {guardian.name}을(를) 공격해야 합니다."
+        )
+
+    def _consume_command(self, actor: Character, hit_names):
+        """지휘에 걸린 캐릭터가 그 가디언을 공격했으면 유도 효과를 해제합니다."""
+        if actor.commanded_by and actor.commanded_by in hit_names:
+            self._log(f"지휘 효과 해제 ({actor.name} → {actor.commanded_by} 공격 완료)", tag="system")
+            actor.commanded_by = None
+
     def _auto_defense_for(self, target: Character) -> bool:
         """점령전 거점(2팀) 대상이면 방어 선언 여부와 무관하게 항상 능동 방어가 자동 발생합니다."""
         return self.site_auto_defense and target.team == "B"
@@ -563,12 +613,7 @@ class Battle:
         actor.pending_attacks = []
         for entry in pending:
             self._log(f"[피해 정산] {entry['attacker_name']} → {actor.name}", tag="action")
-            result = AttackSkill.resolve(
-                entry["atk"], actor,
-                overrides=self.formula_overrides, auto_defense=self._auto_defense_for(actor),
-                defense_stat_mult=entry.get("defense_stat_mult", 1.0),
-            )
-            self._log_attack_resolution(actor, result)
+            self._resolve_hit(entry["atk"], actor, entry.get("defense_stat_mult", 1.0))
 
     # ------------------------------------------------------------------
     # 행동 : 방어 정산 (점령전 거점 전용) - 보류된 공격만 정산하고, 이어서 공격/힐을 할 수 있습니다.
@@ -645,6 +690,7 @@ class Battle:
         if actor is None or target is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(actor)
+        self._check_command_lock(actor)
 
         ok, reason = self.swap_skill.can_use(actor)
         if not ok:
@@ -691,6 +737,7 @@ class Battle:
             raise BattleError("대상이 존재하지 않습니다.")
         if target.team == attacker.team:
             raise BattleError("아군은 공격할 수 없습니다.")
+        self._check_command_lock(attacker, attack_target=target)
 
         attacker_team_label = self.team_label_of(attacker)
         forced = self._forced_for(attacker_team_label)
@@ -749,12 +796,7 @@ class Battle:
 
         if resolved_target.has_acted:
             # 대상이 이미 이번 라운드 행동을 마쳤다면 더 기다릴 필요가 없으므로 즉시 정산합니다.
-            result = AttackSkill.resolve(
-                atk, resolved_target,
-                overrides=self.formula_overrides, auto_defense=self._auto_defense_for(resolved_target),
-                defense_stat_mult=def_mult,
-            )
-            self._log_attack_resolution(resolved_target, result)
+            self._resolve_hit(atk, resolved_target, def_mult)
         else:
             # 대상이 아직 이번 라운드 행동 전이라면 피해를 보류하고, 대상의 턴에 정산합니다.
             resolved_target.pending_attacks.append({
@@ -762,6 +804,7 @@ class Battle:
             })
 
         self._maybe_trigger_leech(attacker)
+        self._consume_command(attacker, {target.name})
 
         if forced is not None:
             self._consume_forced_target(
@@ -832,6 +875,7 @@ class Battle:
             raise BattleError("대상이 존재하지 않습니다.")
         if target.team == attacker.team:
             raise BattleError("아군은 공격할 수 없습니다.")
+        self._check_command_lock(attacker, attack_target=target)
 
         attacker_team_label = self.team_label_of(attacker)
         forced = self._forced_for(attacker_team_label)
@@ -872,17 +916,14 @@ class Battle:
             else:
                 self._log(f"[붕괴 {i}/2] 공격 수치 {atk['total']}{note}", tag="damage")
             if resolved_target.has_acted:
-                result = AttackSkill.resolve(
-                    atk, resolved_target, overrides=self.formula_overrides,
-                    auto_defense=self._auto_defense_for(resolved_target), defense_stat_mult=def_mult,
-                )
-                self._log_attack_resolution(resolved_target, result)
+                self._resolve_hit(atk, resolved_target, def_mult)
             else:
                 resolved_target.pending_attacks.append({
                     "attacker_name": attacker.name, "atk": atk, "defense_stat_mult": def_mult,
                 })
 
         self._maybe_trigger_leech(attacker)
+        self._consume_command(attacker, {target.name})
 
         if forced is not None:
             self._consume_forced_target(
@@ -909,6 +950,10 @@ class Battle:
         if not enemies:
             raise BattleError("공격할 적이 없습니다.")
 
+        if attacker.commanded_by:
+            # 광역 공격이라 지휘한 가디언도 함께 맞으므로 유도된 공격으로 인정합니다.
+            commander = self.find_character(attacker.commanded_by)
+            self._check_command_lock(attacker, attack_target=commander if commander in enemies else None)
         attacker_team_label = self.team_label_of(attacker)
         # 방출은 광역 공격이라 강제 대상도 어차피 맞으므로, 대상 지정 자체는 막지 않습니다.
         forced = self._forced_for(attacker_team_label)
@@ -938,17 +983,14 @@ class Battle:
                 else:
                     self._log(f"[방출 → {enemy.name} {i}/2] 공격 수치 {atk['total']}", tag="damage")
                 if resolved_target.has_acted:
-                    result = AttackSkill.resolve(
-                        atk, resolved_target, overrides=self.formula_overrides,
-                        auto_defense=self._auto_defense_for(resolved_target), defense_stat_mult=def_mult,
-                    )
-                    self._log_attack_resolution(resolved_target, result)
+                    self._resolve_hit(atk, resolved_target, def_mult)
                 else:
                     resolved_target.pending_attacks.append({
                         "attacker_name": attacker.name, "atk": atk, "defense_stat_mult": def_mult,
                     })
 
         self._maybe_trigger_leech(attacker)
+        self._consume_command(attacker, {e.name for e in enemies})
 
         if forced is not None:
             self._consume_forced_target(
@@ -966,6 +1008,7 @@ class Battle:
         if actor is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(actor)
+        self._check_command_lock(actor)
 
         ok, reason = self.self_defend_skill.can_use(actor)
         if not ok:
@@ -989,6 +1032,7 @@ class Battle:
         if tanker is None or target is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(tanker)
+        self._check_command_lock(tanker)
 
         ok, reason = self.defend_skill.can_use(tanker)
         if not ok:
@@ -1017,6 +1061,7 @@ class Battle:
         if tanker is None or target is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(tanker)
+        self._check_command_lock(tanker)
 
         ok, reason = self.taunt_skill.can_use(tanker)
         if not ok:
@@ -1053,31 +1098,90 @@ class Battle:
         if guardian is None or target is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(guardian)
+        self._check_command_lock(guardian)
 
         ok, reason = self.command_skill.can_use(guardian)
         if not ok:
             raise BattleError(reason)
         if not target.is_alive:
             raise BattleError("대상이 존재하지 않습니다.")
-        if target.team != guardian.team:
-            raise BattleError("지휘 대상은 같은 팀의 캐릭터여야 합니다.")
+        if target.team == guardian.team:
+            raise BattleError("지휘 대상은 적군이어야 합니다.")
 
         self._push_history()
         self.command_skill.execute(guardian, target)
         self._resolve_pending_attacks(guardian)
         guardian.has_acted = True
 
-        enemy_label = self.enemy_team_label(self.team_label_of(guardian))
-        count = self._register_forced_target(guardian, target, enemy_label)
-
-        if target is guardian:
-            self._log(f"{guardian.name} 지휘 (본인) - 능동 방어도 함께 부여됩니다", tag="taunt")
-        else:
-            self._log(f"{guardian.name} 지휘 → {target.name} (능동 방어도 함께 부여됩니다)", tag="taunt")
+        self._log(f"{guardian.name} 지휘 → {target.name}", tag="taunt")
         self._log(
-            f"→ {enemy_label}의 다음 공격 {count}회가 {target.name}을(를) 대상으로 강제됩니다.",
+            f"→ {target.name}의 다음 행동 1회는 {guardian.name} 공격으로 강제됩니다.",
             tag="system",
         )
+        self._maybe_trigger_leech(guardian)
+        self._check_finish()
+
+    # ------------------------------------------------------------------
+    # 행동 : 방어 (모든 직군) - 본인 지정 시 직접 방어, 아군 지정 시 대리 방어.
+    # ------------------------------------------------------------------
+    def perform_proxy_defend(self, name: str, target_name: str = None):
+        actor = self.find_character(name)
+        target = self.find_character(target_name) if target_name else actor
+        if actor is None or target is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(actor)
+        self._check_command_lock(actor)
+
+        ok, reason = self.proxy_defend_skill.can_use(actor)
+        if not ok:
+            raise BattleError(reason)
+        if not target.is_alive:
+            raise BattleError("대상이 존재하지 않습니다.")
+        if target.team != actor.team:
+            raise BattleError("방어 대상은 본인 또는 아군이어야 합니다.")
+
+        self._push_history()
+        self.proxy_defend_skill.execute(actor, target)
+        self._resolve_pending_attacks(actor)
+        actor.has_acted = True
+
+        if target is actor:
+            self._log(f"{actor.name} 방어 (직접 방어)", tag="defend")
+        else:
+            self._log(f"{actor.name} 대리 방어 → {target.name}", tag="defend")
+            self._log(
+                f"→ {target.name}이(가) 공격받으면 {actor.name}이(가) 대신 받습니다 (남은 피해도 {actor.name}에게).",
+                tag="system",
+            )
+        self._maybe_trigger_leech(actor)
+        self._check_finish()
+
+    # ------------------------------------------------------------------
+    # 행동 : 수호 (가디언 전용) - 지정 아군 1인에게 단순 방어 부여(남은 피해는 대상 본인에게).
+    # ------------------------------------------------------------------
+    def perform_guard(self, name: str, target_name: str):
+        actor = self.find_character(name)
+        target = self.find_character(target_name)
+        if actor is None or target is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(actor)
+        self._check_command_lock(actor)
+
+        ok, reason = self.guard_skill.can_use(actor)
+        if not ok:
+            raise BattleError(reason)
+        if not target.is_alive:
+            raise BattleError("대상이 존재하지 않습니다.")
+        if target.team != actor.team or target is actor:
+            raise BattleError("수호 대상은 본인을 제외한 아군이어야 합니다.")
+
+        self._push_history()
+        self.guard_skill.execute(actor, target)
+        self._resolve_pending_attacks(actor)
+        actor.has_acted = True
+
+        self._log(f"{actor.name} 수호 → {target.name} (방어 부여)", tag="defend")
+        self._maybe_trigger_leech(actor)
         self._check_finish()
 
     # ------------------------------------------------------------------
@@ -1089,6 +1193,7 @@ class Battle:
         if actor is None or target is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(actor)
+        self._check_command_lock(actor)
 
         ok, reason = self.shield_skill.can_use(actor)
         if not ok:
@@ -1119,6 +1224,7 @@ class Battle:
         if actor is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(actor)
+        self._check_command_lock(actor)
 
         ok, reason = self.polarize_skill.can_use(actor)
         if not ok:
@@ -1149,6 +1255,7 @@ class Battle:
         if actor is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(actor)
+        self._check_command_lock(actor)
 
         ok, reason = self.dodge_skill.can_use(actor)
         if not ok:
@@ -1172,6 +1279,7 @@ class Battle:
         if healer is None or target is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(healer, allow_free_turn=True)
+        self._check_command_lock(healer)
 
         ok, reason = self.heal_skill.can_use(healer)
         if not ok:
@@ -1228,6 +1336,7 @@ class Battle:
         if actor is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(actor, allow_free_turn=True)
+        self._check_command_lock(actor)
 
         ok, reason = self.reflux_skill.can_use(actor)
         if not ok:
@@ -1295,6 +1404,7 @@ class Battle:
         if actor is None:
             raise BattleError("대상이 존재하지 않습니다.")
         self._check_actor_turn(actor, allow_free_turn=True)
+        self._check_command_lock(actor)
 
         ok, reason = self.restore_skill.can_use(actor)
         if not ok:
@@ -1346,6 +1456,7 @@ class Battle:
         self.timeout_skill.execute(actor)
         self._resolve_pending_attacks(actor)
         actor.has_acted = True
+        actor.commanded_by = None  # 지휘로 강제된 행동 기회도 시간 초과로 사라집니다.
         self._log(f"{actor.name} 시간 초과", tag="wait")
         self._check_finish()
 

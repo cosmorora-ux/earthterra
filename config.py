@@ -115,6 +115,11 @@ ACTION_DEFENSE_SETTLE = "방어 정산"  # 점령전 거점 전용 - 보류된 �
 ACTION_MOVE = "이동"  # 마스 레이드(격자) 전용 - 이번 라운드 행동 전에 먼저 선언합니다. has_acted를 소모하지 않습니다.
 ACTION_COMMAND = "지휘"  # 가디언 전용(마스 레이드) - 공격유도와 같은 어그로 강제이지만, 방어 부여 효과는 없습니다.
 ACTION_SWAP = "배치"  # 메딕 전용(마스 레이드) - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 사정거리 제한 없음.
+# 수호 (가디언 전용) - 지정 아군 1인에게 단순 방어를 부여합니다. 남은 피해는 피격 대상 본인이 받습니다.
+ACTION_GUARD = "수호"
+# 방어 (모든 직군) - 대상이 본인이면 '직접 방어', 아군이면 '대리 방어'(피격 대상을 대신해 맞고,
+# 남은 피해도 대리 방어자가 받습니다). 가디언의 '지휘'(ACTION_COMMAND)는 지정 적군 1인이 자신을
+# 공격하도록 유도(그 적군의 다음 행동 1회를 강제)합니다.
 
 # 메딕 전용 표시명 - 스트라이커의 "본인방어"/"힐"과 동일한 행동이지만 메딕 화면에는 이 이름으로
 # 보여줍니다. "방어"는 가디언의 능동 방어 부여 행동(ACTION_DEFEND)과 글자는 같지만 서로 다른
@@ -123,16 +128,16 @@ ACTION_SELF_DEFEND_MEDIC = "방어"
 ACTION_HEAL_MEDIC = "회복"
 
 ROLE_ACTIONS = {
-    ROLE_TANKER: [ACTION_ATTACK, ACTION_DEFEND, ACTION_TAUNT],
-    ROLE_DEALER: [ACTION_ATTACK, ACTION_SELF_DEFEND, ACTION_DODGE],
-    ROLE_HEALER: [ACTION_ATTACK, ACTION_SELF_DEFEND, ACTION_HEAL],
+    ROLE_TANKER: [ACTION_ATTACK, ACTION_GUARD, ACTION_DEFEND, ACTION_COMMAND],
+    ROLE_DEALER: [ACTION_ATTACK, ACTION_DEFEND, ACTION_DODGE],
+    ROLE_HEALER: [ACTION_ATTACK, ACTION_DEFEND, ACTION_HEAL],
 }
 # 마스 레이드에서만 위 ROLE_ACTIONS 대신 적용되는 역할별 행동 목록 (webapp.py가
 # forced_actions로 덮어씁니다 - 여기 없는 COMMON_ACTIONS(시간초과/도주)는 webapp.py에서 함께 붙여줍니다).
 MASS_RAID_ROLE_ACTIONS = {
-    ROLE_TANKER: [ACTION_DEFEND, ACTION_COMMAND],
-    ROLE_DEALER: [ACTION_ATTACK, ACTION_DODGE],
-    ROLE_HEALER: [ACTION_HEAL, ACTION_SWAP],
+    ROLE_TANKER: [ACTION_ATTACK, ACTION_GUARD, ACTION_DEFEND, ACTION_COMMAND, ACTION_DODGE],
+    ROLE_DEALER: [ACTION_ATTACK, ACTION_DEFEND, ACTION_DODGE],
+    ROLE_HEALER: [ACTION_DEFEND, ACTION_HEAL, ACTION_SWAP],
 }
 COMMON_ACTIONS = [ACTION_TIMEOUT, ACTION_FLEE]  # 모든 역할이 사용 가능
 

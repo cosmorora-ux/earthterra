@@ -347,6 +347,8 @@ def build_character_public(c):
         "boss_group": c.boss_group,
         "boss_section": c.boss_section,
         "deferred_this_round": c.deferred_this_round,
+        "interceptors": [d.name for d in c.interceptors],  # 이 캐릭터를 대리 방어 중인 아군
+        "commanded_by": c.commanded_by,  # 지휘로 이 캐릭터의 다음 행동을 강제한 적 가디언
         "raid_display_name": c.raid_display_name,
         "inventory": c.inventory,
         "skill_log_type": c.skill_log_type,
@@ -592,6 +594,7 @@ ACTOR_FIELD = {
     "attack": "attacker",
     "self_defend": "name",
     "defend": "tanker",
+    "guard": "tanker",
     "taunt": "tanker",
     "dodge": "name",
     "heal": "healer",
@@ -1287,7 +1290,9 @@ def on_start_battle(data):
     if room.battle_type != "mass_raid":
         for c in room.game.battle.team_a + room.game.battle.team_b:
             if c.role == config.ROLE_TANKER:
-                c.forced_actions = [config.ACTION_ATTACK, config.ACTION_DEFEND, config.ACTION_COMMAND] + config.COMMON_ACTIONS
+                c.forced_actions = [
+                    config.ACTION_ATTACK, config.ACTION_GUARD, config.ACTION_DEFEND, config.ACTION_COMMAND,
+                ] + config.COMMON_ACTIONS
 
     # 격자 전투(마스 레이드/점령전) : 중앙에 몹(거점)을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
     if is_grid_battle:
@@ -1437,7 +1442,10 @@ def on_stop_music(data):
 ACTION_HANDLERS = {
     "attack": lambda battle, p: battle.perform_attack(p["attacker"], p["target"]),
     "self_defend": lambda battle, p: battle.perform_self_defend(p["name"]),
-    "defend": lambda battle, p: battle.perform_defend(p["tanker"], p["target"]),
+    # 방어 : 본인 지정이면 직접 방어, 아군 지정이면 대리 방어 (모든 직군)
+    "defend": lambda battle, p: battle.perform_proxy_defend(p["tanker"], p.get("target") or p["tanker"]),
+    # 수호 : 가디언 전용, 지정 아군 1인에게 단순 방어 부여
+    "guard": lambda battle, p: battle.perform_guard(p["tanker"], p["target"]),
     "taunt": lambda battle, p: battle.perform_taunt(p["tanker"], p["target"]),
     "dodge": lambda battle, p: battle.perform_dodge(p["name"]),
     "heal": lambda battle, p: battle.perform_heal(p["healer"], p["target"]),

@@ -460,12 +460,11 @@ const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "
 const ACTION_LABELS = {
   "공격": "attack", "본인방어": "self_defend", "방어": "defend",
   "회피": "dodge", "힐": "heal", "회복": "heal", "시간초과": "timeout", "도주": "flee",
-  "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap",
+  "방어 정산": "defense_settle", "이동": "move", "지휘": "command", "배치": "swap", "수호": "guard",
   "붕괴": "collapse", "방출": "emission", "차폐": "shield", "편광": "polarize",
   "환류": "reflux", "복원": "restore", "후공": "declare_defer",
 };
 function resolveActionType(label, actorRole) {
-  if (label === '방어' && actorRole === '메딕') return 'self_defend';
   return ACTION_LABELS[label];
 }
 function canDeclareDefer(battle, actor) {
@@ -475,7 +474,7 @@ function canDeclareDefer(battle, actor) {
   return battle.current_turn_team === myTeamKr && battle.current_turn_team === battle.round_first_team;
 }
 const TYPE_TO_LABEL = Object.fromEntries(Object.entries(ACTION_LABELS).map(([label, type]) => [type, label]));
-const NEEDS_TARGET = new Set(["attack", "defend", "heal", "command", "swap", "collapse", "shield", "restore"]);
+const NEEDS_TARGET = new Set(["attack", "defend", "guard", "heal", "command", "swap", "collapse", "shield", "restore"]);
 // 역할별 마스 레이드 스킬 2종 (캐릭터 등록/수정 화면의 스킬 드롭다운용)
 const SKILL_OPTIONS = { "가디언": ["차폐", "편광"], "스트라이커": ["붕괴", "방출"], "메딕": ["환류", "복원"] };
 
@@ -913,7 +912,7 @@ function refreshActTargetOptions() {
   if (ENEMY_TARGET_ACTIONS.has(label)) {
     pool = lastAllForCards.filter(c => c.teamLabel !== actor.teamLabel);
   } else if (ALLY_TARGET_ACTIONS.has(label) || multiCount) {
-    pool = lastAllForCards.filter(c => c.teamLabel === actor.teamLabel);
+    pool = lastAllForCards.filter(c => c.teamLabel === actor.teamLabel && (label !== '수호' || c.name !== actor.name));
   } else {
     pool = [actor];  // 본인방어/회피/도주/시간초과/방어 정산/방출/편광 등 대상이 필요 없는 행동
   }
@@ -969,6 +968,8 @@ function renderCardHtml(c) {
   if (c.polarize_active) badges.push('🛡 편광중');
   if (c.has_leech_buff) badges.push('🩸 흡수버프');
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
+  if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
+  if (c.commanded_by) badges.push(`🎯 지휘: ${c.commanded_by} 공격 강제`);
 
   return `<div class="char-card team-${c.teamLabel} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" style="${gridBorder}" onclick="toggleCard('${c.name}')">
     <div class="row1">
@@ -993,9 +994,9 @@ function renderCardHtml(c) {
 let selectedGridChar = null;  // 지도에서 선택된 "행동하는" 캐릭터 (범위 미리보기 대상)
 let selectedGridTargetName = null;  // 범위 내에서 클릭해 지정한 대상 (본인 포함)
 const GRID_CELL_PX = 36;
-const ALLY_TARGET_ACTIONS = new Set(["방어", "힐", "회복", "지휘", "배치", "차폐", "복원"]);
-const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴"]);
-const SELF_ONLY_ACTIONS = new Set(["본인방어", "방어", "회피", "도주", "방어 정산", "방출", "편광"]);
+const ALLY_TARGET_ACTIONS = new Set(["방어", "수호", "힐", "회복", "배치", "차폐", "복원"]);
+const ENEMY_TARGET_ACTIONS = new Set(["공격", "붕괴", "지휘"]);
+const SELF_ONLY_ACTIONS = new Set(["본인방어", "회피", "도주", "방어 정산", "방출", "편광"]);
 const RANGE_IGNORING_ACTIONS = new Set(["배치"]);  // 사정거리 제한 없이 아무 아군이나 대상 지정 가능
 const MULTI_TARGET_ACTIONS = { "환류": 3 };  // 지정 인원 수가 고정된 스킬 (행동 실행 패널 전용 UI)
 const ROLE_MOVE_COLOR = {
@@ -1282,11 +1283,10 @@ function renderGridActionPopup(battle, all) {
 
   const isSelf = actor.name === target.name;
   const isEnemy = actor.teamLabel !== target.teamLabel;
-  const allyTargetLabels = actor.role === '메딕'
-    ? new Set([...ALLY_TARGET_ACTIONS].filter(l => l !== '방어'))
-    : ALLY_TARGET_ACTIONS;
+  // '방어'는 본인 지정 = 직접 방어, 아군 지정 = 대리 방어. '수호'는 본인을 뺀 아군에게만 쓸 수 있습니다.
+  const allyTargetLabels = ALLY_TARGET_ACTIONS;
   const allowedLabels = isEnemy ? ENEMY_TARGET_ACTIONS
-    : isSelf ? new Set([...allyTargetLabels, ...SELF_ONLY_ACTIONS])
+    : isSelf ? new Set([...allyTargetLabels, ...SELF_ONLY_ACTIONS].filter(l => l !== '수호'))
     : allyTargetLabels;
 
   const buttons = actor.available_actions.filter(label => allowedLabels.has(label)).map(label => {
@@ -1591,6 +1591,7 @@ function quickAction(type, actorName, targetName) {
     attack: () => ({ attacker: actorName, target: targetName }),
     self_defend: () => ({ name: actorName }),
     defend: () => ({ tanker: actorName, target: targetName || actorName }),
+    guard: () => ({ tanker: actorName, target: targetName }),
     dodge: () => ({ name: actorName }),
     heal: () => ({ healer: actorName, target: targetName }),
     timeout: () => ({ name: actorName }),
@@ -1625,6 +1626,7 @@ function submitAction() {
     attack: { attacker: actor, target },
     self_defend: { name: actor },
     defend: { tanker: actor, target: target || actor },
+    guard: { tanker: actor, target },
     dodge: { name: actor },
     heal: { healer: actor, target },
     timeout: { name: actor },

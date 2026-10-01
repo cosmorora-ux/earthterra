@@ -48,6 +48,11 @@ class Character:
         # 이번 라운드에 이 캐릭터에게 부여된 능동 방어 목록(부여자 Character, 부여된 순서).
         # 공격을 받을 때마다 맨 앞(먼저 걸린 것)부터 하나씩 소모됩니다. (요청 13)
         self.defense_grants = []
+        # 대리 방어 - 이 캐릭터가 공격받으면 대신 맞아줄 아군 목록(먼저 걸린 순서대로 1회씩 소모).
+        self.interceptors = []
+        # 지휘 - 적 가디언이 이 캐릭터에게 '자신을 공격하라'고 유도한 경우 그 가디언 이름.
+        # 이 값이 있으면 다음 행동 1회는 반드시 그 가디언을 공격해야 합니다(라운드가 바뀌어도 유지).
+        self.commanded_by = None
         self.protecting_ally = None       # 탱커가 '방어'로 자신이 아닌 아군을 지정했을 때 그 아군 이름
         self.dodging_this_round = False   # 이번 라운드에 회피를 선언했는지 여부(딜러 전용)
         self.pending_attacks = []         # 아직 정산되지 않은 공격(피해 보류) 목록
@@ -167,6 +172,7 @@ class Character:
         self.has_acted = False
         self.defended_this_round = False
         self.defense_grants = []
+        self.interceptors = []
         self.protecting_ally = None
         self.dodging_this_round = False
         self.pending_attacks = []
@@ -337,6 +343,36 @@ class DefendSkill(Skill):
         return {}
 
 
+class ProxyDefendSkill(Skill):
+    """
+    '방어' (모든 직군) - 대상이 본인이면 직접 방어(능동 방어를 본인에게 부여),
+    아군이면 대리 방어(그 아군이 공격받으면 대신 맞아주고, 남은 피해도 본인이 받음)입니다.
+    """
+    name = "방어"
+    allowed_roles = None
+
+    def execute(self, actor: Character, target: Character):
+        actor.defended_this_round = True
+        if target is actor:
+            actor.defense_grants.append(actor)
+        else:
+            target.interceptors.append(actor)
+            actor.protecting_ally = target.name
+        return {}
+
+
+class GuardSkill(Skill):
+    """'수호' (가디언 전용) - 지정 아군 1인에게 단순 방어(능동 방어)를 부여합니다. 남은 피해는 대상 본인에게 갑니다."""
+    name = "수호"
+    allowed_roles = [config.ROLE_TANKER]
+
+    def execute(self, actor: Character, target: Character):
+        target.defended_this_round = True
+        target.defense_grants.append(actor)
+        actor.protecting_ally = target.name
+        return {}
+
+
 class TauntSkill(Skill):
     """
     가디언 전용 '공격유도' - 어그로를 걸 대상(본인 또는 아군)을 지정합니다.
@@ -376,15 +412,14 @@ class HealSkill(Skill):
 
 class CommandSkill(Skill):
     """
-    가디언 전용 '지휘' - 지정 아군 1인(본인 포함)에게 어그로 1회를 부여함과 동시에,
-    그 대상에게 능동 방어도 함께 부여합니다.
+    가디언 전용 '지휘' - 지정 적군 1인에게 '자신(가디언)을 공격하도록' 유도 효과 1회를 부여합니다.
+    그 적군의 다음 행동 1회는 이 가디언에 대한 공격으로 강제됩니다(Battle이 처리).
     """
     name = "지휘"
     allowed_roles = [config.ROLE_TANKER]
 
     def execute(self, actor: Character, target: Character):
-        target.defended_this_round = True
-        target.defense_grants.append(actor)
+        target.commanded_by = actor.name
         return {}
 
 
