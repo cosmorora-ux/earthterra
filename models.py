@@ -86,6 +86,14 @@ class Character:
         self.boss_group = None   # 같은 BOSS 개체를 묶는 식별자(문자열) 또는 None
         self.boss_section = None  # "NE"/"NW"/"SE"/"SW" 또는 None
 
+        # 마이페이지 팝업 부가 정보 (캐릭터 등록 데이터베이스에도 저장되어 다음 전투로 이어짐).
+        # GameManager.build_character()가 등록된 값으로 바로 덮어씁니다 - 여기서는 기본값만.
+        self.raid_display_name = None  # 마스 레이드 카드에 쓸 짧은 표기 이름 (본인이 설정)
+        self.inventory = ""            # 소지품 (운영진만 수정 가능)
+        self.skill_log_type = "text"   # 스킬 로그 표시 방식 - "text" 또는 "image"
+        self.skill_log_text = ""       # skill_log_type이 "text"일 때 보여줄 내용
+        self.avatar_url = None         # 업로드한 프로필 이미지 URL (정사각형 PNG/WebP/GIF)
+
     # ------------------------------------------------------------------
     @property
     def is_alive(self) -> bool:

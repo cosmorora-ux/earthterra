@@ -51,7 +51,8 @@
       "행운": 3
     },
     "color": "#e7ffc2",
-    "skill": "환류"
+    "skill": "환류",
+    "avatar_url": "/static/avatars/89f0afa0d9724614951de1d8a5b43737.png"
   },
   "E": {
     "role": "가디언",
@@ -392,7 +393,12 @@
       "민첩": 2,
       "행운": 2
     },
-    "skill": "붕괴"
+    "color": "#003994",
+    "skill": "붕괴",
+    "raid_display_name": "AV단짝",
+    "inventory": "구급상자 1, 성수 2",
+    "skill_log_type": "text",
+    "skill_log_text": "불꽃을 휘감으며 돌진한다"
   },
   "AW": {
     "role": "스트라이커",
@@ -405,7 +411,8 @@
       "민첩": 2,
       "행운": 2
     },
-    "skill": "붕괴"
+    "skill": "붕괴",
+    "avatar_url": "/static/avatars/9fc52c439ade4f8fa16c2695b337b517.png"
   },
   "AX": {
     "role": "메딕",

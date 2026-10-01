@@ -1618,6 +1618,13 @@ class GameManager:
         )
         c.boss_group = boss_group
         c.boss_section = boss_section
+        # 마이페이지 팝업 부가 정보 - 전투 중에는 live Character에서 직접 갱신되고,
+        # 캐릭터 등록 데이터베이스에도 그대로 반영되어 다음 전투에 이어집니다.
+        c.raid_display_name = data.get("raid_display_name") or None
+        c.inventory = data.get("inventory") or ""
+        c.skill_log_type = data.get("skill_log_type") or "text"
+        c.skill_log_text = data.get("skill_log_text") or ""
+        c.avatar_url = data.get("avatar_url") or None
         return c
 
     def build_team(self, names: list, formula_overrides: dict = None) -> list:

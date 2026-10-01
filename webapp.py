@@ -33,6 +33,10 @@ socketio = SocketIO(app, async_mode="threading")
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 MUSIC_DIR = os.path.join(_THIS_DIR, "static", "music")
 os.makedirs(MUSIC_DIR, exist_ok=True)
+AVATAR_DIR = os.path.join(_THIS_DIR, "static", "avatars")
+os.makedirs(AVATAR_DIR, exist_ok=True)
+# 투명도를 지원하는 포맷만 허용합니다(마이페이지 프로필 이미지는 정사각형+투명 배경 전제).
+AVATAR_ALLOWED_EXTS = (".png", ".webp", ".gif")
 
 # socket id -> {"room_id", "role", "nickname"}
 CONNECTIONS = {}
@@ -211,6 +215,49 @@ def upload_music():
     return jsonify({"url": url_for("static", filename=f"music/{filename}")})
 
 
+@app.route("/upload_avatar", methods=["POST"])
+def upload_avatar():
+    """참가자가 마이페이지에서 자신의 프로필 이미지를 올리면 static/avatars/에 저장하고,
+    캐릭터 등록 DB와(전투 중이면) live 캐릭터에도 즉시 반영합니다. 정사각형 여부는
+    클라이언트에서 먼저 확인하지만, 서버에서도 투명도를 지원하는 포맷(png/webp/gif)인지만
+    가볍게 검사합니다(치수 검사는 이미지 라이브러리 없이는 할 수 없어 생략합니다)."""
+    room_id = request.form.get("room_id", "")
+    key = request.form.get("key", "")
+    name = (request.form.get("name") or "").strip()
+    room = get_room(room_id)
+    if room is None or key not in (room.gm_key, room.guest_key):
+        return jsonify({"error": "권한이 없습니다."}), 403
+    if not name or not room.game.db.exists(name):
+        return jsonify({"error": "존재하지 않는 캐릭터입니다."}), 400
+
+    f = request.files.get("file")
+    if f is None or not f.filename:
+        return jsonify({"error": "파일이 없습니다."}), 400
+    ext = os.path.splitext(f.filename.lower())[1]
+    if ext not in AVATAR_ALLOWED_EXTS:
+        return jsonify({"error": "투명도를 지원하는 png/webp/gif 이미지만 업로드할 수 있습니다."}), 400
+
+    filename = f"{uuid.uuid4().hex}{ext}"
+    f.save(os.path.join(AVATAR_DIR, filename))
+    avatar_url = url_for("static", filename=f"avatars/{filename}")
+
+    existing = room.game.db.get(name) or {}
+    room.game.db.add_or_update(
+        name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
+        color=existing.get("color"), skill=existing.get("skill"),
+        raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
+        skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
+        avatar_url=avatar_url,
+    )
+    battle = room.game.battle
+    if battle is not None:
+        live = battle.find_character(name)
+        if live is not None:
+            live.avatar_url = avatar_url
+    broadcast_state(room)
+    return jsonify({"url": avatar_url})
+
+
 # ----------------------------------------------------------------------
 # 상태 직렬화
 # ----------------------------------------------------------------------
@@ -242,6 +289,11 @@ def build_character_public(c):
         "boss_group": c.boss_group,
         "boss_section": c.boss_section,
         "deferred_this_round": c.deferred_this_round,
+        "raid_display_name": c.raid_display_name,
+        "inventory": c.inventory,
+        "skill_log_type": c.skill_log_type,
+        "skill_log_text": c.skill_log_text,
+        "avatar_url": c.avatar_url,
     }
 
 
@@ -272,6 +324,11 @@ def build_preview_character(room, name):
         "max_hp": max_hp,
         "stats": dict(stats),
         "stat_total": sum(stats.values()) if stats else 0,
+        "raid_display_name": data.get("raid_display_name"),
+        "inventory": data.get("inventory") or "",
+        "skill_log_type": data.get("skill_log_type") or "text",
+        "skill_log_text": data.get("skill_log_text") or "",
+        "avatar_url": data.get("avatar_url"),
     }
 
 
@@ -622,6 +679,11 @@ def on_chat_message(data):
         socketio.emit("chat_message", entry, room=_team_channel(info["room_id"], speaker.team))
         return
 
+    # 전투 관전 탭에서 보내면, 실제 역할(운영진/참가자)과 무관하게 지금 보고 있는 탭에
+    # 그대로 표시되도록 카테고리를 관전으로 맞춰줍니다.
+    if data.get("mode") == "spectator":
+        category = "spectator"
+
     entry = {
         "time": time.strftime("%H:%M:%S"),
         "nickname": nickname,
@@ -678,12 +740,118 @@ def on_set_my_color(data):
     room.game.db.add_or_update(
         name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
         color=color, skill=existing.get("skill"),
+        raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
+        skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
+avatar_url=existing.get("avatar_url"),
     )
     battle = room.game.battle
     if battle is not None:
         live = battle.find_character(name)
         if live is not None:
             live.color = color
+    broadcast_state(room)
+
+
+@socketio.on("set_my_raid_display_name")
+def on_set_my_raid_display_name(data):
+    """참가자가 마스 레이드 카드 등에 쓰일 자신의 짧은 표기 이름을 직접 지정합니다(마이페이지)."""
+    info = CONNECTIONS.get(request.sid)
+    if info is None:
+        emit("action_error", {"message": "먼저 입장해주세요."})
+        return
+    room = get_room(info["room_id"])
+    if room is None:
+        return
+    control = resolve_control(room, info)
+    if control["scope"] != "character":
+        emit("action_error", {"message": "캐릭터로 입장한 뒤에만 표기 이름을 바꿀 수 있습니다."})
+        return
+    name = control["name"]
+    raid_display_name = (data.get("raid_display_name") or "").strip()[:10] or None
+    existing = room.game.db.get(name) or {}
+    room.game.db.add_or_update(
+        name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
+        color=existing.get("color"), skill=existing.get("skill"),
+        raid_display_name=raid_display_name, inventory=existing.get("inventory"),
+        skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
+avatar_url=existing.get("avatar_url"),
+    )
+    battle = room.game.battle
+    if battle is not None:
+        live = battle.find_character(name)
+        if live is not None:
+            live.raid_display_name = raid_display_name
+    broadcast_state(room)
+
+
+@socketio.on("set_my_skill_log")
+def on_set_my_skill_log(data):
+    """참가자가 자신의 스킬 로그 표시 방식(텍스트/이미지)과 텍스트 내용을 지정합니다(마이페이지)."""
+    info = CONNECTIONS.get(request.sid)
+    if info is None:
+        emit("action_error", {"message": "먼저 입장해주세요."})
+        return
+    room = get_room(info["room_id"])
+    if room is None:
+        return
+    control = resolve_control(room, info)
+    if control["scope"] != "character":
+        emit("action_error", {"message": "캐릭터로 입장한 뒤에만 설정할 수 있습니다."})
+        return
+    name = control["name"]
+    log_type = data.get("skill_log_type") if data.get("skill_log_type") in ("text", "image") else "text"
+    log_text = (data.get("skill_log_text") or "").strip()[:300]
+    existing = room.game.db.get(name) or {}
+    room.game.db.add_or_update(
+        name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
+        color=existing.get("color"), skill=existing.get("skill"),
+        raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
+        skill_log_type=log_type, skill_log_text=log_text or None,
+avatar_url=existing.get("avatar_url"),
+    )
+    battle = room.game.battle
+    if battle is not None:
+        live = battle.find_character(name)
+        if live is not None:
+            live.skill_log_type = log_type
+            live.skill_log_text = log_text
+    broadcast_state(room)
+
+
+@socketio.on("set_mypage_gm_fields")
+def on_set_mypage_gm_fields(data):
+    """운영진이 마이페이지 팝업에서 캐릭터의 체력/소지품을 직접 수정합니다. 체력은 전투 중
+    live 캐릭터에만 적용되고(스탯 기반 자동계산과 무관), 소지품은 등록 DB에도 저장되어
+    다음 전투로 이어집니다. 참가자 링크에서 닉네임 "GM"+비밀번호로 들어온 경우에도 허용합니다
+    (마이페이지는 참가자 화면에서만 열리므로, 실제 운영진 화면 접속에만 쓰는 _require_gm으로는
+    항상 거부되어 버립니다)."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    name = (data.get("name") or "").strip()
+    battle = room.game.battle
+    live = battle.find_character(name) if battle is not None else None
+    if live is None:
+        emit("action_error", {"message": "전투 중인 캐릭터만 마이페이지에서 수정할 수 있습니다."})
+        return
+    if "current_hp" in data:
+        try:
+            hp = int(data.get("current_hp"))
+        except (TypeError, ValueError):
+            hp = live.current_hp
+        live.current_hp = max(0, min(hp, live.max_hp))
+    if "inventory" in data:
+        inventory = (data.get("inventory") or "").strip()[:200]
+        live.inventory = inventory
+        existing = room.game.db.get(name) or {}
+        room.game.db.add_or_update(
+            name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
+            color=existing.get("color"), skill=existing.get("skill"),
+            raid_display_name=existing.get("raid_display_name"), inventory=inventory,
+            skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
+avatar_url=existing.get("avatar_url"),
+        )
     broadcast_state(room)
 
 
@@ -737,7 +905,12 @@ def on_update_character(data):
     stats = data.get("stats", {})
     skill = data.get("skill") or None
     existing = room.game.db.get(name) or {}
-    warns = room.game.db.add_or_update(name, role, stats, color=existing.get("color"), skill=skill)
+    warns = room.game.db.add_or_update(
+        name, role, stats, color=existing.get("color"), skill=skill,
+        raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
+        skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
+avatar_url=existing.get("avatar_url"),
+    )
 
     # 전투가 진행 중이고 이 캐릭터가 현재 전투에 참여 중이라면, 실시간 스탯도 즉시 갱신합니다.
     battle = room.game.battle

@@ -161,14 +161,29 @@ class CharacterDatabase:
     # ------------------------------------------------------------------
     # CRUD (추가/수정/삭제/조회)
     # ------------------------------------------------------------------
-    def add_or_update(self, name: str, role: str, stats: dict, color: str = None, skill: str = None):
-        """캐릭터를 새로 추가하거나, 이미 있으면 정보를 수정합니다. 스탯은 자동으로 캡 적용됩니다."""
+    def add_or_update(self, name: str, role: str, stats: dict, color: str = None, skill: str = None,
+                       raid_display_name: str = None, inventory: str = None,
+                       skill_log_type: str = None, skill_log_text: str = None, avatar_url: str = None):
+        """캐릭터를 새로 추가하거나, 이미 있으면 정보를 수정합니다. 스탯은 자동으로 캡 적용됩니다.
+        raid_display_name/inventory/skill_log_*/avatar_url은 마이페이지 팝업에서 쓰는 부가
+        정보입니다 - 다른 필드만 바꾸는 호출(예: 색상 변경)에서도 기존 값을 잃지 않으려면
+        호출하는 쪽에서 existing.get(...)으로 함께 넘겨줘야 합니다."""
         clamped, warns = config.clamp_stats(stats)
         entry = {"role": role, "stats": clamped}
         if color:
             entry["color"] = color
         if skill and skill in config.SKILL_OPTIONS.get(role, []):
             entry["skill"] = skill
+        if raid_display_name:
+            entry["raid_display_name"] = raid_display_name
+        if inventory:
+            entry["inventory"] = inventory
+        if skill_log_type:
+            entry["skill_log_type"] = skill_log_type
+        if skill_log_text:
+            entry["skill_log_text"] = skill_log_text
+        if avatar_url:
+            entry["avatar_url"] = avatar_url
         self.characters[name] = entry
         self.save()
         return warns
