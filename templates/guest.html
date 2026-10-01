@@ -640,6 +640,9 @@
 </div>
 <input type="color" id="myColorInput" value="#4a90ff" style="position:fixed; opacity:0; pointer-events:none; width:0; height:0;" onchange="onMyColorChange(this.value)">
 
+<div id="serverRestartNotice" style="display:none; margin:0 0 10px; padding:10px 14px; border-radius:10px; background:#3a2a10; border:1px solid #8a6a2a; color:#ffd58a; font-size:14px;">
+  ⚠ 서버가 예전 버전으로 실행 중이에요. 일부 기능(마이페이지 저장 등)이 막힐 수 있어요. 서버 창에서 Ctrl + C → ↑ → Enter로 서버를 다시 켜 주세요.
+</div>
 <div class="topbar v2 panel">
   <div class="seg" id="roomNameLabel">{{ room_id }}</div>
   <span class="sep">▶</span>
@@ -1099,7 +1102,11 @@ function showError(msg) {
 socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
+// 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
+const EXPECTED_SERVER_BUILD = "2026-10-01.1";
 socket.on('public_state', (state) => {
+  const notice = document.getElementById('serverRestartNotice');
+  if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
   const roomNameEl = document.getElementById('roomNameLabel');
   if (roomNameEl && state.room_name) roomNameEl.textContent = state.room_name;
   lastRoster = state.roster || [];

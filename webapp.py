@@ -26,6 +26,10 @@ from rooms import (
     ROOMS, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES,
 )
 
+# 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
+# .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
+SERVER_BUILD = "2026-10-01.1"
+
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
 # html(templates)을 고치면 서버를 다시 켜지 않아도 브라우저 새로고침(F5)만으로 바로 반영됩니다.
@@ -522,6 +526,7 @@ def build_public_state(room):
         "telegraph_cells": room.telegraph_cells,
         "preview_teams": preview_teams,
         "server_now": time.time(),
+        "server_build": SERVER_BUILD,
     }
     if room.battle_type == "siege":
         payload["site_dice"] = {
