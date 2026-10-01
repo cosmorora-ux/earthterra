@@ -482,7 +482,7 @@ class Battle:
             pass  # 거점/적 자동 방어는 치명타가 발생하지 않는 규칙이므로 별도 안내가 필요 없습니다.
         elif dfs["active"] and not dfs["position_match"]:
             self._log_operator_only(
-                f"(방어를 부여한 사람이 탱커가 아니므로 방어 크리티컬이 발생하지 않습니다)", tag="formula",
+                f"(방어를 부여한 사람이 가디언이 아니므로 방어 크리티컬이 발생하지 않습니다)", tag="formula",
             )
 
         # 요청 12 : 방어 값(총합)은 러너 공유 로그에도 표시합니다. 크리티컬이면 방어를 부여한
@@ -740,7 +740,7 @@ class Battle:
             )
         elif not atk["position_match"]:
             self._log_operator_only(
-                f"({attacker.name}은(는) 딜러가 아니므로 크리티컬이 발생하지 않습니다)", tag="formula",
+                f"({attacker.name}은(는) 스트라이커가 아니므로 크리티컬이 발생하지 않습니다)", tag="formula",
             )
 
         # 편광(가디언 스킬)이 활성화된 아군이 있으면 실제 피해는 그쪽으로 집중됩니다.
@@ -1205,7 +1205,7 @@ class Battle:
             self._log_public_only("크리티컬!", tag="crit")
         elif not heal["position_match"]:
             self._log_operator_only(
-                f"({healer.name}은(는) 힐러가 아니므로 크리티컬이 발생하지 않습니다)", tag="formula",
+                f"({healer.name}은(는) 메딕이 아니므로 크리티컬이 발생하지 않습니다)", tag="formula",
             )
 
         if heal["is_crit"]:
