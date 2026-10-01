@@ -872,7 +872,7 @@ function renderBattle(battle) {
   lastAllForCards = all;
   teamsEl.innerHTML = all.map(c => renderCardHtml(c)).join('');
 
-  const opts = all.map(c => `<option value="${c.name}">${displayNameOf(c)} (${c.teamLabel}팀)</option>`).join('');
+  const opts = all.map(c => `<option value="${c.name}">${displayNameOf(c)} (${c.teamLabel === 'A' ? '1팀' : '2팀'})</option>`).join('');
   const prevActor = actorSel.value;
   actorSel.innerHTML = opts;
   if ([...actorSel.options].some(o => o.value === prevActor)) actorSel.value = prevActor;

@@ -1225,8 +1225,8 @@ function shiftMobCarousel(delta) {
 
 let lastPreviewTeams = null;  // 전투 시작 전 "무작위 배치" 미리보기 - {"team_a":[...], "team_b":[...]} 또는 null
 
-// A팀/B팀을 각자의 칸(teamsA/teamsB)에 나눠 그립니다. 점령전/마스 레이드는 2팀(거점/몹)을
-// siteStatusCard에서 따로 보여주므로 B팀 칸은 통째로 숨깁니다. 두 팀 모두 항상 포지션 순
+// 1팀/2팀(teamLabel 'A'/'B')을 각자의 칸(teamsA/teamsB)에 나눠 그립니다. 점령전/마스 레이드는 2팀(거점/몹)을
+// siteStatusCard에서 따로 보여주므로 2팀 칸은 통째로 숨깁니다. 두 팀 모두 항상 포지션 순
 // (스트라이커 → 가디언 → 메딕)으로 고정 정렬합니다.
 function splitAndRenderTeams(list, renderOne) {
   const allA = list.filter(c => c.teamLabel === 'A');
@@ -1302,7 +1302,7 @@ function renderBattle(battle) {
 function renderCards() {
   const useCompact = BATTLE_TYPE === 'mass_raid';
   const renderOne = useCompact ? renderCompactCardHtml : renderCardHtml;
-  // 점령전/마스 레이드는 러너(A팀)만 이 칸에 넣습니다(2팀은 siteStatusCard에서 따로 보여줍니다).
+  // 점령전/마스 레이드는 러너(1팀)만 이 칸에 넣습니다(2팀은 siteStatusCard에서 따로 보여줍니다).
   splitAndRenderTeams(lastAllForCards, renderOne);
   const slot = document.getElementById('multiSkillSlot');
   if (slot) slot.innerHTML = renderMultiSkillTrigger();
@@ -2508,7 +2508,7 @@ function refreshGmActorOptions() {
   const sel = document.getElementById('gmActActor');
   if (!sel) return;
   const prev = sel.value;
-  sel.innerHTML = lastAllForCards.map(c => `<option value="${c.name}">${displayNameOf(c)} (${c.teamLabel}팀 ${c.role || '몹'})</option>`).join('');
+  sel.innerHTML = lastAllForCards.map(c => `<option value="${c.name}">${displayNameOf(c)} (${c.teamLabel === 'A' ? '1팀' : '2팀'} ${c.role || '몹'})</option>`).join('');
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
   refreshGmActTypeOptions();
 }
