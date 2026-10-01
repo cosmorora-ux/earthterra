@@ -168,10 +168,18 @@
   #pubLog { height: 420px; overflow-y:auto; padding: 12px 18px; font-size:15px; line-height:1.65; }
   .logline { color: var(--text); opacity:.92; }
   .logline .li { display:inline-block; width:20px; text-align:center; margin-right:4px; opacity:.85; }
-  .logline.group-start { margin-top:10px; font-weight:600; }
-  .logline.group-start:first-child { margin-top:0; }
+  .logline.group-start { font-weight:600; }
+  .logblock { margin:8px 0; padding:6px 10px 6px 10px; border-left:3px solid var(--muted); border-radius:6px; background:rgba(255,255,255,.035); }
+  .logblock:first-child { margin-top:0; }
+  .logblock.team-A { border-left-color: var(--accent-blue); }
+  .logblock.team-B { border-left-color: var(--accent-red); }
+  .logblock.cont { margin-top:-4px; background:rgba(255,255,255,.02); }
+  .logblock .logline:not(.group-start) { padding-left:14px; font-size:.95em; }
+  .logblock .logline.group-start { padding-bottom:2px; margin-bottom:2px; border-bottom:1px solid rgba(255,255,255,.08); }
+  .logblock .logline.group-start:last-child { border-bottom:none; padding-bottom:0; margin-bottom:0; }
+  .logblock.cont .logline:not(.group-start) { padding-left:14px; }
   .logline.tag-crit { color:#fff; font-weight:700; }
-  .logline.tag-system { color: var(--muted); font-size:14px; }
+  .logline.tag-system, .logline.tag-wait { color: var(--muted); font-size:14px; }
   .logline.tag-round { color:#7fb0ff; font-weight:700; margin-top:14px; }
 
   #chatPanelBody { display:flex; flex-direction:column; height:420px; }
@@ -1385,17 +1393,35 @@ function tickTimer() {
 }
 setInterval(tickTimer, 1000);
 
-const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round']);
+const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round', 'wait']);
 const LOG_TAG_ICON = {
   round: '✶', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
-  heal: '✚', crit: '✦', system: '·', hp: '❤', formula: '', summary: '',
+  heal: '✚', crit: '✦', system: '·', wait: '⏸', hp: '❤', formula: '', summary: '',
 };
+function formatLogLineHtml(l) {
+  const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
+  const icon = LOG_TAG_ICON[l.tag] || '';
+  const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${l.text}</span>` : l.text;
+  return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${body}</div>`;
+}
+// 섹션 첫 줄("AZ 공격 → F")이 어느 캐릭터의 행동인지 찾아 팀 색을 입힙니다. 이름이 겹칠 수 있어
+// 가장 긴 이름부터 맞춰봅니다.
+function logActorTeam(text) {
+  let best = null;
+  (lastAllForCards || []).forEach(c => {
+    if (text.startsWith(c.name) && (!best || c.name.length > best.name.length)) best = c;
+  });
+  return best ? best.teamLabel : null;
+}
+// 캐릭터 한 명의 행동(공격 → 크리티컬 → 공격 수치 …)을 하나의 블록으로 묶어 보여줍니다.
 function formatLogHtml(lines) {
-  return (lines || []).map(l => {
-    const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
-    const icon = LOG_TAG_ICON[l.tag] || '';
-    const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${l.text}</span>` : l.text;
-    return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${body}</div>`;
+  return splitLogIntoSections(lines || []).map(section => {
+    const head = section[0];
+    if (head.tag === 'round') return section.map(formatLogLineHtml).join('');
+    const isGroup = LOG_GROUP_START_TAGS.has(head.tag);
+    const team = isGroup ? logActorTeam(head.text) : null;
+    const cls = `logblock${isGroup ? '' : ' cont'}${team ? ' team-' + team : ''}`;
+    return `<div class="${cls}">${section.map(formatLogLineHtml).join('')}</div>`;
   }).join('');
 }
 

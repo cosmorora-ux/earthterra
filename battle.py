@@ -305,7 +305,7 @@ class Battle:
             raise BattleError("이미 후공을 선언했습니다.")
 
         actor.deferred_this_round = True
-        self._log(f"{actor.name} 이번 라운드 행동을 후공까지 미룹니다.", tag="system")
+        self._log(f"{actor.name} 이번 라운드 행동을 후공까지 미룹니다.", tag="wait")
 
     # ------------------------------------------------------------------
     # 되돌리기 (undo) : 잘못 실행된 행동을 취소하고 재행동 기회를 부여합니다.
@@ -1327,7 +1327,7 @@ class Battle:
         self.timeout_skill.execute(actor)
         self._resolve_pending_attacks(actor)
         actor.has_acted = True
-        self._log(f"{actor.name} 시간 초과", tag="system")
+        self._log(f"{actor.name} 시간 초과", tag="wait")
         self._check_finish()
 
     def perform_timeout_unacted_runners(self):
