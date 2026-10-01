@@ -144,6 +144,8 @@
   .chat-body .time { color: var(--muted); font-size:13px; margin-left:6px; }
   .chat-line.is-command .chat-text { color:#9fc3ff; font-family: ui-monospace, monospace; font-size:14px; }
   .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
+  /* 안내 문구 안의 줄바꿈(\n)을 그대로 보여줍니다. */
+  .chat-text { white-space: pre-line; }
 
   .input-row { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--panel-border); align-items:center; }
   .input-row input { flex:1; }

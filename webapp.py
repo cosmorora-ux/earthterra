@@ -358,11 +358,10 @@ def build_character_public(c):
 
 
 def _first_team_display_name(room, battle):
-    """전투 시작 안내 메시지용 - 선공 팀을 화면에 쓰는 이름으로 바꿉니다.
-    PVP는 카드가 위/아래 줄로 고정 표시되므로 어느 줄인지도 함께 알려줍니다."""
+    """전투 시작 안내 메시지용 - 선공 팀을 화면에 쓰는 이름으로 바꿉니다."""
     is_team_a = battle.round_first_team == Battle.TEAM_A
     if room.battle_type == "pvp":
-        return f"{battle.round_first_team}({'윗줄' if is_team_a else '아랫줄'})"
+        return battle.round_first_team
     return "러너팀" if is_team_a else "GM팀"
 
 
@@ -1294,7 +1293,7 @@ def on_start_battle(data):
         "nickname": "GM",
         "role": "gm",
         "category": "operator",
-        "text": f"전투가 시작됩니다. 선공 팀은 {first_team_label}입니다. 제한시간 내 행동해 주세요.",
+        "text": f"전투가 시작됩니다. 선공 팀은 {first_team_label}입니다.\n제한시간 내 행동해 주세요.",
     }
     room.chat_log.append(entry)
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
