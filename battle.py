@@ -757,9 +757,12 @@ class Battle:
                     f"{target.name}은(는) 이번 라운드에 이미 2명에게 공격받았습니다. "
                     "한 대상은 라운드당 최대 2명까지만 공격할 수 있습니다."
                 )
-            self._attacks_on_target_this_round[target.name] = focus_count + 1
 
+        # 되돌리기 기록을 먼저 남긴 뒤에 공격 횟수를 셉니다. 순서가 반대면 되돌리기를 해도
+        # 이번 공격 횟수가 남아서, 다시 공격할 때 '이미 2명에게 공격받았습니다'가 잘못 뜹니다.
         self._push_history()
+        if not self.site_auto_defense:
+            self._attacks_on_target_this_round[target.name] = focus_count + 1
 
         # 공격자 자신에게 걸려있던 보류 피해를 먼저 정산합니다.
         self._resolve_pending_attacks(attacker)
