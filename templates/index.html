@@ -30,6 +30,19 @@
     width: 100%; box-sizing: border-box; background: #111; color: #eee; border: 1px solid #444;
     border-radius: 6px; padding: 9px 10px; font-size: 15px; margin-bottom: 10px;
   }
+
+  /* 스크롤바 공통 : 브라우저 기본(굵은 흰 바) 대신 화면 톤에 맞춘 얇고 어두운 바.
+     평소엔 은은하게, 마우스를 올리면 조금 밝아집니다. 위아래 화살표 버튼은 없앱니다. */
+  /* 크롬/엣지는 아래 ::-webkit-scrollbar 규칙만 쓰고(표준 속성을 같이 쓰면 화살표가 다시 생김), 파이어폭스만 표준 속성을 씁니다. */
+  @supports not selector(::-webkit-scrollbar) {
+    * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.16) transparent; }
+  }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius:8px; border:2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.28); border:2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-button { display:none; width:0; height:0; }
+  ::-webkit-scrollbar-corner { background: transparent; }
 </style>
 </head>
 <body>
