@@ -504,6 +504,12 @@ def build_public_state(room):
         "chat_tabs": room.chat_tabs_enabled,
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
+        # 전투에 참여하지 않은 캐릭터도 로그인하면 마이페이지를 볼/수정할 수 있도록 등록 정보를 함께 보냅니다
+        # (스탯은 상대에게 비공개라 빼고 보냅니다).
+        "roster_mypage": {
+            name: {k: v for k, v in (build_preview_character(room, name) or {}).items() if k != "stats"}
+            for name in room.game.db.all_names()
+        },
         "userinfo_hidden": list(room.userinfo_hidden),
         "online_characters": sorted(_online_character_names(room)),
         # 채팅창에서 말한 사람의 프로필 이미지/닉네임 색상을 보여주기 위한 정보(전투 참여 여부와 무관).
@@ -868,6 +874,10 @@ def _mypage_target_name(room, info, data):
     control = resolve_control(room, info)
     if control["scope"] == "character":
         return control["name"]
+    # 전투에 참여하지 않았어도, 등록된 캐릭터 이름으로 로그인했으면 본인 마이페이지는 수정할 수 있습니다.
+    nickname = (info.get("nickname") or "").strip()
+    if nickname and nickname != "익명" and room.game.db.exists(nickname):
+        return nickname
     return None
 
 
@@ -884,7 +894,7 @@ def on_set_my_color(data):
         return
     name = _mypage_target_name(room, info, data)
     if name is None:
-        emit("action_error", {"message": "캐릭터로 입장한 뒤에만 색상을 바꿀 수 있습니다."})
+        emit("action_error", {"message": "로그인한 뒤에 색상을 바꿀 수 있습니다."})
         return
     color = (data.get("color") or "").strip()
     if not _HEX_COLOR_RE.match(color):
@@ -919,7 +929,7 @@ def on_set_my_raid_display_name(data):
         return
     name = _mypage_target_name(room, info, data)
     if name is None:
-        emit("action_error", {"message": "캐릭터로 입장한 뒤에만 표기 이름을 바꿀 수 있습니다."})
+        emit("action_error", {"message": "로그인한 뒤에 표기 이름을 바꿀 수 있습니다."})
         return
     raid_display_name = (data.get("raid_display_name") or "").strip()[:10] or None
     existing = room.game.db.get(name) or {}
@@ -952,7 +962,7 @@ def on_set_my_sound_effect_volume(data):
         return
     name = _mypage_target_name(room, info, data)
     if name is None:
-        emit("action_error", {"message": "캐릭터로 입장한 뒤에만 음량을 조절할 수 있습니다."})
+        emit("action_error", {"message": "로그인한 뒤에 음량을 조절할 수 있습니다."})
         return
     try:
         volume = int(data.get("sound_effect_volume"))
@@ -988,7 +998,7 @@ def on_set_my_skill_log(data):
         return
     name = _mypage_target_name(room, info, data)
     if name is None:
-        emit("action_error", {"message": "캐릭터로 입장한 뒤에만 설정할 수 있습니다."})
+        emit("action_error", {"message": "로그인한 뒤에 설정할 수 있습니다."})
         return
     log_type = data.get("skill_log_type") if data.get("skill_log_type") in ("text", "image") else "text"
     log_text = (data.get("skill_log_text") or "").strip()[:300]

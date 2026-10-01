@@ -840,7 +840,8 @@ let lastBattleForPanel = null;
 let actionPanelActorName = null;
 let lastUserInfoHidden = new Set();  // 운영진이 눈을 끈(GM이 아닌 사람에게 숨긴) 이름들
 let lastRoster = [];  // 캐릭터 데이터베이스에 등록된 전체 이름 목록 (전투 참여 여부와 무관)
-let lastRosterProfiles = {};  // 이름 -> { color, avatar_url } (채팅창 프로필 이미지/닉네임 색상용)
+let lastRosterProfiles = {};
+let lastRosterMypage = {};  // 이름 -> 마이페이지용 등록 정보(전투에 없는 캐릭터용)  // 이름 -> { color, avatar_url } (채팅창 프로필 이미지/닉네임 색상용)
 let lastOnlineCharacters = [];  // 지금 그 이름으로 로그인(접속)해 있는 캐릭터 이름 목록 (유저 접속정보 팝업용)
 
 const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "행운"];
@@ -966,7 +967,7 @@ function onAvatarDotClick() {
 }
 
 function onInputAvatarDotDblClick() {
-  if (myControlInfo(lastBattleForPanel).scope !== 'character') return;
+  if (!myLoggedInName()) return;
   document.getElementById('myAvatarFileInput').click();
 }
 
@@ -1033,9 +1034,15 @@ function submitJoinModal() {
 }
 
 // 마이페이지를 편집할 수 있는지 - 본인 캐릭터로 로그인했거나, GM(남의 마이페이지도 전부 수정 가능)
+// 등록된 캐릭터 이름으로 로그인한 상태면 그 이름(전투 참여 여부와 무관), 아니면 null
+function myLoggedInName() {
+  if (!explicitlyJoined) return null;
+  const n = (MY_NICKNAME || '').trim();
+  if (!n || n === '익명' || n.toLowerCase() === 'gm') return null;
+  return lastRoster.includes(n) ? n : null;
+}
 function canEditMyPage() {
-  const scope = myControlInfo(lastBattleForPanel).scope;
-  return scope === 'character' || scope === 'all';
+  return myControlInfo(lastBattleForPanel).scope === 'all' || !!myLoggedInName();
 }
 // 지금 마이페이지에 떠 있는 캐릭터 이름 (GM이 남의 마이페이지를 수정할 때 서버에 함께 보냅니다)
 function myPageEditName() {
@@ -1060,7 +1067,8 @@ function myCharacterAvatarUrl(battle) {
   if (!explicitlyJoined) return null;
   const control = myControlInfo(battle !== undefined ? battle : lastBattleForPanel);
   if (control.scope === 'character') return control.character.avatar_url || null;
-  return null;
+  const me = myLoggedInName();
+  return me && lastRosterMypage[me] ? (lastRosterMypage[me].avatar_url || null) : null;
 }
 
 function updateAvatarDots(battle) {
@@ -1097,6 +1105,7 @@ socket.on('public_state', (state) => {
   lastRoster = state.roster || [];
   lastUserInfoHidden = new Set(state.userinfo_hidden || []);
   lastRosterProfiles = state.roster_profiles || {};
+  lastRosterMypage = state.roster_mypage || {};
   lastOnlineCharacters = state.online_characters || [];
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
   lastSiteDice = state.site_dice || null;
@@ -2828,9 +2837,14 @@ function myPageTargetChar() {
     return d ? { ...d, current_hp: null, max_hp: null } : null;
   }
   const battle = lastBattleForPanel;
-  if (!battle) return null;
-  const actorName = myActorName(battle);
-  return lastAllForCards.find(c => c.name === actorName) || null;
+  if (battle) {
+    const actorName = myActorName(battle);
+    const live = lastAllForCards.find(c => c.name === actorName);
+    if (live) return live;
+  }
+  // 전투에 없더라도 로그인한 캐릭터면 등록 정보로 마이페이지를 보여줍니다.
+  const me = myLoggedInName();
+  return me && lastRosterMypage[me] ? { ...lastRosterMypage[me] } : null;
 }
 
 function openMyPage() {
@@ -2848,7 +2862,7 @@ function renderMyPage() {
   if (document.getElementById('myPageModal').style.display !== 'flex') return;
   const control = myControlInfo(lastBattleForPanel);
   const isGm = control.scope === 'all';
-  const isSelf = control.scope === 'character';
+  const isSelf = !!myLoggedInName();
   // GM은 남의 마이페이지도 전부 수정할 수 있습니다.
   const canEdit = isSelf || isGm;
   const c = myPageTargetChar();
@@ -2975,7 +2989,7 @@ function onMySoundEffectFileChosen(event) {
   event.target.value = '';
   if (!file) return;
   if (!canEditMyPage()) {
-    showError('캐릭터로 입장한 뒤에만 효과음을 등록할 수 있습니다.');
+    showError('로그인한 뒤에 효과음을 등록할 수 있습니다.');
     return;
   }
   if (file.size > SOUND_EFFECT_MAX_BYTES) {
@@ -3037,7 +3051,7 @@ function onMyAvatarFileChosen(event) {
   event.target.value = '';
   if (!file) return;
   if (!canEditMyPage()) {
-    showError('캐릭터로 입장한 뒤에만 프로필 이미지를 등록할 수 있습니다.');
+    showError('로그인한 뒤에 프로필 이미지를 등록할 수 있습니다.');
     return;
   }
   const c = myPageTargetChar();
