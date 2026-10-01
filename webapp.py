@@ -429,6 +429,12 @@ def build_public_state(room):
         "chat_tabs": room.chat_tabs_enabled,
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
+        # 채팅창에서 말한 사람의 프로필 이미지/닉네임 색상을 보여주기 위한 정보(전투 참여 여부와 무관).
+        "roster_profiles": {
+            name: {"color": data.get("color"), "avatar_url": data.get("avatar_url")}
+            for name, data in room.game.db.characters.items()
+            if data.get("color") or data.get("avatar_url")
+        },
         "music": room.music,
         "telegraph_cells": room.telegraph_cells,
         "preview_teams": preview_teams,

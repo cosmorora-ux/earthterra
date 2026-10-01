@@ -228,6 +228,10 @@
   #chatLog { flex:1; overflow-y:auto; padding:12px 18px; font-size:15px; }
   .chat-line { display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; }
   .chat-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; margin-top:2px; }
+  .chat-avatar {
+    width:22px; height:22px; border-radius:4px; flex-shrink:0; margin-top:2px; background:#0c0c0d;
+    border:1px solid var(--card-border); background-size:cover; background-position:center; background-repeat:no-repeat;
+  }
   .chat-dot.chat-star { background:transparent; display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:18px; }
   .chat-body b { font-weight:700; }
   .chat-body .time { color: var(--muted); font-size:13px; margin-left:6px; }
@@ -692,6 +696,7 @@ let lastChat = [];
 let lastBattleForPanel = null;
 let actionPanelActorName = null;
 let lastRoster = [];  // 캐릭터 데이터베이스에 등록된 전체 이름 목록 (전투 참여 여부와 무관)
+let lastRosterProfiles = {};  // 이름 -> { color, avatar_url } (채팅창 프로필 이미지/닉네임 색상용)
 
 const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "행운"];
 // "방어"는 가디언의 능동 방어 부여(아군 지정 가능, type "defend")와 메딕의 "본인방어"를 대신하는
@@ -930,6 +935,7 @@ socket.on('public_state', (state) => {
   const roomNameEl = document.getElementById('roomNameLabel');
   if (roomNameEl && state.room_name) roomNameEl.textContent = state.room_name;
   lastRoster = state.roster || [];
+  lastRosterProfiles = state.roster_profiles || {};
   lastSiteDice = state.site_dice || null;
   lastPreviewTeams = state.preview_teams || null;
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
@@ -2093,12 +2099,11 @@ function renderChatFiltered() {
   el.scrollTop = el.scrollHeight;
 }
 
-function nicknameDotColor(nickname) {
+// 채팅에서 말한 사람의 프로필(색상/이미지). 전투 중인 캐릭터면 실시간 값을, 아니면 등록 DB 값을 씁니다.
+function chatProfileOf(nickname) {
   const c = lastAllForCards.find(x => x.name === nickname);
-  if (c) return c.color || roleColorVar(c.role);
-  let hash = 0;
-  for (let i = 0; i < (nickname || '').length; i++) hash = (hash * 31 + nickname.charCodeAt(i)) % 360;
-  return `hsl(${hash}, 55%, 55%)`;
+  if (c) return { color: c.color || null, avatar_url: c.avatar_url || null };
+  return lastRosterProfiles[nickname] || { color: null, avatar_url: null };
 }
 
 function formatChatTime(timeStr) {
@@ -2116,16 +2121,17 @@ function fmtChat(entry) {
   const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:') || (entry.text || '').startsWith('[행동:');
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
   const isStar = entry.role === 'system' || entry.role === 'gm' || (entry.nickname || '').trim().toLowerCase() === 'gm';
+  const profile = chatProfileOf(entry.nickname);
   const dot = isStar
     ? `<div class="chat-dot chat-star">✶</div>`
-    : `<div class="chat-dot" style="background:${nicknameDotColor(entry.nickname)};"></div>`;
+    : `<div class="chat-avatar" style="${profile.avatar_url ? `background-image:url('${profile.avatar_url}');` : ''}"></div>`;
   // GM은 양 팀 아군 회의를 같은 탭에서 같이 보므로, 어느 팀 회의인지 작게 표시해줍니다.
   const teamTag = entry.category === 'team'
     ? ` <span style="color:var(--muted); font-size:12px;">(${entry.team === 'A' ? '1팀' : '2팀'} 회의)</span>`
     : '';
   return `<div class="chat-line ${cls}">
     ${dot}
-    <div class="chat-body"><b>${entry.nickname}</b>${teamTag}<span class="time">${formatChatTime(entry.time)}</span><br>
+    <div class="chat-body"><b${!isStar && profile.color ? ` style="color:${profile.color};"` : ''}>${entry.nickname}</b>${teamTag}<span class="time">${formatChatTime(entry.time)}</span><br>
     <span class="chat-text">${entry.text}</span></div>
   </div>`;
 }
