@@ -23,7 +23,7 @@ ROOMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rooms.jso
 # RoomState의 필드 중 이 목록만 rooms.json에 저장/복원합니다.
 _PERSISTED_FIELDS = [
     "name", "battle_type", "gm_key", "guest_key", "created_at",
-    "chat_tabs_enabled", "chat_tab_labels",
+    "chat_tabs_enabled", "chat_tab_labels", "userinfo_hidden",
 ]
 
 BATTLE_TYPE_LABELS = {
@@ -98,6 +98,9 @@ class RoomState:
         # 탭 이름도 운영진이 바꿀 수 있습니다(기능 자체는 그대로라 부가설명은 클라이언트에
         # 고정 텍스트로 둡니다 - 채팅 탭 설정 팝업 참고).
         self.chat_tab_labels = {"player": "참여 인원만", "spectator": "관전 인원만", "entry": "입장 기록", "team": "아군 회의"}
+        # 유저 접속정보 목록에서 운영진이 눈을 꺼서(숨김) GM이 아닌 사람에게는 안 보이게 한 캐릭터 이름들
+        # (보스처럼 참가자가 아닌 캐릭터용).
+        self.userinfo_hidden = []
 
 
 def create_room(battle_type: str = "pvp", name: str = None) -> RoomState:

@@ -93,6 +93,9 @@
   .userinfo-dot { width:9px; height:9px; border-radius:50%; background:#4a4a4e; flex-shrink:0; }
   .userinfo-dot.online { background:#3ecf6a; box-shadow:0 0 6px rgba(62,207,106,.8); }
   .userinfo-name { flex:1; }
+  .userinfo-row.is-hidden .userinfo-name { color: var(--muted); text-decoration: line-through; }
+  .userinfo-eye { background:none; border:none; color: var(--muted); cursor:pointer; font-size:14px; padding:2px 4px; }
+  .userinfo-eye:hover { color: var(--text); }
   .mypage-portrait-wrap { display:flex; justify-content:center; margin-bottom:14px; }
   .mypage-portrait {
     width:120px; height:120px; border-radius:16px; background:#0c0c0d;
@@ -825,6 +828,7 @@ let chatFilter = 'all';
 let lastChat = [];
 let lastBattleForPanel = null;
 let actionPanelActorName = null;
+let lastUserInfoHidden = new Set();  // 운영진이 눈을 끈(GM이 아닌 사람에게 숨긴) 이름들
 let lastRoster = [];  // 캐릭터 데이터베이스에 등록된 전체 이름 목록 (전투 참여 여부와 무관)
 let lastRosterProfiles = {};  // 이름 -> { color, avatar_url } (채팅창 프로필 이미지/닉네임 색상용)
 let lastOnlineCharacters = [];  // 지금 그 이름으로 로그인(접속)해 있는 캐릭터 이름 목록 (유저 접속정보 팝업용)
@@ -1069,6 +1073,7 @@ socket.on('public_state', (state) => {
   const roomNameEl = document.getElementById('roomNameLabel');
   if (roomNameEl && state.room_name) roomNameEl.textContent = state.room_name;
   lastRoster = state.roster || [];
+  lastUserInfoHidden = new Set(state.userinfo_hidden || []);
   lastRosterProfiles = state.roster_profiles || {};
   lastOnlineCharacters = state.online_characters || [];
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
@@ -2694,10 +2699,22 @@ function renderUserInfoList() {
     listEl.innerHTML = '<div class="hint" style="padding:8px 2px;">등록된 캐릭터가 없습니다.</div>';
     return;
   }
-  listEl.innerHTML = lastRoster.map(name => {
+  // GM은 전원을 보고 이름 옆 눈 아이콘으로 숨김을 켜고 끕니다. GM이 아닌 사람에게는 숨긴 이름이 아예 안 보입니다.
+  const isGm = myControlInfo(lastBattleForPanel).scope === 'all';
+  const names = isGm ? lastRoster : lastRoster.filter(n => !lastUserInfoHidden.has(n));
+  listEl.innerHTML = names.map(name => {
     const online = onlineSet.has(name);
-    return `<div class="userinfo-row"><span class="userinfo-dot ${online ? 'online' : ''}"></span><span class="userinfo-name">${name}</span></div>`;
+    const hidden = lastUserInfoHidden.has(name);
+    const eye = isGm
+      ? `<button class="userinfo-eye" onclick="toggleUserInfoHidden('${name.replace(/'/g, "\\'")}')">`
+        + `<i class="fa-solid ${hidden ? 'fa-eye-slash' : 'fa-eye'}"></i></button>`
+      : '';
+    return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''}"><span class="userinfo-dot ${online ? 'online' : ''}"></span><span class="userinfo-name">${name}</span>${eye}</div>`;
   }).join('');
+}
+
+function toggleUserInfoHidden(name) {
+  socket.emit('set_userinfo_hidden', { name, hidden: !lastUserInfoHidden.has(name) });
 }
 
 function toggleUserInfoPanel() {

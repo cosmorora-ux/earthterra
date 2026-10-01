@@ -502,6 +502,7 @@ def build_public_state(room):
         "chat_tabs": room.chat_tabs_enabled,
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
+        "userinfo_hidden": list(room.userinfo_hidden),
         "online_characters": sorted(_online_character_names(room)),
         # 채팅창에서 말한 사람의 프로필 이미지/닉네임 색상을 보여주기 위한 정보(전투 참여 여부와 무관).
         "roster_profiles": {
@@ -777,6 +778,27 @@ def on_chat_message(data):
     }
     room.chat_log.append(entry)
     socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
+
+
+@socketio.on("set_userinfo_hidden")
+def on_set_userinfo_hidden(data):
+    """운영진(비밀번호 입장 GM 포함)이 유저 접속정보 목록에서 특정 캐릭터를 GM이 아닌 사람에게
+    숨기거나(눈 끄기) 다시 보이게(눈 켜기) 합니다. 방 설정으로 저장되어 서버를 재시작해도 유지됩니다."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    name = (data.get("name") or "").strip()
+    if not name:
+        return
+    hidden = set(room.userinfo_hidden)
+    if data.get("hidden"):
+        hidden.add(name)
+    else:
+        hidden.discard(name)
+    room.userinfo_hidden = sorted(hidden)
+    save_rooms()
+    broadcast_state(room)
 
 
 @socketio.on("set_chat_tabs")
