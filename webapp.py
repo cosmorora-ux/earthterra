@@ -859,6 +859,18 @@ def on_set_chat_tabs(data):
     broadcast_state(room)
 
 
+def _mypage_target_name(room, info, data):
+    """마이페이지 수정 대상 캐릭터 이름. GM(운영진/비밀번호 입장)은 data["name"]으로 지정한 아무
+    캐릭터나 수정할 수 있고, 일반 참가자는 본인(로그인한 캐릭터)만 수정할 수 있습니다."""
+    wanted = (data.get("name") or "").strip()
+    if wanted and _require_gm_or_guest_gm(request.sid) is not None and room.game.db.exists(wanted):
+        return wanted
+    control = resolve_control(room, info)
+    if control["scope"] == "character":
+        return control["name"]
+    return None
+
+
 @socketio.on("set_my_color")
 def on_set_my_color(data):
     """참가자가 자신의 캐릭터 색상(아바타 동그라미/카드/채팅에 쓰이는 구분색)을 직접 지정합니다.
@@ -870,11 +882,10 @@ def on_set_my_color(data):
     room = get_room(info["room_id"])
     if room is None:
         return
-    control = resolve_control(room, info)
-    if control["scope"] != "character":
+    name = _mypage_target_name(room, info, data)
+    if name is None:
         emit("action_error", {"message": "캐릭터로 입장한 뒤에만 색상을 바꿀 수 있습니다."})
         return
-    name = control["name"]
     color = (data.get("color") or "").strip()
     if not _HEX_COLOR_RE.match(color):
         emit("action_error", {"message": "색상 형식이 올바르지 않습니다."})
@@ -906,11 +917,10 @@ def on_set_my_raid_display_name(data):
     room = get_room(info["room_id"])
     if room is None:
         return
-    control = resolve_control(room, info)
-    if control["scope"] != "character":
+    name = _mypage_target_name(room, info, data)
+    if name is None:
         emit("action_error", {"message": "캐릭터로 입장한 뒤에만 표기 이름을 바꿀 수 있습니다."})
         return
-    name = control["name"]
     raid_display_name = (data.get("raid_display_name") or "").strip()[:10] or None
     existing = room.game.db.get(name) or {}
     room.game.db.add_or_update(
@@ -940,11 +950,10 @@ def on_set_my_sound_effect_volume(data):
     room = get_room(info["room_id"])
     if room is None:
         return
-    control = resolve_control(room, info)
-    if control["scope"] != "character":
+    name = _mypage_target_name(room, info, data)
+    if name is None:
         emit("action_error", {"message": "캐릭터로 입장한 뒤에만 음량을 조절할 수 있습니다."})
         return
-    name = control["name"]
     try:
         volume = int(data.get("sound_effect_volume"))
     except (TypeError, ValueError):
@@ -977,11 +986,10 @@ def on_set_my_skill_log(data):
     room = get_room(info["room_id"])
     if room is None:
         return
-    control = resolve_control(room, info)
-    if control["scope"] != "character":
+    name = _mypage_target_name(room, info, data)
+    if name is None:
         emit("action_error", {"message": "캐릭터로 입장한 뒤에만 설정할 수 있습니다."})
         return
-    name = control["name"]
     log_type = data.get("skill_log_type") if data.get("skill_log_type") in ("text", "image") else "text"
     log_text = (data.get("skill_log_text") or "").strip()[:300]
     existing = room.game.db.get(name) or {}

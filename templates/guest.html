@@ -1032,8 +1032,20 @@ function submitJoinModal() {
   });
 }
 
+// 마이페이지를 편집할 수 있는지 - 본인 캐릭터로 로그인했거나, GM(남의 마이페이지도 전부 수정 가능)
+function canEditMyPage() {
+  const scope = myControlInfo(lastBattleForPanel).scope;
+  return scope === 'character' || scope === 'all';
+}
+// 지금 마이페이지에 떠 있는 캐릭터 이름 (GM이 남의 마이페이지를 수정할 때 서버에 함께 보냅니다)
+function myPageEditName() {
+  const c = myPageTargetChar();
+  return c ? c.name : undefined;
+}
+
 function onMyColorChange(hex) {
-  socket.emit('set_my_color', { color: hex });
+  const mypageOpen = document.getElementById('myPageModal').style.display === 'flex';
+  socket.emit('set_my_color', { color: hex, name: mypageOpen ? myPageEditName() : undefined });
 }
 
 function myCharacterColor(battle) {
@@ -2837,6 +2849,8 @@ function renderMyPage() {
   const control = myControlInfo(lastBattleForPanel);
   const isGm = control.scope === 'all';
   const isSelf = control.scope === 'character';
+  // GM은 남의 마이페이지도 전부 수정할 수 있습니다.
+  const canEdit = isSelf || isGm;
   const c = myPageTargetChar();
 
   const hpView = document.getElementById('myPageCurrentHpView');
@@ -2902,28 +2916,28 @@ function renderMyPage() {
   }
 
   // 표기 이름/색상/스킬 로그는 본인(그 캐릭터로 직접 로그인한 사람)만 수정 가능합니다.
-  document.getElementById('myPageRaidNameView').classList.toggle('editable', isSelf);
-  document.getElementById('myPagePortrait').style.cursor = isSelf ? 'pointer' : 'default';
-  document.getElementById('myPageColorDot').style.cursor = isSelf ? 'pointer' : 'default';
+  document.getElementById('myPageRaidNameView').classList.toggle('editable', canEdit);
+  document.getElementById('myPagePortrait').style.cursor = canEdit ? 'pointer' : 'default';
+  document.getElementById('myPageColorDot').style.cursor = canEdit ? 'pointer' : 'default';
   const typeSel = document.getElementById('myPageSkillLogType');
   const textArea = document.getElementById('myPageSkillLogText');
-  typeSel.disabled = !isSelf;
-  textArea.disabled = !isSelf;
+  typeSel.disabled = !canEdit;
+  textArea.disabled = !canEdit;
   if (document.activeElement !== typeSel) typeSel.value = c.skill_log_type || 'text';
   if (document.activeElement !== textArea) textArea.value = c.skill_log_text || '';
 
   document.getElementById('myPageSoundStatus').textContent = c.sound_effect ? '등록됨' : '미등록';
   document.getElementById('myPageSoundPreviewBtn').disabled = !c.sound_effect;
-  document.getElementById('myPageSoundUploadBtn').disabled = !isSelf;
+  document.getElementById('myPageSoundUploadBtn').disabled = !canEdit;
   const soundVolume = document.getElementById('myPageSoundVolume');
-  soundVolume.disabled = !isSelf;
+  soundVolume.disabled = !canEdit;
   if (document.activeElement !== soundVolume) {
     soundVolume.value = c.sound_effect_volume != null ? c.sound_effect_volume : 100;
   }
 }
 
 function startEditRaidName() {
-  if (myControlInfo(lastBattleForPanel).scope !== 'character') return;
+  if (!canEditMyPage()) return;
   const c = myPageTargetChar();
   if (!c) return;
   document.getElementById('myPageRaidNameView').style.display = 'none';
@@ -2938,12 +2952,13 @@ function commitRaidName() {
   const input = document.getElementById('myPageRaidNameInput');
   input.style.display = 'none';
   document.getElementById('myPageRaidNameView').style.display = '';
-  socket.emit('set_my_raid_display_name', { raid_display_name: input.value.trim() });
+  socket.emit('set_my_raid_display_name', { raid_display_name: input.value.trim(), name: myPageEditName() });
 }
 
 function onMyPageSkillLogChange() {
-  if (myControlInfo(lastBattleForPanel).scope !== 'character') return;
+  if (!canEditMyPage()) return;
   socket.emit('set_my_skill_log', {
+    name: myPageEditName(),
     skill_log_type: document.getElementById('myPageSkillLogType').value,
     skill_log_text: document.getElementById('myPageSkillLogText').value,
   });
@@ -2959,7 +2974,7 @@ function onMySoundEffectFileChosen(event) {
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
-  if (myControlInfo(lastBattleForPanel).scope !== 'character') {
+  if (!canEditMyPage()) {
     showError('캐릭터로 입장한 뒤에만 효과음을 등록할 수 있습니다.');
     return;
   }
@@ -2997,8 +3012,9 @@ function previewMySoundEffect() {
 }
 
 function onMySoundEffectVolumeChange() {
-  if (myControlInfo(lastBattleForPanel).scope !== 'character') return;
+  if (!canEditMyPage()) return;
   socket.emit('set_my_sound_effect_volume', {
+    name: myPageEditName(),
     sound_effect_volume: parseInt(document.getElementById('myPageSoundVolume').value, 10),
   });
 }
@@ -3020,7 +3036,7 @@ function onMyAvatarFileChosen(event) {
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
-  if (myControlInfo(lastBattleForPanel).scope !== 'character') {
+  if (!canEditMyPage()) {
     showError('캐릭터로 입장한 뒤에만 프로필 이미지를 등록할 수 있습니다.');
     return;
   }
