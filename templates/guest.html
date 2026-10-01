@@ -2765,7 +2765,9 @@ function renderUserInfoList() {
   const isGm = myControlInfo(lastBattleForPanel).scope === 'all';
   const gmHint = document.getElementById('userInfoGmHint');
   if (gmHint) gmHint.style.display = isGm ? '' : 'none';
-  const names = isGm ? lastRoster : lastRoster.filter(n => !lastUserInfoHidden.has(n));
+  // 가나다순(한국어 정렬, 숫자는 크기순 - 예: NOVA 2구역 < NOVA 10구역)
+  const names = (isGm ? lastRoster : lastRoster.filter(n => !lastUserInfoHidden.has(n)))
+    .slice().sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
   listEl.innerHTML = names.map(name => {
     const online = onlineSet.has(name);
     const hidden = lastUserInfoHidden.has(name);
