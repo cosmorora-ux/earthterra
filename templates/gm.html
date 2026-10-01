@@ -407,6 +407,23 @@ let logView = 'operator';
 let lastOperatorLog = [];
 let lastPublicLog = [];
 let roundDeadlineAt = null;
+// 서버 시계와 내 PC 시계의 차이(초). 접속자마다 PC 시계가 조금씩 달라도 타이머/시계가 모두
+// 서버 기준으로 똑같이 보이도록, 서버가 상태를 보낼 때 함께 보내는 server_now로 계산합니다.
+let serverTimeOffset = 0;
+let serverOffsetSampled = false;
+function updateServerTimeOffset(serverNow) {
+  if (!serverNow) return;
+  // 받은 순간 계산한 값은 "실제 차이 - 전송 지연"이라 실제보다 항상 조금 작게 나옵니다.
+  // 그래서 여러 번 받은 값 중 가장 큰 값(지연이 가장 짧았던 값)을 씁니다. 단, 2초 넘게
+  // 벌어지면 PC 시계가 바뀐 것이므로 새 값으로 바로 갈아탑니다.
+  const sample = serverNow - Date.now() / 1000;
+  if (!serverOffsetSampled || Math.abs(sample - serverTimeOffset) > 2) serverTimeOffset = sample;
+  else serverTimeOffset = Math.max(serverTimeOffset, sample);
+  serverOffsetSampled = true;
+}
+function serverNowSec() {
+  return Date.now() / 1000 + serverTimeOffset;
+}
 let lastRoster = [];
 let lastBattleForPanel = null;
 let actionPanelActorName = null;
@@ -1276,13 +1293,13 @@ function tickTimer() {
     el.style.color = '';
     return;
   }
-  const remain = Math.max(0, Math.round(roundDeadlineAt - Date.now() / 1000));
+  const remain = Math.max(0, Math.ceil(roundDeadlineAt - serverNowSec()));
   const m = String(Math.floor(remain / 60)).padStart(2, '0');
   const s = String(remain % 60).padStart(2, '0');
   el.textContent = `${m}:${s}`;
   el.style.color = remain <= 30 ? '#ff8080' : '';
 }
-setInterval(tickTimer, 1000);
+setInterval(tickTimer, 200);
 
 function setLogView(view) {
   logView = view;
@@ -1613,7 +1630,6 @@ function submitAction() {
 // ------------------------------------------------------------------
 let musicState = null;
 let musicKey = null;
-let serverTimeOffset = 0;
 let ytPlayer = null;
 let ytApiReady = false;
 
@@ -1688,7 +1704,7 @@ function stopMusic() {
 }
 
 function renderMusic(music, serverNow) {
-  if (serverNow) serverTimeOffset = serverNow - Date.now() / 1000;
+  updateServerTimeOffset(serverNow);
   const key = music ? `${music.type}:${music.src}:${music.started_at}` : null;
   if (key === musicKey) return;
   musicKey = key;

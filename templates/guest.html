@@ -778,6 +778,23 @@ const GRID_SIZE = {{ grid_size }};
 
 const socket = io();
 let roundDeadlineAt = null;
+// 서버 시계와 내 PC 시계의 차이(초). 접속자마다 PC 시계가 조금씩 달라도 타이머/시계가 모두
+// 서버 기준으로 똑같이 보이도록, 서버가 상태를 보낼 때 함께 보내는 server_now로 계산합니다.
+let serverTimeOffset = 0;
+let serverOffsetSampled = false;
+function updateServerTimeOffset(serverNow) {
+  if (!serverNow) return;
+  // 받은 순간 계산한 값은 "실제 차이 - 전송 지연"이라 실제보다 항상 조금 작게 나옵니다.
+  // 그래서 여러 번 받은 값 중 가장 큰 값(지연이 가장 짧았던 값)을 씁니다. 단, 2초 넘게
+  // 벌어지면 PC 시계가 바뀐 것이므로 새 값으로 바로 갈아탑니다.
+  const sample = serverNow - Date.now() / 1000;
+  if (!serverOffsetSampled || Math.abs(sample - serverTimeOffset) > 2) serverTimeOffset = sample;
+  else serverTimeOffset = Math.max(serverTimeOffset, sample);
+  serverOffsetSampled = true;
+}
+function serverNowSec() {
+  return Date.now() / 1000 + serverTimeOffset;
+}
 let MY_NICKNAME = '';
 let chatFilter = 'all';
 let lastChat = [];
@@ -1060,14 +1077,14 @@ function statsTitle(c) {
 function tickClock() {
   const el = document.getElementById('liveClock');
   if (!el) return;
-  const now = new Date();
+  const now = new Date(serverNowSec() * 1000);  // 서버 시각 기준
   const yy = String(now.getFullYear() % 100).padStart(2, '0');
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
   const timeStr = now.toLocaleTimeString('ko-KR', { hour12: true });
   el.textContent = `${yy}.${mm}.${dd} ${timeStr}`;
 }
-setInterval(tickClock, 1000);
+setInterval(tickClock, 200);
 tickClock();
 
 // ------------------------------------------------------------------
@@ -1853,13 +1870,13 @@ function tickTimer() {
     el.style.color = '';
     return;
   }
-  const remain = Math.max(0, Math.round(roundDeadlineAt - Date.now() / 1000));
+  const remain = Math.max(0, Math.ceil(roundDeadlineAt - serverNowSec()));
   const m = String(Math.floor(remain / 60)).padStart(2, '0');
   const s = String(remain % 60).padStart(2, '0');
   el.textContent = `${m}:${s}`;
   el.style.color = remain <= 30 ? '#ff8080' : '';
 }
-setInterval(tickTimer, 1000);
+setInterval(tickTimer, 200);
 
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round', 'wait']);
 const LOG_TAG_ICON = {
@@ -2617,7 +2634,6 @@ function quickMultiAction(type, actorName, count) {
 // ------------------------------------------------------------------
 let musicState = null;
 let musicKey = null;
-let serverTimeOffset = 0;
 let ytPlayer = null;
 let ytApiReady = false;
 
@@ -2931,7 +2947,7 @@ function updateMusicStatusText() {
 setInterval(updateMusicStatusText, 1000);
 
 function renderMusic(music, serverNow) {
-  if (serverNow) serverTimeOffset = serverNow - Date.now() / 1000;
+  updateServerTimeOffset(serverNow);
   const key = music ? `${music.type}:${music.src}:${music.started_at}` : null;
   if (key === musicKey) return;
   musicKey = key;
