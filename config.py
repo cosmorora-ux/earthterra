@@ -228,23 +228,30 @@ def _roll_core_dice(stats: dict, dice_count: int, overrides: dict = None) -> dic
     reroll_count = max(1, int(get_value("MENTAL_REROLL_COUNT", overrides)))
 
     first_rolls, final_rolls, rerolled = [], [], []
+    reroll_tries = []  # 다이스마다 재굴림으로 새로 굴린 값들(재굴림 안 했으면 빈 리스트) - 운영진 로그 표시용
     for _ in range(dice_count):
         r = random.randint(1, sides)
         first_rolls.append(r)
         if r <= threshold:
             # 기준치 이하면 reroll_count번 다시 굴리고, 그 중 가장 높은 값을 채택합니다.
             best = r
+            tries = []
             for _ in range(reroll_count):
-                best = max(best, random.randint(1, sides))
+                t = random.randint(1, sides)
+                tries.append(t)
+                best = max(best, t)
             r = best
             rerolled.append(True)
+            reroll_tries.append(tries)
         else:
             rerolled.append(False)
+            reroll_tries.append([])
         final_rolls.append(r)
 
     return {
         "sides": sides, "mental_threshold": threshold, "dice_count": dice_count,
         "first_rolls": first_rolls, "final_rolls": final_rolls, "rerolled": rerolled,
+        "reroll_tries": reroll_tries,
         "subtotal": sum(final_rolls),
     }
 
@@ -303,6 +310,7 @@ def roll_attack(stats: dict, role: str = None, overrides: dict = None) -> dict:
         "dice_sides": core["sides"], "dice_count": core["dice_count"],
         "mental_threshold": core["mental_threshold"],
         "first_rolls": core["first_rolls"], "final_rolls": core["final_rolls"], "rerolled": core["rerolled"],
+        "reroll_tries": core["reroll_tries"],
         "dice_subtotal": core["subtotal"],
         "stat_val": atk_val, "stat_mult": stat_mult, "stat_bonus": atk_bonus,
         "subtotal": subtotal, "is_crit": is_crit, "position_match": position_match,
@@ -393,6 +401,7 @@ def roll_defense(target_stats: dict, active: bool, grantor_stats: dict = None,
         "grantor_name": grantor_name, "sides": core["sides"], "dice_count": core["dice_count"],
         "mental_threshold": core["mental_threshold"],
         "first_rolls": core["first_rolls"], "final_rolls": core["final_rolls"], "rerolled": core["rerolled"],
+        "reroll_tries": core["reroll_tries"],
         "stat_val": g_def_val, "stat_mult": stat_mult,
         "is_crit": is_crit, "position_match": position_match,
         "crit_chance": crit_chance, "crit_mult": round(crit_mult, 3),
@@ -506,6 +515,7 @@ def roll_heal(stats: dict, role: str = None, overrides: dict = None) -> dict:
         "dice_sides": core["sides"], "dice_count": core["dice_count"],
         "mental_threshold": core["mental_threshold"],
         "first_rolls": core["first_rolls"], "final_rolls": core["final_rolls"], "rerolled": core["rerolled"],
+        "reroll_tries": core["reroll_tries"],
         "base_total": base_total, "dice_subtotal": core["subtotal"],
         "is_crit": is_crit, "position_match": position_match,
         "crit_chance": crit_chance, "crit_mult": round(crit_mult, 3),

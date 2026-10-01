@@ -54,6 +54,23 @@ def cell_label(x: int, y: int) -> str:
     return f"{col}{y + 1}"
 
 
+def _reroll_detail(roll: dict) -> str:
+    """운영진 로그용 - 재굴림(정신 기준치 이하) 과정을 보여주는 문구를 만듭니다.
+    예) " (재굴림 2회씩: 1→[4, 3]→4, 2→[18, 7]→18)" / 재굴림이 없었으면 " (재굴림 없음)"."""
+    tries = roll.get("reroll_tries")
+    if tries is None:
+        return ""
+    parts = [
+        f"{first}→{t}→{final}"
+        for first, t, final in zip(roll.get("first_rolls", []), tries, roll.get("final_rolls", []))
+        if t
+    ]
+    if not parts:
+        return " (재굴림 없음)"
+    count = max(len(t) for t in tries)
+    return f" (재굴림 {count}회씩: {', '.join(parts)})"
+
+
 def decide_first_team(team_a, team_b):
     """
     민첩 합산을 기준으로 선공 팀을 자동 결정합니다.
@@ -449,7 +466,7 @@ class Battle:
             self._log_operator_only(
                 f"방어 굴림(능동 방어 - {grantor_desc}) : "
                 f"수동 바닥값 {dfs['passive_component']} + "
-                f"[다이스 {dfs['final_rolls']}(1차 {dfs['first_rolls']}) 합 "
+                f"[다이스 {dfs['final_rolls']}(1차 {dfs['first_rolls']}{_reroll_detail(dfs)}) 합 "
                 f"{sum(dfs['final_rolls'])} + 방어{dfs['stat_val']}×{dfs['stat_mult']}] "
                 f"= 능동계층 {dfs['active_subtotal']}  →  총 {dfs['passive_component'] + dfs['active_subtotal']}",
                 tag="formula",
@@ -712,7 +729,7 @@ class Battle:
         self._log_operator_only(
             f"공격 굴림 : 다이스(1~{atk['dice_sides']}, {atk['dice_count']}개, "
             f"재굴림 기준치 {atk['mental_threshold']} 이하) "
-            f"1차 {atk['first_rolls']} → 최종 {atk['final_rolls']} 합계 {atk['dice_subtotal']} "
+            f"1차 {atk['first_rolls']} → 최종 {atk['final_rolls']}{_reroll_detail(atk)} 합계 {atk['dice_subtotal']} "
             f"+ 공격{atk['stat_val']}×{atk['stat_mult']} = {atk['subtotal']}",
             tag="formula",
         )
@@ -1176,8 +1193,8 @@ class Battle:
         self._log_operator_only(
             f"힐 굴림 : 다이스(1~{heal['dice_sides']}, {heal['dice_count']}개, "
             f"재굴림 기준치 {heal['mental_threshold']} 이하) "
-            f"1차 {heal['first_rolls']} → 최종 {heal['final_rolls']} 합계 {heal['dice_subtotal']} "
-            f"× 배율{config.HEAL_OUTPUT_MULTIPLIER} = {heal['base_total']}",
+            f"1차 {heal['first_rolls']} → 최종 {heal['final_rolls']}{_reroll_detail(heal)} 합계 {heal['dice_subtotal']} "
+            f"× 배율{config.get_value('HEAL_OUTPUT_MULTIPLIER', self.formula_overrides)} = {heal['base_total']}",
             tag="formula",
         )
         if heal["is_crit"]:
