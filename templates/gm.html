@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <title>운영진 화면 - {{ room_id }}</title>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <style>
   :root {
     --bg: #050505;
@@ -13,7 +15,7 @@
     --card-border: #2a2a2e;
     --text: #f2f2f2;
     --muted: #8b8b90;
-    --accent-blue: #3b82f6;
+    --accent-blue: #0043FF;
     --accent-red: #e2574a;
     --role-스트라이커: #ff6b5b;
     --role-딜러: #ff6b5b;
@@ -23,7 +25,7 @@
     --role-힐러: #ffd166;
   }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, "Segoe UI", "Pretendard", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
+  body { font-family: "Pretendard", -apple-system, "Segoe UI", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
   .shell { max-width: 1360px; margin: 0 auto; padding: 20px 20px 40px; }
   .panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; }
   a { color: inherit; }
@@ -106,8 +108,9 @@
   .logline.group-start { font-weight:600; }
   .logblock { margin:8px 0; padding:6px 10px 6px 10px; border-left:3px solid var(--muted); border-radius:6px; background:rgba(255,255,255,.035); }
   .logblock:first-child { margin-top:0; }
-  .logblock.team-A { border-left-color: var(--accent-blue); }
-  .logblock.team-B { border-left-color: var(--accent-red); }
+  .logblock.atk { border-left-color: var(--role-스트라이커); }
+  .logblock.def { border-left-color: var(--role-가디언); }
+  .logblock.heal { border-left-color: var(--role-메딕); }
   .logblock.cont { margin-top:-4px; background:rgba(255,255,255,.02); }
   .logblock .logline:not(.group-start) { padding-left:14px; font-size:.95em; }
   .logblock .logline.group-start { padding-bottom:2px; margin-bottom:2px; border-bottom:1px solid rgba(255,255,255,.08); }
@@ -116,6 +119,11 @@
   .logline.tag-crit { color:#fff; font-weight:700; }
   .logline.tag-system, .logline.tag-wait { color: var(--muted); font-size:14px; }
   .logline.tag-round { color:#7fb0ff; font-weight:700; margin-top:14px; }
+  /* 블록 첫 줄(누가 무엇을 했는지)만 흰색, 그 아래 결과 줄들은 살짝 연하게 합니다.
+     직군 색으로 칠해진 수치(span)는 그 색 그대로 유지됩니다. */
+  .logblock .logline.group-start { color:#ffffff; opacity:1; }
+  .logblock .logline:not(.group-start), .logblock .logline.tag-crit:not(.group-start) { color:#c8cad0; }
+  .logblock .logline.tag-system, .logblock .logline.tag-wait { color: var(--muted); }
 
   .chat-tabs { display:flex; gap:6px; margin-left:auto; }
   .chat-tabs button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:6px; padding:3px 8px; font-size:13px; }
@@ -1283,7 +1291,7 @@ function setLogView(view) {
 
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round', 'wait']);
 const LOG_TAG_ICON = {
-  round: '✶', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
+  round: '✶', action: '⚔', damage: '⚔', defend: '🛡', defend_value: '🛡', taunt: '🎯',
   heal: '✚', crit: '✦', system: '·', wait: '⏸', hp: '❤', formula: '', summary: '',
 };
 function formatLogLineHtml(l) {
@@ -1292,14 +1300,18 @@ function formatLogLineHtml(l) {
   const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${l.text}</span>` : l.text;
   return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${body}</div>`;
 }
-// 섹션 첫 줄("AZ 공격 → F")이 어느 캐릭터의 행동인지 찾아 팀 색을 입힙니다. 이름이 겹칠 수 있어
-// 가장 긴 이름부터 맞춰봅니다.
-function logActorTeam(text) {
-  let best = null;
-  (lastAllForCards || []).forEach(c => {
-    if (text.startsWith(c.name) && (!best || c.name.length > best.name.length)) best = c;
-  });
-  return best ? best.teamLabel : null;
+// 블록 첫 줄의 내용으로 공격/방어/힐 중 어떤 행동인지 구분해 그 색을 입힙니다. 피해 정산처럼
+// 자동으로 발생한 안내성 줄("["로 시작)이나 이동/배치처럼 셋 중 어디에도 안 속하는 행동은
+// 무채색(기본 테두리색) 그대로 둡니다.
+function logActionClass(head) {
+  if (head.tag === 'defend') return 'def';
+  if (head.tag !== 'action') return '';
+  const t = head.text;
+  if (t.startsWith('[')) return '';
+  if (t.includes('공격') || t.includes('【붕괴】') || t.includes('【방출】')) return 'atk';
+  if (t.includes('힐')) return 'heal';
+  if (t.includes('방어') || t.includes('회피')) return 'def';
+  return '';
 }
 // 캐릭터 한 명의 행동(공격 → 크리티컬 → 공격 수치 …)을 하나의 블록으로 묶어 보여줍니다.
 function formatLogHtml(lines) {
@@ -1307,8 +1319,8 @@ function formatLogHtml(lines) {
     const head = section[0];
     if (head.tag === 'round') return section.map(formatLogLineHtml).join('');
     const isGroup = LOG_GROUP_START_TAGS.has(head.tag);
-    const team = isGroup ? logActorTeam(head.text) : null;
-    const cls = `logblock${isGroup ? '' : ' cont'}${team ? ' team-' + team : ''}`;
+    const actionCls = isGroup ? logActionClass(head) : '';
+    const cls = `logblock${isGroup ? '' : ' cont'}${actionCls ? ' ' + actionCls : ''}`;
     return `<div class="${cls}">${section.map(formatLogLineHtml).join('')}</div>`;
   }).join('');
 }

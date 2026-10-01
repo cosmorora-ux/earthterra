@@ -93,6 +93,8 @@ class Character:
         self.skill_log_type = "text"   # 스킬 로그 표시 방식 - "text" 또는 "image"
         self.skill_log_text = ""       # skill_log_type이 "text"일 때 보여줄 내용
         self.avatar_url = None         # 업로드한 프로필 이미지 URL (정사각형 PNG/WebP/GIF)
+        self.sound_effect = None       # 본인 행동에 쓸 효과음 파일 URL(등록 시 공통 효과음 대신 사용 - 추후 구현)
+        self.sound_effect_volume = 100  # 효과음 재생 음량(0~100)
 
     # ------------------------------------------------------------------
     @property

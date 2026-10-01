@@ -193,7 +193,6 @@ class HPBar(tk.Canvas):
 LOG_TAG_STYLE = {
     "round": {"foreground": COLORS["accent"], "font": ("맑은 고딕", 12, "bold"), "spacing1": 10, "spacing3": 4},
     "system": {"foreground": COLORS["accent2"], "font": ("맑은 고딕", 9, "italic")},
-    "wait": {"foreground": COLORS["accent2"], "font": ("맑은 고딕", 10, "bold"), "spacing1": 6},
     "action": {"foreground": COLORS["text"], "font": ("맑은 고딕", 10, "bold"), "spacing1": 6},
     "defend": {"foreground": COLORS["accent2"], "font": ("맑은 고딕", 10, "bold"), "spacing1": 6},
     "taunt": {"foreground": COLORS["aggro"], "font": ("맑은 고딕", 10, "bold"), "spacing1": 6},
@@ -220,7 +219,7 @@ def render_log(text_widget, log_entries):
         icon = {
             "round": "▌ ", "crit": "✦ ", "damage": "⚔ ", "heal": "✚ ",
             "defend": "🛡 ", "taunt": "🎯 ",
-            "system": "· ", "wait": "⏸ ", "summary": "  - ",
+            "system": "· ", "summary": "  - ",
         }.get(entry["tag"], "")
         text_widget.insert(tk.END, icon + entry["text"] + "\n", entry["tag"])
     text_widget.see(tk.END)

@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <title>참가자 화면 - {{ room_id }}</title>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <style>
   :root {
     --bg: #050505;
@@ -13,7 +15,7 @@
     --card-border: #2a2a2e;
     --text: #f2f2f2;
     --muted: #8b8b90;
-    --accent-blue: #3b82f6;
+    --accent-blue: #0043FF;
     --accent-red: #e2574a;
     --role-스트라이커: #ff6b5b;
     --role-딜러: #ff6b5b;
@@ -23,8 +25,11 @@
     --role-힐러: #ffd166;
   }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, "Segoe UI", "Pretendard", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
-  .shell { max-width: 1360px; margin: 0 auto; padding: 20px 20px 40px; }
+  body { font-family: "Pretendard", -apple-system, "Segoe UI", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
+  .shell {
+    max-width: 1360px; margin: 0 auto; padding: 20px 20px 40px; width:100%;
+    flex:1; min-height:0; display:flex; flex-direction:column;
+  }
   .panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; }
   a { color: inherit; }
 
@@ -77,6 +82,15 @@
 
   /* ---------- 마이페이지 팝업 ---------- */
   .modal-box.mypage { width:380px; max-height:85vh; overflow-y:auto; }
+
+  /* ---------- 유저 접속정보 팝업 ---------- */
+  .modal-box.userinfo-modal { width:320px; max-height:80vh; display:flex; flex-direction:column; }
+  .userinfo-list { overflow-y:auto; flex:1 1 auto; min-height:0; }
+  .userinfo-row { display:flex; align-items:center; gap:10px; padding:7px 2px; font-size:15px; border-bottom:1px solid var(--panel-border); }
+  .userinfo-row:last-child { border-bottom:none; }
+  .userinfo-dot { width:9px; height:9px; border-radius:50%; background:#4a4a4e; flex-shrink:0; }
+  .userinfo-dot.online { background:#3ecf6a; box-shadow:0 0 6px rgba(62,207,106,.8); }
+  .userinfo-name { flex:1; }
   .mypage-portrait-wrap { display:flex; justify-content:center; margin-bottom:14px; }
   .mypage-portrait {
     width:120px; height:120px; border-radius:16px; background:#0c0c0d;
@@ -109,12 +123,14 @@
     background:#0c0c0d; border:1px solid var(--card-border); color:var(--text);
     border-radius:8px; padding:10px 12px; font-size:15px; font-family:inherit;
   }
+  .mypage-sound-controls { display:flex; align-items:center; gap:8px; padding:4px 0; }
+  .mypage-sound-controls #myPageSoundVolume { flex:1; accent-color: var(--accent-blue); }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
   .chat-tab-cfg-row .hint { margin-top:6px; }
 
-  .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding: 0 4px; }
+  .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding: 0 4px; flex-shrink:0; }
   .breadcrumb { color: var(--muted); font-size:15px; }
   .breadcrumb b { color: var(--text); }
   .bgm-label { color: var(--muted); font-size:15px; display:flex; align-items:center; gap:6px; }
@@ -190,6 +206,14 @@
               border-radius:10px; padding:8px 12px; font-size:14px; white-space:nowrap; display:none; box-shadow:0 6px 18px rgba(0,0,0,.5); }
   .cavatar-sm .stat-tip { right:auto; left:0; }
   .cavatar:hover .stat-tip, .cavatar-sm:hover .stat-tip { display:block; }
+  .card-info-icon {
+    position:relative; width:16px; height:16px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; cursor:default;
+    opacity:.75;
+  }
+  .card-info-icon svg { width:100%; height:100%; display:block; }
+  .card-info-icon:hover { opacity:1; }
+  .card-info-icon:hover .stat-tip { display:block; }
 
   /* ---------- 하단 그리드 (로그 / 커맨드) ---------- */
   .bottom-grid { display:grid; grid-template-columns: 1fr 1.35fr; gap:16px; }
@@ -206,8 +230,9 @@
   .logline.group-start { font-weight:600; }
   .logblock { margin:8px 0; padding:6px 10px; border-left:3px solid var(--muted); border-radius:6px; background:rgba(255,255,255,.035); }
   .logblock:first-child { margin-top:0; }
-  .logblock.team-A { border-left-color: var(--accent-blue); }
-  .logblock.team-B { border-left-color: var(--accent-red); }
+  .logblock.atk { border-left-color: var(--role-스트라이커); }
+  .logblock.def { border-left-color: var(--role-가디언); }
+  .logblock.heal { border-left-color: var(--role-메딕); }
   .logblock.cont { margin-top:-4px; background:rgba(255,255,255,.02); }
   .logblock .logline:not(.group-start) { padding-left:14px; font-size:.95em; }
   .logblock .logline.group-start { padding-bottom:2px; margin-bottom:2px; border-bottom:1px solid rgba(255,255,255,.08); }
@@ -215,6 +240,11 @@
   .logline.tag-crit { color:#fff; font-weight:700; }
   .logline.tag-system, .logline.tag-wait { color: var(--muted); font-size:14px; }
   .logline.tag-round { color:#7fb0ff; font-weight:700; margin-top:14px; }
+  /* 블록 첫 줄(누가 무엇을 했는지)만 흰색, 그 아래 결과 줄들은 살짝 연하게 합니다.
+     직군 색으로 칠해진 수치(span)는 그 색 그대로 유지됩니다. */
+  .logblock .logline.group-start { color:#ffffff; opacity:1; }
+  .logblock .logline:not(.group-start), .logblock .logline.tag-crit:not(.group-start) { color:#c8cad0; }
+  .logblock .logline.tag-system, .logblock .logline.tag-wait { color: var(--muted); }
 
   .chat-tabs { display:flex; gap:6px; margin-left:auto; }
   .chat-tabs button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:6px; padding:3px 8px; font-size:13px; cursor:pointer; }
@@ -284,7 +314,7 @@
   /* ================================================================
      새 레이아웃 : 좌측 아이콘 사이드바 + 본문(팀 카드/우측 Member 패널)
      ================================================================ */
-  .app-shell { display:flex; min-height:100vh; }
+  .app-shell { display:flex; height:100vh; overflow:hidden; }
   .sidebar {
     width:64px; flex-shrink:0; background: var(--panel); border-right:1px solid var(--panel-border);
     display:flex; flex-direction:column; align-items:center; padding:18px 0; gap:6px;
@@ -303,20 +333,23 @@
   .sidebar .sidebar-gap { height:16px; }
   .sidebar .sidebar-grow { flex:1; }
 
-  .content-area { flex:1; min-width:0; padding: 20px 20px 40px; }
+  /* 사이드바가 항상 화면 높이에 딱 맞도록(스크롤 없이 로그인 버튼까지 다 보이도록),
+     content-area 자체를 화면 높이 안에서 세로 flex로 채우고 넘치는 부분은 안쪽
+     (teams-col-scroll / member-body)에서만 스크롤되게 합니다. */
+  .content-area {
+    flex:1; min-width:0; min-height:0;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
 
   /* 상단바 - 새 디자인(타임/라운드/타이머를 크게) */
-  .topbar.v2 { display:flex; align-items:center; gap:22px; padding:18px 26px; }
+  .topbar.v2 { display:flex; align-items:center; gap:22px; padding:18px 26px; flex-shrink:0; }
   .topbar.v2 .seg { font-size:20px; font-weight:800; }
   .topbar.v2 .play-icon { color: var(--accent-blue); font-size:15px; }
   .topbar.v2 #roundTimerLabel { font-size:30px; font-weight:700; }
 
   /* 본문을 좌(팀 카드) / 우(Member 패널)로 나눕니다 */
-  .layout-grid { display:flex; gap:16px; align-items:stretch; }
-  .teams-col {
-    flex:1; min-width:0; display:flex; flex-direction:column;
-    height: calc(100vh - 150px); min-height:520px;
-  }
+  .layout-grid { display:flex; gap:16px; align-items:stretch; flex:1; min-height:0; }
+  .teams-col { flex:1; min-width:0; display:flex; flex-direction:column; }
   .teams-col-scroll { flex:1; min-height:0; overflow-y:auto; }
   .member-col { width:380px; flex-shrink:0; }
 
@@ -329,16 +362,27 @@
   /* 캐릭터 카드 새 디자인 - 큰 정사각 아바타가 왼쪽 아래, HP는 아바타 옆에 */
   .char-card.v2 { padding:14px; }
   .char-card.v2 .row1 { align-items:center; }
-  .char-card.v2 .cname { font-size:17px; }
+  .char-card.v2 .cname { font-size:17px; font-weight:800; }
   .char-card.v2 .crole { display:inline; margin-left:8px; }
-  .char-card.v2 .cbadges { margin-top:8px; }
-  .char-card.v2 .portrait-row { display:flex; align-items:flex-end; gap:10px; margin-top:10px; }
+  /* 초상화는 왼쪽에 큼직하게, 뱃지는 초상화 "위"가 아니라 초상화 옆 오른쪽 상단에 쌓입니다.
+     체력 바는 이 줄 아래에 카드 전체 폭으로 따로 둡니다(portrait-row 밖). */
+  .char-card.v2 .portrait-row { display:flex; align-items:stretch; gap:12px; margin-top:8px; }
   .char-card.v2 .portrait {
-    width:64px; height:64px; border-radius:8px; background:#0c0c0d; border:1px solid var(--card-border);
+    width:96px; height:96px; border-radius:10px; background:#0c0c0d; border:1px solid var(--card-border);
     flex-shrink:0; background-size:contain; background-position:center; background-repeat:no-repeat;
   }
-  .char-card.v2 .portrait-side { flex:1; min-width:0; }
-  .char-card.v2 .hpbar-wrap { margin-top:0; }
+  /* 오른쪽 칸은 초상화와 높이가 같고, 위에는 뱃지, 맨 아래에는 HP 숫자 → HP 바 순서로 둡니다.
+     그래서 HP 바의 아랫변이 초상화의 아랫변과 정확히 같은 선에 맞습니다. */
+  .char-card.v2 .portrait-side { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between; }
+  .char-card.v2 .cbadges-row { display:flex; justify-content:space-between; align-items:flex-start; gap:6px; }
+  .char-card.v2 .cbadges { display:flex; flex-direction:column; gap:4px; font-size:13px; color: var(--muted); min-width:0; }
+  .char-card.v2 .cbadges > div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .char-card.v2 .cstatus-tag { font-size:13px; color: var(--muted); flex-shrink:0; white-space:nowrap; margin-left:0; }
+  /* 체력 숫자는 바 바로 위, 오른쪽 정렬입니다. */
+  .char-card.v2 .hpbar-wrap { display:flex; flex-direction:column; align-items:stretch; gap:4px; margin-top:6px; }
+  .char-card.v2 .hpnum { align-self:flex-end; font-size:14px; color: var(--muted); }
+  /* 세로(column) 배치 안에서는 공통 .hpbar-track의 flex:1 때문에 높이가 0이 되므로 고정 높이로 둡니다. */
+  .char-card.v2 .hpbar-track { flex:none; height:6px; }
 
   .round-track-ph {
     display:flex; align-items:center; justify-content:space-between; padding:14px 20px; margin-top:16px;
@@ -356,7 +400,7 @@
   .action-bar-bottom button { height:40px; box-sizing:border-box; }
 
   /* 우측 Member 패널 - 채팅창/로그창/회의창 3탭 구조 */
-  .member-panel { display:flex; flex-direction:column; height: calc(100vh - 150px); min-height:520px; position:relative; }
+  .member-panel { display:flex; flex-direction:column; height:100%; position:relative; }
   .member-panel .member-header {
     display:flex; align-items:center; justify-content:space-between; padding:16px 18px;
     border-bottom:1px solid var(--panel-border);
@@ -441,12 +485,10 @@
   </div>
 </div>
 <div id="userInfoModal" class="modal-overlay">
-  <div class="modal-box panel">
+  <div class="modal-box userinfo-modal panel">
     <div class="modal-title">유저 접속정보</div>
-    <div style="font-size:15px; line-height:2;">
-      <div>닉네임: <b id="userInfoNickname">-</b></div>
-      <div>역할/소속: <b id="userInfoRole">-</b></div>
-    </div>
+    <div class="hint" style="margin-bottom:6px;">초록 점이 켜진 이름은 지금 그 캐릭터로 접속 중이에요.</div>
+    <div class="userinfo-list" id="userInfoList"></div>
     <div class="row"><button class="btn-plain" onclick="closeUserInfoPanel()">닫기</button></div>
   </div>
 </div>
@@ -513,6 +555,20 @@
       </select>
     </div>
     <textarea id="myPageSkillLogText" placeholder="텍스트를 작성해 주세요." onchange="onMyPageSkillLogChange()"></textarea>
+
+    <div class="mypage-divider"></div>
+
+    <div class="mypage-row">
+      <span class="mypage-label">효과음</span>
+      <span class="mypage-value" id="myPageSoundStatus">미등록</span>
+    </div>
+    <div class="mypage-sound-controls">
+      <button class="btn-plain" id="myPageSoundUploadBtn" onclick="document.getElementById('mySoundFileInput').click()">업로드</button>
+      <button class="btn-plain" id="myPageSoundPreviewBtn" onclick="previewMySoundEffect()" disabled>▶ 미리듣기</button>
+      <input type="range" id="myPageSoundVolume" min="0" max="100" value="100" onchange="onMySoundEffectVolumeChange()" data-tip="효과음 음량 (본인에게만 들려요)">
+    </div>
+    <div class="hint" style="margin-top:4px;">최대 6초만 재생되고, 업로드 파일은 5MB까지 가능합니다.</div>
+    <input type="file" id="mySoundFileInput" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,.mp3,.wav,.ogg,.m4a,.aac" style="display:none;" onchange="onMySoundEffectFileChosen(event)">
 
     <div class="row"><button class="btn-plain" onclick="closeMyPage()">닫기</button></div>
   </div>
@@ -697,6 +753,7 @@ let lastBattleForPanel = null;
 let actionPanelActorName = null;
 let lastRoster = [];  // 캐릭터 데이터베이스에 등록된 전체 이름 목록 (전투 참여 여부와 무관)
 let lastRosterProfiles = {};  // 이름 -> { color, avatar_url } (채팅창 프로필 이미지/닉네임 색상용)
+let lastOnlineCharacters = [];  // 지금 그 이름으로 로그인(접속)해 있는 캐릭터 이름 목록 (유저 접속정보 팝업용)
 
 const STAT_KEYS = ["체력", "공격", "방어", "이능", "정신", "민첩", "행운"];
 // "방어"는 가디언의 능동 방어 부여(아군 지정 가능, type "defend")와 메딕의 "본인방어"를 대신하는
@@ -936,6 +993,8 @@ socket.on('public_state', (state) => {
   if (roomNameEl && state.room_name) roomNameEl.textContent = state.room_name;
   lastRoster = state.roster || [];
   lastRosterProfiles = state.roster_profiles || {};
+  lastOnlineCharacters = state.online_characters || [];
+  if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
   lastSiteDice = state.site_dice || null;
   lastPreviewTeams = state.preview_teams || null;
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
@@ -1227,6 +1286,14 @@ function displayNameOf(c) {
   return `${base} [${c.boss_section}]`;
 }
 
+// 카드 우상단의 "스탯 보기" 아이콘 - 마우스를 올리면 stat-tip 툴팁이 뜹니다. 카드마다 이 SVG가
+// 반복되므로, id가 겹치면 안 되는 clipPath(원래 안에 들어있던)는 빼고 넣었습니다(패스 자체가
+// viewBox 안에 다 들어와서 클리핑 없이도 모양은 동일합니다).
+const CARD_INFO_ICON_SVG = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path opacity="0.8" d="M5.9999 11.6004C9.0927 11.6004 11.5999 9.09319 11.5999 6.00039C11.5999 2.9076 9.0927 0.400391 5.9999 0.400391C2.90711 0.400391 0.399902 2.9076 0.399902 6.00039C0.399902 9.09319 2.90711 11.6004 5.9999 11.6004Z" fill="#B3B3B3" fill-opacity="0.2" stroke="white" stroke-width="0.8"/>
+<path d="M6.3 4.74348V8.79948H5.54V4.74348H6.3ZM5.5 3.06348H6.34V3.91148H5.5V3.06348Z" fill="white"/>
+</svg>`;
+
 function renderCardHtml(c) {
   const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
   const isAlly = lastMyTeam !== null && c.team === lastMyTeam;
@@ -1246,18 +1313,22 @@ function renderCardHtml(c) {
     <div class="row1">
       <div>
         <span class="cname">${displayNameOf(c)}${isMine ? ' <span style="color:var(--accent-blue); font-size:13px;">(나)</span>' : ''}</span>
-        <span class="crole" style="color:${roleColorVar(c.role)}">${c.role}${(c.skill && BATTLE_TYPE === 'mass_raid') ? ' 【' + c.skill + '】' : ''}<span class="cstatus-tag">${statusTag}</span></span>
+        <span class="crole" style="color:${roleColorVar(c.role)}">${c.role}${(c.skill && BATTLE_TYPE === 'mass_raid') ? ' 【' + c.skill + '】' : ''}</span>
       </div>
-    </div>
-    <div class="cbadges">${badges.join('&nbsp;&nbsp;')}</div>
-    <div class="portrait-row">
-      <div class="portrait" style="${c.avatar_url ? `background-image:url('${c.avatar_url}');` : ''}">
+      <div class="card-info-icon">${CARD_INFO_ICON_SVG}
         <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
       </div>
+    </div>
+    <div class="portrait-row">
+      <div class="portrait" style="${c.avatar_url ? `background-image:url('${c.avatar_url}');` : ''}"></div>
       <div class="portrait-side">
+        <div class="cbadges-row">
+          <div class="cbadges">${badges.map(b => `<div>${b}</div>`).join('')}</div>
+          <div class="cstatus-tag">${statusTag}</div>
+        </div>
         <div class="hpbar-wrap">
-          <div class="hpbar-track"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
           <div class="hpnum">${c.current_hp}/${c.max_hp}</div>
+          <div class="hpbar-track"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
         </div>
       </div>
     </div>
@@ -1724,7 +1795,7 @@ setInterval(tickTimer, 1000);
 
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round', 'wait']);
 const LOG_TAG_ICON = {
-  round: '✶', action: '⚔', damage: '⚔', defend: '🛡', taunt: '🎯',
+  round: '✶', action: '⚔', damage: '⚔', defend: '🛡', defend_value: '🛡', taunt: '🎯',
   heal: '✚', crit: '✦', system: '·', wait: '⏸', hp: '❤', formula: '', summary: '',
 };
 function formatLogLineHtml(l) {
@@ -1733,14 +1804,18 @@ function formatLogLineHtml(l) {
   const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${l.text}</span>` : l.text;
   return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${body}</div>`;
 }
-// 섹션 첫 줄("AZ 공격 → F")이 어느 캐릭터의 행동인지 찾아 팀 색을 입힙니다. 이름이 겹칠 수 있어
-// 가장 긴 이름부터 맞춰봅니다.
-function logActorTeam(text) {
-  let best = null;
-  (lastAllForCards || []).forEach(c => {
-    if (text.startsWith(c.name) && (!best || c.name.length > best.name.length)) best = c;
-  });
-  return best ? best.teamLabel : null;
+// 블록 첫 줄의 내용으로 공격/방어/힐 중 어떤 행동인지 구분해 그 색을 입힙니다. 피해 정산처럼
+// 자동으로 발생한 안내성 줄("["로 시작)이나 이동/배치처럼 셋 중 어디에도 안 속하는 행동은
+// 무채색(기본 테두리색) 그대로 둡니다.
+function logActionClass(head) {
+  if (head.tag === 'defend') return 'def';
+  if (head.tag !== 'action') return '';
+  const t = head.text;
+  if (t.startsWith('[')) return '';
+  if (t.includes('공격') || t.includes('【붕괴】') || t.includes('【방출】')) return 'atk';
+  if (t.includes('힐')) return 'heal';
+  if (t.includes('방어') || t.includes('회피')) return 'def';
+  return '';
 }
 // 캐릭터 한 명의 행동(공격 → 크리티컬 → 공격 수치 …)을 하나의 블록으로 묶어 보여줍니다.
 function formatLogHtml(lines) {
@@ -1748,8 +1823,8 @@ function formatLogHtml(lines) {
     const head = section[0];
     if (head.tag === 'round') return section.map(formatLogLineHtml).join('');
     const isGroup = LOG_GROUP_START_TAGS.has(head.tag);
-    const team = isGroup ? logActorTeam(head.text) : null;
-    const cls = `logblock${isGroup ? '' : ' cont'}${team ? ' team-' + team : ''}`;
+    const actionCls = isGroup ? logActionClass(head) : '';
+    const cls = `logblock${isGroup ? '' : ' cont'}${actionCls ? ' ' + actionCls : ''}`;
     return `<div class="${cls}">${section.map(formatLogLineHtml).join('')}</div>`;
   }).join('');
 }
@@ -2500,15 +2575,22 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 
-function toggleUserInfoPanel() {
-  document.getElementById('userInfoNickname').textContent = MY_NICKNAME || '미입장';
-  const control = myControlInfo(lastBattleForPanel);
-  let roleText = '미입장/관전';
-  if (control.scope === 'all') roleText = '운영진(GM)';
-  else if (control.scope === 'character') {
-    roleText = `${control.character.team === 'A' ? '1팀' : '2팀'} · ${control.character.role || ''}`.trim();
+// 등록된 캐릭터 전원을 보여주고, 지금 그 이름으로 접속 중이면 초록 점을 켭니다.
+function renderUserInfoList() {
+  const listEl = document.getElementById('userInfoList');
+  const onlineSet = new Set(lastOnlineCharacters);
+  if (!lastRoster.length) {
+    listEl.innerHTML = '<div class="hint" style="padding:8px 2px;">등록된 캐릭터가 없습니다.</div>';
+    return;
   }
-  document.getElementById('userInfoRole').textContent = roleText;
+  listEl.innerHTML = lastRoster.map(name => {
+    const online = onlineSet.has(name);
+    return `<div class="userinfo-row"><span class="userinfo-dot ${online ? 'online' : ''}"></span><span class="userinfo-name">${name}</span></div>`;
+  }).join('');
+}
+
+function toggleUserInfoPanel() {
+  renderUserInfoList();
   document.getElementById('userInfoModal').style.display = 'flex';
 }
 function closeUserInfoPanel() {
@@ -2561,6 +2643,10 @@ function renderMyPage() {
     invView.textContent = '-';
     hpView.style.display = ''; hpInput.style.display = 'none';
     invView.style.display = ''; invInput.style.display = 'none';
+    document.getElementById('myPageSoundStatus').textContent = '미등록';
+    document.getElementById('myPageSoundPreviewBtn').disabled = true;
+    document.getElementById('myPageSoundUploadBtn').disabled = true;
+    document.getElementById('myPageSoundVolume').disabled = true;
     return;
   }
 
@@ -2604,6 +2690,15 @@ function renderMyPage() {
   textArea.disabled = !isSelf;
   if (document.activeElement !== typeSel) typeSel.value = c.skill_log_type || 'text';
   if (document.activeElement !== textArea) textArea.value = c.skill_log_text || '';
+
+  document.getElementById('myPageSoundStatus').textContent = c.sound_effect ? '등록됨' : '미등록';
+  document.getElementById('myPageSoundPreviewBtn').disabled = !c.sound_effect;
+  document.getElementById('myPageSoundUploadBtn').disabled = !isSelf;
+  const soundVolume = document.getElementById('myPageSoundVolume');
+  soundVolume.disabled = !isSelf;
+  if (document.activeElement !== soundVolume) {
+    soundVolume.value = c.sound_effect_volume != null ? c.sound_effect_volume : 100;
+  }
 }
 
 function startEditRaidName() {
@@ -2630,6 +2725,60 @@ function onMyPageSkillLogChange() {
   socket.emit('set_my_skill_log', {
     skill_log_type: document.getElementById('myPageSkillLogType').value,
     skill_log_text: document.getElementById('myPageSkillLogText').value,
+  });
+}
+
+// 효과음은 지금은 등록(파일 업로드)/미리듣기만 지원합니다 - 행동마다 실제로 재생하는 기능은
+// 나중에 추가되고, 그때 공통 효과음이 기본이며 여기서 등록한 사람만 자기 행동에 한해 이
+// 파일+음량을 쓰게 됩니다.
+const SOUND_EFFECT_MAX_BYTES = 5 * 1024 * 1024;
+const SOUND_EFFECT_MAX_SECONDS = 6;
+
+function onMySoundEffectFileChosen(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  if (myControlInfo(lastBattleForPanel).scope !== 'character') {
+    showError('캐릭터로 입장한 뒤에만 효과음을 등록할 수 있습니다.');
+    return;
+  }
+  if (file.size > SOUND_EFFECT_MAX_BYTES) {
+    showError(`파일이 너무 큽니다 (최대 ${Math.floor(SOUND_EFFECT_MAX_BYTES / (1024 * 1024))}MB).`);
+    return;
+  }
+  const c = myPageTargetChar();
+  if (!c) return;
+  const fd = new FormData();
+  fd.append('room_id', ROOM_ID);
+  fd.append('key', KEY);
+  fd.append('name', c.name);
+  fd.append('file', file);
+  fetch('/upload_sound_effect', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => { if (data.error) showError(data.error); })
+    .catch(() => showError('효과음 업로드에 실패했습니다.'));
+}
+
+// 본인에게만 들리는 미리듣기 - 서버로 보내지 않고 이 브라우저에서만 재생하고, 아무리 길어도
+// 6초가 지나면 멈춥니다.
+let myPagePreviewAudio = null;
+function previewMySoundEffect() {
+  const c = myPageTargetChar();
+  if (!c || !c.sound_effect) return;
+  if (myPagePreviewAudio) { myPagePreviewAudio.pause(); myPagePreviewAudio = null; }
+  const audio = new Audio(c.sound_effect);
+  audio.volume = (c.sound_effect_volume != null ? c.sound_effect_volume : 100) / 100;
+  myPagePreviewAudio = audio;
+  audio.play().catch(() => showError('효과음을 재생할 수 없습니다.'));
+  setTimeout(() => {
+    if (myPagePreviewAudio === audio) { audio.pause(); myPagePreviewAudio = null; }
+  }, SOUND_EFFECT_MAX_SECONDS * 1000);
+}
+
+function onMySoundEffectVolumeChange() {
+  if (myControlInfo(lastBattleForPanel).scope !== 'character') return;
+  socket.emit('set_my_sound_effect_volume', {
+    sound_effect_volume: parseInt(document.getElementById('myPageSoundVolume').value, 10),
   });
 }
 

@@ -11,7 +11,8 @@
       "행운": 1
     },
     "color": "#ff8800",
-    "skill": "붕괴"
+    "skill": "붕괴",
+    "avatar_url": "/static/avatars/22829c7854b44b9a9dcd2a8f5f3d275e.png"
   },
   "B": {
     "role": "가디언",
@@ -66,7 +67,8 @@
       "행운": 2
     },
     "color": "#ff4dcf",
-    "skill": "차폐"
+    "skill": "차폐",
+    "avatar_url": "/static/avatars/83834a91cf1f4445a91f2a4485ee3305.png"
   },
   "D": {
     "role": "스트라이커",
@@ -106,7 +108,8 @@
       "민첩": 10,
       "행운": 2
     },
-    "skill": "붕괴"
+    "skill": "붕괴",
+    "avatar_url": "/static/avatars/7244e28627b94e9eaed178abe044db3e.png"
   },
   "AA": {
     "role": "가디언",
@@ -398,7 +401,9 @@
     "raid_display_name": "AV단짝",
     "inventory": "구급상자 1, 성수 2",
     "skill_log_type": "text",
-    "skill_log_text": "불꽃을 휘감으며 돌진한다"
+    "skill_log_text": "불꽃을 휘감으며 돌진한다",
+    "sound_effect": "/static/sound_effects/774fe78ec7ea42dbb36caa10e44b1dd6.wav",
+    "sound_effect_volume": 40
   },
   "AW": {
     "role": "스트라이커",

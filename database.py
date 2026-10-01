@@ -163,7 +163,8 @@ class CharacterDatabase:
     # ------------------------------------------------------------------
     def add_or_update(self, name: str, role: str, stats: dict, color: str = None, skill: str = None,
                        raid_display_name: str = None, inventory: str = None,
-                       skill_log_type: str = None, skill_log_text: str = None, avatar_url: str = None):
+                       skill_log_type: str = None, skill_log_text: str = None, avatar_url: str = None,
+                       sound_effect: str = None, sound_effect_volume: int = None):
         """캐릭터를 새로 추가하거나, 이미 있으면 정보를 수정합니다. 스탯은 자동으로 캡 적용됩니다.
         raid_display_name/inventory/skill_log_*/avatar_url은 마이페이지 팝업에서 쓰는 부가
         정보입니다 - 다른 필드만 바꾸는 호출(예: 색상 변경)에서도 기존 값을 잃지 않으려면
@@ -184,6 +185,10 @@ class CharacterDatabase:
             entry["skill_log_text"] = skill_log_text
         if avatar_url:
             entry["avatar_url"] = avatar_url
+        if sound_effect:
+            entry["sound_effect"] = sound_effect
+        if sound_effect_volume is not None:
+            entry["sound_effect_volume"] = sound_effect_volume
         self.characters[name] = entry
         self.save()
         return warns

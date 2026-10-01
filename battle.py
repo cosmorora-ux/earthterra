@@ -469,14 +469,16 @@ class Battle:
             )
 
         # 요청 12 : 방어 값(총합)은 러너 공유 로그에도 표시합니다. 크리티컬이면 방어를 부여한
-        # 캐릭터의 직군 색으로 강조합니다.
+        # 캐릭터의 직군 색으로 강조합니다. tag는 "defend"가 아니라 "defend_value"를 씁니다 -
+        # "defend"는 방어 행동 자체(새 로그 블록의 시작)에 쓰는 태그라서, 공격/피해 정산 블록
+        # 안에 끼는 이 보조 수치 줄까지 같은 태그를 쓰면 블록이 거기서 둘로 쪼개져 버립니다.
         if dfs["is_crit"]:
             grantor = self.find_character(dfs.get("grantor_name"))
             self._log_public_only(
-                f"방어 값 {dfs['total']}", tag="defend", role=grantor.role if grantor else None,
+                f"방어 값 {dfs['total']}", tag="defend_value", role=grantor.role if grantor else None,
             )
         else:
-            self._log_public_only(f"방어 값 {dfs['total']}", tag="defend")
+            self._log_public_only(f"방어 값 {dfs['total']}", tag="defend_value")
 
         self._log(f"피해량 {result['damage']}", tag="damage")
         self._log(f"{target.name} HP {result['hp_before']} → {result['hp_after']}", tag="hp")
@@ -1625,6 +1627,10 @@ class GameManager:
         c.skill_log_type = data.get("skill_log_type") or "text"
         c.skill_log_text = data.get("skill_log_text") or ""
         c.avatar_url = data.get("avatar_url") or None
+        c.sound_effect = data.get("sound_effect") or None
+        c.sound_effect_volume = data.get("sound_effect_volume")
+        if c.sound_effect_volume is None:
+            c.sound_effect_volume = 100
         return c
 
     def build_team(self, names: list, formula_overrides: dict = None) -> list:

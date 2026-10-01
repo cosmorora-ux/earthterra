@@ -39,6 +39,11 @@ AVATAR_DIR = os.path.join(_THIS_DIR, "static", "avatars")
 os.makedirs(AVATAR_DIR, exist_ok=True)
 # 투명도를 지원하는 포맷만 허용합니다(마이페이지 프로필 이미지는 정사각형+투명 배경 전제).
 AVATAR_ALLOWED_EXTS = (".png", ".webp", ".gif")
+SOUND_EFFECT_DIR = os.path.join(_THIS_DIR, "static", "sound_effects")
+os.makedirs(SOUND_EFFECT_DIR, exist_ok=True)
+SOUND_EFFECT_ALLOWED_EXTS = (".mp3", ".wav", ".ogg", ".m4a", ".aac")
+# 재생은 클라이언트에서 6초로 끊지만, 그와 별개로 업로드 자체도 너무 큰 파일은 막아둡니다.
+SOUND_EFFECT_MAX_BYTES = 5 * 1024 * 1024
 
 # socket id -> {"room_id", "role", "nickname"}
 CONNECTIONS = {}
@@ -249,7 +254,8 @@ def upload_avatar():
         color=existing.get("color"), skill=existing.get("skill"),
         raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
         skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
-        avatar_url=avatar_url,
+        avatar_url=avatar_url, sound_effect=existing.get("sound_effect"),
+        sound_effect_volume=existing.get("sound_effect_volume"),
     )
     battle = room.game.battle
     if battle is not None:
@@ -258,6 +264,56 @@ def upload_avatar():
             live.avatar_url = avatar_url
     broadcast_state(room)
     return jsonify({"url": avatar_url})
+
+
+@app.route("/upload_sound_effect", methods=["POST"])
+def upload_sound_effect():
+    """참가자가 마이페이지에서 자신의 효과음 파일을 올리면 static/sound_effects/에 저장하고,
+    캐릭터 등록 DB와(전투 중이면) live 캐릭터에도 즉시 반영합니다. 실제 재생 시 6초로 끊는 건
+    클라이언트가 처리하고, 여기서는 업로드 용량만 제한합니다(길이 검사는 오디오 라이브러리
+    없이는 할 수 없어 생략합니다)."""
+    room_id = request.form.get("room_id", "")
+    key = request.form.get("key", "")
+    name = (request.form.get("name") or "").strip()
+    room = get_room(room_id)
+    if room is None or key not in (room.gm_key, room.guest_key):
+        return jsonify({"error": "권한이 없습니다."}), 403
+    if not name or not room.game.db.exists(name):
+        return jsonify({"error": "존재하지 않는 캐릭터입니다."}), 400
+
+    f = request.files.get("file")
+    if f is None or not f.filename:
+        return jsonify({"error": "파일이 없습니다."}), 400
+    ext = os.path.splitext(f.filename.lower())[1]
+    if ext not in SOUND_EFFECT_ALLOWED_EXTS:
+        return jsonify({"error": "mp3/wav/ogg/m4a/aac 음성 파일만 업로드할 수 있습니다."}), 400
+    f.seek(0, os.SEEK_END)
+    size = f.tell()
+    f.seek(0)
+    if size > SOUND_EFFECT_MAX_BYTES:
+        limit_mb = SOUND_EFFECT_MAX_BYTES // (1024 * 1024)
+        return jsonify({"error": f"파일이 너무 큽니다 (최대 {limit_mb}MB)."}), 400
+
+    filename = f"{uuid.uuid4().hex}{ext}"
+    f.save(os.path.join(SOUND_EFFECT_DIR, filename))
+    sound_url = url_for("static", filename=f"sound_effects/{filename}")
+
+    existing = room.game.db.get(name) or {}
+    room.game.db.add_or_update(
+        name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
+        color=existing.get("color"), skill=existing.get("skill"),
+        raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
+        skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
+        avatar_url=existing.get("avatar_url"), sound_effect=sound_url,
+        sound_effect_volume=existing.get("sound_effect_volume"),
+    )
+    battle = room.game.battle
+    if battle is not None:
+        live = battle.find_character(name)
+        if live is not None:
+            live.sound_effect = sound_url
+    broadcast_state(room)
+    return jsonify({"url": sound_url})
 
 
 # ----------------------------------------------------------------------
@@ -296,6 +352,8 @@ def build_character_public(c):
         "skill_log_type": c.skill_log_type,
         "skill_log_text": c.skill_log_text,
         "avatar_url": c.avatar_url,
+        "sound_effect": c.sound_effect,
+        "sound_effect_volume": c.sound_effect_volume,
     }
 
 
@@ -331,6 +389,8 @@ def build_preview_character(room, name):
         "skill_log_type": data.get("skill_log_type") or "text",
         "skill_log_text": data.get("skill_log_text") or "",
         "avatar_url": data.get("avatar_url"),
+        "sound_effect": data.get("sound_effect"),
+        "sound_effect_volume": data.get("sound_effect_volume"),
     }
 
 
@@ -394,6 +454,20 @@ def build_battle_common(battle):
     }
 
 
+def _online_character_names(room):
+    """이 방에 지금 연결된 소켓들의 닉네임 중, 등록된 캐릭터 이름과 정확히 일치하는 것만
+    모읍니다. 전투 시작 전/후 상관없이 동작합니다(resolve_control처럼 battle.team_a/b를 보는
+    게 아니라 캐릭터 등록 DB 전체를 기준으로 하기 때문) - 유저 접속정보 팝업의 온라인 표시용."""
+    names = set()
+    for info in CONNECTIONS.values():
+        if info.get("room_id") != room.id:
+            continue
+        nickname = info.get("nickname") or ""
+        if room.game.db.exists(nickname):
+            names.add(nickname)
+    return names
+
+
 def build_public_state(room):
     battle = room.game.battle
     sync_round_timer(room)
@@ -429,6 +503,7 @@ def build_public_state(room):
         "chat_tabs": room.chat_tabs_enabled,
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
+        "online_characters": sorted(_online_character_names(room)),
         # 채팅창에서 말한 사람의 프로필 이미지/닉네임 색상을 보여주기 위한 정보(전투 참여 여부와 무관).
         "roster_profiles": {
             name: {"color": data.get("color"), "avatar_url": data.get("avatar_url")}
@@ -624,6 +699,8 @@ def on_disconnect():
         }
         room.chat_log.append(entry)
         socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
+    # 온라인 표시(유저 접속정보 팝업)가 끊기자마자 바로 반영되도록 상태를 다시 보냅니다.
+    broadcast_state(room)
 
 
 @socketio.on("chat_message")
@@ -750,7 +827,8 @@ def on_set_my_color(data):
         color=color, skill=existing.get("skill"),
         raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
         skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
-avatar_url=existing.get("avatar_url"),
+avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
+sound_effect_volume=existing.get("sound_effect_volume"),
     )
     battle = room.game.battle
     if battle is not None:
@@ -782,13 +860,52 @@ def on_set_my_raid_display_name(data):
         color=existing.get("color"), skill=existing.get("skill"),
         raid_display_name=raid_display_name, inventory=existing.get("inventory"),
         skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
-avatar_url=existing.get("avatar_url"),
+avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
+sound_effect_volume=existing.get("sound_effect_volume"),
     )
     battle = room.game.battle
     if battle is not None:
         live = battle.find_character(name)
         if live is not None:
             live.raid_display_name = raid_display_name
+    broadcast_state(room)
+
+
+@socketio.on("set_my_sound_effect_volume")
+def on_set_my_sound_effect_volume(data):
+    """참가자가 자신의 효과음 재생 음량(0~100)을 지정합니다(마이페이지). 효과음 파일 자체는
+    /upload_sound_effect로 올립니다 - 효과음마다 원본 음량이 제각각이라 따로 조절합니다."""
+    info = CONNECTIONS.get(request.sid)
+    if info is None:
+        emit("action_error", {"message": "먼저 입장해주세요."})
+        return
+    room = get_room(info["room_id"])
+    if room is None:
+        return
+    control = resolve_control(room, info)
+    if control["scope"] != "character":
+        emit("action_error", {"message": "캐릭터로 입장한 뒤에만 음량을 조절할 수 있습니다."})
+        return
+    name = control["name"]
+    try:
+        volume = int(data.get("sound_effect_volume"))
+    except (TypeError, ValueError):
+        volume = 100
+    volume = max(0, min(100, volume))
+    existing = room.game.db.get(name) or {}
+    room.game.db.add_or_update(
+        name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
+        color=existing.get("color"), skill=existing.get("skill"),
+        raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
+        skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
+        avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
+        sound_effect_volume=volume,
+    )
+    battle = room.game.battle
+    if battle is not None:
+        live = battle.find_character(name)
+        if live is not None:
+            live.sound_effect_volume = volume
     broadcast_state(room)
 
 
@@ -815,7 +932,8 @@ def on_set_my_skill_log(data):
         color=existing.get("color"), skill=existing.get("skill"),
         raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
         skill_log_type=log_type, skill_log_text=log_text or None,
-avatar_url=existing.get("avatar_url"),
+avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
+sound_effect_volume=existing.get("sound_effect_volume"),
     )
     battle = room.game.battle
     if battle is not None:
@@ -858,7 +976,8 @@ def on_set_mypage_gm_fields(data):
             color=existing.get("color"), skill=existing.get("skill"),
             raid_display_name=existing.get("raid_display_name"), inventory=inventory,
             skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
-avatar_url=existing.get("avatar_url"),
+avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
+sound_effect_volume=existing.get("sound_effect_volume"),
         )
     broadcast_state(room)
 
@@ -917,7 +1036,8 @@ def on_update_character(data):
         name, role, stats, color=existing.get("color"), skill=skill,
         raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
         skill_log_type=existing.get("skill_log_type"), skill_log_text=existing.get("skill_log_text"),
-avatar_url=existing.get("avatar_url"),
+avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
+sound_effect_volume=existing.get("sound_effect_volume"),
     )
 
     # 전투가 진행 중이고 이 캐릭터가 현재 전투에 참여 중이라면, 실시간 스탯도 즉시 갱신합니다.
