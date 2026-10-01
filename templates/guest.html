@@ -968,6 +968,7 @@ function onInputAvatarDotDblClick() {
 }
 
 function logout() {
+  lastTeamChat = [];
   localStorage.removeItem(SAVED_NAME_KEY);
   MY_NICKNAME = '익명';
   socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
@@ -2190,7 +2191,7 @@ let currentMemberView = 'chat';
 const CHAT_TAB_TO_VIEW = { general: 'chat', team: 'meeting', spectator: 'spectate' };
 function chatTabFor(entry) {
   if (entry.category === 'presence') return null;
-  if (entry.category === 'team') return 'team';
+  if (entry.category === 'team') return canSeeTeamMeeting(entry) ? 'team' : null;
   if (entry.category === 'spectator') return 'spectator';
   return 'general';
 }
@@ -2247,9 +2248,18 @@ setMemberTab('chat');
 
 // 채팅창 = 참여 인원(참가자·운영진)만, 전투 관전 = 미참여(관전) 인원만, 아군 회의 = 팀 전용.
 // 입장/퇴장 기록(presence)은 어디에도 남기지 않습니다.
+// 아군 회의는 내 캐릭터의 팀 회의만 보입니다. GM(비밀번호 입장)만 양 팀 회의를 모두 봅니다.
+// (같은 화면에서 다른 팀 캐릭터로 다시 로그인해도 이전 팀 회의가 남아 보이지 않도록 매번 확인합니다.)
+function canSeeTeamMeeting(entry) {
+  const control = myControlInfo(lastBattleForPanel);
+  if (control.scope === 'all') return true;
+  if (control.scope === 'character') return entry.team === control.character.team;
+  return false;
+}
+
 function matchesFilter(entry) {
   if (entry.category === 'presence') return false;
-  if (chatFilter === 'team') return entry.category === 'team';
+  if (chatFilter === 'team') return entry.category === 'team' && canSeeTeamMeeting(entry);
   if (chatFilter === 'spectator') return entry.category === 'spectator';
   return entry.category === 'player' || entry.category === 'operator' || entry.category === 'round';
 }
@@ -2363,7 +2373,7 @@ function fmtChat(entry) {
     ? `<div class="chat-dot chat-star">✶</div>`
     : `<div class="chat-avatar" style="${profile.avatar_url ? `background-image:url('${profile.avatar_url}');` : ''}"></div>`;
   // GM은 양 팀 아군 회의를 같은 탭에서 같이 보므로, 어느 팀 회의인지 작게 표시해줍니다.
-  const teamTag = entry.category === 'team'
+  const teamTag = entry.category === 'team' && myControlInfo(lastBattleForPanel).scope === 'all'
     ? ` <span style="color:var(--muted); font-size:12px;">(${entry.team === 'A' ? '1팀' : '2팀'} 회의)</span>`
     : '';
   return `<div class="chat-line ${cls}">
