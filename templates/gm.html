@@ -271,7 +271,7 @@
   <span class="label">⏱ <span id="roundTimer">--:--</span></span>
   <div class="spacer"></div>
   <div class="whoami">
-    <div class="avatar-dot" id="myAvatarDot" title="클릭해서 닉네임으로 입장" onclick="onAvatarDotClick()" ondblclick="onAvatarDotDblClick()"></div>
+    <div class="avatar-dot" id="myAvatarDot" title="클릭해서 입장/로그아웃" onclick="onAvatarDotClick()"></div>
     <span class="label" id="myNicknameLabel">미입장</span>
   </div>
 </div>
@@ -464,14 +464,13 @@ function silentJoin() {
 // 닉네임으로 입장 (아바타 동그라미 클릭 → 모달). 운영진 링크는 키만 맞으면 항상
 // gm 권한이 주어지므로, 여기서의 "입장"은 표시용 닉네임을 정하는 것에 가깝습니다.
 // ------------------------------------------------------------------
+// 참가자 화면과 똑같이 한 번 클릭으로 입장/로그아웃을 모두 처리합니다.
 function onAvatarDotClick() {
-  if (explicitlyJoined) return;  // 이미 입장한 상태면 더블클릭으로 로그아웃
+  if (explicitlyJoined) {
+    if (confirm('로그아웃 하시겠습니까?')) logout();
+    return;
+  }
   openJoinModal();
-}
-
-function onAvatarDotDblClick() {
-  if (!explicitlyJoined) return;
-  if (confirm('로그아웃 하시겠습니까?')) logout();
 }
 
 function openJoinModal() {
