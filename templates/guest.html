@@ -1332,7 +1332,7 @@ function renderCompactCardHtml(c) {
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
   if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
-  if (c.commanded_by) badges.push(`🎯 지휘: ${c.commanded_by} 공격 강제`);
+  if (c.commanded_by) badges.push(`🎯 유도 효과: ${c.commanded_by} 공격`);
   return `<div class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
@@ -1385,14 +1385,14 @@ function renderCardHtml(c) {
   const statusTag = statusTagFor(c);
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
-  if (lastForcedTargetNames.has(c.name)) badges.push(`🎯 어그로`);
+  if (lastForcedTargetNames.has(c.name)) badges.push(`🎯 유도 효과`);
   if (c.defense_count) badges.push(`🛡 보호${c.defense_count}`);
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
   if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
-  if (c.commanded_by) badges.push(`🎯 지휘: ${c.commanded_by} 공격 강제`);
+  if (c.commanded_by) badges.push(`🎯 유도 효과: ${c.commanded_by} 공격`);
 
   return `<div class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">

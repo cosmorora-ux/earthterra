@@ -969,7 +969,7 @@ function renderCardHtml(c) {
   if (c.has_leech_buff) badges.push('🩸 흡수버프');
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
   if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
-  if (c.commanded_by) badges.push(`🎯 지휘: ${c.commanded_by} 공격 강제`);
+  if (c.commanded_by) badges.push(`🎯 유도 효과: ${c.commanded_by} 공격`);
 
   return `<div class="char-card team-${c.teamLabel} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" style="${gridBorder}" onclick="toggleCard('${c.name}')">
     <div class="row1">

@@ -9,10 +9,12 @@ GameManager 클래스
 
 핵심 규칙 요약
 --------------
-- 딜러/탱커/힐러 모두 공격 가능. 치명타는 "본인 포지션다운 행동"일 때만 발생합니다.
-- 탱커의 '방어'는 본인 또는 아군 1명에게 능동 방어를 부여합니다 (어그로 없음).
-- 탱커의 '공격유도'는 자기 자신에게 어그로를 걸어 상대의 다음 공격을 강제합니다 (방어 효과 없음).
-- 딜러의 '회피'는 행운/민첩 기반으로 다음 피격을 완전히 무효화할 확률을 얻습니다.
+- 스트라이커/가디언/메딕 모두 공격 가능. 치명타는 "본인 포지션다운 행동"일 때만 발생합니다.
+- '방어'(모든 직군) : 본인 지정 = 직접 방어, 아군 지정 = 대리 방어(대신 맞고 남은 피해도 본인이 받음).
+- 가디언의 '수호' : 본인 제외 아군 1명에게 단순 방어 부여(남은 피해는 대상 본인에게).
+- 가디언의 '지휘' : 지정 적군 1인에게 유도 효과 1회 부여 - 그 적의 다음 행동 1회를 이 가디언
+  공격으로 강제합니다 (방어는 함께 부여되지 않습니다).
+- 스트라이커의 '회피'는 행운/민첩 기반으로 다음 피격을 완전히 무효화할 확률을 얻습니다.
 - 힐러는 공격 선행조건 없이, 그리고 자신의 팀 턴이 아니어도(상대 턴 중에도) 라운드당 1회 행동할 수 있습니다.
 - 아직 이번 라운드에 행동하지 않은 대상을 공격하면 피해가 즉시 적용되지 않고 "보류"되며,
   대상이 자신의 턴에 방어/회피/힐 등으로 대응한 뒤 그 결과를 반영해 정산됩니다.
@@ -150,7 +152,7 @@ class Battle:
         self.round_first_team = first_team
         self.current_turn_team = first_team
 
-        # 공격유도/지휘(어그로) 상태 - "공격하는 팀"별로 독립적으로 유지됩니다. 양 팀이 각자
+        # 유도 효과(지휘) 상태 - "공격하는 팀"별로 독립적으로 유지됩니다. 양 팀이 각자
         # 어그로를 걸면 서로 다른 강제 지목이 동시에 존재할 수 있습니다(한쪽이 걸었다고 다른 쪽
         # 효과가 사라지지 않음). 라운드 경계와 무관하게 유지됨.
         # {team_label: {"target": Character, "count": int, "grantor": Character}}
@@ -249,7 +251,7 @@ class Battle:
         return "A" if team_label == self.TEAM_A else "B"
 
     # ------------------------------------------------------------------
-    # 공격유도/지휘(어그로) 강제 지목 - 팀별로 독립적인 상태를 다룹니다.
+    # 유도 효과(지휘) 강제 지목 - 팀별로 독립적인 상태를 다룹니다.
     # ------------------------------------------------------------------
     def _forced_for(self, team_label: str):
         """team_label 팀이 지금 강제로 공격해야 하는 대상 정보. 대상이 죽었으면 자동 해제합니다."""
@@ -260,7 +262,7 @@ class Battle:
         return forced
 
     def _register_forced_target(self, grantor: Character, target: Character, forced_team: str) -> int:
-        """grantor가 target에게 어그로를 걸어, forced_team의 다음 공격을 강제합니다.
+        """grantor가 target에게 유도 효과를 걸어, forced_team의 다음 공격을 강제합니다.
         같은 대상에게 다시 걸면 남은 강제 횟수가 누적되고, 다른 대상으로 걸면 그 팀 몫만 교체됩니다
         (다른 팀에 걸려 있는 강제 지목에는 영향을 주지 않습니다)."""
         existing = self.forced_targets.get(forced_team)
@@ -549,13 +551,13 @@ class Battle:
         if attack_target is guardian:
             return
         raise BattleError(
-            f"지휘 효과 적용 중 : {actor.name}의 이번 행동은 반드시 {guardian.name}을(를) 공격해야 합니다."
+            f"유도 효과 적용 중 : {actor.name}의 이번 행동은 반드시 {guardian.name}을(를) 공격해야 합니다."
         )
 
     def _consume_command(self, actor: Character, hit_names):
         """지휘에 걸린 캐릭터가 그 가디언을 공격했으면 유도 효과를 해제합니다."""
         if actor.commanded_by and actor.commanded_by in hit_names:
-            self._log(f"지휘 효과 해제 ({actor.name} → {actor.commanded_by} 공격 완료)", tag="system")
+            self._log(f"유도 효과 해제 ({actor.name} → {actor.commanded_by} 공격 완료)", tag="system")
             actor.commanded_by = None
 
     def _auto_defense_for(self, target: Character) -> bool:
@@ -743,7 +745,7 @@ class Battle:
         forced = self._forced_for(attacker_team_label)
         if forced is not None and target is not forced["target"]:
             raise BattleError(
-                "현재 공격유도/지휘 효과가 적용 중입니다.\n"
+                "현재 유도 효과가 적용 중입니다.\n"
                 f"이번 공격은 반드시 {forced['target'].name}을(를) 대상으로 해야 합니다. "
                 f"(남은 강제 횟수 {forced['count']}회)"
             )
@@ -808,7 +810,7 @@ class Battle:
 
         if forced is not None:
             self._consume_forced_target(
-                attacker_team_label, "공격 대상 변경 (공격유도/지휘 효과, 남은 강제 횟수 {count}회)",
+                attacker_team_label, "공격 대상 변경 (유도 효과, 남은 강제 횟수 {count}회)",
             )
 
         self._check_finish()
@@ -881,7 +883,7 @@ class Battle:
         forced = self._forced_for(attacker_team_label)
         if forced is not None and target is not forced["target"]:
             raise BattleError(
-                "현재 공격유도/지휘 효과가 적용 중입니다.\n"
+                "현재 유도 효과가 적용 중입니다.\n"
                 f"이번 공격은 반드시 {forced['target'].name}을(를) 대상으로 해야 합니다. "
                 f"(남은 강제 횟수 {forced['count']}회)"
             )
@@ -927,7 +929,7 @@ class Battle:
 
         if forced is not None:
             self._consume_forced_target(
-                attacker_team_label, "공격 대상 변경 (공격유도/지휘 효과, 남은 강제 횟수 {count}회)",
+                attacker_team_label, "공격 대상 변경 (유도 효과, 남은 강제 횟수 {count}회)",
             )
 
         self._check_finish()
@@ -995,7 +997,7 @@ class Battle:
         if forced is not None:
             self._consume_forced_target(
                 attacker_team_label,
-                "강제 대상도 방출 범위에 포함됨 (공격유도/지휘 효과, 남은 강제 횟수 {count}회)",
+                "강제 대상도 방출 범위에 포함됨 (유도 효과, 남은 강제 횟수 {count}회)",
             )
 
         self._check_finish()
@@ -1090,7 +1092,7 @@ class Battle:
         self._check_finish()
 
     # ------------------------------------------------------------------
-    # 행동 : 지휘 (가디언 전용) - 공격유도와 동일한 어그로 강제이지만, 방어 부여 효과는 없습니다.
+    # 행동 : 지휘 (가디언 전용) - 지정 적군 1인에게 유도 효과 1회 부여. 방어 부여 효과는 없습니다.
     # ------------------------------------------------------------------
     def perform_command(self, guardian_name: str, target_name: str):
         guardian = self.find_character(guardian_name)
@@ -1115,7 +1117,7 @@ class Battle:
 
         self._log(f"{guardian.name} 지휘 → {target.name}", tag="taunt")
         self._log(
-            f"→ {target.name}의 다음 행동 1회는 {guardian.name} 공격으로 강제됩니다.",
+            f"→ {target.name}에게 유도 효과 1회 부여 : 다음 행동 1회는 {guardian.name} 공격으로 강제됩니다.",
             tag="system",
         )
         self._maybe_trigger_leech(guardian)
@@ -1606,7 +1608,7 @@ class Battle:
         forced = self.forced_targets.get(self.current_turn_team)
         if forced is not None and not self._forced_turn_had_attack:
             self._log(
-                f"⚠ 공격유도/지휘 효과가 해제되었습니다 ({self.current_turn_team}이(가) 이번 턴에 "
+                f"⚠ 유도 효과가 해제되었습니다 ({self.current_turn_team}이(가) 이번 턴에 "
                 f"공격을 사용하지 않았습니다).",
                 tag="system",
             )
@@ -1615,14 +1617,14 @@ class Battle:
 
     def _log_aggro_reminder_if_needed(self, team_about_to_act: str):
         """
-        공격유도/지휘 효과가 아직 남아있고, 지금 턴을 받는 팀이 그 강제 대상을 공격해야 하는 팀이라면
+        유도 효과가 아직 남아있고, 지금 턴을 받는 팀이 그 강제 대상을 공격해야 하는 팀이라면
         라운드/턴 개시 문구보다 먼저 안내합니다. (라운드 경계를 넘어서도 유지됩니다)
         """
         forced = self._forced_for(team_about_to_act)
         if forced is not None:
             self._forced_turn_had_attack = False  # 이번 턴에는 아직 공격을 사용하지 않았습니다.
             self._log(
-                f"⚠ 공격유도/지휘 효과가 남아있습니다 : {team_about_to_act}의 다음 공격 "
+                f"⚠ 유도 효과가 남아있습니다 : {team_about_to_act}의 다음 공격 "
                 f"{forced['count']}회는 반드시 {forced['target'].name}을(를) 대상으로 해야 합니다.",
                 tag="system",
             )
@@ -1641,7 +1643,8 @@ class Battle:
         for c in self.team_a + self.team_b:
             c.reset_for_new_round()
 
-        # 요청 16 : 공격유도/지휘로 부여된 능동 방어는 그 어그로가 아직 소모되지 않은 만큼
+        # (레거시 데스크톱 '공격유도' 전용 - 웹의 '지휘'는 방어를 부여하지 않으므로 해당 없음)
+        # 요청 16 : 공격유도로 부여된 능동 방어는 그 강제 지목이 아직 소모되지 않은 만큼
         # 라운드 경계를 넘어서도 함께 유지되어야 합니다. reset_for_new_round()가 방어 계층을
         # 비우므로, 남아있는 강제 횟수만큼 다시 채워 넣습니다. (양 팀에 걸린 강제 지목 모두 해당)
         for forced in self.forced_targets.values():
