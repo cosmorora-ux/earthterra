@@ -28,6 +28,8 @@ from rooms import (
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
+# html(templates)을 고치면 서버를 다시 켜지 않아도 브라우저 새로고침(F5)만으로 바로 반영됩니다.
+app.config["TEMPLATES_AUTO_RELOAD"] = True
 socketio = SocketIO(app, async_mode="threading")
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))

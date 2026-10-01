@@ -81,7 +81,7 @@
   .mypage-portrait {
     width:120px; height:120px; border-radius:16px; background:#0c0c0d;
     border:1px solid var(--card-border); cursor:pointer; position:relative;
-    background-size:cover; background-position:center;
+    background-size:contain; background-position:center; background-repeat:no-repeat;
   }
   .mypage-portrait-icon {
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
@@ -235,7 +235,7 @@
   .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
 
   .input-row { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--panel-border); align-items:center; }
-  .input-row .avatar-dot { width:40px; height:40px; border-radius:6px; flex-shrink:0; background:#0c0c0d; background-size:cover; background-position:center; }
+  .input-row .avatar-dot { width:40px; height:40px; border-radius:6px; flex-shrink:0; background:#0c0c0d; background-size:contain; background-position:center; background-repeat:no-repeat; }
   .input-row input {
     flex:1; height:40px; box-sizing:border-box; background:#0c0c0d; border:1px solid var(--card-border);
     color:var(--text); border-radius:8px; padding:0 12px; font-size:15px;
@@ -331,7 +331,7 @@
   .char-card.v2 .portrait-row { display:flex; align-items:flex-end; gap:10px; margin-top:10px; }
   .char-card.v2 .portrait {
     width:84px; height:64px; border-radius:8px; background:#0c0c0d; border:1px solid var(--card-border);
-    flex-shrink:0; background-size:cover; background-position:center;
+    flex-shrink:0; background-size:contain; background-position:center; background-repeat:no-repeat;
   }
   .char-card.v2 .portrait-side { flex:1; min-width:0; }
   .char-card.v2 .hpbar-wrap { margin-top:0; }
