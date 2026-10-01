@@ -456,15 +456,15 @@
 <body>
 <div class="app-shell">
 <div class="sidebar">
-  <button class="sidebar-icon muted" disabled data-tip="알림 (준비 중)">🔔</button>
+  <button class="sidebar-icon muted" disabled>🔔</button>
   <div class="sidebar-gap"></div>
-  <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()" data-tip="전체화면으로 크게 보기">⛶</button>
-  <button class="sidebar-icon active" data-tip="배틀 홈 (지금 화면)">🏠</button>
-  <button class="sidebar-icon" onclick="toggleUserInfoPanel()" data-tip="유저 접속정보">👤</button>
-  <button class="sidebar-icon muted" disabled data-tip="소지품 (준비 중)">🎒</button>
+  <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()">⛶</button>
+  <button class="sidebar-icon active">🏠</button>
+  <button class="sidebar-icon" onclick="toggleUserInfoPanel()">👤</button>
+  <button class="sidebar-icon muted" disabled>🎒</button>
   <div class="sidebar-grow"></div>
-  <button class="sidebar-icon" onclick="openMyPage()" data-tip="설정 (마이페이지)">⚙</button>
-  <button class="sidebar-icon" onclick="onAvatarDotClick()" data-tip="클릭해서 입장/로그아웃">⏻</button>
+  <button class="sidebar-icon" onclick="openMyPage()">⚙</button>
+  <button class="sidebar-icon" onclick="onAvatarDotClick()">⏻</button>
 </div>
 <div class="content-area">
 <div class="shell">
@@ -751,9 +751,9 @@
   </div>
 
   <div class="input-row" id="chatInputRow">
-    <div class="avatar-dot" id="inputAvatarDot" data-tip="더블클릭해서 프로필 이미지 변경" ondblclick="onInputAvatarDotDblClick()"></div>
+    <div class="avatar-dot" id="inputAvatarDot" ondblclick="onInputAvatarDotDblClick()"></div>
     <input id="chatInput" placeholder="대사를 입력해 주세요." onkeydown="if(event.key==='Enter') sendChat()">
-    <button class="btn-plain" id="chatSendBtn" disabled onclick="sendChat()" data-tip="전송 (임시 아이콘 - 추후 교체 예정)">➤</button>
+    <button class="btn-plain" id="chatSendBtn" disabled onclick="sendChat()">➤</button>
   </div>
 
   <div id="actionPopup"></div>
@@ -2639,7 +2639,6 @@ document.addEventListener('fullscreenchange', () => {
   const btn = document.getElementById('sidebarFullscreenBtn');
   if (btn) {
     btn.classList.toggle('active', !!document.fullscreenElement);
-    btn.setAttribute('data-tip', document.fullscreenElement ? '전체화면 종료' : '전체화면으로 크게 보기');
   }
 });
 
