@@ -2024,8 +2024,7 @@ function processLogRevealQueue(view) {
   logRevealBusy[view] = true;
   const section = queue.shift();
   const el = document.getElementById('pubLog');
-  el.innerHTML += formatLogHtml(section);
-  el.scrollTop = el.scrollHeight;
+  scrollKeepingView(el, () => { el.innerHTML += formatLogHtml(section); });
   setTimeout(() => {
     logRevealBusy[view] = false;
     processLogRevealQueue(view);
@@ -2289,10 +2288,18 @@ function renderChat(chat) {
   renderChatFiltered();
 }
 
+// 새 글/로그가 추가돼도 사용자가 보던 위치를 유지합니다. 맨 아래를 보고 있었을 때만(또는 forceBottom)
+// 새 내용을 따라 아래로 내려가고, 위로 올려서 읽던 중이면 그 화면 그대로 둡니다.
+function scrollKeepingView(el, mutate, forceBottom) {
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  const prev = el.scrollTop;
+  mutate();
+  el.scrollTop = (forceBottom || atBottom) ? el.scrollHeight : prev;
+}
+
 function renderChatFiltered() {
   const el = document.getElementById('chatLog');
-  el.innerHTML = lastChat.filter(matchesFilter).map(fmtChat).join('');
-  el.scrollTop = el.scrollHeight;
+  scrollKeepingView(el, () => { el.innerHTML = lastChat.filter(matchesFilter).map(fmtChat).join(''); });
 }
 
 // 채팅에서 말한 사람의 프로필(색상/이미지). 전투 중인 캐릭터면 실시간 값을, 아니면 등록 DB 값을 씁니다.
@@ -2345,8 +2352,8 @@ function appendChat(entry) {
   }
   if (!matchesFilter(entry)) return;
   const el = document.getElementById('chatLog');
-  el.innerHTML += fmtChat(entry);
-  el.scrollTop = el.scrollHeight;
+  // 내가 보낸 글이면 맨 아래로, 남이 보낸 글이면 보던 위치 유지
+  scrollKeepingView(el, () => { el.innerHTML += fmtChat(entry); }, entry.nickname === MY_NICKNAME);
 }
 
 function sendChat() {
