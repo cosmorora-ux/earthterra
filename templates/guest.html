@@ -196,6 +196,9 @@
   .char-card.selected-target { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue); }
   .char-card.team-B { }
   .char-card.ally { border-left: 3px solid #fff; }
+  /* 지금 이 팀의 차례이고 아직 행동하지 않은 캐릭터 - 흰 테두리로 '내 차례' 표시(행동하면 사라짐) */
+  .char-card.turn-pending { border-color:#fff; box-shadow: 0 0 0 1px #fff; }
+  .compact-card.turn-pending { outline:1px solid #fff; border-radius:6px; }
   .char-card .row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:6px; }
   .char-card .cname { font-weight:700; font-size:18px; }
   .char-card .cavatar { width:26px; height:26px; border-radius:50%; background:#4a4a4e; flex-shrink:0; position:relative; }
@@ -272,6 +275,8 @@
   .chat-body .time { color: var(--muted); font-size:13px; margin-left:6px; }
   .chat-line.is-command .chat-text { color:#9fc3ff; font-family: ui-monospace, monospace; font-size:14px; }
   .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
+  .chat-line.is-round { margin:6px 0 8px; }
+  .chat-line.is-round .round-text { color: var(--accent-blue); font-weight:700; font-size:14px; }
   /* 안내 문구 안의 줄바꿈(\n)을 그대로 보여줍니다. */
   .chat-text { white-space: pre-line; }
 
@@ -769,7 +774,9 @@
     <button class="active" id="memberTabBtnChat" onclick="setMemberTab('chat')">
       <span>채팅창</span><span class="unread-dot" id="unreadDotChat"></span>
     </button>
-    <button id="memberTabBtnLog" onclick="setMemberTab('log')">로그창</button>
+    <button id="memberTabBtnLog" onclick="setMemberTab('log')">
+      <span>로그창</span><span class="unread-dot" id="unreadDotLog"></span>
+    </button>
     <button id="memberTabBtnMeeting" onclick="setMemberTab('meeting')">
       <span id="memberTabMeetingLabel">회의창</span><span class="unread-dot" id="unreadDotMeeting"></span>
     </button>
@@ -1333,7 +1340,7 @@ function renderCompactCardHtml(c) {
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
   if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
   if (c.commanded_by) badges.push(`🎯 유도 효과: ${c.commanded_by} 공격`);
-  return `<div class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" onclick="onCardClick('${c.name}')">
+  return `<div class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
         <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
@@ -1377,6 +1384,14 @@ const CARD_INFO_ICON_SVG = `<svg width="12" height="12" viewBox="0 0 12 12" fill
 <path d="M6.3 4.74348V8.79948H5.54V4.74348H6.3ZM5.5 3.06348H6.34V3.91148H5.5V3.06348Z" fill="white"/>
 </svg>`;
 
+// 지금 이 캐릭터 팀의 차례이고, 살아 있고, 아직 이번 라운드 행동을 하지 않았으면 true
+function isTurnPending(c) {
+  const battle = lastBattleForPanel;
+  if (!battle || battle.finished || isDefeatedStatus(c) || c.has_acted) return false;
+  const turnTeamLabel = battle.current_turn_team === '1팀' ? 'A' : 'B';
+  return c.teamLabel === turnTeamLabel;
+}
+
 function renderCardHtml(c) {
   const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
   const isAlly = lastMyTeam !== null && c.team === lastMyTeam;
@@ -1394,7 +1409,7 @@ function renderCardHtml(c) {
   if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
   if (c.commanded_by) badges.push(`🎯 유도 효과: ${c.commanded_by} 공격`);
 
-  return `<div class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''}" onclick="onCardClick('${c.name}')">
+  return `<div class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">
       <div>
         <span class="cname">${displayNameOf(c)}${isMine ? ' <span style="color:var(--accent-blue); font-size:13px;">(나)</span>' : ''}</span>
@@ -1982,8 +1997,14 @@ function splitLogIntoSections(lines) {
 }
 
 function renderPubLog(log, logTotal) {
+  const prevTotal = lastPublicLogTotal;
   lastPublicLog = log || [];
   lastPublicLogTotal = logTotal != null ? logTotal : lastPublicLog.length;
+  // 로그창을 보고 있지 않을 때 새 로그가 쌓이면 로그창 탭에 안 읽음 점을 켭니다(처음 접속 때는 제외).
+  if (logInitialized.public && lastPublicLogTotal > prevTotal && currentMemberView !== 'log') {
+    unreadChat.log = true;
+    updateUnreadBadges();
+  }
   if (logView === 'public') {
     revealNewLogLines('public', lastPublicLog, lastPublicLogTotal);
   } else {
@@ -2163,7 +2184,10 @@ socket.on('gm_state', (state) => {
 
 // 채팅창/전투 관전/아군회의 탭에 새 채팅이 쌓이면(지금 보고 있는 탭이 아닐 때) 탭 모서리에
 // 빨간 점으로 표시합니다.
-let unreadChat = { general: false, spectator: false, team: false };
+let unreadChat = { general: false, spectator: false, team: false, log: false };
+// 지금 화면에 보이는 Member 패널 탭 ('chat' | 'log' | 'meeting' | 'spectate')
+let currentMemberView = 'chat';
+const CHAT_TAB_TO_VIEW = { general: 'chat', team: 'meeting', spectator: 'spectate' };
 function chatTabFor(entry) {
   if (entry.category === 'presence') return null;
   if (entry.category === 'team') return 'team';
@@ -2174,6 +2198,8 @@ function updateUnreadBadges() {
   document.getElementById('unreadDotChat').classList.toggle('show', unreadChat.general);
   document.getElementById('unreadDotSpectate').classList.toggle('show', unreadChat.spectator);
   document.getElementById('unreadDotMeeting').classList.toggle('show', unreadChat.team);
+  const logDot = document.getElementById('unreadDotLog');
+  if (logDot) logDot.classList.toggle('show', unreadChat.log);
 }
 
 function setChatFilter(filter) {
@@ -2188,6 +2214,10 @@ setChatFilter('general');
 // 하나뿐이라, 탭을 옮길 때마다 해당 탭의 마운트 지점으로 DOM을 그대로 옮겨서 재사용합니다.
 // 입력창은 탭과 무관하게 항상 같은 자리(패널 맨 아래)에 고정되어 계속 보입니다.
 function setMemberTab(view) {
+  currentMemberView = view;
+  // 지금 연 탭의 안 읽음 표시는 지웁니다.
+  const readKey = { chat: 'general', meeting: 'team', spectate: 'spectator', log: 'log' }[view];
+  if (readKey) { unreadChat[readKey] = false; updateUnreadBadges(); }
   document.getElementById('memberTabBtnChat').classList.toggle('active', view === 'chat');
   document.getElementById('memberTabBtnLog').classList.toggle('active', view === 'log');
   document.getElementById('memberTabBtnMeeting').classList.toggle('active', view === 'meeting');
@@ -2221,7 +2251,7 @@ function matchesFilter(entry) {
   if (entry.category === 'presence') return false;
   if (chatFilter === 'team') return entry.category === 'team';
   if (chatFilter === 'spectator') return entry.category === 'spectator';
-  return entry.category === 'player' || entry.category === 'operator';
+  return entry.category === 'player' || entry.category === 'operator' || entry.category === 'round';
 }
 
 // 운영진이 전투 관전/아군 회의 탭을 켜둘지/이름을 바꿀지 고르는 설정 (방 전체 공통 - public_state.chat_tabs).
@@ -2321,6 +2351,10 @@ function formatChatTime(timeStr) {
 }
 
 function fmtChat(entry) {
+  // 전투 진행 안내(✶ Round N / ▶ 선공 단계 등)는 아바타 없이 포인트 컬러로 한 줄 표시합니다.
+  if (entry.category === 'round') {
+    return `<div class="chat-line is-round"><span class="round-text">✶ ${entry.text}</span></div>`;
+  }
   const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:') || (entry.text || '').startsWith('[행동:');
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
   const isStar = entry.role === 'system' || entry.role === 'gm' || (entry.nickname || '').trim().toLowerCase() === 'gm';
@@ -2345,8 +2379,9 @@ function appendChat(entry) {
     lastTeamChat.push(entry);
     if (lastTeamChat.length > 200) lastTeamChat.shift();
   }
+  // 그 글이 들어갈 탭을 지금 보고 있지 않으면(다른 탭/로그창을 보는 중) 탭 이름 옆에 안 읽음 점을 켭니다.
   const tab = chatTabFor(entry);
-  if (tab && tab !== chatFilter) {
+  if (tab && CHAT_TAB_TO_VIEW[tab] !== currentMemberView) {
     unreadChat[tab] = true;
     updateUnreadBadges();
   }

@@ -542,7 +542,41 @@ def build_gm_state(room):
     return payload
 
 
+def _mirror_round_logs(room):
+    """전투 로그의 라운드/단계 안내 줄(✶ Round N, ▶ 선공 단계 등)을 일반 채팅창에도 남깁니다.
+    되돌리기로 로그가 줄어들면, 그 범위에 해당하는 안내 채팅도 함께 지웁니다."""
+    battle = room.game.battle
+    if battle is None:
+        return
+    # 어디까지 옮겼는지는 전투 객체에 기록합니다(새 전투가 시작되면 0부터 다시).
+    mirrored = getattr(battle, "_chat_mirrored_len", 0)
+    battle_key = id(battle)
+    log = battle.public_log
+    if len(log) < mirrored:
+        room.chat_log = [
+            e for e in room.chat_log
+            if not (e.get("category") == "round" and e.get("battle_key") == battle_key
+                    and e.get("log_idx", 0) >= len(log))
+        ]
+        mirrored = len(log)
+    for i in range(mirrored, len(log)):
+        if log[i].get("tag") == "round":
+            entry = {
+                "time": time.strftime("%H:%M:%S"),
+                "nickname": "system",
+                "role": "system",
+                "category": "round",
+                "text": log[i]["text"],
+                "log_idx": i,
+                "battle_key": battle_key,
+            }
+            room.chat_log.append(entry)
+            socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
+    battle._chat_mirrored_len = len(log)
+
+
 def broadcast_state(room):
+    _mirror_round_logs(room)
     socketio.emit("public_state", build_public_state(room), room=room_channel(room.id, "all"))
     socketio.emit("gm_state", build_gm_state(room), room=room_channel(room.id, "gm"))
 

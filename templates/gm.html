@@ -144,6 +144,8 @@
   .chat-body .time { color: var(--muted); font-size:13px; margin-left:6px; }
   .chat-line.is-command .chat-text { color:#9fc3ff; font-family: ui-monospace, monospace; font-size:14px; }
   .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
+  .chat-line.is-round { margin:6px 0 8px; }
+  .chat-line.is-round .round-text { color: var(--accent-blue); font-weight:700; font-size:14px; }
   /* 안내 문구 안의 줄바꿈(\n)을 그대로 보여줍니다. */
   .chat-text { white-space: pre-line; }
 
@@ -1472,7 +1474,7 @@ setChatFilter('player');
 
 function matchesFilter(entry) {
   if (chatFilter === 'entry') return entry.category === 'presence';
-  if (chatFilter === 'player') return entry.category === 'player' || entry.category === 'operator';
+  if (chatFilter === 'player') return entry.category === 'player' || entry.category === 'operator' || entry.category === 'round';
   if (chatFilter === 'spectator') return entry.category === 'spectator';
   return false;
 }
@@ -1516,6 +1518,9 @@ function formatChatTime(timeStr) {
 }
 
 function fmtChat(entry) {
+  if (entry.category === 'round') {
+    return `<div class="chat-line is-round"><span class="round-text">✶ ${entry.text}</span></div>`;
+  }
   const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:') || (entry.text || '').startsWith('[행동:');
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
   const isStar = entry.role === 'system' || entry.role === 'gm' || (entry.nickname || '').trim().toLowerCase() === 'gm';
