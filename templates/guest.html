@@ -550,6 +550,7 @@
   <div class="modal-box userinfo-modal panel">
     <div class="modal-title">유저 접속정보</div>
     <div class="hint" style="margin-bottom:6px;">초록 점이 켜진 이름은 지금 그 캐릭터로 접속 중이에요.</div>
+    <div class="hint" id="userInfoGmHint" style="margin:-2px 0 6px; display:none;">GM : 이름을 더블클릭하면 그 캐릭터의 마이페이지가 열려요.</div>
     <div class="userinfo-list" id="userInfoList"></div>
     <div class="row"><button class="btn-plain" onclick="closeUserInfoPanel()">닫기</button></div>
   </div>
@@ -2171,7 +2172,9 @@ socket.on('formulas_saved', (d) => {
   setTimeout(() => { el.textContent = ''; }, 4000);
 });
 
+let lastRosterDetail = [];  // GM 전용 - 등록된 캐릭터 전체 정보(전투에 없는 캐릭터의 마이페이지용)
 socket.on('gm_state', (state) => {
+  lastRosterDetail = state.roster_detail || [];
   lastOperatorLog = state.operator_log || [];
   lastOperatorLogTotal = state.operator_log_total != null ? state.operator_log_total : lastOperatorLog.length;
   if (logView === 'operator') {
@@ -2758,6 +2761,8 @@ function renderUserInfoList() {
   }
   // GM은 전원을 보고 이름 옆 눈 아이콘으로 숨김을 켜고 끕니다. GM이 아닌 사람에게는 숨긴 이름이 아예 안 보입니다.
   const isGm = myControlInfo(lastBattleForPanel).scope === 'all';
+  const gmHint = document.getElementById('userInfoGmHint');
+  if (gmHint) gmHint.style.display = isGm ? '' : 'none';
   const names = isGm ? lastRoster : lastRoster.filter(n => !lastUserInfoHidden.has(n));
   listEl.innerHTML = names.map(name => {
     const online = onlineSet.has(name);
@@ -2766,7 +2771,8 @@ function renderUserInfoList() {
       ? `<button class="userinfo-eye" onclick="toggleUserInfoHidden('${name.replace(/'/g, "\\'")}')">`
         + `<i class="fa-solid ${hidden ? 'fa-eye-slash' : 'fa-eye'}"></i></button>`
       : '';
-    return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''}"><span class="userinfo-dot ${online ? 'online' : ''}"></span><span class="userinfo-name">${name}</span>${eye}</div>`;
+    const dbl = isGm ? ` ondblclick="openMyPageFor('${name.replace(/'/g, "\\'")}')" style="cursor:pointer;"` : '';
+    return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''}"${dbl}><span class="userinfo-dot ${online ? 'online' : ''}"></span><span class="userinfo-name">${name}</span>${eye}</div>`;
   }).join('');
 }
 
@@ -2787,7 +2793,24 @@ function closeUserInfoPanel() {
 // 체력/소지품은 운영진만 수정 가능하고, 그 외(표기 이름/색상/스킬 로그)는 본인(캐릭터로
 // 직접 로그인한 사람)만 수정 가능합니다.
 // ------------------------------------------------------------------
+// GM이 유저 접속정보에서 더블클릭해 연 캐릭터 이름(없으면 평소처럼 본인/선택된 행동자 기준)
+let myPageViewName = null;
+
+function openMyPageFor(name) {
+  if (myControlInfo(lastBattleForPanel).scope !== 'all') return;
+  myPageViewName = name;
+  document.getElementById('myPageModal').style.display = 'flex';
+  renderMyPage();
+}
+
 function myPageTargetChar() {
+  if (myPageViewName) {
+    const live = lastAllForCards.find(c => c.name === myPageViewName);
+    if (live) return live;
+    // 전투에 없는 캐릭터는 등록 정보만 보여줍니다(체력은 전투 중에만 있음).
+    const d = lastRosterDetail.find(r => r.name === myPageViewName);
+    return d ? { ...d, current_hp: null, max_hp: null } : null;
+  }
   const battle = lastBattleForPanel;
   if (!battle) return null;
   const actorName = myActorName(battle);
@@ -2795,11 +2818,13 @@ function myPageTargetChar() {
 }
 
 function openMyPage() {
+  myPageViewName = null;
   document.getElementById('myPageModal').style.display = 'flex';
   renderMyPage();
 }
 
 function closeMyPage() {
+  myPageViewName = null;
   document.getElementById('myPageModal').style.display = 'none';
 }
 
@@ -2849,11 +2874,18 @@ function renderMyPage() {
   document.getElementById('myPageRole').textContent = c.role;
   document.getElementById('myPageRole').style.color = roleColorVar(c.role);
 
+  const hasHp = c.max_hp != null;
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
-  document.getElementById('myPageMaxHp').textContent = c.max_hp;
+  document.getElementById('myPageMaxHp').textContent = hasHp ? c.max_hp : '-';
   document.getElementById('myPageHpBar').style.width = Math.max(0, hpRatio * 100) + '%';
 
-  if (isGm) {
+  if (isGm && !hasHp) {
+    // 전투에 없는 캐릭터 : 체력은 표시만(-), 소지품은 GM이 수정 가능
+    hpView.style.display = ''; hpInput.style.display = 'none';
+    hpView.textContent = '-';
+    invView.style.display = 'none'; invInput.style.display = '';
+    if (document.activeElement !== invInput) invInput.value = c.inventory || '';
+  } else if (isGm) {
     hpView.style.display = 'none'; hpInput.style.display = '';
     if (document.activeElement !== hpInput) { hpInput.value = c.current_hp; hpInput.max = c.max_hp; hpInput.min = 0; }
     invView.style.display = 'none'; invInput.style.display = '';

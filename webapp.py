@@ -1016,10 +1016,11 @@ def on_set_mypage_gm_fields(data):
     name = (data.get("name") or "").strip()
     battle = room.game.battle
     live = battle.find_character(name) if battle is not None else None
-    if live is None:
-        emit("action_error", {"message": "전투 중인 캐릭터만 마이페이지에서 수정할 수 있습니다."})
+    if live is None and not room.game.db.exists(name):
+        emit("action_error", {"message": "존재하지 않는 캐릭터입니다."})
         return
-    if "current_hp" in data:
+    # 전투에 없는 캐릭터(유저 접속정보에서 연 마이페이지)는 체력이 없으므로 소지품만 저장합니다.
+    if live is not None and "current_hp" in data:
         try:
             hp = int(data.get("current_hp"))
         except (TypeError, ValueError):
@@ -1027,7 +1028,8 @@ def on_set_mypage_gm_fields(data):
         live.current_hp = max(0, min(hp, live.max_hp))
     if "inventory" in data:
         inventory = (data.get("inventory") or "").strip()[:200]
-        live.inventory = inventory
+        if live is not None:
+            live.inventory = inventory
         existing = room.game.db.get(name) or {}
         room.game.db.add_or_update(
             name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
