@@ -1026,10 +1026,9 @@ class Battle:
 
         self._push_history()
         self.self_defend_skill.execute(actor)
+        self._log(f"{actor.name} 본인방어", tag="defend")
         self._resolve_pending_attacks(actor)
         actor.has_acted = True
-
-        self._log(f"{actor.name} 본인방어", tag="defend")
         self._check_finish()
 
     # ------------------------------------------------------------------
@@ -1052,13 +1051,13 @@ class Battle:
 
         self._push_history()
         self.defend_skill.execute(tanker, target)
-        self._resolve_pending_attacks(tanker)
-        tanker.has_acted = True
 
         if target is tanker:
             self._log(f"{tanker.name} 방어 (본인)", tag="defend")
         else:
             self._log(f"{tanker.name} 방어 → {target.name} (능동 방어 부여)", tag="defend")
+        self._resolve_pending_attacks(tanker)
+        tanker.has_acted = True
         self._maybe_trigger_leech(tanker)
         self._check_finish()
 
@@ -1152,8 +1151,6 @@ class Battle:
 
         self._push_history()
         self.proxy_defend_skill.execute(actor, target)
-        self._resolve_pending_attacks(actor)
-        actor.has_acted = True
 
         if target is actor:
             self._log(f"{actor.name} 방어 (직접 방어)", tag="defend")
@@ -1163,6 +1160,9 @@ class Battle:
                 f"→ {target.name}이(가) 공격받으면 {actor.name}이(가) 대신 받습니다 (남은 피해도 {actor.name}에게).",
                 tag="system",
             )
+        # 방어가 먼저 적용된 뒤에 보류된 공격을 정산합니다.
+        self._resolve_pending_attacks(actor)
+        actor.has_acted = True
         self._maybe_trigger_leech(actor)
         self._check_finish()
 
@@ -1187,10 +1187,10 @@ class Battle:
 
         self._push_history()
         self.guard_skill.execute(actor, target)
-        self._resolve_pending_attacks(actor)
-        actor.has_acted = True
 
         self._log(f"{actor.name} 수호 → {target.name} (방어 부여)", tag="defend")
+        self._resolve_pending_attacks(actor)
+        actor.has_acted = True
         self._maybe_trigger_leech(actor)
         self._check_finish()
 
@@ -1214,15 +1214,15 @@ class Battle:
             raise BattleError("차폐 대상은 같은 팀의 캐릭터여야 합니다.")
 
         self._push_history()
-        self._resolve_pending_attacks(actor)
         result = self.shield_skill.execute(actor, target)
         target.shield_temp_expires_round = self.round_no + config.SKILL_SHIELD_GRANT_DURATION
-        actor.has_acted = True
 
         if target is actor:
             self._log(f"{actor.name} 【차폐】(본인) : 보호막 +{result['amount']}, 능동 방어 부여", tag="defend")
         else:
             self._log(f"{actor.name} 【차폐】 → {target.name} : 보호막 +{result['amount']}, 능동 방어 부여", tag="defend")
+        self._resolve_pending_attacks(actor)
+        actor.has_acted = True
         self._maybe_trigger_leech(actor)
         self._check_finish()
 
@@ -1241,20 +1241,20 @@ class Battle:
             raise BattleError(reason)
 
         self._push_history()
-        self._resolve_pending_attacks(actor)
         self.polarize_skill.execute(actor)
 
         allies = [c for c in self.team_members(self.team_label_of(actor)) if c.is_alive]
         actor.polarize_active = True
         actor.polarize_expires_round = self.round_no + config.SKILL_POLARIZE_DURATION
         actor.polarize_ally_count = max(1, len(allies))
-        actor.has_acted = True
 
         self._log(
             f"{actor.name} 【편광】 : {config.SKILL_POLARIZE_DURATION}턴간 아군 전원의 피해를 집중시킵니다 "
             f"(방어력 ×{actor.polarize_ally_count}, 이 효과로는 죽지 않습니다).",
             tag="defend",
         )
+        self._resolve_pending_attacks(actor)
+        actor.has_acted = True
         self._check_finish()
 
     # ------------------------------------------------------------------
@@ -1273,10 +1273,10 @@ class Battle:
 
         self._push_history()
         self.dodge_skill.execute(actor)
-        self._resolve_pending_attacks(actor)
-        actor.has_acted = True
 
         self._log(f"{actor.name} 회피 태세", tag="action")
+        self._resolve_pending_attacks(actor)
+        actor.has_acted = True
         self._check_finish()
 
     # ------------------------------------------------------------------
