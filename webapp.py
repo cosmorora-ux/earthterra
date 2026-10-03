@@ -28,7 +28,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-01.1"
+SERVER_BUILD = "2026-10-03.1"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -724,9 +724,8 @@ def on_join(data):
         socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
 
     emit("joined", {"role": role, "room_id": room_id})
-    emit("public_state", build_public_state(room))
-    if role == "gm" or nickname.lower() == "gm":
-        emit("gm_state", build_gm_state(room))
+    # 누가 로그인/로그아웃하면 유저 접속정보(초록 점)가 모든 접속자 화면에 같이 바뀌도록 방 전체에 다시 보냅니다.
+    broadcast_state(room)
 
 
 @socketio.on("disconnect")
