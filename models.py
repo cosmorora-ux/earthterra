@@ -170,15 +170,28 @@ class Character:
             # 도주 시도 결과가 아직 확정되지 않았다면, 그 결과가 나올 때까지 상태를 건드리지 않습니다.
             return
         self.has_acted = False
-        self.defended_this_round = False
-        self.defense_grants = []
-        self.interceptors = []
+        # 방어(직접 방어/수호/차폐 등)와 대리 방어는 라운드가 바뀌어도 '실제로 공격을 막을 때까지' 유지됩니다.
+        # 후공 단계에서 건 방어가 다음 라운드 적의 공격(및 보류 공격 정산)에도 적용되도록 하기 위함입니다.
+        # 같은 사람이 건 방어가 라운드마다 계속 쌓이지 않도록 부여자 1명당 1개만 남깁니다.
+        self.defense_grants = self._dedupe_alive(self.defense_grants)
+        self.interceptors = self._dedupe_alive(self.interceptors)
+        self.defended_this_round = bool(self.defense_grants)
         self.protecting_ally = None
         self.dodging_this_round = False
         # 보류된 공격(pending_attacks)은 라운드가 바뀌어도 지우지 않습니다 - 후공 단계에서 받은 공격은
         # 다음 라운드 그 캐릭터의 행동(방어/회피 등) 때 정산됩니다.
         self.moved_this_round = False
         self.deferred_this_round = False
+
+    @staticmethod
+    def _dedupe_alive(chars: list) -> list:
+        kept, seen = [], set()
+        for ch in chars:
+            if ch is None or not ch.is_alive or ch.name in seen:
+                continue
+            seen.add(ch.name)
+            kept.append(ch)
+        return kept
 
     def hp_ratio(self) -> float:
         if self.max_hp <= 0:
