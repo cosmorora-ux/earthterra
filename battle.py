@@ -560,6 +560,11 @@ class Battle:
             self._log(f"유도 효과 해제 ({actor.name} → {actor.commanded_by} 공격 완료)", tag="system")
             actor.commanded_by = None
 
+    def _settle_immediately(self, target: Character) -> bool:
+        """공격을 바로 정산할지 여부. 일반 캐릭터는 항상 보류해서 방어할 기회를 줍니다(후공 단계 포함).
+        자동 방어가 붙는 점령전 거점/레이드 적군만, 이미 이번 라운드 행동을 마쳤으면 바로 정산합니다."""
+        return target.has_acted and self._auto_defense_for(target)
+
     def _auto_defense_for(self, target: Character) -> bool:
         """점령전 거점(2팀) 대상이면 방어 선언 여부와 무관하게 항상 능동 방어가 자동 발생합니다."""
         return self.site_auto_defense and target.team == "B"
@@ -799,11 +804,11 @@ class Battle:
         resolved_target = self._redirect_for_polarize(target)
         def_mult = resolved_target.polarize_ally_count if resolved_target.polarize_active else 1.0
 
-        if resolved_target.has_acted:
-            # 대상이 이미 이번 라운드 행동을 마쳤다면 더 기다릴 필요가 없으므로 즉시 정산합니다.
+        if self._settle_immediately(resolved_target):
             self._resolve_hit(atk, resolved_target, def_mult)
         else:
-            # 대상이 아직 이번 라운드 행동 전이라면 피해를 보류하고, 대상의 턴에 정산합니다.
+            # 피해를 보류하고, 대상의 다음 행동(방어/회피 등) 때 정산합니다. 이미 이번 라운드 행동을
+            # 마친 대상(후공 단계에서 공격받은 선공 팀 등)이면 다음 라운드 그 캐릭터의 행동 때 정산됩니다.
             resolved_target.pending_attacks.append({
                 "attacker_name": attacker.name, "atk": atk, "defense_stat_mult": def_mult,
             })
@@ -920,7 +925,7 @@ class Battle:
                 self._log(f"[붕괴 {i}/2] 공격 수치 {atk['total']}{note}", tag="damage", role=attacker.role)
             else:
                 self._log(f"[붕괴 {i}/2] 공격 수치 {atk['total']}{note}", tag="damage")
-            if resolved_target.has_acted:
+            if self._settle_immediately(resolved_target):
                 self._resolve_hit(atk, resolved_target, def_mult)
             else:
                 resolved_target.pending_attacks.append({
@@ -987,7 +992,7 @@ class Battle:
                     self._log(f"[방출 → {enemy.name} {i}/2] 공격 수치 {atk['total']}", tag="damage", role=attacker.role)
                 else:
                     self._log(f"[방출 → {enemy.name} {i}/2] 공격 수치 {atk['total']}", tag="damage")
-                if resolved_target.has_acted:
+                if self._settle_immediately(resolved_target):
                     self._resolve_hit(atk, resolved_target, def_mult)
                 else:
                     resolved_target.pending_attacks.append({

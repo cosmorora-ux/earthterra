@@ -175,7 +175,8 @@ class Character:
         self.interceptors = []
         self.protecting_ally = None
         self.dodging_this_round = False
-        self.pending_attacks = []
+        # 보류된 공격(pending_attacks)은 라운드가 바뀌어도 지우지 않습니다 - 후공 단계에서 받은 공격은
+        # 다음 라운드 그 캐릭터의 행동(방어/회피 등) 때 정산됩니다.
         self.moved_this_round = False
         self.deferred_this_round = False
 
