@@ -1103,7 +1103,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-03.3";
+const EXPECTED_SERVER_BUILD = "2026-10-03.4";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -1366,7 +1366,8 @@ function renderCompactCardHtml(c) {
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
-  if (c.defense_count) badges.push(`🛡 보호${c.defense_count}`);
+  if (c.self_defense_count) badges.push(`🛡 직접 방어`);
+  if (c.defense_count - (c.self_defense_count || 0) > 0) badges.push(`🛡 보호${c.defense_count - (c.self_defense_count || 0)}`);
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
@@ -1433,7 +1434,8 @@ function renderCardHtml(c) {
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
   if (lastForcedTargetNames.has(c.name)) badges.push(`🎯 유도 효과`);
-  if (c.defense_count) badges.push(`🛡 보호${c.defense_count}`);
+  if (c.self_defense_count) badges.push(`🛡 직접 방어`);
+  if (c.defense_count - (c.self_defense_count || 0) > 0) badges.push(`🛡 보호${c.defense_count - (c.self_defense_count || 0)}`);
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
   if (c.polarize_active) badges.push(`🛡 편광중`);
   if (c.has_leech_buff) badges.push(`🩸 흡수`);
