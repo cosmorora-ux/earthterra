@@ -2074,26 +2074,27 @@ function renderGrid(battle, all) {
   html += '</table>';
   el.innerHTML = html;
   applyMapBackground();
-  renderGridNotice(battle);
-
+  // 이동/사거리 안내는 지도 아래가 아니라 지도 위 알림줄(라디오 아이콘 옆)에 함께 보여줍니다.
+  const guide = (isEnemyTurn && !medicFreeTurn)
+    ? '적 턴에는 범위가 안 보여요. 내 턴에 다시 확인하세요.'
+    : (selChar
+      ? (highlightIsAction
+          ? `선택: ${displayNameOf(selChar)} — 사거리 표시 중. 범위 내 대상을 클릭해 행동을 고르세요.`
+          : `선택: ${displayNameOf(selChar)} — 이동 범위 표시 중. 이동할 칸을 클릭하세요.`)
+      : '캐릭터를 클릭하면 이동/사거리 범위가 표시돼요.');
+  renderGridNotice(battle, guide);
   const legend = document.getElementById('gridLegend');
-  if (legend) {
-    legend.textContent = (isEnemyTurn && !medicFreeTurn)
-      ? '🔒 적 턴에는 범위가 안 보여요. 내 턴에 다시 확인하세요.'
-      : (selChar
-        ? (highlightIsAction
-            ? `선택: ${displayNameOf(selChar)} — ⚪ 사거리 표시 중. 범위 내 대상을 클릭해 행동을 고르세요.`
-            : `선택: ${displayNameOf(selChar)} — ${ROLE_MOVE_EMOJI[selChar.role] || '🔵'} 이동 범위 표시 중. 이동할 칸을 클릭하세요.`)
-        : '캐릭터를 클릭하면 이동/사거리 범위가 표시돼요. (🔴스트라이커 🔵가디언 🟡메딕)');
-  }
+  if (legend) { legend.textContent = ''; legend.style.display = 'none'; }
 
   renderGridActionPopup(battle, all);
 }
 
 // 맵 위 알림줄 : 공성전은 이번 라운드 거점 행동 횟수, 마스 레이드는 공개된 전조(피해 구역) 칸 수를 안내합니다.
-function renderGridNotice(battle) {
+let lastGridGuide = '';
+function renderGridNotice(battle, guide) {
   const el = document.getElementById('gridNoticeText');
   if (!el) return;
+  if (guide !== undefined) lastGridGuide = guide;
   const parts = [];
   if (BATTLE_TYPE === 'siege' && lastSiteDice && lastSiteDice.value != null && !lastSiteDice.stale) {
     parts.push(`이번 턴 적이 ${lastSiteDice.value}회 공격합니다.`);
@@ -2101,7 +2102,9 @@ function renderGridNotice(battle) {
   if (telegraphRevealedCells.size > 0) {
     parts.push(`${telegraphRevealedCells.size}칸의 데미지 구역이 공개됩니다.`);
   }
-  if (!parts.length) parts.push(battle ? '새 알림이 없습니다.' : '전투 시작 전입니다.');
+  if (!battle) parts.push('전투 시작 전입니다.');
+  else if (lastGridGuide) parts.push(lastGridGuide);
+  else if (!parts.length) parts.push('새 알림이 없습니다.');
   el.textContent = parts.join(' ');
 }
 
