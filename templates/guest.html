@@ -425,6 +425,11 @@
     width:26px; height:26px; border-radius:7px; font-size:12px; align-items:center; justify-content:center; }
   .chat-line:hover .chat-del { display:flex; }
   .chat-del:hover { color:#ff7a7a; border-color:rgba(255,90,90,.5); }
+  /* 전송 버튼 : 종이비행기 아이콘 */
+  .send-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; }
+  .send-btn i { font-size:.92em; }
+  .send-btn.icon-only i { font-size:15px; }
+  .gear i { pointer-events:none; }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
@@ -1227,7 +1232,7 @@
     <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()" data-tip="음소거 켜기/끄기 (나에게만 적용)"><i class="fa-solid fa-volume-high"></i></button>
     <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
     <span class="bgm-vol-num" id="musicVolumeNum"></span>
-    <button type="button" class="bgm-mute" onclick="openSoundSettings()" data-tip="소리 설정 (효과음)"><i class="fa-solid fa-sliders"></i></button>
+    <button type="button" class="bgm-mute" onclick="openSoundSettings()" data-tip="소리 설정 (효과음)"><i class="fa-solid fa-gear"></i></button>
   </div>
 </div>
 
@@ -1298,7 +1303,7 @@
   <select id="cmdTargetSelect" onchange="onCmdTargetChange()"></select>
   <select id="cmdTarget2" style="display:none;"></select>
   <select id="cmdTarget3" style="display:none;"></select>
-  <button class="btn-primary" id="cmdSendBtn" disabled onclick="submitCmd()">전송</button>
+  <button class="btn-primary send-btn" id="cmdSendBtn" disabled onclick="submitCmd()"><i class="fa-solid fa-paper-plane"></i><span>전송</span></button>
 </div>
 
 <div id="gmActPanel" class="gm-act-row action-bar-bottom panel" style="display:none;">
@@ -1325,7 +1330,7 @@
     <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()" data-tip="음소거 켜기/끄기 (나에게만 적용)"><i class="fa-solid fa-volume-high"></i></button>
     <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
     <span class="bgm-vol-num" id="musicVolumeNum"></span>
-    <button type="button" class="bgm-mute" onclick="openSoundSettings()" data-tip="소리 설정 (효과음)"><i class="fa-solid fa-sliders"></i></button>
+    <button type="button" class="bgm-mute" onclick="openSoundSettings()" data-tip="소리 설정 (효과음)"><i class="fa-solid fa-gear"></i></button>
   </div>
 </div>
 {% endif %}
@@ -1334,7 +1339,7 @@
     <b>Chat</b>
     <span class="member-header-tools">
       <button class="chat-search-btn" id="chatSearchBtn" onclick="toggleChatSearch()" data-tip="채팅 검색"><i class="fa-solid fa-magnifying-glass"></i></button>
-      <button class="gear" id="chatTabSettingsBtn" style="display:none;" onclick="toggleChatTabSettings()" data-tip="채팅 탭 설정">⚙</button>
+      <button class="gear" id="chatTabSettingsBtn" style="display:none;" onclick="toggleChatTabSettings()" data-tip="채팅 탭 설정"><i class="fa-solid fa-gear"></i></button>
     </span>
   </div>
   <div class="chat-search-bar" id="chatSearchBar">
@@ -1356,7 +1361,7 @@
           <button id="logTabPublic" class="active" onclick="setLogView('public')">러너 로그</button>
           <button id="logTabOperator" onclick="setLogView('operator')">운영진 로그</button>
         </span>
-        <button class="gear" id="formulaGearBtn" style="display:none;" onclick="toggleFormulaPanel()" data-tip="전투 수식 설정">⚙</button>
+        <button class="gear" id="formulaGearBtn" style="display:none;" onclick="toggleFormulaPanel()" data-tip="전투 수식 설정"><i class="fa-solid fa-gear"></i></button>
       </div>
       <div id="pubLog"></div>
     </div>
@@ -1394,7 +1399,7 @@
   <div class="input-row" id="chatInputRow">
     <div class="avatar-dot" id="inputAvatarDot" ondblclick="onInputAvatarDotDblClick()"></div>
     <input id="chatInput" placeholder="대사를 입력해 주세요." onkeydown="if(event.key==='Enter') sendChat()">
-    <button class="btn-plain" id="chatSendBtn" disabled onclick="sendChat()">➤</button>
+    <button class="btn-plain send-btn icon-only" id="chatSendBtn" disabled onclick="sendChat()" aria-label="보내기"><i class="fa-solid fa-paper-plane"></i></button>
   </div>
 
   <div id="actionPopup"></div>

@@ -250,7 +250,7 @@
 </section>
 
 <section class="panel setup-panel">
-  <h2>⚙ 전투 수식 설정 <span class="hint">({{ battle_type_label }} 전용)</span> <button onclick="toggleFormulaPanel()" id="formulaToggleBtn" style="margin-left:auto;">열기</button></h2>
+  <h2><i class="fa-solid fa-gear"></i> 전투 수식 설정 <span class="hint">({{ battle_type_label }} 전용)</span> <button onclick="toggleFormulaPanel()" id="formulaToggleBtn" style="margin-left:auto;">열기</button></h2>
   <div id="formulaPanel" style="display:none;">
     <div id="formulaCategoryTabs" class="sort-row" style="margin-bottom:8px;"></div>
     <div id="formulaCategoryDesc" class="hint" style="margin-bottom:8px;"></div>
@@ -416,7 +416,7 @@
     <div id="actionPanel" style="padding:8px 18px; border-top:1px solid var(--panel-border);"></div>
     <div class="input-row">
       <input id="chatInput" placeholder="메시지 입력" onkeydown="if(event.key==='Enter') sendChat()">
-      <button class="btn-primary" onclick="sendChat()">전송</button>
+      <button class="btn-primary" onclick="sendChat()" style="display:inline-flex;align-items:center;gap:7px;"><i class="fa-solid fa-paper-plane"></i>전송</button>
     </div>
   </div>
 </div>
