@@ -270,6 +270,12 @@
   .snd-default { border:1px solid var(--card-border); border-radius:10px; padding:10px 12px; margin-top:8px; }
   .snd-default-top { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
   .snd-default-top b { flex:1; font-size:14px; }
+  /* 효과음 크기(dB) 표시 */
+  .snd-level { font-size:12.5px; color: var(--muted); margin-top:6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .snd-level .lv { font-weight:700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .snd-level .badge { font-size:11px; padding:1px 7px; border-radius:999px; border:1px solid var(--card-border); }
+  .snd-level .badge.ok { color: var(--text); }
+  .snd-level .badge.loud, .snd-level .badge.quiet { color: var(--text); border-color: var(--text); }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
@@ -792,6 +798,7 @@
       <input type="range" class="nice-range" id="sfxVolumeSlider" min="0" max="100" oninput="onSfxVolumeChange(this.value)">
       <span class="bgm-vol-num" id="sfxVolumeNum"></span>
     </div>
+    <div class="snd-hint">효과음 적정 크기는 <b>-22 dB (±3)</b>예요. 마이페이지에 소리를 올리면 크기가 표시되고 "적정 크기로 맞추기"로 음량을 자동으로 맞출 수 있어요.</div>
     <div class="snd-hint">공격·방어·지휘·회복 같은 행동을 하면 그 캐릭터의 효과음이 모두에게 들려요. 캐릭터가 마이페이지에 자기 소리를 등록했으면 그 소리로, 아니면 아래 기본 소리로 나와요.</div>
     <div id="sfxDefaultsSection"></div>
     <input type="file" id="sfxDefaultFileInput" accept=".mp3,.wav,.ogg,.m4a,.aac,audio/*" style="display:none;" onchange="onSfxDefaultFileChosen(event)">
@@ -947,8 +954,9 @@
     <div class="mypage-sound-controls">
       <button class="btn-plain" id="myPageSoundUploadBtn" onclick="document.getElementById('mySoundFileInput').click()">업로드</button>
       <button class="btn-plain" id="myPageSoundPreviewBtn" onclick="previewMySoundEffect()" disabled><i class="fa-solid fa-headphones"></i> 미리듣기</button>
-      <input type="range" class="nice-range" id="myPageSoundVolume" min="0" max="100" value="100" oninput="paintRange(this)" onchange="onMySoundEffectVolumeChange()" data-tip="효과음 음량 (본인에게만 들려요)">
+      <input type="range" class="nice-range" id="myPageSoundVolume" min="0" max="100" value="100" oninput="paintRange(this); updateMyPageSoundLevel()" onchange="onMySoundEffectVolumeChange()" data-tip="이 캐릭터 효과음 음량 (모두에게 적용)">
     </div>
+    <div class="snd-level" id="myPageSoundLevel"></div>
     <div class="hint" style="margin-top:4px;">최대 6초만 재생되고, 업로드 파일은 5MB까지 가능합니다.</div>
     <input type="file" id="mySoundFileInput" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,.mp3,.wav,.ogg,.m4a,.aac" style="display:none;" onchange="onMySoundEffectFileChosen(event)">
 
@@ -3322,6 +3330,7 @@ function renderMyPage() {
   if (document.activeElement !== textArea) textArea.value = c.skill_log_text || '';
 
   document.getElementById('myPageSoundStatus').textContent = c.sound_effect ? '등록됨' : '미등록';
+  setTimeout(updateMyPageSoundLevel, 0);
   document.getElementById('myPageSoundPreviewBtn').disabled = !c.sound_effect;
   document.getElementById('myPageSoundUploadBtn').disabled = !canEdit;
   const soundVolume = document.getElementById('myPageSoundVolume');
@@ -4217,7 +4226,7 @@ function renderSoundSettings() {
   if (box.contains(document.activeElement)) return;
   box.innerHTML = `<div class="snd-sec-title" style="margin-top:14px;">기본 효과음 ${gm ? '<span>(운영진 설정 · 모두에게 적용)</span>' : ''}</div>` +
     kinds.map(([kind, d]) => `<div class="snd-default">
-      <div class="snd-default-top"><b>${shopEsc(d.label || kind)}</b>
+      <div class="snd-default-top"><b>${shopEsc(d.label || kind)}</b><span class="snd-level" id="sfxLevel_${kind}" style="margin:0;"></span>
         <button class="shop-btn ghost sm" onclick="previewDefaultSfx('${kind}')"><i class="fa-solid fa-play"></i> 듣기</button>
         ${gm ? `<button class="shop-btn ghost sm" onclick="pickSfxDefault('${kind}')">파일 바꾸기</button>
         <button class="shop-btn ghost sm" onclick="if(confirm('처음 기본 소리로 되돌릴까요?')) socket.emit('set_default_sfx', {kind:'${kind}', reset:true})">초기화</button>` : ''}
@@ -4228,6 +4237,12 @@ function renderSoundSettings() {
         <span class="bgm-vol-num">${d.volume}</span></div>` : ''}
     </div>`).join('');
   box.querySelectorAll('input[type="range"]').forEach(paintRange);
+  kinds.forEach(([kind, d]) => analyzeLoudness(d.url).then(m => {
+    const el = document.getElementById(`sfxLevel_${kind}`);
+    if (!el || !m) return;
+    const eff = m.rms_db + 20 * Math.log10(Math.max(d.volume, 1) / 100);
+    el.innerHTML = `<span class="lv">${eff.toFixed(1)} dB</span> ${loudnessBadge(eff)}`;
+  }));
 }
 function previewDefaultSfx(kind) {
   const d = lastSfxDefaults[kind];
@@ -4240,6 +4255,84 @@ function onSfxDefaultFileChosen(ev) {
   if (!f || !sfxDefaultTargetKind) return;
   if (f.size > 5 * 1024 * 1024) { showError('파일이 너무 커요 (최대 5MB).'); return; }
   f.arrayBuffer().then(buf => socket.emit('set_default_sfx', { kind: sfxDefaultTargetKind, filename: f.name, data: buf }));
+}
+// ==================================================================
+// 효과음 크기(dB) 측정 : 소리 파일을 브라우저에서 분석해 '소리가 나는 구간'의 평균 크기(RMS, dBFS)를 구합니다.
+// 기본 효과음 기준으로 정한 적정 크기(SFX_TARGET_DB)에 맞추면 모든 캐릭터 효과음 크기가 비슷해집니다.
+// 표시하는 값은 '음량 슬라이더까지 적용한 실제 크기'입니다.
+// ==================================================================
+const SFX_TARGET_DB = -22;     // 적정 크기 (기본 효과음 공격/방어 ≈ -22 dB)
+const SFX_TOLERANCE_DB = 3;    // ±3 dB 안이면 '적정'
+const sfxLoudnessCache = {};
+function analyzeLoudness(url) {
+  if (!url) return Promise.resolve(null);
+  if (sfxLoudnessCache[url]) return sfxLoudnessCache[url];
+  const p = fetch(url).then(r => r.arrayBuffer()).then(buf => {
+    const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const ctx = new Ctx(1, 44100, 44100);
+    return new Promise((res, rej) => ctx.decodeAudioData(buf, res, rej));
+  }).then(audio => {
+    const sr = audio.sampleRate;
+    const maxLen = Math.min(audio.length, Math.floor(sr * SOUND_EFFECT_MAX_SECONDS));  // 실제로 재생되는 6초까지만
+    const ch = [];
+    for (let i = 0; i < audio.numberOfChannels; i++) ch.push(audio.getChannelData(i));
+    const win = Math.floor(sr * 0.05);
+    const gate = Math.pow(10, -50 / 20);
+    let sumSq = 0, wins = 0, peak = 0;
+    for (let start = 0; start + win <= maxLen; start += win) {
+      let s = 0;
+      for (let j = start; j < start + win; j++) {
+        let v = 0;
+        for (const c of ch) v += c[j];
+        v /= ch.length;
+        s += v * v;
+        if (Math.abs(v) > peak) peak = Math.abs(v);
+      }
+      const r = Math.sqrt(s / win);
+      if (r > gate) { sumSq += r * r; wins++; }
+    }
+    if (!wins) return { rms_db: -Infinity, peak_db: -Infinity };
+    return { rms_db: 20 * Math.log10(Math.sqrt(sumSq / wins)), peak_db: 20 * Math.log10(peak) };
+  }).catch(() => null);
+  sfxLoudnessCache[url] = p;
+  return p;
+}
+function loudnessBadge(effDb) {
+  if (!isFinite(effDb)) return '<span class="badge quiet">무음</span>';
+  if (effDb > SFX_TARGET_DB + SFX_TOLERANCE_DB) return '<span class="badge loud">큼</span>';
+  if (effDb < SFX_TARGET_DB - SFX_TOLERANCE_DB) return '<span class="badge quiet">작음</span>';
+  return '<span class="badge ok">적정</span>';
+}
+function volumeForTarget(rmsDb) {
+  return Math.round(100 * Math.pow(10, (SFX_TARGET_DB - rmsDb) / 20));
+}
+function updateMyPageSoundLevel() {
+  const el = document.getElementById('myPageSoundLevel');
+  if (!el || document.getElementById('myPageModal').style.display !== 'flex') return;
+  const c = myPageTargetChar();
+  if (!c || !c.sound_effect) { el.innerHTML = `적정 크기 ${SFX_TARGET_DB} dB (±${SFX_TOLERANCE_DB}). 소리를 올리면 크기를 재서 보여줘요.`; return; }
+  const vol = parseInt(document.getElementById('myPageSoundVolume').value, 10);
+  const url = c.sound_effect;
+  el.textContent = '크기 측정 중...';
+  analyzeLoudness(url).then(m => {
+    if (myPageTargetChar() !== c && (!myPageTargetChar() || myPageTargetChar().sound_effect !== url)) return;
+    if (!m) { el.textContent = '이 파일은 크기를 측정할 수 없어요.'; return; }
+    const eff = m.rms_db + 20 * Math.log10(Math.max(vol, 1) / 100);
+    const need = volumeForTarget(m.rms_db);
+    const canEdit = canEditMyPage();
+    el.innerHTML = `크기 <span class="lv">${isFinite(eff) ? eff.toFixed(1) : '-'} dB</span> ${loudnessBadge(eff)}
+      <span>적정 ${SFX_TARGET_DB} dB (±${SFX_TOLERANCE_DB})</span>
+      ${canEdit ? `<button class="shop-btn ghost sm" onclick="autoLevelMySound(${need})">적정 크기로 맞추기</button>` : ''}
+      ${need > 100 ? '<span>원본이 작아서 100%로도 부족해요. 더 큰 파일을 권장해요.</span>' : ''}`;
+  });
+}
+function autoLevelMySound(need) {
+  const v = Math.max(0, Math.min(100, need));
+  const slider = document.getElementById('myPageSoundVolume');
+  slider.value = v;
+  paintRange(slider);
+  onMySoundEffectVolumeChange();
+  updateMyPageSoundLevel();
 }
 </script>
 </body>
