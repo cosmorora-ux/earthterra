@@ -978,7 +978,18 @@ class Battle:
             raise BattleError(reason)
 
         enemy_label = self.enemy_team_label(self.team_label_of(attacker))
-        enemies = [c for c in self.team_members(enemy_label) if c.is_alive]
+        enemies = []
+        seen_boss_groups = set()
+        for c in self.team_members(enemy_label):
+            if not c.is_alive:
+                continue
+            # 2x2 보스(4부위)는 적 1명으로 칩니다 - 방출이 4부위를 각각 때려 단일 공격(붕괴)보다
+            # 세지는 일이 없도록, 살아있는 첫 부위 하나만 맞습니다.
+            if c.boss_group:
+                if c.boss_group in seen_boss_groups:
+                    continue
+                seen_boss_groups.add(c.boss_group)
+            enemies.append(c)
         if not enemies:
             raise BattleError("공격할 적이 없습니다.")
 
