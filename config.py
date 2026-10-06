@@ -227,8 +227,8 @@ def calculate_max_hp(stats: dict, overrides: dict = None) -> int:
 #      높은 값을 채택합니다)
 # ----------------------------------------------------------------------
 BASE_DICE_SIDES = 15
-ABILITY_BONUS = 2
-MENTAL_FLOOR_MULTIPLIER = 3
+ABILITY_BONUS = 3
+MENTAL_FLOOR_MULTIPLIER = 2
 MENTAL_REROLL_COUNT = 1
 
 
@@ -280,15 +280,15 @@ ATTACK_DICE_COUNT = 3
 # 스트라이커(딜러)가 아닌 사람이 공격할 때는 기본 다이스를 이 개수만큼만 굴립니다
 # (역할 없는 몹/거점도 포함 - 딜러만 정직업 화력을 다 씁니다).
 ATTACK_DICE_COUNT_NON_DEALER = 2
-ATTACK_STAT_MULTIPLIER = 12
+ATTACK_STAT_MULTIPLIER = 10
 
-BASE_CRIT_CHANCE = 15
-LUCK_CRIT_CHANCE_MULT = 6
+BASE_CRIT_CHANCE = 20
+LUCK_CRIT_CHANCE_MULT = 5
 MENTAL_CRIT_CHANCE_MULT = 2
 
-BASE_CRIT_DMG = 1.15
-AGI_CRIT_DMG = 0.06
-ABILITY_CRIT_DMG = 0.02
+BASE_CRIT_DMG = 1.2
+AGI_CRIT_DMG = 0.03
+ABILITY_CRIT_DMG = 0.01
 
 
 def roll_attack(stats: dict, role: str = None, overrides: dict = None) -> dict:
@@ -346,16 +346,16 @@ def roll_attack(stats: dict, role: str = None, overrides: dict = None) -> dict:
 #    (공격 크리티컬과 동일한 구조: 행운/민첩이 주 요인, 정신/이능이 부 요인입니다)
 # ----------------------------------------------------------------------
 DEFENSE_DICE_COUNT = 2
-DEFENSE_STAT_MULTIPLIER = 15
+DEFENSE_STAT_MULTIPLIER = 10
 PASSIVE_DEFENSE_STAT_MULTIPLIER = 4
 
 DEFENSE_CRIT_BASE_CHANCE = 15
-DEFENSE_CRIT_LUCK_MULT = 6
+DEFENSE_CRIT_LUCK_MULT = 4
 DEFENSE_CRIT_MENTAL_MULT = 3
 
-DEFENSE_CRIT_BASE_MULT = 1.3
-DEFENSE_CRIT_AGI_MULT = 0.08
-DEFENSE_CRIT_ABILITY_MULT = 0.03
+DEFENSE_CRIT_BASE_MULT = 1.2
+DEFENSE_CRIT_AGI_MULT = 0.04
+DEFENSE_CRIT_ABILITY_MULT = 0.02
 
 
 def roll_defense(target_stats: dict, active: bool, grantor_stats: dict = None,
@@ -491,14 +491,14 @@ def calculate_final_damage(attack_total: int, defense_total: int, overrides: dic
 #    치명타 배율   = HEAL_CRIT_BASE_MULT + 민첩×배율(주 요인) + 이능×배율(부 요인)
 # ----------------------------------------------------------------------
 HEAL_DICE_COUNT = 2
-HEAL_OUTPUT_MULTIPLIER = 1.8
+HEAL_OUTPUT_MULTIPLIER = 1.2
 
 HEAL_CRIT_BASE_CHANCE = 15
-HEAL_CRIT_LUCK_MULT = 6
+HEAL_CRIT_LUCK_MULT = 4
 HEAL_CRIT_MENTAL_MULT = 3
 
-HEAL_CRIT_BASE_MULT = 1.3
-HEAL_CRIT_AGI_MULT = 0.08
+HEAL_CRIT_BASE_MULT = 1.2
+HEAL_CRIT_AGI_MULT = 0.06
 HEAL_CRIT_ABILITY_MULT = 0.03
 
 
@@ -704,6 +704,24 @@ def get_formula_value(key):
     return globals().get(key)
 
 
+# 깃허브로 모두에게 배포한 PVP 다이스 수식 기본값의 버전입니다. 이 값을 올려서 배포하면, 각자
+# 컴퓨터의 formulas.json에 예전에 저장된 아래 항목 값은 한 번 버려지고 새 기본값으로 맞춰집니다.
+# (그 뒤에 운영진 페이지에서 다시 바꾼 값은 평소처럼 유지됩니다)
+FORMULA_DEFAULTS_VERSION = "2026-10-06"
+PUBLISHED_FORMULA_KEYS = (
+    "HP_BASE", "HP_PER_VIT", "BASE_DICE_SIDES", "ABILITY_BONUS", "MENTAL_FLOOR_MULTIPLIER",
+    "ATTACK_DICE_COUNT", "ATTACK_STAT_MULTIPLIER", "BASE_CRIT_CHANCE", "LUCK_CRIT_CHANCE_MULT",
+    "MENTAL_CRIT_CHANCE_MULT", "BASE_CRIT_DMG", "AGI_CRIT_DMG", "ABILITY_CRIT_DMG",
+    "DEFENSE_DICE_COUNT", "DEFENSE_STAT_MULTIPLIER", "PASSIVE_DEFENSE_STAT_MULTIPLIER",
+    "DEFENSE_CRIT_BASE_CHANCE", "DEFENSE_CRIT_LUCK_MULT", "DEFENSE_CRIT_MENTAL_MULT",
+    "DEFENSE_CRIT_BASE_MULT", "DEFENSE_CRIT_AGI_MULT", "DEFENSE_CRIT_ABILITY_MULT",
+    "DODGE_BASE_CHANCE", "DODGE_LUCK_MULTIPLIER", "DODGE_AGI_MULTIPLIER", "MIN_DAMAGE",
+    "HEAL_DICE_COUNT", "HEAL_OUTPUT_MULTIPLIER", "HEAL_CRIT_BASE_CHANCE", "HEAL_CRIT_LUCK_MULT",
+    "HEAL_CRIT_MENTAL_MULT", "HEAL_CRIT_BASE_MULT", "HEAL_CRIT_AGI_MULT", "HEAL_CRIT_ABILITY_MULT",
+    "ROUND_TIME_LIMIT_SECONDS",
+)
+
+
 def save_formula_overrides(values: dict):
     for field in FORMULA_FIELDS:
         key = field["key"]
@@ -714,6 +732,7 @@ def save_formula_overrides(values: dict):
                 pass
 
     data = {field["key"]: globals()[field["key"]] for field in FORMULA_FIELDS}
+    data["_defaults_version"] = FORMULA_DEFAULTS_VERSION
     with open(_OVERRIDE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -723,6 +742,13 @@ def _apply_saved_overrides():
         try:
             with open(_OVERRIDE_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
+            if data.get("_defaults_version") != FORMULA_DEFAULTS_VERSION:
+                # 새로 배포된 기본 수식으로 한 번 맞춥니다(배포 대상이 아닌 항목은 그대로 유지).
+                for key in PUBLISHED_FORMULA_KEYS:
+                    data.pop(key, None)
+                data["_defaults_version"] = FORMULA_DEFAULTS_VERSION
+                with open(_OVERRIDE_PATH, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
             for field in FORMULA_FIELDS:
                 key = field["key"]
                 if key in data:
