@@ -29,13 +29,13 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.4"
+SERVER_BUILD = "2026-10-06.5"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
 # html(templates)을 고치면 서버를 다시 켜지 않아도 브라우저 새로고침(F5)만으로 바로 반영됩니다.
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-socketio = SocketIO(app, async_mode="threading", max_http_buffer_size=2 * 1024 * 1024)
+socketio = SocketIO(app, async_mode="threading", max_http_buffer_size=8 * 1024 * 1024)
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 MUSIC_DIR = os.path.join(_THIS_DIR, "static", "music")
@@ -529,6 +529,7 @@ def build_public_state(room):
             if data.get("color") or data.get("avatar_url")
         },
         "music": room.music,
+        "map_bg": room.map_bg,
         "shop": shop_mod.shared_shop().public_payload(),
         "telegraph_cells": room.telegraph_cells,
         "preview_teams": preview_teams,
@@ -2090,6 +2091,60 @@ def on_shop_admin_request(data):
     data = data or {}
     if shop_mod.shared_shop().set_request_done(data.get("request_id"), data.get("done", True)):
         _broadcast_all_rooms()
+
+
+# ----------------------------------------------------------------------
+# 격자 지도 배경 이미지 (운영진 전용, 방마다 따로 저장)
+# ----------------------------------------------------------------------
+MAP_BG_DIR = os.path.join(_THIS_DIR, "static", "map_bg")
+os.makedirs(MAP_BG_DIR, exist_ok=True)
+MAP_BG_ALLOWED_EXTS = (".png", ".webp", ".gif", ".jpg", ".jpeg")
+MAP_BG_MAX_BYTES = 6 * 1024 * 1024
+MAP_BG_DEFAULT = {"url": None, "mode": "frame", "dim": 40, "line": 22}
+
+
+def _clamp_int(v, lo, hi, default):
+    try:
+        return max(lo, min(hi, int(v)))
+    except (TypeError, ValueError):
+        return default
+
+
+@socketio.on("set_map_bg")
+def on_set_map_bg(data):
+    """운영진 : 배경 이미지 업로드/삭제와 표시 방식(범위/어둡기/격자선 진하기) 설정."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 지도 배경을 바꿀 수 있습니다."})
+        return
+    data = data or {}
+    cfg = dict(MAP_BG_DEFAULT, **(room.map_bg or {}))
+    if data.get("clear_image"):
+        cfg["url"] = None
+    blob = data.get("data")
+    if blob is not None:
+        ext = os.path.splitext((data.get("filename") or "").lower())[1]
+        if ext not in MAP_BG_ALLOWED_EXTS or not isinstance(blob, (bytes, bytearray)):
+            emit("action_error", {"message": "png/jpg/webp/gif 이미지만 올릴 수 있습니다."})
+            return
+        if len(blob) > MAP_BG_MAX_BYTES:
+            emit("action_error", {"message": "이미지가 너무 큽니다 (최대 6MB)."})
+            return
+        filename = f"{uuid.uuid4().hex}{ext}"
+        with open(os.path.join(MAP_BG_DIR, filename), "wb") as f:
+            f.write(blob)
+        cfg["url"] = f"/static/map_bg/{filename}"
+    if data.get("mode") in ("frame", "grid"):
+        cfg["mode"] = data["mode"]
+    if "dim" in data:
+        cfg["dim"] = _clamp_int(data["dim"], 0, 90, cfg["dim"])
+    if "line" in data:
+        cfg["line"] = _clamp_int(data["line"], 0, 100, cfg["line"])
+    if data.get("reset"):
+        cfg = dict(MAP_BG_DEFAULT)
+    room.map_bg = cfg
+    save_rooms()
+    broadcast_state(room)
 
 
 def _runtime_save_loop():

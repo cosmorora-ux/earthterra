@@ -445,7 +445,23 @@
   #gridSection.map-v2 #gridMap { display:flex; justify-content:center; }
   #gridSection.map-v2 #gridLegend { min-height:0; font-size:13px; color: var(--muted); margin:10px 2px 0; }
   .gmap { border-collapse:collapse; }
-  .gmap td { padding:0; border:1px solid rgba(255,255,255,.22); position:relative; }
+  .gmap td { padding:0; border:1px solid rgba(255,255,255,var(--grid-line, .22)); position:relative; }
+  .map-frame { position:relative; }
+  .map-bg-btn { margin-left:auto; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid var(--card-border); color: var(--text);
+    border-radius:7px; padding:4px 10px; font-size:13px; cursor:pointer; display:none; }
+  .map-bg-btn:hover { background:rgba(255,255,255,.12); }
+  .modal-box.mapbg-modal { width:420px; }
+  .mapbg-preview { height:150px; border-radius:10px; border:1px dashed var(--card-border); background:#0c0c0d center/cover no-repeat;
+    display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:13px; cursor:pointer; margin-bottom:12px; position:relative; overflow:hidden; }
+  .mapbg-preview .dim { position:absolute; inset:0; pointer-events:none; }
+  .mapbg-preview span { position:relative; text-shadow:0 1px 3px #000; }
+  .mapbg-row { display:flex; align-items:center; gap:10px; margin:10px 0; font-size:14px; }
+  .mapbg-row label.lbl { width:88px; color: var(--muted); flex:none; }
+  .mapbg-row .val { width:40px; text-align:right; color: var(--muted); font-size:13px; font-variant-numeric: tabular-nums; }
+  .mapbg-row input[type="range"] { flex:1; }
+  .mapbg-seg { display:flex; gap:4px; }
+  .mapbg-seg button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:7px; padding:5px 10px; font-size:13px; cursor:pointer; }
+  .mapbg-seg button.on { background: var(--accent-blue); border-color: var(--accent-blue); color:#fff; }
   .gmap .gcell { position:relative; box-sizing:border-box; display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .gmap .gcell.ally { background:rgba(120,120,126,.55); }
   .gmap .gcell.enemy { background:rgba(150,60,60,.45); }
@@ -610,6 +626,36 @@
 <div class="content-area">
 <div class="shell">
 
+<div id="mapBgModal" class="modal-overlay" onclick="if(event.target===this) closeMapBgModal()">
+  <div class="modal-box mapbg-modal panel">
+    <div class="modal-title">지도 배경 설정</div>
+    <div class="mapbg-preview" id="mapBgPreview" onclick="document.getElementById('mapBgFileInput').click()" data-tip="클릭해서 이미지 올리기">
+      <div class="dim" id="mapBgPreviewDim"></div><span id="mapBgPreviewText">클릭해서 배경 이미지 올리기 (최대 6MB)</span>
+    </div>
+    <input type="file" id="mapBgFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onMapBgFileChosen(event)">
+    <div class="mapbg-row">
+      <label class="lbl">깔리는 범위</label>
+      <div class="mapbg-seg">
+        <button id="mapBgModeFrame" onclick="setMapBg({mode:'frame'})" data-tip="지도 블럭 전체에 꽉 차게(비율 유지, 넘치는 부분은 잘림)">블럭 전체</button>
+        <button id="mapBgModeGrid" onclick="setMapBg({mode:'grid'})" data-tip="격자 칸 영역에 딱 맞게 늘려서(칸 위치에 맞춘 지도용)">격자에 맞춤</button>
+      </div>
+    </div>
+    <div class="mapbg-row">
+      <label class="lbl">어둡게</label>
+      <input type="range" class="nice-range" id="mapBgDim" min="0" max="90" oninput="paintRange(this); onMapBgSlider()" onchange="setMapBg({dim:this.value})">
+      <span class="val" id="mapBgDimVal"></span>
+    </div>
+    <div class="mapbg-row">
+      <label class="lbl">격자선 진하기</label>
+      <input type="range" class="nice-range" id="mapBgLine" min="0" max="100" oninput="paintRange(this); onMapBgSlider()" onchange="setMapBg({line:this.value})">
+      <span class="val" id="mapBgLineVal"></span>
+    </div>
+    <div class="row" style="justify-content:space-between;">
+      <button class="btn" style="background:transparent;border:1px solid var(--card-border);color:var(--text);font-weight:500;" onclick="if(confirm('배경 이미지를 지우고 기본 배경으로 되돌릴까요?')) setMapBg({reset:true})">기본으로 되돌리기</button>
+      <button class="btn" onclick="closeMapBgModal()">닫기</button>
+    </div>
+  </div>
+</div>
 <div id="shopToast"></div>
 <div id="shopModal" class="modal-overlay" onclick="if(event.target===this) closeShop()">
   <div class="modal-box shop-modal panel">
@@ -804,7 +850,8 @@
 <div class="main-grid {% if grid_size %}with-grid-map{% endif %}">
   {% if grid_size %}
   <div id="gridSection" class="map-v2">
-    <div class="grid-notice"><span class="bell">🔔</span><span id="gridNoticeText"></span></div>
+    <div class="grid-notice"><span class="bell">🔔</span><span id="gridNoticeText"></span>
+      <button class="map-bg-btn" id="mapBgBtn" onclick="openMapBgModal()"><i class="fa-solid fa-image"></i> 배경 설정</button></div>
     <div class="map-frame">
       <div id="gridMap"></div>
     </div>
@@ -1238,7 +1285,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-06.4";
+const EXPECTED_SERVER_BUILD = "2026-10-06.5";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -1249,6 +1296,7 @@ socket.on('public_state', (state) => {
   lastRosterProfiles = state.roster_profiles || {};
   lastRosterMypage = state.roster_mypage || {};
   lastShop = state.shop || lastShop;
+  lastMapBg = state.map_bg || null;
   lastOnlineCharacters = state.online_characters || [];
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
   lastSiteDice = state.site_dice || null;
@@ -1265,6 +1313,8 @@ socket.on('public_state', (state) => {
   renderMusic(state.music, state.server_now);
   renderShop();
   renderMyPagePoints();
+  applyMapBackground();
+  renderMapBgModal();
 });
 
 socket.on('battle_starting', () => {
@@ -2011,6 +2061,7 @@ function renderGrid(battle, all) {
   }
   html += '</table>';
   el.innerHTML = html;
+  applyMapBackground();
   renderGridNotice(battle);
 
   const legend = document.getElementById('gridLegend');
@@ -3643,6 +3694,73 @@ function onMyPagePointsChange() {
   const c = myPageTargetChar();
   if (!c) return;
   socket.emit('shop_admin_points', { name: c.name, set: parseInt(document.getElementById('myPagePointsInput').value || '0', 10) });
+}
+// ==================================================================
+// 격자 지도 배경 이미지 (운영진이 설정, 방 전체에 동일하게 표시)
+// ==================================================================
+let lastMapBg = null;
+const MAP_BG_DEFAULTS = { url: null, mode: 'frame', dim: 40, line: 22 };
+function mapBgCfg() { return Object.assign({}, MAP_BG_DEFAULTS, lastMapBg || {}); }
+
+function applyMapBackground(preview) {
+  const frame = document.querySelector('#gridSection .map-frame');
+  const btn = document.getElementById('mapBgBtn');
+  if (btn) btn.style.display = myControlInfo(lastBattleForPanel).scope === 'all' ? 'inline-flex' : 'none';
+  if (!frame) return;
+  const cfg = Object.assign(mapBgCfg(), preview || {});
+  const table = frame.querySelector('.gmap');
+  frame.style.setProperty('--grid-line', (cfg.line / 100).toFixed(2));
+  const layer = cfg.url
+    ? `linear-gradient(rgba(0,0,0,${cfg.dim / 100}), rgba(0,0,0,${cfg.dim / 100})), url('${cfg.url}')`
+    : '';
+  if (!cfg.url) {
+    frame.style.background = '';
+    if (table) table.style.background = '';
+  } else if (cfg.mode === 'grid') {
+    frame.style.background = '';
+    if (table) { table.style.backgroundImage = layer; table.style.backgroundSize = '100% 100%'; table.style.backgroundPosition = 'center'; table.style.backgroundRepeat = 'no-repeat'; }
+  } else {
+    if (table) table.style.background = '';
+    frame.style.backgroundImage = layer;
+    frame.style.backgroundSize = 'cover';
+    frame.style.backgroundPosition = 'center';
+    frame.style.backgroundRepeat = 'no-repeat';
+  }
+}
+
+function openMapBgModal() { document.getElementById('mapBgModal').style.display = 'flex'; renderMapBgModal(); }
+function closeMapBgModal() { document.getElementById('mapBgModal').style.display = 'none'; applyMapBackground(); }
+function renderMapBgModal() {
+  if (document.getElementById('mapBgModal').style.display !== 'flex') return;
+  const cfg = mapBgCfg();
+  const pv = document.getElementById('mapBgPreview');
+  pv.style.backgroundImage = cfg.url ? `url('${cfg.url}')` : '';
+  document.getElementById('mapBgPreviewText').textContent = cfg.url ? '클릭해서 다른 이미지로 바꾸기' : '클릭해서 배경 이미지 올리기 (최대 6MB)';
+  document.getElementById('mapBgModeFrame').classList.toggle('on', cfg.mode === 'frame');
+  document.getElementById('mapBgModeGrid').classList.toggle('on', cfg.mode === 'grid');
+  const dim = document.getElementById('mapBgDim'), line = document.getElementById('mapBgLine');
+  if (document.activeElement !== dim) dim.value = cfg.dim;
+  if (document.activeElement !== line) line.value = cfg.line;
+  paintRange(dim); paintRange(line);
+  onMapBgSlider();
+}
+// 슬라이더를 움직이는 동안에는 내 화면에서만 미리 보여주고, 손을 떼면(change) 저장합니다.
+function onMapBgSlider() {
+  const dim = parseInt(document.getElementById('mapBgDim').value, 10);
+  const line = parseInt(document.getElementById('mapBgLine').value, 10);
+  document.getElementById('mapBgDimVal').textContent = `${dim}%`;
+  document.getElementById('mapBgLineVal').textContent = `${line}%`;
+  document.getElementById('mapBgPreviewDim').style.background = `rgba(0,0,0,${dim / 100})`;
+  applyMapBackground({ dim, line });
+}
+function setMapBg(fields) { socket.emit('set_map_bg', fields); }
+function onMapBgFileChosen(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!f) return;
+  if (f.size > 6 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 6MB).'); return; }
+  document.getElementById('mapBgPreviewText').textContent = '올리는 중...';
+  f.arrayBuffer().then(buf => socket.emit('set_map_bg', { filename: f.name, data: buf }));
 }
 </script>
 </body>
