@@ -283,6 +283,38 @@
   .member-top .bgm-player { padding-top:4px; padding-bottom:4px; }
   .main-grid:not(.with-grid-map) .team-block h2 { height:40px; display:flex; align-items:center; margin:0 0 10px 2px; }
   .sort-row:has(> #multiSkillSlot:empty) { display:none; }
+  /* ================================================================
+     홀로그램 카드 효과 : 마우스를 올리면 카드가 살짝 기울고, 무지개 포일과 반사광이 포인터를 따라 움직입니다.
+     (JS가 --mx/--my(포인터 위치 %), --rx/--ry(기울기 deg), --hp(중심에서 먼 정도 0~1)를 카드에 넣어줍니다)
+     ================================================================ */
+  .char-card, .site-card { --mx:50%; --my:50%; --rx:0deg; --ry:0deg; --hp:0;
+    transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+    transform-style: preserve-3d; transition: transform .5s ease, border-color .12s, box-shadow .3s; isolation:isolate; }
+  .char-card.holo-on, .site-card.holo-on { transition: transform .08s linear, border-color .12s, box-shadow .3s; z-index:5; }
+  .char-card::before, .char-card::after, .site-card::before, .site-card::after {
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition: opacity .35s ease; z-index:2; }
+  /* 무지개 포일 */
+  .char-card::before, .site-card::before {
+    background:
+      repeating-linear-gradient(115deg,
+        hsl(0 90% 70%) 0%, hsl(45 90% 70%) 6%, hsl(110 80% 65%) 12%, hsl(185 85% 65%) 18%,
+        hsl(245 85% 72%) 24%, hsl(300 85% 70%) 30%, hsl(360 90% 70%) 36%);
+    background-size: 300% 300%;
+    background-position: calc(var(--mx) * 1.2) calc(var(--my) * 1.2);
+    mix-blend-mode: color-dodge;
+    filter: saturate(.9) brightness(.7) contrast(1.4);
+  }
+  /* 반사광 */
+  .char-card::after, .site-card::after {
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my),
+      rgba(255,255,255,.22) 0%, rgba(255,255,255,.06) 30%, rgba(0,0,0,.25) 90%);
+    mix-blend-mode: overlay;
+  }
+  .char-card.holo-on::before, .site-card.holo-on::before { opacity: calc(.14 + var(--hp) * .18); }
+  .char-card.holo-on::after, .site-card.holo-on::after { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .char-card, .site-card { transform:none !important; }
+  }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
@@ -4358,6 +4390,41 @@ function autoLevelMySound(need) {
   onMySoundEffectVolumeChange();
   updateMyPageSoundLevel();
 }
+// ==================================================================
+// 홀로그램 카드 효과 : 카드가 자주 다시 그려지므로 문서 전체에서 이벤트를 받아 처리합니다(위임).
+// ==================================================================
+(function setupHoloCards() {
+  const SEL = '.char-card, .site-card';
+  const MAX_TILT = 7;  // 최대 기울기(도)
+  let active = null;
+  function reset(card) {
+    if (!card) return;
+    card.classList.remove('holo-on');
+    card.style.setProperty('--rx', '0deg');
+    card.style.setProperty('--ry', '0deg');
+    card.style.setProperty('--mx', '50%');
+    card.style.setProperty('--my', '50%');
+    card.style.setProperty('--hp', '0');
+  }
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
+    const card = e.target.closest ? e.target.closest(SEL) : null;
+    if (active && active !== card) { reset(active); active = null; }
+    if (!card) return;
+    active = card;
+    const r = card.getBoundingClientRect();
+    const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    card.classList.add('holo-on');
+    card.style.setProperty('--mx', `${(px * 100).toFixed(1)}%`);
+    card.style.setProperty('--my', `${(py * 100).toFixed(1)}%`);
+    card.style.setProperty('--ry', `${((px - 0.5) * 2 * MAX_TILT).toFixed(2)}deg`);
+    card.style.setProperty('--rx', `${((0.5 - py) * 2 * MAX_TILT).toFixed(2)}deg`);
+    card.style.setProperty('--hp', Math.min(1, Math.hypot(px - 0.5, py - 0.5) * 2).toFixed(2));
+  }, { passive: true });
+  document.addEventListener('pointerleave', () => { reset(active); active = null; });
+  window.addEventListener('blur', () => { reset(active); active = null; });
+})();
 </script>
 </body>
 </html>
