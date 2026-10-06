@@ -23,6 +23,7 @@ EFFECT_LABELS = {
     "heal": "체력 회복",        # value만큼 즉시 회복(보류된 공격이 있으면 피해 정산 직후)
     "stat_up": "스탯 증가",     # 사용할 때 고른 스탯 +value (캐릭터 등록 정보에 영구 반영)
     "request": "운영진 처리",   # 사용하면 운영진에게 처리 요청이 올라가고, 운영진이 직접 반영
+    "role_change": "포지션 변경",  # 마이페이지 포지션에서 원하는 포지션을 누르면 1개 차감하고 즉시 변경
 }
 # 사용 가능 시점
 TIMING_LABELS = {
@@ -36,8 +37,8 @@ DEFAULT_ITEMS = [
      "desc": "사용 즉시 체력을 회복합니다."},
     {"name": "스탯 강화제", "price": 300, "effect": "stat_up", "value": 1, "timing": "prebattle",
      "desc": "원하는 스탯 하나를 영구히 +1 합니다."},
-    {"name": "포지션 변경권", "price": 500, "effect": "request", "value": 0, "timing": "prebattle",
-     "desc": "포지션(가디언/스트라이커/메딕)을 변경합니다. 운영진이 처리합니다."},
+    {"name": "포지션 변경권", "price": 500, "effect": "role_change", "value": 0, "timing": "prebattle",
+     "desc": "포지션(가디언/스트라이커/메딕)을 변경합니다. 마이페이지의 포지션에서 원하는 포지션을 누르세요."},
     {"name": "스킬 변경권", "price": 500, "effect": "request", "value": 0, "timing": "prebattle",
      "desc": "보유 스킬을 변경합니다. 운영진이 처리합니다."},
     {"name": "스테이터스 변경권", "price": 500, "effect": "request", "value": 0, "timing": "prebattle",
@@ -109,6 +110,15 @@ class Shop:
             return
         self.items = [dict(_clean_item(it), id=it.get("id") or _new_id()) for it in data.get("items", [])]
         self.requests = data.get("requests", [])
+        # 예전 shop.json의 '포지션 변경권'(운영진 처리)을 마이페이지에서 바로 쓰는 방식으로 바꿉니다.
+        migrated = False
+        for it in self.items:
+            if it["name"] == "포지션 변경권" and it["effect"] == "request":
+                it["effect"] = "role_change"
+                it["desc"] = "포지션(가디언/스트라이커/메딕)을 변경합니다. 마이페이지의 포지션에서 원하는 포지션을 누르세요."
+                migrated = True
+        if migrated:
+            self.save()
 
     def save(self):
         tmp = self.path + ".tmp"

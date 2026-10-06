@@ -86,7 +86,55 @@
   .chat-tab-cfg-row { padding:10px 0; border-bottom:1px solid var(--card-border); }
 
   /* ---------- 마이페이지 팝업 ---------- */
-  .modal-box.mypage { width:380px; max-height:85vh; overflow-y:auto; }
+  .modal-box.mypage { width:820px; max-width:calc(100vw - 32px); max-height:88vh; overflow-y:auto; }
+  .mypage-cols { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+  .mypage-col { min-width:0; }
+  .mypage-col + .mypage-col { border-left:1px solid var(--panel-border); padding-left:28px; }
+  @media (max-width:720px) { .mypage-cols { grid-template-columns:1fr; } .mypage-col + .mypage-col { border-left:none; padding-left:0; } }
+  .mypage-head { display:flex; gap:16px; align-items:center; margin-bottom:6px; }
+  .mypage-head-info { flex:1; min-width:0; }
+  .mypage-head .mypage-name { text-align:left; margin-bottom:2px; }
+  .mypage-head .mypage-row { padding:6px 0; }
+  .mypage-row.top { padding-bottom:4px; }
+  .mypage-raid-input.mypage-raid-input { width:64px !important; text-align:center !important; letter-spacing:2px; }
+  .mypage-roles { display:flex; gap:6px; }
+  .mypage-roles button { background:#151517; color: var(--muted); border:1px solid var(--card-border); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer; }
+  .mypage-roles button.on { color: var(--text); border-color: var(--role-color); box-shadow: inset 0 -2px 0 var(--role-color); font-weight:700; }
+  .mypage-roles button:not(.on):hover:not(:disabled) { color: var(--text); }
+  .mypage-roles button:disabled { cursor:not-allowed; opacity:.5; }
+  .mypage-items { display:flex; flex-wrap:wrap; gap:6px; min-height:32px; }
+  .mypage-items .chip { display:inline-flex; align-items:center; gap:6px; background:#151517; border:1px solid var(--card-border); border-radius:8px; padding:5px 10px; font-size:14px; }
+  .mypage-items .chip b { color: var(--muted); font-weight:500; }
+  .mypage-items .empty { color: var(--muted); font-size:14px; }
+  .btn-plain.btn-xs { padding:4px 10px; font-size:13px; }
+  .seg-toggle { display:inline-flex; border:1px solid var(--card-border); border-radius:8px; overflow:hidden; }
+  .seg-toggle button { background:#151517; color: var(--muted); border:none; padding:6px 14px; font-size:14px; cursor:pointer; }
+  .seg-toggle button + button { border-left:1px solid var(--card-border); }
+  .seg-toggle button.on { background:#2a2a2f; color: var(--text); font-weight:700; }
+  .mypage-field { width:100%; box-sizing:border-box; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:9px 12px; font-size:15px; font-family:inherit; }
+  .modal-box input.mypage-field { font-size:15px; }
+  .rich-mini-bar { display:flex; gap:4px; margin:8px 0 6px; }
+  .mypage-field.rich { min-height:110px; max-height:220px; overflow-y:auto; line-height:1.6; outline:none; white-space:pre-wrap; word-break:break-word; }
+  .mypage-field.rich:empty::before { content: attr(data-placeholder); color: var(--muted); }
+  .mypage-field[contenteditable="false"] { opacity:.6; }
+  .mypage-fx-image { height:170px; border:1px dashed var(--card-border); border-radius:10px; background:#0c0c0d; display:flex; align-items:center; justify-content:center; text-align:center; color: var(--muted); font-size:14px; line-height:1.6; cursor:pointer; overflow:hidden; }
+  .mypage-fx-image img { max-width:100%; max-height:100%; object-fit:contain; }
+
+  /* ---------- 스킬 이펙트 컷인 (딤 + 화면 중앙) ---------- */
+  .skill-cutin { position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0); pointer-events:none; }
+  .skill-cutin.show { display:flex; pointer-events:auto; animation: cutinDim 2.8s ease forwards; }
+  .skill-cutin-band { position:relative; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:34px 24px; text-align:center; }
+  .skill-cutin.text .skill-cutin-band { background:linear-gradient(90deg, transparent, rgba(12,12,14,.85) 18%, rgba(12,12,14,.85) 82%, transparent); border-top:1px solid rgba(255,255,255,.14); border-bottom:1px solid rgba(255,255,255,.14); }
+  .skill-cutin.show .skill-cutin-band { animation: cutinBand 2.8s cubic-bezier(.2,.8,.2,1) forwards; }
+  .skill-cutin-title { font-size:clamp(28px, 4.2vw, 52px); font-weight:800; letter-spacing:.04em; color:#fff; }
+  .skill-cutin-body { margin-top:10px; font-size:clamp(15px, 1.6vw, 20px); color:#d6d6da; line-height:1.6; max-width:760px; white-space:pre-wrap; }
+  .skill-cutin-actor { margin-top:14px; font-size:13px; letter-spacing:.2em; color: var(--muted); }
+  .skill-cutin.show .skill-cutin-title { animation: cutinText 2.8s cubic-bezier(.2,.8,.2,1) forwards; }
+  .skill-cutin.show .skill-cutin-body, .skill-cutin.show .skill-cutin-actor { animation: cutinText 2.8s cubic-bezier(.2,.8,.2,1) .08s both; }
+  .skill-cutin-img { max-width:min(70vw, 900px); max-height:62vh; object-fit:contain; }
+  @keyframes cutinDim { 0% { background:rgba(0,0,0,0); } 10% { background:rgba(0,0,0,.62); } 85% { background:rgba(0,0,0,.62); } 100% { background:rgba(0,0,0,0); } }
+  @keyframes cutinBand { 0% { opacity:0; transform:scaleY(.2); } 12% { opacity:1; transform:scaleY(1); } 85% { opacity:1; transform:scaleY(1); } 100% { opacity:0; transform:scaleY(.6); } }
+  @keyframes cutinText { 0% { opacity:0; transform:translateX(-60px); filter:blur(6px); } 16% { opacity:1; transform:translateX(0); filter:blur(0); } 82% { opacity:1; transform:translateX(8px); } 100% { opacity:0; transform:translateX(60px); filter:blur(4px); } }
 
   /* ---------- 유저 접속정보 팝업 ---------- */
   .modal-box.userinfo-modal { width:320px; max-height:80vh; display:flex; flex-direction:column; }
@@ -126,11 +174,6 @@
     width:80px; font-size:20px; font-weight:700; padding:4px 8px; text-align:left;
   }
   .mypage-hp-row .mypage-hp-col.right input[type="number"] { text-align:right; }
-  #myPageSkillLogText {
-    width:100%; box-sizing:border-box; min-height:90px; margin-top:8px; resize:vertical;
-    background:#0c0c0d; border:1px solid var(--card-border); color:var(--text);
-    border-radius:8px; padding:10px 12px; font-size:15px; font-family:inherit;
-  }
   .mypage-sound-controls { display:flex; align-items:center; gap:8px; padding:4px 0; }
   .mypage-sound-controls #myPageSoundVolume { flex:1; accent-color: var(--accent-blue); }
   /* ================================================================
@@ -1126,31 +1169,30 @@
 <div id="myPageModal" class="modal-overlay">
   <div class="modal-box mypage panel">
     <div class="modal-title">마이페이지</div>
-    <div class="mypage-portrait-wrap">
+    <div class="mypage-cols">
+    <div class="mypage-col">
+    <div class="mypage-head">
       <div class="mypage-portrait" id="myPagePortrait" data-tip="클릭해서 프로필 이미지 등록 (정사각형, 투명 배경 지원 png/webp/gif)" onclick="document.getElementById('myAvatarFileInput').click()">
         <span class="mypage-portrait-icon" id="myPagePortraitIcon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
       </div>
+      <div class="mypage-head-info">
+        <div class="mypage-name" id="myPageName">-</div>
+        <div class="mypage-row">
+          <span class="mypage-label">표시컬러</span>
+          <span class="mypage-value"><div class="avatar-dot mypage-color-dot" id="myPageColorDot" data-tip="클릭해서 색상 변경" onclick="document.getElementById('myColorInput').click()"></div></span>
+        </div>
+        <div class="mypage-row">
+          <span class="mypage-label">마스레이드 이름 표기</span>
+          <input type="text" id="myPageRaidNameInput" class="mypage-raid-input" maxlength="3" placeholder="-"
+            onchange="commitRaidName()" onkeydown="if(event.key==='Enter') this.blur()">
+        </div>
+      </div>
     </div>
     <input type="file" id="myAvatarFileInput" accept="image/png,image/webp,image/gif" style="display:none;" onchange="onMyAvatarFileChosen(event)">
-    <div class="mypage-name" id="myPageName">-</div>
-
-    <div class="mypage-row">
-      <span class="mypage-label">마스레이드 이름 표기</span>
-      <span class="mypage-value editable" id="myPageRaidNameView" data-tip="더블클릭해서 수정" ondblclick="startEditRaidName()">
-        <span id="myPageRaidNameText">-</span>
-      </span>
-      <input type="text" id="myPageRaidNameInput" maxlength="10" placeholder="표기 이름" style="display:none;"
-        onblur="commitRaidName()" onkeydown="if(event.key==='Enter') commitRaidName()">
-    </div>
-
-    <div class="mypage-row">
-      <span class="mypage-label">표시컬러</span>
-      <span class="mypage-value"><div class="avatar-dot mypage-color-dot" id="myPageColorDot" data-tip="클릭해서 색상 변경" onclick="document.getElementById('myColorInput').click()"></div></span>
-    </div>
 
     <div class="mypage-row">
       <span class="mypage-label">포지션</span>
-      <span class="mypage-value" id="myPageRole">-</span>
+      <div class="mypage-roles" id="myPageRoles"></div>
     </div>
 
     <div class="mypage-divider"></div>
@@ -1175,29 +1217,44 @@
       <span class="mypage-value" id="myPagePointsView" style="color:#ffd25e;font-weight:700;">0P</span>
       <input type="number" id="myPagePointsInput" min="0" style="display:none;" onchange="onMyPagePointsChange()">
     </div>
-    <div class="mypage-row">
-      <span class="mypage-label">아이템</span>
-      <span class="mypage-value" id="myPageItemsView" style="cursor:pointer;" onclick="openShopFromMyPage()" data-tip="클릭하면 소지품(상점)을 열어요">-</span>
-    </div>
-
-    <div class="mypage-row">
+    <div class="mypage-row top">
       <span class="mypage-label">소지품</span>
-      <span class="mypage-value" id="myPageInventoryView">-</span>
-      <input type="text" id="myPageInventoryInput" maxlength="200" placeholder="소지품" style="display:none;" onchange="onMyPageGmFieldChange()">
+      <button class="btn-plain btn-xs" onclick="openShopFromMyPage()"><i class="fa-solid fa-store"></i> 상점</button>
+    </div>
+    <div class="mypage-items" id="myPageItemsView"></div>
     </div>
 
-    <div class="mypage-divider"></div>
-
+    <div class="mypage-col">
     <div class="mypage-row">
-      <span class="mypage-label">스킬 로그 타입</span>
-      <select id="myPageSkillLogType" onchange="onMyPageSkillLogChange()">
-        <option value="text">텍스트</option>
-        <option value="image">이미지</option>
-      </select>
+      <span class="mypage-label">스킬 이펙트</span>
+      <div class="seg-toggle" id="myPageSkillLogType">
+        <button data-v="text" onclick="setSkillLogType('text')"><i class="fa-solid fa-font"></i> 글</button>
+        <button data-v="image" onclick="setSkillLogType('image')"><i class="fa-solid fa-image"></i> 이미지</button>
+      </div>
     </div>
-    <textarea id="myPageSkillLogText" placeholder="텍스트를 작성해 주세요." onchange="onMyPageSkillLogChange()"></textarea>
+    <div id="myPageSkillText">
+      <input type="text" id="myPageSkillLogTitle" class="mypage-field" maxlength="30" placeholder="제목" onchange="saveSkillLogText()">
+      <div class="rich-mini-bar">
+        <button class="btn-plain btn-xs" onmousedown="event.preventDefault()" onclick="skillLogFormat('bold')" data-tip="굵게"><i class="fa-solid fa-bold"></i></button>
+        <button class="btn-plain btn-xs" onmousedown="event.preventDefault()" onclick="skillLogFormat('italic')" data-tip="기울임"><i class="fa-solid fa-italic"></i></button>
+      </div>
+      <div id="myPageSkillLogText" class="mypage-field rich" contenteditable="true" data-placeholder="본문" onblur="saveSkillLogText()"></div>
+    </div>
+    <div id="myPageSkillImage" style="display:none;">
+      <div class="mypage-fx-image" id="myPageSkillImageBox" onclick="document.getElementById('mySkillImageInput').click()">
+        <img id="myPageSkillImagePreview" alt="" style="display:none;">
+        <span id="myPageSkillImageEmpty"><i class="fa-solid fa-upload"></i><br>클릭해서 이미지 올리기<br><small>png · apng · gif · webp / 5MB까지</small></span>
+      </div>
+      <div class="row" style="justify-content:flex-start; margin-top:6px;">
+        <button class="btn-plain btn-xs" id="myPageSkillImageClear" onclick="clearSkillLogImage()"><i class="fa-solid fa-trash"></i> 이미지 삭제</button>
+      </div>
+      <input type="file" id="mySkillImageInput" accept="image/png,image/apng,image/gif,image/webp,.apng" style="display:none;" onchange="onSkillImageChosen(event)">
+    </div>
+    <div class="row" style="justify-content:flex-start;">
+      <button class="btn-plain" onclick="previewSkillCutin()"><i class="fa-solid fa-eye"></i> 스킬 이펙트 미리 보기</button>
+    </div>
 
-    <div class="mypage-divider"></div>
+    <div class="mypage-divider" style="margin-top:12px;"></div>
 
     <div class="mypage-row">
       <span class="mypage-label">효과음</span>
@@ -1209,11 +1266,16 @@
       <input type="range" class="nice-range" id="myPageSoundVolume" min="0" max="100" value="100" oninput="paintRange(this); updateMyPageSoundLevel()" onchange="onMySoundEffectVolumeChange()" data-tip="이 캐릭터 효과음 음량 (모두에게 적용)">
     </div>
     <div class="snd-level" id="myPageSoundLevel"></div>
-    <div class="hint" style="margin-top:4px;">최대 6초만 재생되고, 업로드 파일은 5MB까지 가능합니다.</div>
+    <div class="hint" style="margin-top:4px; font-size:13px; color:var(--muted);">최대 6초만 재생되고, 업로드 파일은 5MB까지 가능합니다.</div>
     <input type="file" id="mySoundFileInput" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,.mp3,.wav,.ogg,.m4a,.aac" style="display:none;" onchange="onMySoundEffectFileChosen(event)">
+    </div>
+    </div>
 
     <div class="row"><button class="btn-plain" onclick="closeMyPage()">닫기</button></div>
   </div>
+</div>
+<div id="skillCutin" class="skill-cutin" onclick="hideSkillCutin()">
+  <div class="skill-cutin-band" id="skillCutinBand"></div>
 </div>
 <input type="color" id="myColorInput" value="#4a90ff" style="position:fixed; opacity:0; pointer-events:none; width:0; height:0;" onchange="onMyColorChange(this.value)">
 
@@ -1714,7 +1776,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-06.14";
+const EXPECTED_SERVER_BUILD = "2026-10-06.15";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -3494,6 +3556,7 @@ let myPageViewName = null;
 function openMyPageFor(name) {
   if (myControlInfo(lastBattleForPanel).scope !== 'all') return;
   myPageViewName = name;
+  skillLogTypeLocal = null;
   document.getElementById('myPageModal').style.display = 'flex';
   renderMyPage();
   renderMyPagePoints();
@@ -3520,6 +3583,7 @@ function myPageTargetChar() {
 
 function openMyPage() {
   myPageViewName = null;
+  skillLogTypeLocal = null;
   document.getElementById('myPageModal').style.display = 'flex';
   renderMyPage();
   renderMyPagePoints();
@@ -3541,22 +3605,19 @@ function renderMyPage() {
 
   const hpView = document.getElementById('myPageCurrentHpView');
   const hpInput = document.getElementById('myPageCurrentHpInput');
-  const invView = document.getElementById('myPageInventoryView');
-  const invInput = document.getElementById('myPageInventoryInput');
 
   if (!c) {
     document.getElementById('myPageName').textContent = '미로그인';
     document.getElementById('myPagePortrait').style.backgroundImage = 'none';
     document.getElementById('myPagePortraitIcon').style.display = '';
     document.getElementById('myPageColorDot').style.background = '#0c0c0d';
-    document.getElementById('myPageRaidNameText').textContent = '-';
-    document.getElementById('myPageRole').textContent = '-';
+    document.getElementById('myPageRaidNameInput').value = '';
+    document.getElementById('myPageRaidNameInput').disabled = true;
+    document.getElementById('myPageRoles').innerHTML = '';
     document.getElementById('myPageCurrentHpView').textContent = '000';
     document.getElementById('myPageMaxHp').textContent = '000';
     document.getElementById('myPageHpBar').style.width = '0%';
-    invView.textContent = '-';
     hpView.style.display = ''; hpInput.style.display = 'none';
-    invView.style.display = ''; invInput.style.display = 'none';
     document.getElementById('myPageSoundStatus').textContent = '미등록';
     document.getElementById('myPageSoundPreviewBtn').disabled = true;
     document.getElementById('myPageSoundUploadBtn').disabled = true;
@@ -3574,9 +3635,10 @@ function renderMyPage() {
     document.getElementById('myPagePortraitIcon').style.display = '';
   }
   document.getElementById('myPageColorDot').style.background = c.color || '#0c0c0d';
-  document.getElementById('myPageRaidNameText').textContent = c.raid_display_name || '(미설정)';
-  document.getElementById('myPageRole').textContent = c.role;
-  document.getElementById('myPageRole').style.color = roleColorVar(c.role);
+  const raidInput = document.getElementById('myPageRaidNameInput');
+  raidInput.disabled = !canEdit;
+  if (document.activeElement !== raidInput) raidInput.value = c.raid_display_name || '';
+  renderMyPageRoles(c, canEdit);
 
   const hasHp = c.max_hp != null;
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
@@ -3587,30 +3649,18 @@ function renderMyPage() {
     // 전투에 없는 캐릭터 : 체력은 표시만(-), 소지품은 GM이 수정 가능
     hpView.style.display = ''; hpInput.style.display = 'none';
     hpView.textContent = '-';
-    invView.style.display = 'none'; invInput.style.display = '';
-    if (document.activeElement !== invInput) invInput.value = c.inventory || '';
   } else if (isGm) {
     hpView.style.display = 'none'; hpInput.style.display = '';
     if (document.activeElement !== hpInput) { hpInput.value = c.current_hp; hpInput.max = c.max_hp; hpInput.min = 0; }
-    invView.style.display = 'none'; invInput.style.display = '';
-    if (document.activeElement !== invInput) invInput.value = c.inventory || '';
   } else {
     hpView.style.display = ''; hpInput.style.display = 'none';
     hpView.textContent = c.current_hp;
-    invView.style.display = ''; invInput.style.display = 'none';
-    invView.textContent = c.inventory || '(없음)';
   }
 
   // 표기 이름/색상/스킬 로그는 본인(그 캐릭터로 직접 로그인한 사람)만 수정 가능합니다.
-  document.getElementById('myPageRaidNameView').classList.toggle('editable', canEdit);
   document.getElementById('myPagePortrait').style.cursor = canEdit ? 'pointer' : 'default';
   document.getElementById('myPageColorDot').style.cursor = canEdit ? 'pointer' : 'default';
-  const typeSel = document.getElementById('myPageSkillLogType');
-  const textArea = document.getElementById('myPageSkillLogText');
-  typeSel.disabled = !canEdit;
-  textArea.disabled = !canEdit;
-  if (document.activeElement !== typeSel) typeSel.value = c.skill_log_type || 'text';
-  if (document.activeElement !== textArea) textArea.value = c.skill_log_text || '';
+  renderMyPageSkillLog(c, canEdit);
 
   document.getElementById('myPageSoundStatus').textContent = c.sound_effect ? '등록됨' : '미등록';
   setTimeout(updateMyPageSoundLevel, 0);
@@ -3624,33 +3674,152 @@ function renderMyPage() {
   }
 }
 
-function startEditRaidName() {
-  if (!canEditMyPage()) return;
-  const c = myPageTargetChar();
-  if (!c) return;
-  document.getElementById('myPageRaidNameView').style.display = 'none';
-  const input = document.getElementById('myPageRaidNameInput');
-  input.style.display = '';
-  input.value = c.raid_display_name || '';
-  input.focus();
-  input.select();
-}
-
 function commitRaidName() {
+  if (!canEditMyPage()) return;
   const input = document.getElementById('myPageRaidNameInput');
-  input.style.display = 'none';
-  document.getElementById('myPageRaidNameView').style.display = '';
-  socket.emit('set_my_raid_display_name', { raid_display_name: input.value.trim(), name: myPageEditName() });
+  input.value = input.value.trim().slice(0, 3);
+  socket.emit('set_my_raid_display_name', { raid_display_name: input.value, name: myPageEditName() });
 }
 
-function onMyPageSkillLogChange() {
+// ---- 포지션 : 변경권(상점 아이템)을 1개 써서 바꿉니다. 운영진은 변경권 없이 바꿀 수 있어요. ----
+const MYPAGE_ROLES = ['가디언', '스트라이커', '메딕'];
+function myRoleTickets(name) {
+  const d = (lastRosterMypage || {})[name] || {};
+  return ((lastShop && lastShop.items) || []).filter(it => it.effect === 'role_change')
+    .reduce((n, it) => n + ((d.items || {})[it.id] || 0), 0);
+}
+function renderMyPageRoles(c, canEdit) {
+  const box = document.getElementById('myPageRoles');
+  box.innerHTML = MYPAGE_ROLES.map(r => `<button class="${r === c.role ? 'on' : ''}" style="--role-color:${roleColorVar(r)}"
+    ${canEdit ? '' : 'disabled'} onclick="onRoleClick('${r}')">${r}</button>`).join('');
+}
+async function onRoleClick(role) {
+  const c = myPageTargetChar();
+  if (!c || role === c.role || !canEditMyPage()) return;
+  if ((lastAllForCards || []).some(x => x.name === c.name)) {
+    await uiAlert('전투 중에는 포지션을 바꿀 수 없어요.\n전투가 끝난 뒤에 다시 시도해 주세요.', { title: '포지션 변경', icon: 'fa-user-shield' });
+    return;
+  }
+  const gm = myControlInfo(lastBattleForPanel).scope === 'all';
+  const tickets = myRoleTickets(c.name);
+  if (!tickets && !gm) {
+    await uiAlert('포지션 변경권이 없어서 바꿀 수 없어요.\n상점에서 포지션 변경권을 구매한 뒤에 다시 시도해 주세요.',
+      { title: '포지션 변경', icon: 'fa-user-shield' });
+    return;
+  }
+  const msg = tickets
+    ? `포지션을 ${c.role} → ${role}(으)로 변경하시겠어요?\n포지션 변경권 1개가 차감됩니다. (보유 ${tickets}개)`
+    : `포지션을 ${c.role} → ${role}(으)로 변경하시겠어요?\n운영진 권한으로 변경권 없이 바꿉니다.`;
+  const ok = await uiConfirm(msg, { title: '포지션 변경', okText: '변경', icon: 'fa-user-shield' });
+  if (ok) socket.emit('change_position', { name: c.name, role });
+}
+
+// ---- 스킬 이펙트 : 스킬을 쓰면 모두의 화면 중앙에 딤 + 글/이미지 컷인이 뜹니다. ----
+let skillLogTypeLocal = null;  // 이미지 탭으로 바꿨지만 아직 이미지를 안 올렸을 때 화면 유지용
+function myPageSkillData(c) {
+  const d = (lastRosterMypage || {})[c.name] || {};
+  return {
+    type: skillLogTypeLocal || d.skill_log_type || c.skill_log_type || 'text',
+    title: d.skill_log_title || '',
+    body: d.skill_log_text != null ? d.skill_log_text : (c.skill_log_text || ''),
+    image: d.skill_log_image || null,
+  };
+}
+function renderMyPageSkillLog(c, canEdit) {
+  const fx = myPageSkillData(c);
+  document.querySelectorAll('#myPageSkillLogType button').forEach(b => {
+    b.classList.toggle('on', b.dataset.v === fx.type);
+    b.disabled = !canEdit;
+  });
+  document.getElementById('myPageSkillText').style.display = fx.type === 'text' ? '' : 'none';
+  document.getElementById('myPageSkillImage').style.display = fx.type === 'image' ? '' : 'none';
+  const title = document.getElementById('myPageSkillLogTitle');
+  const body = document.getElementById('myPageSkillLogText');
+  title.disabled = !canEdit;
+  body.contentEditable = canEdit ? 'true' : 'false';
+  if (document.activeElement !== title) title.value = fx.title;
+  if (document.activeElement !== body && body.innerHTML !== fx.body) body.innerHTML = fx.body;
+  const img = document.getElementById('myPageSkillImagePreview');
+  img.style.display = fx.image ? '' : 'none';
+  if (fx.image && img.getAttribute('src') !== fx.image) img.src = fx.image;
+  document.getElementById('myPageSkillImageEmpty').style.display = fx.image ? 'none' : '';
+  document.getElementById('myPageSkillImageClear').disabled = !canEdit || !fx.image;
+  document.getElementById('myPageSkillImageBox').style.cursor = canEdit ? 'pointer' : 'default';
+}
+function setSkillLogType(type) {
+  if (!canEditMyPage()) return;
+  skillLogTypeLocal = type;
+  socket.emit('set_my_skill_log', { name: myPageEditName(), skill_log_type: type });
+  renderMyPage();
+}
+function skillLogFormat(cmd) {
+  document.getElementById('myPageSkillLogText').focus();
+  document.execCommand(cmd);
+}
+function saveSkillLogText() {
   if (!canEditMyPage()) return;
   socket.emit('set_my_skill_log', {
     name: myPageEditName(),
-    skill_log_type: document.getElementById('myPageSkillLogType').value,
-    skill_log_text: document.getElementById('myPageSkillLogText').value,
+    skill_log_title: document.getElementById('myPageSkillLogTitle').value.trim(),
+    skill_log_text: document.getElementById('myPageSkillLogText').innerHTML,
   });
 }
+function onSkillImageChosen(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file || !canEditMyPage()) return;
+  if (!/\.(png|apng|gif|webp)$/i.test(file.name)) { showError('png(apng)/gif/webp 이미지만 올릴 수 있어요.'); return; }
+  if (file.size > 5 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 5MB).'); return; }
+  file.arrayBuffer().then(buf => socket.emit('set_my_skill_log', {
+    name: myPageEditName(), skill_log_type: 'image', image_data: buf, filename: file.name,
+  }));
+}
+async function clearSkillLogImage() {
+  if (!canEditMyPage()) return;
+  const ok = await uiConfirm('스킬 이펙트 이미지를 삭제할까요?', { title: '이미지 삭제', okText: '삭제', danger: true, icon: 'fa-trash' });
+  if (ok) socket.emit('set_my_skill_log', { name: myPageEditName(), clear_image: true });
+}
+function previewSkillCutin() {
+  const c = myPageTargetChar();
+  if (!c) return;
+  const fx = myPageSkillData(c);
+  if (fx.type === 'text') {
+    fx.title = document.getElementById('myPageSkillLogTitle').value.trim();
+    fx.body = document.getElementById('myPageSkillLogText').innerHTML;
+  }
+  if (fx.type === 'image' ? !fx.image : !(fx.title || fx.body.replace(/<[^>]*>/g, '').trim())) {
+    showError(fx.type === 'image' ? '먼저 이미지를 올려 주세요.' : '먼저 제목이나 본문을 써 주세요.');
+    return;
+  }
+  showSkillCutin({ ...fx, actor: displayNameOf(c) });
+}
+let skillCutinTimer = null;
+function showSkillCutin(fx) {
+  const el = document.getElementById('skillCutin');
+  const band = document.getElementById('skillCutinBand');
+  const esc = t => String(t || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  if (fx.type === 'image') {
+    band.innerHTML = `<img class="skill-cutin-img" src="${esc(fx.image)}" alt="">`;
+  } else {
+    // 본문은 서버에서 굵게/기울임만 남기고 정리된 HTML입니다(미리 보기는 내 화면에서만 표시).
+    band.innerHTML = (fx.title ? `<div class="skill-cutin-title">${esc(fx.title)}</div>` : '')
+      + (fx.body ? `<div class="skill-cutin-body">${fx.body}</div>` : '')
+      + (fx.actor ? `<div class="skill-cutin-actor">${esc(fx.actor)}</div>` : '');
+  }
+  el.className = 'skill-cutin';
+  void el.offsetWidth;  // 애니메이션을 처음부터 다시 재생
+  el.className = 'skill-cutin show ' + (fx.type === 'image' ? 'image' : 'text');
+  clearTimeout(skillCutinTimer);
+  skillCutinTimer = setTimeout(hideSkillCutin, 2800);
+}
+function hideSkillCutin() {
+  clearTimeout(skillCutinTimer);
+  document.getElementById('skillCutin').className = 'skill-cutin';
+}
+socket.on('skill_cutin', (d) => {
+  const c = sfxCharacter(d.actor);
+  showSkillCutin({ ...d, actor: c ? displayNameOf(c) : d.actor });
+});
 
 // 효과음은 지금은 등록(파일 업로드)/미리듣기만 지원합니다 - 행동마다 실제로 재생하는 기능은
 // 나중에 추가되고, 그때 공통 효과음이 기본이며 여기서 등록한 사람만 자기 행동에 한해 이
@@ -3714,7 +3883,6 @@ function onMyPageGmFieldChange() {
   socket.emit('set_mypage_gm_fields', {
     name: c.name,
     current_hp: parseInt(document.getElementById('myPageCurrentHpInput').value, 10),
-    inventory: document.getElementById('myPageInventoryInput').value,
   });
 }
 
@@ -4028,7 +4196,9 @@ function renderShopInventory(target, data) {
     return `<div class="shop-item">${shopIconHtml(it, false)}
       <div class="shop-info"><div class="shop-name">${shopEsc(it.name)}<span class="count">×${n}</span></div>
         <div class="shop-desc">${shopEsc(it.desc)}</div>${shopTagsHtml(it)}</div>
-      <div class="shop-actions">${extra}<button class="shop-btn" onclick="shopUse('${it.id}')">사용</button></div>
+      <div class="shop-actions">${extra}${it.effect === 'role_change'
+        ? `<button class="shop-btn" onclick="closeShop(); openMyPage();">마이페이지에서 사용</button>`
+        : `<button class="shop-btn" onclick="shopUse('${it.id}')">사용</button>`}</div>
     </div>`;
   }).join('');
 }
@@ -4152,9 +4322,10 @@ function renderMyPagePoints() {
   view.style.display = gm ? 'none' : '';
   input.style.display = gm ? '' : 'none';
   if (document.activeElement !== input) input.value = d.points || 0;
+  const esc = t => String(t).replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
   const items = Object.entries(d.items || {}).filter(([, n]) => n > 0)
-    .map(([id, n]) => { const it = shopItemById(id); return `${it ? it.name : '삭제된 상품'} ×${n}`; });
-  document.getElementById('myPageItemsView').textContent = items.length ? items.join(', ') : '(없음)';
+    .map(([id, n]) => { const it = shopItemById(id); return `<span class="chip">${esc(it ? it.name : '삭제된 상품')} <b>×${n}</b></span>`; });
+  document.getElementById('myPageItemsView').innerHTML = items.length ? items.join('') : '<span class="empty">소지품이 없어요.</span>';
 }
 function openShopFromMyPage() {
   const c = myPageTargetChar();
@@ -4679,6 +4850,8 @@ function openUiDialog(opts) {
   document.getElementById('uiDialogMsg').textContent = opts.message || '';
   document.getElementById('uiDialogOk').textContent = opts.okText || '확인';
   document.getElementById('uiDialogCancel').textContent = opts.cancelText || '취소';
+  document.getElementById('uiDialogCancel').style.display = opts.alert ? 'none' : '';
+  document.getElementById('uiDialogMsg').style.whiteSpace = 'pre-line';
   input.style.display = opts.prompt ? '' : 'none';
   input.value = opts.defaultValue || '';
   input.placeholder = opts.placeholder || '';
@@ -4687,6 +4860,7 @@ function openUiDialog(opts) {
   return new Promise(res => { uiDialogResolve = (v) => { ov.style.display = 'none'; uiDialogResolve = null; res(v); }; });
 }
 function uiConfirm(message, opts = {}) { return openUiDialog({ ...opts, message }).then(v => v !== null); }
+function uiAlert(message, opts = {}) { return openUiDialog({ ...opts, message, alert: true, icon: opts.icon || 'fa-circle-info' }); }
 function uiPrompt(message, defaultValue = '', opts = {}) { return openUiDialog({ ...opts, message, prompt: true, defaultValue, icon: opts.icon || 'fa-pen' }); }
 document.getElementById('uiDialogOk').onclick = () => {
   if (!uiDialogResolve) return;

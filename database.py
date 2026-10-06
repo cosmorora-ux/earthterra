@@ -46,7 +46,8 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "characters.j
 
 
 # 상점 재화(P)/구매한 아이템 - 다른 필드를 수정하는 호출(add_or_update/재등록)에서도 사라지지 않게 유지합니다.
-SHOP_FIELDS = ("points", "items")
+# 상점 재화/아이템과 스킬 이펙트(컷인) 설정은 add_or_update 인자에 없어서, 다른 필드를 바꿀 때 지워지지 않도록 유지합니다.
+SHOP_FIELDS = ("points", "items", "skill_log_title", "skill_log_image")
 
 
 def _keep_shop_fields(old: dict, new: dict):

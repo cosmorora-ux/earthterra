@@ -5,6 +5,7 @@ __pycache__/
 static/music/*.mp3
 static/avatars/
 static/sound_effects/
+static/skill_fx/
 # 방 목록(운영진/참가자 키 포함) - 서버 인스턴스별 실데이터라 커밋하지 않습니다.
 rooms.json
 server.log

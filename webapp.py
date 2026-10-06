@@ -31,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.14"
+SERVER_BUILD = "2026-10-06.15"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -51,6 +51,16 @@ os.makedirs(SOUND_EFFECT_DIR, exist_ok=True)
 SOUND_EFFECT_ALLOWED_EXTS = (".mp3", ".wav", ".ogg", ".m4a", ".aac")
 # 재생은 클라이언트에서 6초로 끊지만, 그와 별개로 업로드 자체도 너무 큰 파일은 막아둡니다.
 SOUND_EFFECT_MAX_BYTES = 5 * 1024 * 1024
+# 스킬 이펙트(컷인) : 글(제목+본문) 또는 이미지(apng 등 움직이는 이미지 포함)
+SKILL_LOG_DIR = os.path.join(_THIS_DIR, "static", "skill_fx")
+os.makedirs(SKILL_LOG_DIR, exist_ok=True)
+SKILL_LOG_IMAGE_EXTS = (".png", ".apng", ".gif", ".webp")
+SKILL_LOG_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+SKILL_LOG_TITLE_MAX = 30
+SKILL_LOG_BODY_MAX = 300
+SKILL_LOG_TAGS = {"b", "strong", "i", "em", "br", "div", "p", "span"}
+# 이 행동을 하면 그 캐릭터의 스킬 이펙트(컷인)를 모두의 화면에 띄웁니다.
+SKILL_ACTIONS = ("collapse", "emission", "shield", "polarize", "reflux", "restore")
 
 # socket id -> {"room_id", "role", "nickname"}
 CONNECTIONS = {}
@@ -406,6 +416,8 @@ def build_preview_character(room, name):
         "inventory": data.get("inventory") or "",
         "skill_log_type": data.get("skill_log_type") or "text",
         "skill_log_text": data.get("skill_log_text") or "",
+        "skill_log_title": data.get("skill_log_title") or "",
+        "skill_log_image": data.get("skill_log_image"),
         "avatar_url": data.get("avatar_url"),
         "sound_effect": data.get("sound_effect"),
         "sound_effect_volume": data.get("sound_effect_volume"),
@@ -655,6 +667,22 @@ def emit_action_sfx(room, actor_name, action_type):
     kind = ACTION_SFX_KIND.get(action_type)
     if kind and actor_name:
         socketio.emit("action_sfx", {"actor": actor_name, "kind": kind}, room=room_channel(room.id, "all"))
+    if action_type in SKILL_ACTIONS and actor_name:
+        fx = skill_cutin_payload(room.game.db.get(actor_name))
+        if fx:
+            socketio.emit("skill_cutin", dict(fx, actor=actor_name), room=room_channel(room.id, "all"))
+
+
+def skill_cutin_payload(entry):
+    """캐릭터 등록 정보에서 스킬 이펙트(컷인) 내용을 뽑습니다. 아무것도 설정하지 않았으면 None."""
+    if not entry:
+        return None
+    if entry.get("skill_log_type") == "image":
+        return {"type": "image", "image": entry["skill_log_image"]} if entry.get("skill_log_image") else None
+    title, body = entry.get("skill_log_title") or "", entry.get("skill_log_text") or ""
+    if not title and not body:
+        return None
+    return {"type": "text", "title": title, "body": body}
 
 
 def broadcast_state(room):
@@ -1013,7 +1041,7 @@ def on_set_my_raid_display_name(data):
     if name is None:
         emit("action_error", {"message": "로그인한 뒤에 표기 이름을 바꿀 수 있습니다."})
         return
-    raid_display_name = (data.get("raid_display_name") or "").strip()[:10] or None
+    raid_display_name = (data.get("raid_display_name") or "").strip()[:3] or None
     existing = room.game.db.get(name) or {}
     room.game.db.add_or_update(
         name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
@@ -1070,7 +1098,8 @@ def on_set_my_sound_effect_volume(data):
 
 @socketio.on("set_my_skill_log")
 def on_set_my_skill_log(data):
-    """참가자가 자신의 스킬 로그 표시 방식(텍스트/이미지)과 텍스트 내용을 지정합니다(마이페이지)."""
+    """참가자가 자신의 스킬 이펙트(스킬을 쓸 때 화면 중앙에 뜨는 컷인)를 지정합니다(마이페이지).
+    글 : 제목(일반 글자) + 본문(굵게/기울임만 허용하는 HTML), 이미지 : png/apng/gif/webp 업로드."""
     info = CONNECTIONS.get(request.sid)
     if info is None:
         emit("action_error", {"message": "먼저 입장해주세요."})
@@ -1078,28 +1107,107 @@ def on_set_my_skill_log(data):
     room = get_room(info["room_id"])
     if room is None:
         return
+    data = data or {}
     name = _mypage_target_name(room, info, data)
     if name is None:
         emit("action_error", {"message": "로그인한 뒤에 설정할 수 있습니다."})
         return
-    log_type = data.get("skill_log_type") if data.get("skill_log_type") in ("text", "image") else "text"
-    log_text = (data.get("skill_log_text") or "").strip()[:300]
-    existing = room.game.db.get(name) or {}
-    room.game.db.add_or_update(
-        name, existing.get("role", config.DEFAULT_ROLE), existing.get("stats", {}),
-        color=existing.get("color"), skill=existing.get("skill"),
-        raid_display_name=existing.get("raid_display_name"), inventory=existing.get("inventory"),
-        skill_log_type=log_type, skill_log_text=log_text or None,
-avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
-sound_effect_volume=existing.get("sound_effect_volume"),
-    )
+    entry = room.game.db.get(name)
+    if entry is None:
+        return
+    if data.get("skill_log_type") in ("text", "image"):
+        entry["skill_log_type"] = data["skill_log_type"]
+    if "skill_log_title" in data:
+        title = (data.get("skill_log_title") or "").strip()[:SKILL_LOG_TITLE_MAX]
+        if title:
+            entry["skill_log_title"] = title
+        else:
+            entry.pop("skill_log_title", None)
+    if "skill_log_text" in data:
+        body = notices_mod.sanitize_html(data.get("skill_log_text") or "", SKILL_LOG_TAGS, 4000)
+        if len(notices_mod.plain_text(body)) > SKILL_LOG_BODY_MAX:
+            emit("action_error", {"message": f"본문은 {SKILL_LOG_BODY_MAX}자까지 쓸 수 있습니다."})
+            return
+        if notices_mod.plain_text(body).strip():
+            entry["skill_log_text"] = body
+        else:
+            entry.pop("skill_log_text", None)
+    if data.get("clear_image"):
+        entry.pop("skill_log_image", None)
+    blob = data.get("image_data")
+    if blob is not None:
+        ext = os.path.splitext((data.get("filename") or "").lower())[1]
+        if ext not in SKILL_LOG_IMAGE_EXTS or not isinstance(blob, (bytes, bytearray)):
+            emit("action_error", {"message": "png(apng)/gif/webp 이미지만 올릴 수 있습니다."})
+            return
+        if len(blob) > SKILL_LOG_IMAGE_MAX_BYTES:
+            emit("action_error", {"message": f"이미지가 너무 큽니다 (최대 {SKILL_LOG_IMAGE_MAX_BYTES // (1024 * 1024)}MB)."})
+            return
+        filename = f"{uuid.uuid4().hex}{ext}"
+        with open(os.path.join(SKILL_LOG_DIR, filename), "wb") as f:
+            f.write(blob)
+        entry["skill_log_image"] = url_for("static", filename=f"skill_fx/{filename}")
+        entry["skill_log_type"] = "image"
+    room.game.db.save()
     battle = room.game.battle
     if battle is not None:
         live = battle.find_character(name)
         if live is not None:
-            live.skill_log_type = log_type
-            live.skill_log_text = log_text
-    broadcast_state(room)
+            live.skill_log_type = entry.get("skill_log_type") or "text"
+            live.skill_log_text = entry.get("skill_log_text") or ""
+    _broadcast_all_rooms()
+
+
+@socketio.on("change_position")
+def on_change_position(data):
+    """마이페이지 포지션 변경 : '포지션 변경권'(효과 role_change)을 1개 차감하고 포지션을 바꿉니다.
+    변경권이 없으면 바꿀 수 없고, 전투에 참여 중일 때는 바꿀 수 없습니다(전투 전 전용).
+    운영진(GM)은 변경권 없이 바로 바꿀 수 있습니다. 바뀐 포지션에서 쓸 수 없는 스킬은 해제됩니다."""
+    info = CONNECTIONS.get(request.sid)
+    if info is None:
+        emit("action_error", {"message": "먼저 입장해주세요."})
+        return
+    room = get_room(info["room_id"])
+    if room is None:
+        return
+    data = data or {}
+    name = _mypage_target_name(room, info, data)
+    if name is None:
+        emit("action_error", {"message": "로그인한 뒤에 포지션을 바꿀 수 있습니다."})
+        return
+    db = room.game.db
+    entry = db.get(name)
+    new_role = data.get("role")
+    if entry is None or new_role not in config.ROLES:
+        emit("action_error", {"message": "알 수 없는 포지션입니다."})
+        return
+    old_role = entry.get("role", config.DEFAULT_ROLE)
+    if new_role == old_role:
+        return
+    if _live_battle_char(room, name) is not None:
+        emit("action_error", {"message": "전투 중에는 포지션을 바꿀 수 없습니다."})
+        return
+    is_gm = _require_gm_or_guest_gm(request.sid) is not None
+    shop = shop_mod.shared_shop()
+    held = shop_mod.get_items(db, name)
+    ticket = next((it for it in shop.items if it["effect"] == "role_change" and held.get(it["id"], 0) > 0), None)
+    if ticket is None and not is_gm:
+        emit("action_error", {"message": "포지션 변경권이 없습니다. 상점에서 구매한 뒤에 바꿀 수 있습니다."})
+        return
+    entry["role"] = new_role
+    skill_note = ""
+    if entry.get("skill") and entry["skill"] not in config.SKILL_OPTIONS.get(new_role, []):
+        entry.pop("skill", None)
+        skill_note = " (스킬은 해제되었습니다)"
+    db.save()
+    if ticket is not None:
+        shop_mod.change_item_count(db, name, ticket["id"], -1)
+        post_system_chat(room, f"{name} : {ticket['name']} 사용 → 포지션 {old_role} → {new_role}{skill_note}")
+        emit("shop_result", {"message": f"포지션을 {new_role}(으)로 바꿨습니다. ({ticket['name']} -1){skill_note}"})
+    else:
+        post_system_chat(room, f"운영진이 {name}의 포지션을 {old_role} → {new_role}(으)로 바꿨습니다.{skill_note}")
+        emit("shop_result", {"message": f"포지션을 {new_role}(으)로 바꿨습니다.{skill_note}"})
+    _broadcast_all_rooms()
 
 
 @socketio.on("set_mypage_gm_fields")
@@ -1992,6 +2100,9 @@ def on_shop_use(data):
         emit("action_error", {"message": "보유하지 않은 아이템입니다."})
         return
 
+    if item["effect"] == "role_change":
+        emit("action_error", {"message": "포지션 변경권은 마이페이지의 포지션에서 원하는 포지션을 눌러 사용하세요."})
+        return
     live = _live_battle_char(room, name)
     in_battle = live is not None
     if item["timing"] == "battle" and not in_battle:

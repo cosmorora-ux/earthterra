@@ -47,8 +47,9 @@ def _clean_style(style: str) -> str:
 
 
 class _Sanitizer(HTMLParser):
-    def __init__(self):
+    def __init__(self, allowed=None):
         super().__init__(convert_charrefs=True)
+        self.allowed = allowed or ALLOWED_TAGS
         self.out = []
         self.stack = []
         self.skip_depth = 0  # <script>/<style> 안의 내용은 통째로 버립니다.
@@ -58,7 +59,7 @@ class _Sanitizer(HTMLParser):
         if tag in ("script", "style", "iframe", "object", "embed"):
             self.skip_depth += 1
             return
-        if self.skip_depth or tag not in ALLOWED_TAGS:
+        if self.skip_depth or tag not in self.allowed:
             return
         kept = []
         for name, value in attrs:
@@ -88,7 +89,7 @@ class _Sanitizer(HTMLParser):
         if tag in ("script", "style", "iframe", "object", "embed"):
             self.skip_depth = max(0, self.skip_depth - 1)
             return
-        if self.skip_depth or tag not in ALLOWED_TAGS or tag in VOID_TAGS:
+        if self.skip_depth or tag not in self.allowed or tag in VOID_TAGS:
             return
         if tag in self.stack:
             # 짝이 맞지 않게 닫힌 태그도 안전하게 정리합니다.
@@ -108,11 +109,16 @@ class _Sanitizer(HTMLParser):
         return "".join(self.out)
 
 
-def sanitize_html(raw: str) -> str:
-    p = _Sanitizer()
+def sanitize_html(raw: str, allowed=None, max_len: int = MAX_HTML_LEN) -> str:
+    p = _Sanitizer(allowed)
     p.feed(raw or "")
     p.close()
-    return p.result()[:MAX_HTML_LEN]
+    return p.result()[:max_len]
+
+
+def plain_text(raw_html: str) -> str:
+    """태그를 뺀 순수 글자만(길이 검사용)."""
+    return html.unescape(re.sub(r"<[^>]+>", "", raw_html or ""))
 
 
 class NoticeBoard:
