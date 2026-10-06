@@ -658,6 +658,14 @@
   ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.28); border:2px solid transparent; background-clip: padding-box; }
   ::-webkit-scrollbar-button { display:none; width:0; height:0; }
   ::-webkit-scrollbar-corner { background: transparent; }
+  /* 상태 태그 (피해 보류/직접 방어/대리 방어/수호/지휘/회복/흡수) */
+  .stag { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+  .stag i { font-size:.92em; width:1.1em; text-align:center; }
+  .stag-pending i { color:#ffb340; }
+  .stag-selfdef i, .stag-guard i, .stag-proxydef i { color:#6ea8ff; }
+  .stag-command i { color:#ff6b6b; }
+  .stag-heal i { color:#5fd38a; }
+  .stag-leech i { color:#e0517a; }
 </style>
 </head>
 <body>
@@ -1517,9 +1525,9 @@ function renderSiteStatusCard(battle) {
   const site = mobs[mobCarouselIndex];
   const hpRatio = site.max_hp > 0 ? site.current_hp / site.max_hp : 0;
   const badges = [];
-  if (site.defense_count) badges.push(`🛡 보호${site.defense_count}`);
+  if (site.defense_count) badges.push(makeStatusTag('guard', `수호${site.defense_count > 1 ? ' ' + site.defense_count : ''}`));
   if (site.shield_hp) badges.push(`🔷 보호막${site.shield_hp}`);
-  if (site.has_leech_buff) badges.push(`🩸 흡수`);
+  if (site.has_leech_buff) badges.push(makeStatusTag('leech', '흡수'));
   const navHtml = (mobs.length > 1)
     ? `<div class="site-nav">
         <button onclick="shiftMobCarousel(-1)" aria-label="이전 몹">‹</button>
@@ -1658,14 +1666,14 @@ function renderCompactCardHtml(c) {
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
-  if (c.self_defense_count) badges.push(`🛡 직접 방어`);
-  if (c.defense_count - (c.self_defense_count || 0) > 0) badges.push(`🛡 보호${c.defense_count - (c.self_defense_count || 0)}`);
+  if (c.self_defense_count) badges.push(makeStatusTag('selfdef', '직접 방어'));
+  if (c.defense_count - (c.self_defense_count || 0) > 0) badges.push(makeStatusTag('guard', `수호${c.defense_count - (c.self_defense_count || 0) > 1 ? ' ' + (c.defense_count - (c.self_defense_count || 0)) : ''}`));
   if (c.polarize_active) badges.push(`🛡 편광중`);
-  if (c.has_leech_buff) badges.push(`🩸 흡수`);
-  if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
-  if (c.pending_heals) badges.push(`💚 회복 대기 +${c.pending_heals}`);
-  if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
-  if (c.commanded_by) badges.push(`🎯 유도 효과: ${c.commanded_by} 공격`);
+  if (c.has_leech_buff) badges.push(makeStatusTag('leech', '흡수'));
+  if (c.pending_attacks) badges.push(makeStatusTag('pending', `피해 보류 ${c.pending_attacks}`));
+  if (c.pending_heals) badges.push(makeStatusTag('heal', `회복 +${c.pending_heals}`));
+  if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`));
+  if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`));
   return `<div class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
@@ -1726,16 +1734,16 @@ function renderCardHtml(c) {
   const statusTag = statusTagFor(c);
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
-  if (lastForcedTargetNames.has(c.name)) badges.push(`🎯 유도 효과`);
-  if (c.self_defense_count) badges.push(`🛡 직접 방어`);
-  if (c.defense_count - (c.self_defense_count || 0) > 0) badges.push(`🛡 보호${c.defense_count - (c.self_defense_count || 0)}`);
+  if (lastForcedTargetNames.has(c.name)) badges.push(makeStatusTag('command', '지휘'));
+  if (c.self_defense_count) badges.push(makeStatusTag('selfdef', '직접 방어'));
+  if (c.defense_count - (c.self_defense_count || 0) > 0) badges.push(makeStatusTag('guard', `수호${c.defense_count - (c.self_defense_count || 0) > 1 ? ' ' + (c.defense_count - (c.self_defense_count || 0)) : ''}`));
   if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
   if (c.polarize_active) badges.push(`🛡 편광중`);
-  if (c.has_leech_buff) badges.push(`🩸 흡수`);
-  if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
-  if (c.pending_heals) badges.push(`💚 회복 대기 +${c.pending_heals}`);
-  if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
-  if (c.commanded_by) badges.push(`🎯 유도 효과: ${c.commanded_by} 공격`);
+  if (c.has_leech_buff) badges.push(makeStatusTag('leech', '흡수'));
+  if (c.pending_attacks) badges.push(makeStatusTag('pending', `피해 보류 ${c.pending_attacks}`));
+  if (c.pending_heals) badges.push(makeStatusTag('heal', `회복 +${c.pending_heals}`));
+  if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`));
+  if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`));
 
   return `<div class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">
@@ -4051,6 +4059,41 @@ function saveNotice() {
 function deleteNotice(id) {
   const n = lastNotices.find(x => x.id === id);
   if (confirm(`'${n ? n.title : ''}' 공지를 삭제할까요?`)) socket.emit('notice_delete', { id });
+}
+// ------------------------------------------------------------------
+// 상태 태그 아이콘 (Font Awesome). Pro 전용 아이콘이 로드되지 않으면 무료 대체 아이콘으로 자동 전환합니다.
+// ------------------------------------------------------------------
+const STATUS_TAG_ICONS = {
+  pending:   { cls: 'fa-solid fa-radiation',               fallback: 'fa-solid fa-radiation' },
+  selfdef:   { cls: 'fa-solid fa-shield-halved',           fallback: 'fa-solid fa-shield-halved' },
+  proxydef:  { cls: 'fa-solid fa-shield-user',             fallback: 'fa-solid fa-user-shield' },
+  guard:     { cls: 'fa-solid fa-shield-cross',            fallback: 'fa-solid fa-shield-heart' },
+  command:   { cls: 'fa-sharp fa-solid fa-bullseye-pointer', fallback: 'fa-solid fa-bullseye' },
+  heal:      { cls: 'fa-solid fa-hand-holding-medical',    fallback: 'fa-solid fa-hand-holding-medical' },
+  leech:     { cls: 'fa-sharp fa-solid fa-droplet-plus',   fallback: 'fa-solid fa-droplet' },
+};
+const statusIconOk = {};
+function detectStatusIcons() {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute; left:-9999px; top:-9999px;';
+  document.body.appendChild(probe);
+  Object.entries(STATUS_TAG_ICONS).forEach(([k, v]) => {
+    const i = document.createElement('i');
+    i.className = v.cls;
+    probe.appendChild(i);
+    const content = getComputedStyle(i, '::before').content;
+    statusIconOk[k] = !!content && content !== 'none' && content !== 'normal' && content !== '""';
+  });
+  probe.remove();
+}
+function makeStatusTag(kind, text) {
+  const ic = STATUS_TAG_ICONS[kind];
+  const cls = ic ? (statusIconOk[kind] === false ? ic.fallback : ic.cls) : '';
+  return `<span class="stag stag-${kind}">${cls ? `<i class="${cls}"></i>` : ''}${text}</span>`;
+}
+// 아이콘 폰트가 늦게 로드될 수 있어서, 로드 후 한 번 더 확인하고 화면을 다시 그립니다.
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => { detectStatusIcons(); if (typeof renderBattle === 'function' && lastBattleForPanel !== undefined) renderBattle(lastBattleForPanel); });
 }
 </script>
 </body>
