@@ -31,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.12"
+SERVER_BUILD = "2026-10-06.13"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -103,6 +103,13 @@ def _sync_team_channel(room, sid: str, nickname: str, role: str):
             return
 
 
+def _with_chat_id(entry):
+    """채팅 한 줄마다 고유 id를 붙입니다(운영진 메시지 삭제용). 같은 dict를 그대로 돌려줍니다."""
+    if not entry.get("id"):
+        entry["id"] = uuid.uuid4().hex[:12]
+    return entry
+
+
 def post_system_chat(room, text: str, nickname: str = "system"):
     """채팅 로그에 타임스탬프가 찍힌 시스템 메시지를 남기고 전체에게 전송합니다."""
     entry = {
@@ -112,7 +119,7 @@ def post_system_chat(room, text: str, nickname: str = "system"):
         "category": "system",
         "text": text,
     }
-    room.chat_log.append(entry)
+    room.chat_log.append(_with_chat_id(entry))
     mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
@@ -512,7 +519,7 @@ def build_public_state(room):
         # 그대로 쓰므로 서버 메모리에서는 자르지 않습니다).
         "log": pub_log[-LOG_SEND_CAP:],
         "log_total": len(pub_log),
-        "chat": room.chat_log[-200:],
+        "chat": [_with_chat_id(e) for e in room.chat_log[-200:]],
         "chat_tabs": room.chat_tabs_enabled,
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
@@ -599,7 +606,7 @@ def _mirror_round_logs(room):
                 "log_idx": i,
                 "battle_key": battle_key,
             }
-            room.chat_log.append(entry)
+            room.chat_log.append(_with_chat_id(entry))
             mark_runtime_dirty()
             socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
     battle._chat_mirrored_len = len(log)
@@ -775,7 +782,7 @@ def on_join(data):
             "category": "presence",
             "text": f"{previous_nickname}님이 퇴장했습니다",
         }
-        room.chat_log.append(entry)
+        room.chat_log.append(_with_chat_id(entry))
         mark_runtime_dirty()
         socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
     elif nickname != "익명":
@@ -786,7 +793,7 @@ def on_join(data):
             "category": "presence",
             "text": f"{nickname}님이 입장했습니다 ({'운영진' if role == 'gm' else '참가자'})",
         }
-        room.chat_log.append(entry)
+        room.chat_log.append(_with_chat_id(entry))
         mark_runtime_dirty()
         socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
 
@@ -812,7 +819,7 @@ def on_disconnect():
             "category": "presence",
             "text": f"{info['nickname']}님이 퇴장했습니다",
         }
-        room.chat_log.append(entry)
+        room.chat_log.append(_with_chat_id(entry))
         mark_runtime_dirty()
         socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
     # 온라인 표시(유저 접속정보 팝업)가 끊기자마자 바로 반영되도록 상태를 다시 보냅니다.
@@ -877,6 +884,7 @@ def on_chat_message(data):
         # 주의 : room.chat_log(공용 채팅 기록)에는 남기지 않습니다 - public_state의 "chat"
         # 필드는 방 전체에 그대로 재전송되는 공용 스냅샷이라, 여기에 남기면 재접속/새로고침
         # 시 상대 팀의 아군 회의 내용까지 함께 전송돼 버립니다(팀 채널로만 실시간 전달).
+        _with_chat_id(entry)
         socketio.emit("chat_message", entry, room=_team_channel(info["room_id"], speaker.team))
         return
 
@@ -892,7 +900,7 @@ def on_chat_message(data):
         "category": category,
         "text": text[:500],
     }
-    room.chat_log.append(entry)
+    room.chat_log.append(_with_chat_id(entry))
     mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
 
@@ -1450,7 +1458,7 @@ def on_start_battle(data):
         "category": "operator",
         "text": f"전투가 시작됩니다. 선공 팀은 {first_team_label}입니다.\n제한시간 내 행동해 주세요.",
     }
-    room.chat_log.append(entry)
+    room.chat_log.append(_with_chat_id(entry))
     mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
@@ -1615,7 +1623,7 @@ def _post_mass_raid_reminder(room, battle, threshold):
         "category": "system",
         "text": f"제한시간 {minutes}분 남았습니다 ({acted_count}/{len(living)}명 행동 완료) · 미완료: {names}",
     }
-    room.chat_log.append(entry)
+    room.chat_log.append(_with_chat_id(entry))
     mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
@@ -1691,7 +1699,7 @@ def _maybe_auto_advance_turn(room, battle):
         "category": "system",
         "text": f"{battle.current_turn_team} 전원 행동 완료 — 자동으로 다음 턴으로 넘어갑니다.",
     }
-    room.chat_log.append(entry)
+    room.chat_log.append(_with_chat_id(entry))
     mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
     try:
@@ -1870,7 +1878,7 @@ def on_reveal_pending_action(data):
         "category": "system",
         "text": summary,
     }
-    room.chat_log.append(entry)
+    room.chat_log.append(_with_chat_id(entry))
     mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
@@ -2331,6 +2339,23 @@ def on_set_track_bg(data):
     room.track_bg = cfg
     save_rooms()
     broadcast_state(room)
+
+
+@socketio.on("chat_delete")
+def on_chat_delete(data):
+    """운영진 : 채팅 메시지 한 줄 삭제. 모든 접속자 화면에서도 바로 지워집니다."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 메시지를 삭제할 수 있습니다."})
+        return
+    msg_id = (data or {}).get("id")
+    if not msg_id:
+        return
+    before = len(room.chat_log)
+    room.chat_log = [e for e in room.chat_log if e.get("id") != msg_id]
+    if len(room.chat_log) != before:
+        mark_runtime_dirty()
+    socketio.emit("chat_deleted", {"id": msg_id}, room=room_channel(room.id, "all"))
 
 
 def _runtime_save_loop():
