@@ -232,6 +232,10 @@
 <section class="panel setup-panel">
   <h2>🎵 배경음악 <span class="hint">(방에 있는 모두가 같은 위치로 동기화됩니다)</span></h2>
   <div class="row">
+    러너 화면 표시 이름: <input id="musicDisplayTitle" maxlength="40" placeholder="예) 결전의 테마 (비우면 '배경음악')" style="width:260px;">
+    <button onclick="applyMusicTitle()" title="지금 재생 중인 곡의 표시 이름만 바꿉니다(처음부터 다시 재생하지 않음)">이름만 바꾸기</button>
+  </div>
+  <div class="row">
     유튜브 링크: <input id="musicYoutubeUrl" placeholder="https://www.youtube.com/watch?v=..." style="width:320px;">
     <button onclick="playYoutubeMusic()">유튜브로 재생</button>
   </div>
@@ -1736,7 +1740,7 @@ function updateMusicStatusText() {
   } else if (musicState.type === 'youtube') {
     playing = !!(ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1);
   }
-  const title = musicState.title || (musicState.type === 'youtube' ? '유튜브' : 'mp3');
+  const title = musicState.title || '배경음악';
   statusEl.textContent = playing ? `▶ ${title} 재생 중` : `⏹ 멈춤 (${title})`;
 }
 setInterval(updateMusicStatusText, 1000);
@@ -1744,7 +1748,7 @@ setInterval(updateMusicStatusText, 1000);
 function playYoutubeMusic() {
   const url = document.getElementById('musicYoutubeUrl').value.trim();
   if (!url) { showError('유튜브 링크를 입력해주세요.'); return; }
-  socket.emit('set_music', { type: 'youtube', src: url, title: '' });
+  socket.emit('set_music', { type: 'youtube', src: url, title: musicDisplayTitle() });
 }
 
 function uploadAndPlayMp3() {
@@ -1759,9 +1763,17 @@ function uploadAndPlayMp3() {
     .then(r => r.json())
     .then(data => {
       if (data.error) { showError(data.error); return; }
-      socket.emit('set_music', { type: 'mp3', src: data.url, title: file.name });
+      socket.emit('set_music', { type: 'mp3', src: data.url, title: musicDisplayTitle() });
     })
     .catch(() => showError('업로드에 실패했습니다.'));
+}
+
+// 러너 화면에 보일 곡 이름. 비워두면 '배경음악'으로 보입니다(유튜브 제목/파일 이름이 그대로 드러나지 않게).
+function musicDisplayTitle() {
+  return (document.getElementById('musicDisplayTitle').value || '').trim();
+}
+function applyMusicTitle() {
+  socket.emit('set_music_title', { title: musicDisplayTitle() });
 }
 
 function stopMusic() {
@@ -1771,7 +1783,11 @@ function stopMusic() {
 function renderMusic(music, serverNow) {
   updateServerTimeOffset(serverNow);
   const key = music ? `${music.type}:${music.src}:${music.started_at}` : null;
-  if (key === musicKey) return;
+  if (key === musicKey) {
+    // 같은 곡이면 재생은 그대로 두고, 표시 이름만 바뀐 경우를 반영합니다.
+    if (music && musicState && music.title !== musicState.title) { musicState = music; updateMusicStatusText(); }
+    return;
+  }
   musicKey = key;
   musicState = music;
   stopLocalPlayback();

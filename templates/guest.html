@@ -1714,7 +1714,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-06.13";
+const EXPECTED_SERVER_BUILD = "2026-10-06.14";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -3822,7 +3822,7 @@ function updateMusicStatusText() {
   } else if (musicState.type === 'youtube') {
     playing = !!(ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1);
   }
-  const title = musicState.title || (musicState.type === 'youtube' ? '유튜브' : 'mp3');
+  const title = musicState.title || '배경음악';
   statusEl.textContent = title;
   statusEl.parentElement.title = title;
   if (player) player.classList.toggle('playing', playing);
@@ -3833,7 +3833,11 @@ setInterval(updateMusicStatusText, 1000);
 function renderMusic(music, serverNow) {
   updateServerTimeOffset(serverNow);
   const key = music ? `${music.type}:${music.src}:${music.started_at}` : null;
-  if (key === musicKey) return;
+  if (key === musicKey) {
+    // 같은 곡이면 재생은 그대로 두고, 표시 이름만 바뀐 경우를 반영합니다.
+    if (music && musicState && music.title !== musicState.title) { musicState = music; updateMusicStatusText(); }
+    return;
+  }
   musicKey = key;
   musicState = music;
   stopLocalPlayback();

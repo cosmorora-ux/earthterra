@@ -31,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.13"
+SERVER_BUILD = "2026-10-06.14"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -1553,16 +1553,30 @@ def on_set_music(data):
         if not video_id:
             emit("action_error", {"message": "유튜브 링크에서 영상 ID를 찾지 못했습니다."})
             return
-        room.music = {"type": "youtube", "src": video_id, "title": data.get("title", ""), "started_at": time.time()}
+        room.music = {"type": "youtube", "src": video_id, "title": (data.get("title") or "").strip()[:40], "started_at": time.time()}
     elif music_type == "mp3":
         src = (data.get("src") or "").strip()
         if not src:
             emit("action_error", {"message": "mp3 파일을 먼저 업로드해주세요."})
             return
-        room.music = {"type": "mp3", "src": src, "title": data.get("title", ""), "started_at": time.time()}
+        room.music = {"type": "mp3", "src": src, "title": (data.get("title") or "").strip()[:40], "started_at": time.time()}
     else:
         emit("action_error", {"message": "알 수 없는 음악 형식입니다."})
         return
+    broadcast_state(room)
+
+
+@socketio.on("set_music_title")
+def on_set_music_title(data):
+    """운영진 : 지금 재생 중인 곡의 '러너 화면 표시 이름'만 바꿉니다(재생 위치는 그대로)."""
+    room = _require_gm(request.sid) or _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    if not room.music:
+        emit("action_error", {"message": "지금 재생 중인 배경음악이 없습니다."})
+        return
+    room.music = dict(room.music, title=((data or {}).get("title") or "").strip()[:40])
     broadcast_state(room)
 
 
