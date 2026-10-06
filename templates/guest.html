@@ -344,6 +344,63 @@
   .member-panel, .topbar.v2, .action-bar-bottom, .bgm-player { --light-size: 200px; }
   .char-card.holo-on::before, .site-card.holo-on::before, .compact-card.holo-on::before, .member-panel.holo-on::before, .topbar.v2.holo-on::before, .action-bar-bottom.holo-on::before, .map-frame.holo-on::before, .bgm-player.holo-on::before { opacity:1; transition-delay:.1s; }
   .char-card.holo-on::after, .site-card.holo-on::after, .compact-card.holo-on::after, .member-panel.holo-on::after, .topbar.v2.holo-on::after, .action-bar-bottom.holo-on::after, .map-frame.holo-on::after, .bgm-player.holo-on::after { opacity:.925; transition-delay:0s; }
+  /* ---------- 디자인된 확인/입력 팝업 (브라우저 기본 confirm/prompt 대신) ---------- */
+  #uiDialog { z-index:400; }
+  .modal-box.ui-dialog { width:380px; max-width:calc(100vw - 32px); padding:22px 22px 18px; }
+  .ui-dialog-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    background:rgba(91,140,255,.14); color:#8fb0ff; font-size:18px; margin-bottom:12px; }
+  .ui-dialog.danger .ui-dialog-icon { background:rgba(255,90,90,.14); color:#ff8a8a; }
+  .ui-dialog-title { font-size:17px; font-weight:700; margin-bottom:6px; }
+  .ui-dialog-msg { font-size:14.5px; line-height:1.55; color: var(--muted); white-space:pre-line; word-break:keep-all; }
+  .ui-dialog-input { margin-top:12px; }
+  .ui-dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+  .ui-dialog-actions button { min-width:84px; height:38px; border-radius:9px; font-size:14px; font-weight:700; cursor:pointer; border:1px solid var(--card-border); }
+  .ui-dialog-actions .cancel { background:transparent; color: var(--text); font-weight:500; }
+  .ui-dialog-actions .cancel:hover { background:rgba(255,255,255,.06); }
+  .ui-dialog-actions .ok { background: var(--accent-blue); border-color: var(--accent-blue); color:#fff; }
+  .ui-dialog.danger .ui-dialog-actions .ok { background:#c43c3c; border-color:#c43c3c; }
+  /* ================================================================
+     라운드 트랙 (PVP) : 라운드별 선공/후공 진행을 보여주는 블럭. 아래 손잡이를 끌어서 높이를 바꿀 수 있고
+     (내 화면에만 저장), 운영진이 배경 이미지를 깔 수 있습니다.
+     ================================================================ */
+  .round-track { position:relative; margin-top:16px; border-radius:14px; border:1px solid var(--card-border);
+    background: linear-gradient(90deg, #161a24, #1c1824); overflow:hidden; height:var(--rt-h, 120px); min-height:72px;
+    flex-shrink:0; isolation:isolate; }
+  .round-track .rt-bg { position:absolute; inset:0; z-index:-1; background-size:cover; background-position:center; }
+  .round-track .rt-inner { position:relative; height:100%; display:flex; align-items:center; gap:22px; padding:12px 22px 16px; box-sizing:border-box; }
+  .rt-round { flex:none; display:flex; flex-direction:column; justify-content:center; min-width:86px; }
+  .rt-round .k { font-size:10px; letter-spacing:.16em; color: var(--muted); font-weight:700; }
+  .rt-round .n { font-size:34px; font-weight:800; line-height:1; font-variant-numeric: tabular-nums; }
+  .rt-round .ph { font-size:12px; color: var(--muted); margin-top:4px; white-space:nowrap; }
+  .rt-track { flex:1; min-width:0; display:flex; align-items:center; gap:0; overflow:hidden; }
+  .rt-node { flex:1 1 0; min-width:54px; display:flex; flex-direction:column; align-items:stretch; gap:6px; position:relative; }
+  .rt-node .lab { font-size:11px; color: var(--muted); text-align:center; white-space:nowrap; font-variant-numeric: tabular-nums; }
+  .rt-node .bar { display:flex; gap:3px; height:8px; padding:0 3px; }
+  .rt-node .seg { flex:1; border-radius:4px; background:rgba(255,255,255,.08); position:relative; overflow:hidden; }
+  .rt-node .seg.done { background:rgba(255,255,255,.45); }
+  .rt-node .seg.now { background:rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(255,255,255,.75) inset; }
+  .rt-node .seg.now::after { content:""; position:absolute; inset:0; width:var(--rt-prog, 0%); background:#fff; border-radius:4px; transition: width .4s ease; }
+  .rt-node .teams { display:flex; gap:3px; padding:0 3px; font-size:10px; color: var(--muted); }
+  .rt-node .teams span { flex:1; text-align:center; white-space:nowrap; }
+  .rt-node.current .lab { color: var(--text); font-weight:700; }
+  .rt-node.future { opacity:.45; }
+  .rt-side { flex:none; display:flex; flex-direction:column; gap:6px; min-width:150px; }
+  .rt-team { display:flex; align-items:center; gap:8px; font-size:12px; color: var(--muted); }
+  .rt-team b { color: var(--text); font-weight:700; min-width:28px; }
+  .rt-team .dots { display:flex; gap:3px; }
+  .rt-team .dots i { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.14); display:block; }
+  .rt-team .dots i.on { background:#fff; }
+  .rt-team.active b::after { content:" ●"; font-size:9px; vertical-align:middle; }
+  .rt-empty { color: var(--muted); font-size:14px; }
+  .round-track .rt-bg-btn { position:absolute; top:8px; right:10px; width:28px; height:28px; border-radius:8px; border:1px solid var(--card-border);
+    background:rgba(0,0,0,.35); color: var(--text); font-size:12px; display:none; align-items:center; justify-content:center; z-index:2; }
+  .round-track:hover .rt-bg-btn.gm { display:flex; }
+  .round-track .rt-resize { position:absolute; left:0; right:0; bottom:0; height:8px; cursor:ns-resize; z-index:2; }
+  .round-track .rt-resize::after { content:""; position:absolute; left:50%; bottom:3px; width:36px; height:3px; margin-left:-18px; border-radius:2px; background:rgba(255,255,255,.18); }
+  .round-track:hover .rt-resize::after { background:rgba(255,255,255,.4); }
+  .round-track.compact .rt-node .teams, .round-track.compact .rt-round .ph { display:none; }
+  .round-track.compact .rt-round .n { font-size:24px; }
+  @media (max-width: 760px) { .rt-side { display:none; } }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
@@ -567,7 +624,7 @@
   /* ---------- 공성전/마스 레이드 새 화면 : 카드 없이 가운데를 넓은 맵으로만 씁니다 ---------- */
   .main-grid.with-grid-map { grid-template-columns: 1fr; }
   .main-grid.with-grid-map .teams-columns,
-  .main-grid.with-grid-map .round-track-ph,
+  .main-grid.with-grid-map .round-track-ph, .main-grid.with-grid-map .round-track,
   .main-grid.with-grid-map #siteViewToggle,
   .main-grid.with-grid-map #siteStatusCard { display:none !important; }
   #gridSection.map-v2 { padding:0; background:transparent; border:none; }
@@ -850,7 +907,7 @@
     <div id="bossImgSection"></div>
     <input type="file" id="bossImgFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onBossImgChosen(event)">
     <div class="row" style="justify-content:space-between;">
-      <button class="btn" style="background:transparent;border:1px solid var(--card-border);color:var(--text);font-weight:500;" onclick="if(confirm('배경 이미지를 지우고 기본 배경으로 되돌릴까요?')) setMapBg({reset:true})">기본으로 되돌리기</button>
+      <button class="btn" style="background:transparent;border:1px solid var(--card-border);color:var(--text);font-weight:500;" onclick="uiConfirm('배경 이미지를 지우고 기본 배경으로 되돌릴까요?', {title:'기본 배경으로', okText:'되돌리기', danger:true}).then(ok => ok && setMapBg({reset:true}))">기본으로 되돌리기</button>
       <button class="btn" onclick="closeMapBgModal()">닫기</button>
     </div>
   </div>
@@ -921,6 +978,36 @@
     <div class="snd-hint">공격·방어·지휘·회복 같은 행동을 하면 그 캐릭터의 효과음이 모두에게 들려요. 캐릭터가 마이페이지에 자기 소리를 등록했으면 그 소리로, 아니면 아래 기본 소리로 나와요.</div>
     <div id="sfxDefaultsSection"></div>
     <input type="file" id="sfxDefaultFileInput" accept=".mp3,.wav,.ogg,.m4a,.aac,audio/*" style="display:none;" onchange="onSfxDefaultFileChosen(event)">
+  </div>
+</div>
+<div id="trackBgModal" class="modal-overlay" onclick="if(event.target===this) closeTrackBgModal()">
+  <div class="modal-box mapbg-modal panel">
+    <div class="modal-title">라운드 트랙 배경</div>
+    <div class="mapbg-preview" id="trackBgPreview" onclick="document.getElementById('trackBgFileInput').click()" data-tip="클릭해서 이미지 올리기">
+      <div class="dim" id="trackBgPreviewDim"></div><span id="trackBgPreviewText">클릭해서 배경 이미지 올리기 (최대 6MB)</span>
+    </div>
+    <input type="file" id="trackBgFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onTrackBgFileChosen(event)">
+    <div class="mapbg-row">
+      <label class="lbl">어둡게</label>
+      <input type="range" class="nice-range" id="trackBgDim" min="0" max="90" oninput="paintRange(this); onTrackBgSlider()" onchange="socket.emit('set_track_bg', {dim: parseInt(this.value,10)})">
+      <span class="val" id="trackBgDimVal"></span>
+    </div>
+    <div class="row" style="justify-content:space-between;">
+      <button class="btn" style="background:transparent;border:1px solid var(--card-border);color:var(--text);font-weight:500;" onclick="uiConfirm('배경 이미지를 지울까요?', {title:'배경 지우기', okText:'지우기', danger:true}).then(ok => ok && socket.emit('set_track_bg', {reset:true}))">배경 지우기</button>
+      <button class="btn" onclick="closeTrackBgModal()">닫기</button>
+    </div>
+  </div>
+</div>
+<div id="uiDialog" class="modal-overlay">
+  <div class="modal-box ui-dialog panel" id="uiDialogBox" role="dialog" aria-modal="true">
+    <div class="ui-dialog-icon" id="uiDialogIcon"><i class="fa-solid fa-circle-question"></i></div>
+    <div class="ui-dialog-title" id="uiDialogTitle"></div>
+    <div class="ui-dialog-msg" id="uiDialogMsg"></div>
+    <input type="text" class="ui-dialog-input" id="uiDialogInput" style="display:none;">
+    <div class="ui-dialog-actions">
+      <button type="button" class="cancel" id="uiDialogCancel">취소</button>
+      <button type="button" class="ok" id="uiDialogOk">확인</button>
+    </div>
   </div>
 </div>
 <div id="shopToast"></div>
@@ -1170,11 +1257,18 @@
       </div>
     </div>
 
-    <div class="round-track-ph">라운드 트랙 표시 (디자인 예정)</div>
   </div>
 </div>
 </div>
 
+{% if not grid_size %}
+<div class="round-track" id="roundTrack">
+      <div class="rt-bg" id="roundTrackBg"></div>
+      <div class="rt-inner" id="roundTrackInner"></div>
+      <button type="button" class="rt-bg-btn" id="roundTrackBgBtn" onclick="openTrackBgModal()" data-tip="라운드 트랙 배경 이미지 (운영진)"><i class="fa-solid fa-image"></i></button>
+      <div class="rt-resize" id="roundTrackResize" aria-label="끌어서 높이 조절"></div>
+    </div>
+{% endif %}
 <div id="commandSendBar" class="action-bar-bottom panel">
   <select id="cmdActionSelect" onchange="refreshCmdTargetOptions()"></select>
   <select id="cmdTargetSelect" onchange="onCmdTargetChange()"></select>
@@ -1436,7 +1530,7 @@ function onAvatarDotClick() {
   // 전투 시작 전(등록된 이름으로만 입장)이거나 전투에 없는 이름으로 입장한 경우에도
   // 로그아웃할 수 있도록, 실제로 입장한 상태인지(explicitlyJoined)만 봅니다.
   if (explicitlyJoined) {
-    if (confirm('로그아웃 하시겠습니까?')) logout();
+    uiConfirm('지금 캐릭터에서 로그아웃할까요?', {title:'로그아웃', okText:'로그아웃', icon:'fa-right-from-bracket'}).then(ok => ok && logout());
   } else {
     openJoinModal();
   }
@@ -1576,7 +1670,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-06.11";
+const EXPECTED_SERVER_BUILD = "2026-10-06.12";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -1589,6 +1683,7 @@ socket.on('public_state', (state) => {
   lastShop = state.shop || lastShop;
   lastMapBg = state.map_bg || null;
   if (state.sfx_defaults) lastSfxDefaults = state.sfx_defaults;
+  lastTrackBg = state.track_bg || null;
   lastBossImages = state.boss_images || {};
   lastOnlineCharacters = state.online_characters || [];
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
@@ -1609,6 +1704,8 @@ socket.on('public_state', (state) => {
   applyMapBackground();
   renderMapBgModal();
   renderSoundSettings();
+  renderRoundTrack();
+  renderTrackBgModal();
 });
 
 socket.on('battle_starting', () => {
@@ -3947,8 +4044,8 @@ function shopPayloadName() { return shopIsGm() ? { name: shopGmTarget } : {}; }
 function shopBuy(itemId) {
   const it = shopItemById(itemId);
   if (!it || !shopTargetName()) return;
-  if (!confirm(`${it.name}을(를) ${it.price}P에 구매할까요?`)) return;
-  socket.emit('shop_buy', { item_id: itemId, qty: 1, ...shopPayloadName() });
+  uiConfirm(`${it.name}을(를) ${it.price}P에 구매할까요?`, {title:'구매', okText:`${it.price}P 구매`, icon:'fa-cart-shopping'})
+    .then(ok => ok && socket.emit('shop_buy', { item_id: itemId, qty: 1, ...shopPayloadName() }));
 }
 function shopUse(itemId) {
   const it = shopItemById(itemId);
@@ -3957,8 +4054,8 @@ function shopUse(itemId) {
   if (it.effect === 'stat_up') payload.stat = document.getElementById(`shopStat_${itemId}`).value;
   if (it.effect === 'request') payload.memo = document.getElementById(`shopMemo_${itemId}`).value;
   const what = it.effect === 'stat_up' ? ` (${payload.stat} +${it.value})` : '';
-  if (!confirm(`${it.name}${what}을(를) 사용할까요?`)) return;
-  socket.emit('shop_use', payload);
+  uiConfirm(`${it.name}${what}을(를) 사용할까요?`, {title:'아이템 사용', okText:'사용', icon:'fa-flask'})
+    .then(ok => ok && socket.emit('shop_use', payload));
 }
 
 // ---- 운영진 동작 ----
@@ -3967,7 +4064,8 @@ function shopAddItem() { socket.emit('shop_admin_item', { action: 'add', fields:
 function shopMoveItem(id, delta) { socket.emit('shop_admin_item', { action: 'move', item_id: id, delta }); }
 function shopDeleteItem(id) {
   const it = shopItemById(id);
-  if (confirm(`'${it ? it.name : ''}' 상품을 삭제할까요? (이미 산 사람의 소지품에는 '삭제된 상품'으로 남아요)`)) socket.emit('shop_admin_item', { action: 'delete', item_id: id });
+  uiConfirm(`'${it ? it.name : ''}' 상품을 삭제할까요?\n이미 산 사람의 소지품에는 '삭제된 상품'으로 남아요.`, {title:'상품 삭제', okText:'삭제', danger:true})
+    .then(ok => ok && socket.emit('shop_admin_item', { action: 'delete', item_id: id }));
 }
 function pickShopIcon(id) { shopIconTargetId = id; document.getElementById('shopIconFileInput').click(); }
 function shopClearIcon(id) { socket.emit('shop_admin_icon', { item_id: id, clear: true }); }
@@ -3982,8 +4080,8 @@ function shopSetPoints(name, v) { socket.emit('shop_admin_points', { name, set: 
 function shopBulkPoints(sign) {
   const v = parseInt(document.getElementById('shopBulkPoints').value || '0', 10) * sign;
   if (!v) return;
-  if (!confirm(`등록된 캐릭터 전원에게 ${v > 0 ? '+' : ''}${v}P 할까요?`)) return;
-  socket.emit('shop_admin_points', { names: lastRoster || [], delta: v });
+  uiConfirm(`등록된 캐릭터 전원에게 ${v > 0 ? '+' : ''}${v}P 할까요?`, {title:'P 일괄 지급', okText:'적용', icon:'fa-coins'})
+    .then(ok => ok && socket.emit('shop_admin_points', { names: lastRoster || [], delta: v }));
 }
 function shopGive(name, itemId, delta) { socket.emit('shop_admin_give', { name, item_id: itemId, delta }); }
 function shopReqDone(id, done) { socket.emit('shop_admin_request', { request_id: id, done }); }
@@ -4120,7 +4218,7 @@ function renderBossImgSection() {
     ${rows || '<div class="boss-img-hint">지금 전투에 2x2 몹이 없어요. (이름이 BOSS/NOVA로 시작하는 캐릭터)</div>'}`;
 }
 function pickBossImg(key) { bossImgTargetKey = key; document.getElementById('bossImgFileInput').click(); }
-function clearBossImg(key) { if (confirm(`'${key}' 몹 이미지를 지울까요?`)) socket.emit('set_boss_image', { key, clear: true }); }
+function clearBossImg(key) { uiConfirm(`'${key}' 몹 이미지를 지울까요?`, {title:'몹 이미지 삭제', okText:'지우기', danger:true}).then(ok => ok && socket.emit('set_boss_image', { key, clear: true })); }
 function onBossImgChosen(ev) {
   const f = ev.target.files && ev.target.files[0];
   ev.target.value = '';
@@ -4165,9 +4263,9 @@ function openNotices() {
   setTimeout(markNoticesSeen, 0);
 }
 function closeNotices() {
-  if (noticeEditing && !confirm('작성 중인 내용이 사라져요. 닫을까요?')) return;
-  noticeEditing = false; noticeEditingId = null;
-  document.getElementById('noticeModal').style.display = 'none';
+  const doClose = () => { noticeEditing = false; noticeEditingId = null; document.getElementById('noticeModal').style.display = 'none'; };
+  if (!noticeEditing) { doClose(); return; }
+  uiConfirm('작성 중인 내용이 사라져요. 닫을까요?', {title:'공지 닫기', okText:'닫기', danger:true}).then(ok => ok && doClose());
 }
 function fmtNoticeDate(ts) {
   if (!ts) return '';
@@ -4225,9 +4323,11 @@ function startNoticeEdit(id) {
   refreshNoticeToolbar();
 }
 function cancelNoticeEdit() {
-  if (!confirm('작성 중인 내용을 버릴까요?')) return;
-  noticeEditing = false; noticeEditingId = null;
-  renderNotices();
+  uiConfirm('작성 중인 내용을 버릴까요?', {title:'작성 취소', okText:'버리기', danger:true}).then(ok => {
+    if (!ok) return;
+    noticeEditing = false; noticeEditingId = null;
+    renderNotices();
+  });
 }
 function noticeCmd(cmd, value) {
   if (!value && ['fontSize', 'formatBlock'].includes(cmd)) return;
@@ -4244,9 +4344,16 @@ function noticeCmd(cmd, value) {
   refreshNoticeToolbar();
 }
 function noticeLink() {
-  const url = prompt('링크 주소를 입력하세요 (https://...)', 'https://');
-  if (!url || !/^https?:\/\//i.test(url)) return;
-  noticeCmd('createLink', url);
+  // 팝업이 뜨면 편집기 선택 영역이 풀리므로 미리 저장했다가 되살립니다.
+  const sel = window.getSelection();
+  const range = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+  uiPrompt('링크 주소를 입력하세요.', 'https://', {title:'링크 넣기', okText:'넣기', placeholder:'https://...', icon:'fa-link'}).then(url => {
+    if (!url || !/^https?:\/\//i.test(url)) return;
+    const area = document.getElementById('noticeEditArea');
+    area.focus();
+    if (range) { const s2 = window.getSelection(); s2.removeAllRanges(); s2.addRange(range); }
+    noticeCmd('createLink', url);
+  });
 }
 function refreshNoticeToolbar() {
   document.querySelectorAll('#noticeToolbar button[data-cmd]').forEach(b => {
@@ -4263,7 +4370,7 @@ function saveNotice() {
 }
 function deleteNotice(id) {
   const n = lastNotices.find(x => x.id === id);
-  if (confirm(`'${n ? n.title : ''}' 공지를 삭제할까요?`)) socket.emit('notice_delete', { id });
+  uiConfirm(`'${n ? n.title : ''}' 공지를 삭제할까요?`, {title:'공지 삭제', okText:'삭제', danger:true}).then(ok => ok && socket.emit('notice_delete', { id }));
 }
 // ------------------------------------------------------------------
 // 상태 태그 아이콘 (Font Awesome). Pro 전용 아이콘이 로드되지 않으면 무료 대체 아이콘으로 자동 전환합니다.
@@ -4365,7 +4472,7 @@ function renderSoundSettings() {
       <div class="snd-default-top"><b>${shopEsc(d.label || kind)}</b><span class="snd-level" id="sfxLevel_${kind}" style="margin:0;"></span>
         <button class="shop-btn ghost sm" onclick="previewDefaultSfx('${kind}')"><i class="fa-solid fa-play"></i> 듣기</button>
         ${gm ? `<button class="shop-btn ghost sm" onclick="pickSfxDefault('${kind}')">파일 바꾸기</button>
-        <button class="shop-btn ghost sm" onclick="if(confirm('처음 기본 소리로 되돌릴까요?')) socket.emit('set_default_sfx', {kind:'${kind}', reset:true})">초기화</button>` : ''}
+        <button class="shop-btn ghost sm" onclick="uiConfirm('처음 기본 소리로 되돌릴까요?', {title:'효과음 초기화', okText:'초기화', danger:true}).then(ok => ok && socket.emit('set_default_sfx', {kind:'${kind}', reset:true}))">초기화</button>` : ''}
       </div>
       ${gm ? `<div class="snd-row"><span class="snd-hint" style="margin:0;width:56px;">기본 음량</span>
         <input type="range" class="nice-range" min="0" max="100" value="${d.volume}" oninput="paintRange(this); this.nextElementSibling.textContent=this.value"
@@ -4501,6 +4608,143 @@ function autoLevelMySound(need) {
   document.addEventListener('pointerleave', clear);
   window.addEventListener('blur', clear);
 })();
+// ==================================================================
+// 디자인된 확인/입력 팝업 : uiConfirm(메시지, 옵션) / uiPrompt(메시지, 기본값, 옵션) → Promise
+// (브라우저 기본 confirm/prompt 창 대신 사이트 디자인에 맞춘 팝업을 띄웁니다)
+// ==================================================================
+let uiDialogResolve = null;
+function openUiDialog(opts) {
+  const ov = document.getElementById('uiDialog'), box = document.getElementById('uiDialogBox');
+  const input = document.getElementById('uiDialogInput');
+  box.classList.toggle('danger', !!opts.danger);
+  document.getElementById('uiDialogIcon').innerHTML = `<i class="fa-solid ${opts.icon || (opts.danger ? 'fa-triangle-exclamation' : 'fa-circle-question')}"></i>`;
+  document.getElementById('uiDialogTitle').textContent = opts.title || '확인';
+  document.getElementById('uiDialogMsg').textContent = opts.message || '';
+  document.getElementById('uiDialogOk').textContent = opts.okText || '확인';
+  document.getElementById('uiDialogCancel').textContent = opts.cancelText || '취소';
+  input.style.display = opts.prompt ? '' : 'none';
+  input.value = opts.defaultValue || '';
+  input.placeholder = opts.placeholder || '';
+  ov.style.display = 'flex';
+  setTimeout(() => (opts.prompt ? input : document.getElementById('uiDialogOk')).focus(), 0);
+  return new Promise(res => { uiDialogResolve = (v) => { ov.style.display = 'none'; uiDialogResolve = null; res(v); }; });
+}
+function uiConfirm(message, opts = {}) { return openUiDialog({ ...opts, message }).then(v => v !== null); }
+function uiPrompt(message, defaultValue = '', opts = {}) { return openUiDialog({ ...opts, message, prompt: true, defaultValue, icon: opts.icon || 'fa-pen' }); }
+document.getElementById('uiDialogOk').onclick = () => {
+  if (!uiDialogResolve) return;
+  const input = document.getElementById('uiDialogInput');
+  uiDialogResolve(input.style.display === 'none' ? true : input.value);
+};
+document.getElementById('uiDialogCancel').onclick = () => uiDialogResolve && uiDialogResolve(null);
+document.getElementById('uiDialog').addEventListener('click', (e) => { if (e.target.id === 'uiDialog' && uiDialogResolve) uiDialogResolve(null); });
+document.addEventListener('keydown', (e) => {
+  if (!uiDialogResolve) return;
+  if (e.key === 'Escape') { e.preventDefault(); uiDialogResolve(null); }
+  else if (e.key === 'Enter') { e.preventDefault(); document.getElementById('uiDialogOk').click(); }
+}, true);
+// ==================================================================
+// 라운드 트랙 (PVP) : 라운드마다 [선공 | 후공] 두 칸, 진행한 칸은 채우고 지금 칸은 행동한 비율만큼 채웁니다.
+// 높이는 아래 손잡이로 조절(이 브라우저에 저장), 배경 이미지는 운영진이 설정(모두에게 적용).
+// ==================================================================
+let lastTrackBg = null;
+const RT_WINDOW = 8;  // 한 번에 보여줄 라운드 수
+(function initRoundTrackHeight() {
+  const el = document.getElementById('roundTrack');
+  if (!el) return;
+  let h = 120;
+  try { const v = parseInt(localStorage.getItem('roundTrackHeight') || '', 10); if (v) h = v; } catch (e) {}
+  el.style.setProperty('--rt-h', `${h}px`);
+  el.classList.toggle('compact', h < 104);
+  const handle = document.getElementById('roundTrackResize');
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const startY = e.clientY, startH = el.getBoundingClientRect().height;
+    handle.setPointerCapture(e.pointerId);
+    const move = (ev) => {
+      const nh = Math.max(72, Math.min(420, Math.round(startH + ev.clientY - startY)));
+      el.style.setProperty('--rt-h', `${nh}px`);
+      el.classList.toggle('compact', nh < 104);
+    };
+    const up = () => {
+      handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up);
+      try { localStorage.setItem('roundTrackHeight', String(Math.round(el.getBoundingClientRect().height))); } catch (e) {}
+    };
+    handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', up);
+  });
+})();
+
+function renderRoundTrack() {
+  const el = document.getElementById('roundTrack');
+  if (!el) return;
+  const inner = document.getElementById('roundTrackInner');
+  const bg = document.getElementById('roundTrackBg');
+  const cfg = Object.assign({ url: null, dim: 45 }, lastTrackBg || {});
+  bg.style.backgroundImage = cfg.url ? `linear-gradient(rgba(0,0,0,${cfg.dim / 100}), rgba(0,0,0,${cfg.dim / 100})), url('${cfg.url}')` : '';
+  document.getElementById('roundTrackBgBtn').classList.toggle('gm', myControlInfo(lastBattleForPanel).scope === 'all');
+  const b = lastBattleForPanel;
+  if (!b) { inner.innerHTML = '<div class="rt-empty">전투가 시작되면 라운드 진행이 여기에 표시돼요.</div>'; return; }
+  const cur = b.round_no || 1;
+  const first = b.round_first_team || '1팀';
+  const second = first === '1팀' ? '2팀' : '1팀';
+  const inSecond = !b.finished && b.current_turn_team && b.current_turn_team !== first;
+  const teamMembers = (label) => (label === '1팀' ? b.team_a : b.team_b) || [];
+  const alive = (c) => !['dead', 'fled'].includes(c.status);
+  const turnTeam = b.current_turn_team;
+  const acting = teamMembers(turnTeam).filter(alive);
+  const prog = acting.length ? Math.round(acting.filter(c => c.has_acted).length / acting.length * 100) : 0;
+  const start = Math.max(1, cur - RT_WINDOW + 2);
+  const nodes = [];
+  for (let r = start; r < start + RT_WINDOW; r++) {
+    // PVP는 선후공이 라운드마다 바뀔 수 있어서, 지난/다음 라운드는 팀 이름 대신 '선/후'로만 표시합니다.
+    const isCur = r === cur, past = r < cur || (isCur && b.finished), future = r > cur;
+    const segA = past ? 'done' : (isCur ? (inSecond ? 'done' : 'now') : '');
+    const segB = past ? 'done' : (isCur && inSecond ? 'now' : '');
+    nodes.push(`<div class="rt-node ${isCur ? 'current' : ''} ${future ? 'future' : ''}">
+      <div class="lab">R${r}</div>
+      <div class="bar"><div class="seg ${segA}" ${segA === 'now' ? `style="--rt-prog:${prog}%"` : ''}></div><div class="seg ${segB}" ${segB === 'now' ? `style="--rt-prog:${prog}%"` : ''}></div></div>
+      <div class="teams"><span>${isCur ? first : '선'}</span><span>${isCur ? second : '후'}</span></div>
+    </div>`);
+  }
+  const teamRow = (label) => {
+    const ms = teamMembers(label).filter(alive);
+    const dots = ms.map(c => `<i class="${c.has_acted ? 'on' : ''}"></i>`).join('');
+    return `<div class="rt-team ${label === turnTeam && !b.finished ? 'active' : ''}"><b>${label}</b><span class="dots">${dots}</span><span>${ms.filter(c => c.has_acted).length}/${ms.length}</span></div>`;
+  };
+  const phase = b.finished ? (b.winner ? `종료 · ${b.winner} 승리` : '종료') : `${inSecond ? '후공' : '선공'} · ${turnTeam} 행동`;
+  inner.innerHTML = `<div class="rt-round"><span class="k">ROUND</span><span class="n">${cur}</span><span class="ph">${phase}</span></div>
+    <div class="rt-track">${nodes.join('')}</div>
+    <div class="rt-side">${teamRow('1팀')}${teamRow('2팀')}</div>`;
+}
+
+function openTrackBgModal() { document.getElementById('trackBgModal').style.display = 'flex'; renderTrackBgModal(); }
+function closeTrackBgModal() { document.getElementById('trackBgModal').style.display = 'none'; renderRoundTrack(); }
+function renderTrackBgModal() {
+  if (document.getElementById('trackBgModal').style.display !== 'flex') return;
+  const cfg = Object.assign({ url: null, dim: 45 }, lastTrackBg || {});
+  document.getElementById('trackBgPreview').style.backgroundImage = cfg.url ? `url('${cfg.url}')` : '';
+  document.getElementById('trackBgPreviewText').textContent = cfg.url ? '클릭해서 다른 이미지로 바꾸기' : '클릭해서 배경 이미지 올리기 (최대 6MB)';
+  const dim = document.getElementById('trackBgDim');
+  if (document.activeElement !== dim) dim.value = cfg.dim;
+  paintRange(dim);
+  onTrackBgSlider();
+}
+function onTrackBgSlider() {
+  const dim = parseInt(document.getElementById('trackBgDim').value, 10);
+  document.getElementById('trackBgDimVal').textContent = `${dim}%`;
+  document.getElementById('trackBgPreviewDim').style.background = `rgba(0,0,0,${dim / 100})`;
+  const cfg = Object.assign({ url: null }, lastTrackBg || {});
+  const bg = document.getElementById('roundTrackBg');
+  if (bg && cfg.url) bg.style.backgroundImage = `linear-gradient(rgba(0,0,0,${dim / 100}), rgba(0,0,0,${dim / 100})), url('${cfg.url}')`;
+}
+function onTrackBgFileChosen(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!f) return;
+  if (f.size > 6 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 6MB).'); return; }
+  document.getElementById('trackBgPreviewText').textContent = '올리는 중...';
+  f.arrayBuffer().then(buf => socket.emit('set_track_bg', { filename: f.name, data: buf }));
+}
 </script>
 </body>
 </html>

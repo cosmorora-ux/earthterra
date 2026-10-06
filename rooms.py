@@ -25,7 +25,7 @@ ROOMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rooms.jso
 # RoomState의 필드 중 이 목록만 rooms.json에 저장/복원합니다.
 _PERSISTED_FIELDS = [
     "name", "battle_type", "gm_key", "guest_key", "created_at",
-    "chat_tabs_enabled", "chat_tab_labels", "userinfo_hidden", "map_bg", "boss_images",
+    "chat_tabs_enabled", "chat_tab_labels", "userinfo_hidden", "map_bg", "boss_images", "track_bg",
 ]
 
 BATTLE_TYPE_LABELS = {
@@ -109,6 +109,8 @@ class RoomState:
         # 2x2 몹(BOSS) 이미지 - 4칸에 걸쳐 한 장으로 표시됩니다. {몹 이름(줄 이름): 이미지 URL}
         # 같은 이름의 몹이면 다음 전투에도 그대로 쓰입니다.
         self.boss_images = {}
+        # PVP 라운드 트랙 블럭 배경 이미지. {"url": str|None, "dim": 0~90(%)} 또는 None
+        self.track_bg = None
 
 
 def create_room(battle_type: str = "pvp", name: str = None) -> RoomState:

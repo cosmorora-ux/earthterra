@@ -31,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.11"
+SERVER_BUILD = "2026-10-06.12"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -534,6 +534,7 @@ def build_public_state(room):
         "map_bg": room.map_bg,
         "sfx_defaults": SFX_CONFIG,
         "boss_images": room.boss_images or {},
+        "track_bg": room.track_bg,
         "shop": shop_mod.shared_shop().public_payload(),
         "telegraph_cells": room.telegraph_cells,
         "preview_teams": preview_teams,
@@ -2299,6 +2300,37 @@ def on_set_default_sfx(data):
     _save_sfx_config()
     for r in list_rooms():
         broadcast_state(r)
+
+
+@socketio.on("set_track_bg")
+def on_set_track_bg(data):
+    """운영진 : 라운드 트랙 블럭 배경 이미지 업로드/삭제와 어둡기."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 라운드 트랙 배경을 바꿀 수 있습니다."})
+        return
+    data = data or {}
+    cfg = dict({"url": None, "dim": 45}, **(room.track_bg or {}))
+    if data.get("reset"):
+        cfg = {"url": None, "dim": 45}
+    blob = data.get("data")
+    if blob is not None:
+        ext = os.path.splitext((data.get("filename") or "").lower())[1]
+        if ext not in MAP_BG_ALLOWED_EXTS or not isinstance(blob, (bytes, bytearray)):
+            emit("action_error", {"message": "png/jpg/webp/gif 이미지만 올릴 수 있습니다."})
+            return
+        if len(blob) > MAP_BG_MAX_BYTES:
+            emit("action_error", {"message": "이미지가 너무 큽니다 (최대 6MB)."})
+            return
+        filename = f"track_{uuid.uuid4().hex}{ext}"
+        with open(os.path.join(MAP_BG_DIR, filename), "wb") as f:
+            f.write(blob)
+        cfg["url"] = f"/static/map_bg/{filename}"
+    if "dim" in data:
+        cfg["dim"] = _clamp_int(data["dim"], 0, 90, cfg["dim"])
+    room.track_bg = cfg
+    save_rooms()
+    broadcast_state(room)
 
 
 def _runtime_save_loop():
