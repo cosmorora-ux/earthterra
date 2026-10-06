@@ -284,37 +284,50 @@
   .main-grid:not(.with-grid-map) .team-block h2 { height:40px; display:flex; align-items:center; margin:0 0 10px 2px; }
   .sort-row:has(> #multiSkillSlot:empty) { display:none; }
   /* ================================================================
-     홀로그램 카드 효과 : 마우스를 올리면 카드가 살짝 기울고, 무지개 포일과 반사광이 포인터를 따라 움직입니다.
-     (JS가 --mx/--my(포인터 위치 %), --rx/--ry(기울기 deg), --hp(중심에서 먼 정도 0~1)를 카드에 넣어줍니다)
+     홀로그램(글리터) 카드 효과 : 카드 영역에 마우스를 올리면 모든 카드 테두리에 무지개빛이 돌고,
+     포인터 주변이 밝게 비칩니다. 카드 안쪽은 반짝이 질감이 깔린 어두운 면이 됩니다.
+     (JS가 카드마다 --mouse-x/--mouse-y(px), --ratio-x/--ratio-y(0~1)를 넣어줍니다)
      ================================================================ */
-  .char-card, .site-card { --mx:50%; --my:50%; --rx:0deg; --ry:0deg; --hp:0;
-    transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
-    transform-style: preserve-3d; transition: transform .5s ease, border-color .12s, box-shadow .3s; isolation:isolate; }
-  .char-card.holo-on, .site-card.holo-on { transition: transform .08s linear, border-color .12s, box-shadow .3s; z-index:5; }
-  .char-card::before, .char-card::after, .site-card::before, .site-card::after {
-    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition: opacity .35s ease; z-index:2; }
-  /* 무지개 포일 */
+  .char-card, .site-card {
+    --mouse-x: -999px; --mouse-y: -999px; --ratio-x: .5; --ratio-y: .75; --light-size: 300px;
+    --glitter: url("/static/fx/glitter.png");
+    isolation: isolate; overflow: visible;
+  }
+  .site-card { position: relative; }
+  .char-card::before, .site-card::before, .char-card::after, .site-card::after {
+    content:""; position:absolute; pointer-events:none; opacity:0; transition: opacity 500ms ease;
+  }
+  /* 무지개 테두리 + 포인터 빛 (카드 전체) */
   .char-card::before, .site-card::before {
-    background:
-      repeating-linear-gradient(115deg,
-        hsl(0 90% 70%) 0%, hsl(45 90% 70%) 6%, hsl(110 80% 65%) 12%, hsl(185 85% 65%) 18%,
-        hsl(245 85% 72%) 24%, hsl(300 85% 70%) 30%, hsl(360 90% 70%) 36%);
-    background-size: 300% 300%;
-    background-position: calc(var(--mx) * 1.2) calc(var(--my) * 1.2);
-    mix-blend-mode: color-dodge;
-    filter: saturate(.9) brightness(.7) contrast(1.4);
+    inset:0; border-radius: inherit; z-index:-2;
+    background-image:
+      conic-gradient(from 0deg at var(--mouse-x) var(--mouse-y),
+        #FFBD8C 0%, #FD8585 11%, #FD8585 15%, #F882FF 27%, #F882FF 31%, #8785FE 42%, #8785FE 46%,
+        #9AFCFF 55%, #9AFCFF 59%, #99FD9C 70%, #99FD9C 74%, #FFFD84 87%, #FFFD84 91%, #FFBD8C 100%),
+      radial-gradient(calc(var(--light-size) * 1.5) circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,.7), rgba(0,0,0,.5) 50%),
+      radial-gradient(calc(var(--light-size) * 1.5) circle at var(--mouse-x) var(--mouse-y), transparent, rgb(33,22,44) 60%, var(--bg) 120%);
+    background-blend-mode: hue, color-dodge;
+    transition-delay: 0s;
   }
-  /* 반사광 */
+  /* 안쪽 면 : 반짝이 질감 + 포인터 쪽이 조금 밝은 어두운 면 (테두리 1px만 남기고 덮음) */
   .char-card::after, .site-card::after {
-    background: radial-gradient(farthest-corner circle at var(--mx) var(--my),
-      rgba(255,255,255,.22) 0%, rgba(255,255,255,.06) 30%, rgba(0,0,0,.25) 90%);
-    mix-blend-mode: overlay;
+    --bgoffsetx: calc(3px * var(--ratio-x)); --bgoffsety: calc(3px * var(--ratio-y));
+    --pointerx: calc(100% * var(--ratio-x)); --pointery: calc(100% * var(--ratio-y));
+    inset:1px; border-radius: calc(14px - 1px); z-index:-1;
+    background-color: var(--card);
+    background-image:
+      radial-gradient(var(--light-size) circle at var(--pointerx) var(--pointery), rgba(0,0,0,.75), black),
+      radial-gradient(var(--light-size) circle at var(--pointerx) var(--pointery), #252525cc, rgb(16,16,16) var(--light-size)),
+      var(--glitter), var(--glitter);
+    background-position: center, center, center, var(--bgoffsetx) var(--bgoffsety);
+    background-size: 100% 100%, 100% 100%, 256px 256px, 256px 256px;
+    background-repeat: no-repeat, no-repeat, repeat, repeat;
+    background-blend-mode: normal, color-burn, color-dodge;
+    filter: brightness(1.4) contrast(.725);
+    transition-delay: .1s;
   }
-  .char-card.holo-on::before, .site-card.holo-on::before { opacity: calc(.14 + var(--hp) * .18); }
-  .char-card.holo-on::after, .site-card.holo-on::after { opacity: 1; }
-  @media (prefers-reduced-motion: reduce) {
-    .char-card, .site-card { transform:none !important; }
-  }
+  .holo-zone.holo-hover .char-card::before, .holo-zone.holo-hover .site-card::before { opacity:1; transition-delay:.1s; }
+  .holo-zone.holo-hover .char-card::after, .holo-zone.holo-hover .site-card::after { opacity:.925; transition-delay:0s; }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
@@ -1059,7 +1072,7 @@
       <button class="sort-btn active" id="siteModeTotalBtn" onclick="setSiteViewMode('total')">전체</button>
       <button class="sort-btn" id="siteModePartsBtn" onclick="setSiteViewMode('parts')">개별</button>
     </div>
-    <div id="siteStatusCard" class="site-card panel" style="display:none;"></div>
+    <div class="holo-zone"><div id="siteStatusCard" class="site-card panel" style="display:none;"></div></div>
     <div id="gmControlPanel" class="gm-act-row panel" style="display:none;">
       <button onclick="doAction('advance_turn', {})">▶ 다음 턴</button>
       <button onclick="doAction('undo', {})">↩ 되돌리기</button>
@@ -1079,7 +1092,7 @@
       <span id="multiSkillSlot"></span>
     </div>
 
-    <div class="teams-columns">
+    <div class="teams-columns holo-zone">
       <div class="team-block">
         <h2 id="teamALabel">1팀</h2>
         <div id="teamsA" class="card-grid {% if battle_type == 'mass_raid' %}compact-list{% endif %}"></div>
@@ -4391,39 +4404,33 @@ function autoLevelMySound(need) {
   updateMyPageSoundLevel();
 }
 // ==================================================================
-// 홀로그램 카드 효과 : 카드가 자주 다시 그려지므로 문서 전체에서 이벤트를 받아 처리합니다(위임).
+// 홀로그램(글리터) 카드 효과 : 카드 영역(.holo-zone)에 마우스가 있으면 영역 안 모든 카드에
+// 포인터 위치를 넣어줘서, 빛이 카드 사이를 넘나드는 것처럼 보이게 합니다. 카드는 자주 다시
+// 그려지므로 문서 전체에서 이벤트를 받아 처리합니다.
 // ==================================================================
 (function setupHoloCards() {
-  const SEL = '.char-card, .site-card';
-  const MAX_TILT = 7;  // 최대 기울기(도)
-  let active = null;
-  function reset(card) {
-    if (!card) return;
-    card.classList.remove('holo-on');
-    card.style.setProperty('--rx', '0deg');
-    card.style.setProperty('--ry', '0deg');
-    card.style.setProperty('--mx', '50%');
-    card.style.setProperty('--my', '50%');
-    card.style.setProperty('--hp', '0');
+  const CARD_SEL = '.char-card, .site-card';
+  let zone = null;
+  function apply(z, e) {
+    for (const card of z.querySelectorAll(CARD_SEL)) {
+      const r = card.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      card.style.setProperty('--mouse-x', `${x}px`);
+      card.style.setProperty('--mouse-y', `${y}px`);
+      card.style.setProperty('--ratio-x', (x / r.width).toFixed(3));
+      card.style.setProperty('--ratio-y', (y / r.height).toFixed(3));
+    }
   }
   document.addEventListener('pointermove', (e) => {
     if (e.pointerType === 'touch') return;
-    const card = e.target.closest ? e.target.closest(SEL) : null;
-    if (active && active !== card) { reset(active); active = null; }
-    if (!card) return;
-    active = card;
-    const r = card.getBoundingClientRect();
-    const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-    const py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
-    card.classList.add('holo-on');
-    card.style.setProperty('--mx', `${(px * 100).toFixed(1)}%`);
-    card.style.setProperty('--my', `${(py * 100).toFixed(1)}%`);
-    card.style.setProperty('--ry', `${((px - 0.5) * 2 * MAX_TILT).toFixed(2)}deg`);
-    card.style.setProperty('--rx', `${((0.5 - py) * 2 * MAX_TILT).toFixed(2)}deg`);
-    card.style.setProperty('--hp', Math.min(1, Math.hypot(px - 0.5, py - 0.5) * 2).toFixed(2));
+    const z = e.target.closest ? e.target.closest('.holo-zone') : null;
+    if (zone && zone !== z) zone.classList.remove('holo-hover');
+    zone = z;
+    if (!z) return;
+    z.classList.add('holo-hover');
+    apply(z, e);
   }, { passive: true });
-  document.addEventListener('pointerleave', () => { reset(active); active = null; });
-  window.addEventListener('blur', () => { reset(active); active = null; });
+  document.addEventListener('pointerleave', () => { if (zone) zone.classList.remove('holo-hover'); zone = null; });
 })();
 </script>
 </body>
