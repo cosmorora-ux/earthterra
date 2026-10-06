@@ -338,7 +338,10 @@
   .map-frame::after { display:none; }
   /* 카드·지도 외 블럭(채팅창/상단바/행동 블럭/BGM)은 효과를 50%로 약하게 */
   .member-panel.holo-on::before, .topbar.v2.holo-on::before, .action-bar-bottom.holo-on::before, .bgm-player.holo-on::before { opacity:.5 !important; }
-  .member-panel.holo-on::after, .topbar.v2.holo-on::after, .action-bar-bottom.holo-on::after, .bgm-player.holo-on::after { opacity:.46 !important; }
+  /* 안쪽 면은 그대로 덮어서(뒤의 둥근 불빛이 비쳐 보이지 않게) 두고, 안쪽 면의 밝기와 불빛 크기를 줄입니다 */
+  .member-panel.holo-on::after, .topbar.v2.holo-on::after, .action-bar-bottom.holo-on::after, .bgm-player.holo-on::after {
+    opacity:.925 !important; filter: brightness(1.05) contrast(.725); }
+  .member-panel, .topbar.v2, .action-bar-bottom, .bgm-player { --light-size: 200px; }
   .char-card.holo-on::before, .site-card.holo-on::before, .compact-card.holo-on::before, .member-panel.holo-on::before, .topbar.v2.holo-on::before, .action-bar-bottom.holo-on::before, .map-frame.holo-on::before, .bgm-player.holo-on::before { opacity:1; transition-delay:.1s; }
   .char-card.holo-on::after, .site-card.holo-on::after, .compact-card.holo-on::after, .member-panel.holo-on::after, .topbar.v2.holo-on::after, .action-bar-bottom.holo-on::after, .map-frame.holo-on::after, .bgm-player.holo-on::after { opacity:.925; transition-delay:0s; }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
