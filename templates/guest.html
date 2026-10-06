@@ -138,9 +138,37 @@
   .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding: 0 4px; flex-shrink:0; }
   .breadcrumb { color: var(--muted); font-size:15px; }
   .breadcrumb b { color: var(--text); }
-  .bgm-label { color: var(--muted); font-size:15px; display:flex; align-items:center; gap:6px; }
-  .bgm-label button { background:transparent; border:1px solid var(--card-border); color: var(--text); border-radius:6px; padding:2px 8px; font-size:14px; cursor:pointer; }
-  .bgm-label input[type="range"] { width:70px; accent-color: var(--accent-blue); }
+  /* ---------- 배경음악 플레이어 (상단 오른쪽) ---------- */
+  .bgm-player { display:flex; align-items:center; gap:10px; padding:6px 12px 6px 10px; max-width:420px; min-width:0;
+    background: linear-gradient(135deg, rgba(0,67,255,.10), rgba(255,255,255,.02)); border:1px solid var(--card-border);
+    border-radius:999px; }
+  .bgm-eq { display:flex; align-items:flex-end; gap:2px; width:18px; height:16px; flex:none; }
+  .bgm-eq span { flex:1; height:30%; background: var(--muted); border-radius:1px; transition: background .2s; }
+  .bgm-player.playing .bgm-eq span { background: #5b8cff; animation: bgmEq 1s ease-in-out infinite; }
+  .bgm-player.playing .bgm-eq span:nth-child(2) { animation-delay: -.4s; }
+  .bgm-player.playing .bgm-eq span:nth-child(3) { animation-delay: -.7s; }
+  .bgm-player.playing .bgm-eq span:nth-child(4) { animation-delay: -.2s; }
+  @keyframes bgmEq { 0%,100% { height:25%; } 50% { height:100%; } }
+  .bgm-info { display:flex; flex-direction:column; min-width:0; line-height:1.15; }
+  .bgm-kicker { font-size:9px; letter-spacing:.12em; color: var(--muted); font-weight:700; }
+  .bgm-player.playing .bgm-kicker { color:#5b8cff; }
+  .bgm-title { font-size:13px; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+  .bgm-player:not(.playing) .bgm-title { color: var(--muted); }
+  .bgm-mute { flex:none; width:26px; height:26px; border-radius:50%; border:none; background:rgba(255,255,255,.06);
+    color: var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px; }
+  .bgm-mute:hover { background:rgba(255,255,255,.14); }
+  .bgm-vol-num { font-size:11px; color: var(--muted); width:22px; text-align:right; font-variant-numeric: tabular-nums; flex:none; }
+
+  /* 공용 슬라이더 : 얇은 트랙 + 채워진 부분 + 동그란 손잡이 (--fill 값은 JS가 갱신) */
+  input[type="range"].nice-range { -webkit-appearance:none; appearance:none; width:84px; height:4px; border-radius:999px; cursor:pointer;
+    background: linear-gradient(to right, #5b8cff 0%, #5b8cff var(--fill, 70%), rgba(255,255,255,.14) var(--fill, 70%), rgba(255,255,255,.14) 100%);
+    outline:none; margin:0; }
+  input[type="range"].nice-range::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
+    background:#fff; box-shadow:0 0 0 3px rgba(91,140,255,.35); transition: transform .12s; }
+  input[type="range"].nice-range:hover::-webkit-slider-thumb { transform:scale(1.2); }
+  input[type="range"].nice-range::-moz-range-thumb { width:12px; height:12px; border:none; border-radius:50%; background:#fff; box-shadow:0 0 0 3px rgba(91,140,255,.35); }
+  input[type="range"].nice-range::-moz-range-track { background:transparent; }
+  input[type="range"].nice-range:disabled { opacity:.4; cursor:default; }
 
   /* ---------- 메인 그리드 (좌측 패널/격자 + 카드) ---------- */
   /* 좌측 패널(격자 지도 포함)은 항상 우측 카드 영역 높이에 맞춰 늘어납니다(grid 기본 stretch).
@@ -630,7 +658,7 @@
     <div class="mypage-sound-controls">
       <button class="btn-plain" id="myPageSoundUploadBtn" onclick="document.getElementById('mySoundFileInput').click()">업로드</button>
       <button class="btn-plain" id="myPageSoundPreviewBtn" onclick="previewMySoundEffect()" disabled><i class="fa-solid fa-headphones"></i> 미리듣기</button>
-      <input type="range" id="myPageSoundVolume" min="0" max="100" value="100" onchange="onMySoundEffectVolumeChange()" data-tip="효과음 음량 (본인에게만 들려요)">
+      <input type="range" class="nice-range" id="myPageSoundVolume" min="0" max="100" value="100" oninput="paintRange(this)" onchange="onMySoundEffectVolumeChange()" data-tip="효과음 음량 (본인에게만 들려요)">
     </div>
     <div class="hint" style="margin-top:4px;">최대 6초만 재생되고, 업로드 파일은 5MB까지 가능합니다.</div>
     <input type="file" id="mySoundFileInput" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,.mp3,.wav,.ogg,.m4a,.aac" style="display:none;" onchange="onMySoundEffectFileChosen(event)">
@@ -656,10 +684,15 @@
 
 <div class="breadcrumb-row">
   <div class="breadcrumb"><b>전투 화면</b> ◢ {{ battle_type_label }}</div>
-  <div class="bgm-label">
-    <i class="fa-solid fa-volume-high" style="color:var(--muted);"></i>
-    <span id="musicStatus">재생 없음</span>
-    <input type="range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
+  <div class="bgm-player" id="bgmPlayer">
+    <div class="bgm-eq" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <div class="bgm-info">
+      <div class="bgm-kicker" id="musicKicker">BGM</div>
+      <div class="bgm-title"><span id="musicStatus">재생 없음</span></div>
+    </div>
+    <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()" data-tip="음소거 켜기/끄기 (나에게만 적용)"><i class="fa-solid fa-volume-high"></i></button>
+    <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
+    <span class="bgm-vol-num" id="musicVolumeNum"></span>
   </div>
 </div>
 
@@ -2769,6 +2802,7 @@ let musicVolume = parseInt(localStorage.getItem('musicVolume') || '70', 10);
 (function initVolumeSlider() {
   const slider = document.getElementById('musicVolumeSlider');
   if (slider) slider.value = musicVolume;
+  refreshVolumeUi();
 })();
 
 function toggleFullscreen() {
@@ -2958,6 +2992,7 @@ function renderMyPage() {
   soundVolume.disabled = !canEdit;
   if (document.activeElement !== soundVolume) {
     soundVolume.value = c.sound_effect_volume != null ? c.sound_effect_volume : 100;
+    paintRange(soundVolume);
   }
 }
 
@@ -3093,6 +3128,38 @@ function onVolumeChange(value) {
   musicVolume = parseInt(value, 10);
   localStorage.setItem('musicVolume', musicVolume);
   applyVolume();
+  refreshVolumeUi();
+}
+
+// 슬라이더의 채워진 부분(왼쪽 파란색) 길이를 현재 값에 맞춥니다.
+function paintRange(el) {
+  if (!el) return;
+  const min = parseFloat(el.min || 0), max = parseFloat(el.max || 100);
+  el.style.setProperty('--fill', `${((parseFloat(el.value) - min) / (max - min)) * 100}%`);
+}
+
+let musicVolumeBeforeMute = null;
+function toggleMusicMute() {
+  if (musicVolume > 0) {
+    musicVolumeBeforeMute = musicVolume;
+    onVolumeChange(0);
+  } else {
+    onVolumeChange(musicVolumeBeforeMute || 70);
+  }
+  const slider = document.getElementById('musicVolumeSlider');
+  if (slider) slider.value = musicVolume;
+  refreshVolumeUi();
+}
+
+function refreshVolumeUi() {
+  paintRange(document.getElementById('musicVolumeSlider'));
+  const num = document.getElementById('musicVolumeNum');
+  if (num) num.textContent = musicVolume;
+  const btn = document.getElementById('musicMuteBtn');
+  if (btn) {
+    const icon = musicVolume === 0 ? 'fa-volume-xmark' : (musicVolume < 40 ? 'fa-volume-low' : 'fa-volume-high');
+    btn.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+  }
 }
 
 function applyVolume() {
@@ -3112,7 +3179,14 @@ function applyVolume() {
 function updateMusicStatusText() {
   const statusEl = document.getElementById('musicStatus');
   if (!statusEl) return;
-  if (!musicState) { statusEl.textContent = '재생 없음'; return; }
+  const player = document.getElementById('bgmPlayer');
+  const kicker = document.getElementById('musicKicker');
+  if (!musicState) {
+    statusEl.textContent = '재생 없음';
+    if (player) player.classList.remove('playing');
+    if (kicker) kicker.textContent = 'BGM';
+    return;
+  }
   const audio = document.getElementById('mp3Player');
   let playing = false;
   if (musicState.type === 'mp3') {
@@ -3121,7 +3195,10 @@ function updateMusicStatusText() {
     playing = !!(ytPlayer && ytPlayer.getPlayerState && ytPlayer.getPlayerState() === 1);
   }
   const title = musicState.title || (musicState.type === 'youtube' ? '유튜브' : 'mp3');
-  statusEl.textContent = playing ? `${title} 재생 중` : `멈춤 (${title})`;
+  statusEl.textContent = title;
+  statusEl.parentElement.title = title;
+  if (player) player.classList.toggle('playing', playing);
+  if (kicker) kicker.textContent = playing ? 'NOW PLAYING' : 'PAUSED';
 }
 setInterval(updateMusicStatusText, 1000);
 
