@@ -30,7 +30,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.8"
+SERVER_BUILD = "2026-10-06.9"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
