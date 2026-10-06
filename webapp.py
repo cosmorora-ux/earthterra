@@ -28,7 +28,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-03.5"
+SERVER_BUILD = "2026-10-06.1"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -337,6 +337,7 @@ def build_character_public(c):
         "dodging_this_round": c.dodging_this_round,
         "protecting_ally": c.protecting_ally,
         "pending_attacks": len(c.pending_attacks),
+        "pending_heals": sum(h["amount"] for h in c.pending_heals),
         "stats": dict(c.stats),
         "stat_total": c.stat_total,
         "available_actions": c.available_actions(),

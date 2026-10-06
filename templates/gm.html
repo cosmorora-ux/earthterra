@@ -970,6 +970,7 @@ function renderCardHtml(c) {
   if (c.polarize_active) badges.push('🛡 편광중');
   if (c.has_leech_buff) badges.push('🩸 흡수버프');
   if (c.pending_attacks) badges.push(`⚠ 보류 ${c.pending_attacks}건`);
+  if (c.pending_heals) badges.push(`💚 회복 대기 +${c.pending_heals}`);
   if (c.interceptors && c.interceptors.length) badges.push(`🛡 대리방어 ${c.interceptors.join(', ')}`);
   if (c.commanded_by) badges.push(`🎯 유도 효과: ${c.commanded_by} 공격`);
 

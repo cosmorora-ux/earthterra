@@ -56,6 +56,7 @@ class Character:
         self.protecting_ally = None       # 탱커가 '방어'로 자신이 아닌 아군을 지정했을 때 그 아군 이름
         self.dodging_this_round = False   # 이번 라운드에 회피를 선언했는지 여부(딜러 전용)
         self.pending_attacks = []         # 아직 정산되지 않은 공격(피해 보류) 목록
+        self.pending_heals = []           # 보류 공격이 있을 때 받은 회복 - 피해 정산 직후에 적용됩니다
         self.fleeing_watch_key = None     # 도주 시도 중, 이 팀 키("A"/"B")의 턴이 끝나면 도주가 확정됩니다.
         # 1라운드 선공팀 힐러 전용 - "후공" 버튼으로 이번 라운드 행동을 후공 페이즈까지
         # 미루겠다고 선언했는지 여부. 이게 True여야만 (1) 아직 행동 안 해도 선공→후공 전환을

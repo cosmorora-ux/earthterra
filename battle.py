@@ -345,6 +345,7 @@ class Battle:
                 "protecting_ally": c.protecting_ally,
                 "dodging_this_round": c.dodging_this_round,
                 "pending_attacks": copy.deepcopy(c.pending_attacks),
+                "pending_heals": copy.deepcopy(c.pending_heals),
                 "fleeing_watch_key": c.fleeing_watch_key,
                 "grid_pos": c.grid_pos,
                 "moved_this_round": c.moved_this_round,
@@ -422,6 +423,7 @@ class Battle:
             c.protecting_ally = cs["protecting_ally"]
             c.dodging_this_round = cs["dodging_this_round"]
             c.pending_attacks = copy.deepcopy(cs["pending_attacks"])
+            c.pending_heals = copy.deepcopy(cs.get("pending_heals", []))
             c.fleeing_watch_key = cs["fleeing_watch_key"]
             c.grid_pos = cs["grid_pos"]
             c.moved_this_round = cs["moved_this_round"]
@@ -614,13 +616,31 @@ class Battle:
         actor 자신에게 걸려있던 '보류된 공격'을 정산합니다.
         actor가 이번 라운드 자신의 행동(방어/회피 등)을 선언한 직후, 다른 효과를 적용하기 전에 호출됩니다.
         """
-        if not actor.pending_attacks:
-            return
         pending = actor.pending_attacks
         actor.pending_attacks = []
         for entry in pending:
             self._log(f"[피해 정산] {entry['attacker_name']} → {actor.name}", tag="action")
             self._resolve_hit(entry["atk"], actor, entry.get("defense_stat_mult", 1.0))
+        # 피해 정산이 모두 끝난 뒤, 그동안 맡아둔 회복을 받은 순서대로 적용합니다.
+        heals = actor.pending_heals
+        actor.pending_heals = []
+        for h in heals:
+            was_downed = actor.status == Character.STATUS_DOWNED
+            hp_before = actor.current_hp
+            actor.heal(h["amount"])
+            self._log(f"[회복 정산] {h['source']} → {actor.name} +{h['amount']}", tag="heal")
+            self._log(f"{actor.name} HP {hp_before} → {actor.current_hp}", tag="hp")
+            if was_downed and actor.status == Character.STATUS_ALIVE:
+                self._log(f"{actor.name} 위기를 넘기고 전투에 복귀했습니다!", tag="system")
+
+    def _apply_or_queue_heal(self, target: Character, amount: int, source: str) -> bool:
+        """보류된 공격이 있는 대상의 회복은 피해 정산 직후로 미룹니다(회복량이 최대 체력에 막혀 버려지지 않도록).
+        미뤘으면 True, 바로 적용했으면 False를 돌려줍니다."""
+        if target.pending_attacks:
+            target.pending_heals.append({"amount": amount, "source": source})
+            return True
+        target.heal(amount)
+        return False
 
     # ------------------------------------------------------------------
     # 행동 : 방어 정산 (점령전 거점 전용) - 보류된 공격만 정산하고, 이어서 공격/힐을 할 수 있습니다.
@@ -1303,10 +1323,12 @@ class Battle:
         self._resolve_pending_attacks(healer)
 
         target_was_downed = target.status == Character.STATUS_DOWNED
-        result = self.heal_skill.execute(healer, target, overrides=self.formula_overrides)
+        heal = config.roll_heal(healer.stats, role=healer.role, overrides=self.formula_overrides)
+        hp_before = target.current_hp
+        queued = self._apply_or_queue_heal(target, heal["total"], healer.name)
+        hp_after = target.current_hp
         healer.has_acted = True
 
-        heal = result["heal"]
         self._log(f"{healer.name} 힐 → {target.name}", tag="action")
         self._log_operator_only(
             f"힐 굴림 : 다이스(1~{heal['dice_sides']}, {heal['dice_count']}개, "
@@ -1326,11 +1348,18 @@ class Battle:
                 f"({healer.name}은(는) 메딕이 아니므로 크리티컬이 발생하지 않습니다)", tag="formula",
             )
 
+        heal_note = " (피해 정산 후 적용)" if queued else ""
         if heal["is_crit"]:
-            self._log(f"회복 {heal['total']}", tag="heal", role=healer.role)
+            self._log(f"회복 {heal['total']}{heal_note}", tag="heal", role=healer.role)
         else:
-            self._log(f"회복 {heal['total']}", tag="heal")
-        self._log(f"{target.name} HP {result['hp_before']} → {result['hp_after']}", tag="hp")
+            self._log(f"회복 {heal['total']}{heal_note}", tag="heal")
+        if queued:
+            self._log(
+                f"→ {target.name}에게 보류된 공격이 있어, {target.name}이(가) 행동해 피해가 정산된 직후 회복됩니다.",
+                tag="system",
+            )
+        else:
+            self._log(f"{target.name} HP {hp_before} → {hp_after}", tag="hp")
 
         if target_was_downed and target.status == Character.STATUS_ALIVE:
             self._log(f"{target.name} 위기를 넘기고 전투에 복귀했습니다!", tag="system")
@@ -1388,10 +1417,12 @@ class Battle:
         for medic in medics:
             heal = config.roll_heal(actor.stats, role=actor.role, overrides=merged)
             hp_before = medic.current_hp
-            medic.heal(heal["total"])
-            self._log(
-                f"[환류 - 메딕 회복] {medic.name} +{heal['total']} ({hp_before}→{medic.current_hp})", tag="heal",
-            )
+            if self._apply_or_queue_heal(medic, heal["total"], f"{actor.name} 환류"):
+                self._log(f"[환류 - 메딕 회복] {medic.name} +{heal['total']} (피해 정산 후 적용)", tag="heal")
+            else:
+                self._log(
+                    f"[환류 - 메딕 회복] {medic.name} +{heal['total']} ({hp_before}→{medic.current_hp})", tag="heal",
+                )
 
         # 3) 지정 아군 3인에게 3턴 흡수 버프 부여
         for t in targets:
@@ -1441,9 +1472,10 @@ class Battle:
             if bonus_target is not None and ally is bonus_target:
                 total = round(total * (1 + config.SKILL_RESTORE_BONUS_PCT / 100))
             hp_before = ally.current_hp
-            ally.heal(total)
+            queued = self._apply_or_queue_heal(ally, total, f"{actor.name} 복원")
             bonus_note = f" (+{config.SKILL_RESTORE_BONUS_PCT}% 보너스)" if ally is bonus_target else ""
-            self._log(f"[복원] {ally.name} +{total}{bonus_note} ({hp_before}→{ally.current_hp})", tag="heal")
+            hp_note = "(피해 정산 후 적용)" if queued else f"({hp_before}→{ally.current_hp})"
+            self._log(f"[복원] {ally.name} +{total}{bonus_note} {hp_note}", tag="heal")
 
         actor.has_acted = True
         self._maybe_trigger_leech(actor)
