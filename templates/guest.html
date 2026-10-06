@@ -256,7 +256,7 @@
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
   .chat-tab-cfg-row .hint { margin-top:6px; }
 
-  .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding: 0 4px; flex-shrink:0; }
+  .breadcrumb-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; padding: 0 4px; flex-shrink:0; }
   .breadcrumb { color: var(--muted); font-size:15px; }
   .breadcrumb b { color: var(--text); }
   /* ---------- 배경음악 플레이어 (상단 오른쪽) ---------- */
@@ -478,7 +478,7 @@
   .main-grid.with-grid-map #siteViewToggle,
   .main-grid.with-grid-map #siteStatusCard { display:none !important; }
   #gridSection.map-v2 { padding:0; background:transparent; border:none; }
-  .grid-notice { display:flex; align-items:center; gap:10px; padding:4px 4px 14px; font-size:15px; min-height:22px; }
+  .grid-notice { display:flex; align-items:center; gap:10px; padding:0 4px; font-size:15px; min-height:22px; flex:1; min-width:0; }
   .grid-notice .bell { font-size:18px; opacity:.9; }
   .map-frame {
     padding:22px; border-radius:6px; border:1px solid var(--panel-border);
@@ -489,7 +489,7 @@
   .gmap { border-collapse:collapse; }
   .gmap td { padding:0; border:1px solid rgba(255,255,255,var(--grid-line, .22)); position:relative; }
   .map-frame { position:relative; }
-  .map-bg-btn { margin-left:auto; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid var(--card-border); color: var(--text);
+  .map-bg-btn { margin-left:12px; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid var(--card-border); color: var(--text);
     border-radius:7px; padding:4px 10px; font-size:13px; cursor:pointer; display:none; }
   .map-bg-btn:hover { background:rgba(255,255,255,.12); }
   .modal-box.mapbg-modal { width:420px; max-height:88vh; overflow-y:auto; }
@@ -932,6 +932,16 @@
   <div class="seg" id="roundInfo">-</div>
   <span class="label" id="roundTimerLabel"><span id="roundTimer">--:--</span></span>
   <div class="spacer"></div>
+  <div class="clock" id="liveClock">--:--:--</div>
+</div>
+
+<div class="breadcrumb-row">
+  {% if grid_size %}
+  <div class="grid-notice"><span class="bell"><i class="fa-solid fa-radio"></i></span><span id="gridNoticeText"></span>
+      <button class="map-bg-btn" id="mapBgBtn" onclick="openMapBgModal()"><i class="fa-solid fa-image"></i> 배경·몹 이미지</button></div>
+  {% else %}
+  <div></div>
+  {% endif %}
   <div class="bgm-player" id="bgmPlayer">
     <div class="bgm-eq" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
     <div class="bgm-info">
@@ -942,7 +952,6 @@
     <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
     <span class="bgm-vol-num" id="musicVolumeNum"></span>
   </div>
-  <div class="clock" id="liveClock">--:--:--</div>
 </div>
 
 <div class="layout-grid">
@@ -951,8 +960,6 @@
 <div class="main-grid {% if grid_size %}with-grid-map{% endif %}">
   {% if grid_size %}
   <div id="gridSection" class="map-v2">
-    <div class="grid-notice"><span class="bell"><i class="fa-solid fa-radio"></i></span><span id="gridNoticeText"></span>
-      <button class="map-bg-btn" id="mapBgBtn" onclick="openMapBgModal()"><i class="fa-solid fa-image"></i> 배경·몹 이미지</button></div>
     <div class="map-frame">
       <div id="gridMap"></div>
     </div>
@@ -1023,7 +1030,7 @@
 <div class="member-col">
 <div class="member-panel panel">
   <div class="member-header">
-    <b>Member</b>
+    <b>Chat</b>
     <button class="gear" id="chatTabSettingsBtn" style="display:none;" onclick="toggleChatTabSettings()" data-tip="채팅 탭 설정">⚙</button>
   </div>
 
