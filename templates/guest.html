@@ -272,7 +272,7 @@
   .sort-btn { background:#0c0c0d; border:1px solid var(--card-border); color: var(--muted); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer; }
   .sort-btn.active { color:#fff; border-color: var(--accent-blue); background:#132038; }
 
-  /* 거점 상태 헤더 카드 (점령전 전용) */
+  /* 거점 상태 헤더 카드 (공성전 전용) */
   .site-card { border:1px solid var(--card-border); border-radius:14px; padding:14px 16px; margin-bottom:14px; }
   .site-card .site-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
   .site-card .site-title { font-size:22px; font-weight:700; }
@@ -420,7 +420,7 @@
   .ap-close { display:block; color: var(--muted); font-size:14px; cursor:pointer; background:none; border:none; flex-shrink:0; }
   .ap-multi-select { width:100%; margin-bottom:6px; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:6px; padding:5px; font-size:14px; }
 
-  /* ---------- GM(비밀번호 입장) 전용 행동 실행 패널 - PVP/점령전 ---------- */
+  /* ---------- GM(비밀번호 입장) 전용 행동 실행 패널 - PVP/공성전 ---------- */
   .gm-act-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 14px; margin-bottom:10px; }
   .gm-act-row select { background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:6px; padding:6px 8px; font-size:14px; max-width:180px; }
   .gm-act-row .btn-primary { padding:6px 14px; font-size:14px; }
@@ -429,7 +429,7 @@
   #gridSection.panel { padding:16px 18px; margin-bottom:16px; }
   #gridSection b { font-size:16px; }
 
-  /* ---------- 점령전/마스 레이드 새 화면 : 카드 없이 가운데를 넓은 맵으로만 씁니다 ---------- */
+  /* ---------- 공성전/마스 레이드 새 화면 : 카드 없이 가운데를 넓은 맵으로만 씁니다 ---------- */
   .main-grid.with-grid-map { grid-template-columns: 1fr; }
   .main-grid.with-grid-map .teams-columns,
   .main-grid.with-grid-map .round-track-ph,
@@ -450,7 +450,7 @@
   .map-bg-btn { margin-left:auto; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid var(--card-border); color: var(--text);
     border-radius:7px; padding:4px 10px; font-size:13px; cursor:pointer; display:none; }
   .map-bg-btn:hover { background:rgba(255,255,255,.12); }
-  .modal-box.mapbg-modal { width:420px; }
+  .modal-box.mapbg-modal { width:420px; max-height:88vh; overflow-y:auto; }
   .mapbg-preview { height:150px; border-radius:10px; border:1px dashed var(--card-border); background:#0c0c0d center/cover no-repeat;
     display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:13px; cursor:pointer; margin-bottom:12px; position:relative; overflow:hidden; }
   .mapbg-preview .dim { position:absolute; inset:0; pointer-events:none; }
@@ -460,6 +460,14 @@
   .mapbg-row .val { width:40px; text-align:right; color: var(--muted); font-size:13px; font-variant-numeric: tabular-nums; }
   .mapbg-row input[type="range"] { flex:1; }
   .mapbg-seg { display:flex; gap:4px; }
+  .boss-img-title { font-size:14px; font-weight:700; margin:16px 0 4px; padding-top:12px; border-top:1px solid var(--panel-border); }
+  .boss-img-hint { font-size:12px; color: var(--muted); margin-bottom:8px; }
+  .boss-img-row { display:flex; align-items:center; gap:10px; padding:6px 0; }
+  .boss-img-thumb { width:64px; height:64px; flex:none; border-radius:8px; border:1px dashed var(--card-border); background:#0c0c0d center/100% 100% no-repeat;
+    cursor:pointer; position:relative; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; overflow:hidden; image-rendering: pixelated; }
+  .boss-img-thumb i { border:1px solid rgba(255,255,255,.18); }
+  .boss-img-name { flex:1; font-size:14px; }
+  .boss-img-name small { display:block; color: var(--muted); font-size:12px; }
   .mapbg-seg button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:7px; padding:5px 10px; font-size:13px; cursor:pointer; }
   .mapbg-seg button.on { background: var(--accent-blue); border-color: var(--accent-blue); color:#fff; }
   .gmap .gcell { position:relative; box-sizing:border-box; display:flex; align-items:center; justify-content:center; overflow:hidden; }
@@ -628,7 +636,7 @@
 
 <div id="mapBgModal" class="modal-overlay" onclick="if(event.target===this) closeMapBgModal()">
   <div class="modal-box mapbg-modal panel">
-    <div class="modal-title">지도 배경 설정</div>
+    <div class="modal-title">지도 배경 · 몹 이미지 설정</div>
     <div class="mapbg-preview" id="mapBgPreview" onclick="document.getElementById('mapBgFileInput').click()" data-tip="클릭해서 이미지 올리기">
       <div class="dim" id="mapBgPreviewDim"></div><span id="mapBgPreviewText">클릭해서 배경 이미지 올리기 (최대 6MB)</span>
     </div>
@@ -650,6 +658,8 @@
       <input type="range" class="nice-range" id="mapBgLine" min="0" max="100" oninput="paintRange(this); onMapBgSlider()" onchange="setMapBg({line:this.value})">
       <span class="val" id="mapBgLineVal"></span>
     </div>
+    <div id="bossImgSection"></div>
+    <input type="file" id="bossImgFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onBossImgChosen(event)">
     <div class="row" style="justify-content:space-between;">
       <button class="btn" style="background:transparent;border:1px solid var(--card-border);color:var(--text);font-weight:500;" onclick="if(confirm('배경 이미지를 지우고 기본 배경으로 되돌릴까요?')) setMapBg({reset:true})">기본으로 되돌리기</button>
       <button class="btn" onclick="closeMapBgModal()">닫기</button>
@@ -851,7 +861,7 @@
   {% if grid_size %}
   <div id="gridSection" class="map-v2">
     <div class="grid-notice"><span class="bell">🔔</span><span id="gridNoticeText"></span>
-      <button class="map-bg-btn" id="mapBgBtn" onclick="openMapBgModal()"><i class="fa-solid fa-image"></i> 배경 설정</button></div>
+      <button class="map-bg-btn" id="mapBgBtn" onclick="openMapBgModal()"><i class="fa-solid fa-image"></i> 배경·몹 이미지</button></div>
     <div class="map-frame">
       <div id="gridMap"></div>
     </div>
@@ -1285,7 +1295,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-06.5";
+const EXPECTED_SERVER_BUILD = "2026-10-06.6";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -1297,6 +1307,7 @@ socket.on('public_state', (state) => {
   lastRosterMypage = state.roster_mypage || {};
   lastShop = state.shop || lastShop;
   lastMapBg = state.map_bg || null;
+  lastBossImages = state.boss_images || {};
   lastOnlineCharacters = state.online_characters || [];
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
   lastSiteDice = state.site_dice || null;
@@ -1452,7 +1463,7 @@ function shiftMobCarousel(delta) {
 
 let lastPreviewTeams = null;  // 전투 시작 전 "무작위 배치" 미리보기 - {"team_a":[...], "team_b":[...]} 또는 null
 
-// 1팀/2팀(teamLabel 'A'/'B')을 각자의 칸(teamsA/teamsB)에 나눠 그립니다. 점령전/마스 레이드는 2팀(거점/몹)을
+// 1팀/2팀(teamLabel 'A'/'B')을 각자의 칸(teamsA/teamsB)에 나눠 그립니다. 공성전/마스 레이드는 2팀(거점/몹)을
 // siteStatusCard에서 따로 보여주므로 2팀 칸은 통째로 숨깁니다. 두 팀 모두 항상 포지션 순
 // (스트라이커 → 가디언 → 메딕)으로 고정 정렬합니다.
 function splitAndRenderTeams(list, renderOne) {
@@ -1529,7 +1540,7 @@ function renderBattle(battle) {
 function renderCards() {
   const useCompact = BATTLE_TYPE === 'mass_raid';
   const renderOne = useCompact ? renderCompactCardHtml : renderCardHtml;
-  // 점령전/마스 레이드는 러너(1팀)만 이 칸에 넣습니다(2팀은 siteStatusCard에서 따로 보여줍니다).
+  // 공성전/마스 레이드는 러너(1팀)만 이 칸에 넣습니다(2팀은 siteStatusCard에서 따로 보여줍니다).
   splitAndRenderTeams(lastAllForCards, renderOne);
   const slot = document.getElementById('multiSkillSlot');
   if (slot) slot.innerHTML = renderMultiSkillTrigger();
@@ -1580,7 +1591,7 @@ let lastAllForCards = [];
 let lastMyTeam = null;
 let lastSeesAll = false;
 let lastForcedTargetNames = new Set();
-let lastSiteDice = null;  // 점령전 : { round_no, value, used, stale }
+let lastSiteDice = null;  // 공성전 : { round_no, value, used, stale }
 
 function roleColorVar(role) {
   return `var(--role-${role}, #9aa0a6)`;
@@ -2021,11 +2032,12 @@ function renderGrid(battle, all) {
         onclick = (isSelfTargetable || isTargetable)
           ? `onclick="onGridTargetClick('${selectedGridChar}','${c.name}')"`
           : `onclick="onGridActorClick('${c.name}')"`;
-        if (c.boss_section && c.avatar_url) {
+        const bossImg = c.boss_section ? (bossImageFor(c) || c.avatar_url) : null;
+        if (bossImg) {
           // BOSS(2x2)는 4칸에 걸쳐 한 장의 이미지가 이어지도록, 칸마다 이미지의 해당 1/4만 보여줍니다.
           const pos = { NW: '0% 0%', NE: '100% 0%', SW: '0% 100%', SE: '100% 100%' }[c.boss_section] || 'center';
           cellCls = 'boss';
-          cellStyle = `background-image:url('${c.avatar_url}'); background-size:200% 200%; background-position:${pos};`;
+          cellStyle = `background-image:url('${bossImg}'); background-size:200% 200%; background-position:${pos};`;
         } else {
           cellCls = c.teamLabel === 'A' ? 'ally' : 'enemy';
         }
@@ -2078,7 +2090,7 @@ function renderGrid(battle, all) {
   renderGridActionPopup(battle, all);
 }
 
-// 맵 위 알림줄 : 점령전은 이번 라운드 거점 행동 횟수, 마스 레이드는 공개된 전조(피해 구역) 칸 수를 안내합니다.
+// 맵 위 알림줄 : 공성전은 이번 라운드 거점 행동 횟수, 마스 레이드는 공개된 전조(피해 구역) 칸 수를 안내합니다.
 function renderGridNotice(battle) {
   const el = document.getElementById('gridNoticeText');
   if (!el) return;
@@ -2662,7 +2674,7 @@ function myControlInfo(battle) {
 
 // ------------------------------------------------------------------
 // GM(비밀번호로 입장) 전용 진행 컨트롤 - 다음 턴/시간 초과는 모든 전투 유형 공통이고,
-// 다이스 굴리기(점령전)/전조 출력(마스 레이드)은 전투 유형에 맞는 것만 표시됩니다.
+// 다이스 굴리기(공성전)/전조 출력(마스 레이드)은 전투 유형에 맞는 것만 표시됩니다.
 // ------------------------------------------------------------------
 function refreshGmControlPanelVisibility() {
   const panel = document.getElementById('gmControlPanel');
@@ -2776,7 +2788,7 @@ function renderTelegraphControls() {
 }
 
 // ------------------------------------------------------------------
-// GM(비밀번호로 입장) 전용 행동 실행 패널 - PVP/점령전에서는 격자가 없어 카드 클릭만으로는
+// GM(비밀번호로 입장) 전용 행동 실행 패널 - PVP/공성전에서는 격자가 없어 카드 클릭만으로는
 // "누구로 행동할지"를 고를 수 없으므로, 행동자/행동/대상을 직접 드롭다운으로 지정합니다.
 // ------------------------------------------------------------------
 function refreshGmActPanelVisibility() {
@@ -3743,6 +3755,7 @@ function renderMapBgModal() {
   if (document.activeElement !== line) line.value = cfg.line;
   paintRange(dim); paintRange(line);
   onMapBgSlider();
+  renderBossImgSection();
 }
 // 슬라이더를 움직이는 동안에는 내 화면에서만 미리 보여주고, 손을 떼면(change) 저장합니다.
 function onMapBgSlider() {
@@ -3761,6 +3774,51 @@ function onMapBgFileChosen(ev) {
   if (f.size > 6 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 6MB).'); return; }
   document.getElementById('mapBgPreviewText').textContent = '올리는 중...';
   f.arrayBuffer().then(buf => socket.emit('set_map_bg', { filename: f.name, data: buf }));
+}
+// ---- 2x2 몹(BOSS) 이미지 : 4칸이 한 세트로 이어지는 한 장의 이미지 ----
+let lastBossImages = {};
+let bossImgTargetKey = null;
+function bossKeyOf(c) { return c && c.boss_group ? String(c.boss_group).split('#')[0] : null; }
+function bossImageFor(c) { const k = bossKeyOf(c); return k ? (lastBossImages[k] || null) : null; }
+function currentBossGroups() {
+  const groups = {};
+  const all = lastAllForCards || [];
+  all.forEach(c => {
+    const k = bossKeyOf(c);
+    if (!k) return;
+    if (!groups[k]) groups[k] = { key: k, members: [], fallback: null };
+    groups[k].members.push(c.name);
+    if (!groups[k].fallback && c.avatar_url) groups[k].fallback = c.avatar_url;
+  });
+  // 지금 전투에는 없어도 예전에 등록해 둔 몹 이미지는 보여줍니다(지우기 가능).
+  Object.keys(lastBossImages || {}).forEach(k => { if (!groups[k]) groups[k] = { key: k, members: [], fallback: null }; });
+  return Object.values(groups);
+}
+function renderBossImgSection() {
+  const box = document.getElementById('bossImgSection');
+  if (!box) return;
+  const groups = currentBossGroups();
+  const rows = groups.map(g => {
+    const url = lastBossImages[g.key] || null;
+    const esc = shopEsc(g.key);
+    return `<div class="boss-img-row">
+      <div class="boss-img-thumb" style="${url ? `background-image:url('${url}')` : ''}" onclick="pickBossImg('${esc}')" data-tip="클릭해서 이미지 올리기"><i></i><i></i><i></i><i></i></div>
+      <div class="boss-img-name">${esc}<small>${g.members.length ? `지금 전투: ${g.members.map(shopEsc).join(', ')}` : '지금 전투에는 없음'}${!url && g.fallback ? ' · 현재 프로필 이미지 사용 중' : ''}</small></div>
+      ${url ? `<button class="shop-btn danger sm" onclick="clearBossImg('${esc}')">지우기</button>` : `<button class="shop-btn ghost sm" onclick="pickBossImg('${esc}')">등록</button>`}
+    </div>`;
+  }).join('');
+  box.innerHTML = `<div class="boss-img-title">몹(2x2) 이미지</div>
+    <div class="boss-img-hint">한 장을 올리면 4칸에 나눠서 이어지게 보여요. 정사각형 이미지를 권장해요. 같은 이름의 몹이면 다음 전투에도 그대로 쓰여요.</div>
+    ${rows || '<div class="boss-img-hint">지금 전투에 2x2 몹이 없어요. (이름이 BOSS/NOVA로 시작하는 캐릭터)</div>'}`;
+}
+function pickBossImg(key) { bossImgTargetKey = key; document.getElementById('bossImgFileInput').click(); }
+function clearBossImg(key) { if (confirm(`'${key}' 몹 이미지를 지울까요?`)) socket.emit('set_boss_image', { key, clear: true }); }
+function onBossImgChosen(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!f || !bossImgTargetKey) return;
+  if (f.size > 6 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 6MB).'); return; }
+  f.arrayBuffer().then(buf => socket.emit('set_boss_image', { key: bossImgTargetKey, filename: f.name, data: buf }));
 }
 </script>
 </body>

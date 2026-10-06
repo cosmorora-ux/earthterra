@@ -25,12 +25,12 @@ ROOMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rooms.jso
 # RoomState의 필드 중 이 목록만 rooms.json에 저장/복원합니다.
 _PERSISTED_FIELDS = [
     "name", "battle_type", "gm_key", "guest_key", "created_at",
-    "chat_tabs_enabled", "chat_tab_labels", "userinfo_hidden", "map_bg",
+    "chat_tabs_enabled", "chat_tab_labels", "userinfo_hidden", "map_bg", "boss_images",
 ]
 
 BATTLE_TYPE_LABELS = {
     "pvp": "PVP",
-    "siege": "점령전",
+    "siege": "공성전",
     "mass_raid": "마스 레이드",
 }
 # 전투 유형별 팀 인원 기본값 : (1팀/러너팀 기본 인원, 2팀/GM팀 기본 인원)
@@ -41,7 +41,7 @@ BATTLE_TYPE_DEFAULTS = {
 }
 # 마스 레이드 격자 크기 (가로, 세로)
 MASS_RAID_GRID_SIZE = 14
-# 점령전 격자 크기 (가로, 세로) - 점령전도 마스 레이드처럼 격자 이동을 사용합니다.
+# 공성전 격자 크기 (가로, 세로) - 공성전도 마스 레이드처럼 격자 이동을 사용합니다.
 SIEGE_GRID_SIZE = 10
 # 격자 이동을 사용하는 전투 유형과 그 격자 크기
 GRID_SIZES = {
@@ -63,12 +63,12 @@ class RoomState:
         self.last_round_no = None    # round_deadline을 언제 다시 계산해야 하는지 판단하는 기준
         self.battle_type = battle_type if battle_type in BATTLE_TYPE_LABELS else "pvp"
 
-        # 점령전(siege) 전용 : "거점" 팀(2팀/GM팀)이 이번 라운드에 몇 회 행동할 수 있는지.
+        # 공성전(siege) 전용 : "거점" 팀(2팀/GM팀)이 이번 라운드에 몇 회 행동할 수 있는지.
         self.site_dice_round_no = None   # 이 굴림이 적용되는 라운드 번호
         self.site_dice_value = None      # 이번 라운드 거점 행동 허용 횟수 (1~3)
         self.site_dice_used = 0          # 이번 라운드에 이미 사용한 행동 횟수
 
-        # 점령전/레이드 전용 : GM(거점/보스)의 행동을 러너에게 공개하기 전에 미리보기 상태로 잡아둡니다.
+        # 공성전/레이드 전용 : GM(거점/보스)의 행동을 러너에게 공개하기 전에 미리보기 상태로 잡아둡니다.
         # None이 아니면 "공개 대기 중"이며, 참가자에게는 아직 아무것도 전송되지 않은 상태입니다.
         self.pending_reveal = None  # {"actor": 이름, "pub_len_before": int} 또는 None
 
@@ -103,9 +103,12 @@ class RoomState:
         # 유저 접속정보 목록에서 운영진이 눈을 꺼서(숨김) GM이 아닌 사람에게는 안 보이게 한 캐릭터 이름들
         # (보스처럼 참가자가 아닌 캐릭터용).
         self.userinfo_hidden = []
-        # 격자 지도(마스 레이드/점령전) 배경 이미지 설정. None이면 기본 배경.
+        # 격자 지도(마스 레이드/공성전) 배경 이미지 설정. None이면 기본 배경.
         # {"url": str|None, "mode": "frame"|"grid", "dim": 0~90(%), "line": 0~100(%)}
         self.map_bg = None
+        # 2x2 몹(BOSS) 이미지 - 4칸에 걸쳐 한 장으로 표시됩니다. {몹 이름(줄 이름): 이미지 URL}
+        # 같은 이름의 몹이면 다음 전투에도 그대로 쓰입니다.
+        self.boss_images = {}
 
 
 def create_room(battle_type: str = "pvp", name: str = None) -> RoomState:

@@ -29,7 +29,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.5"
+SERVER_BUILD = "2026-10-06.6"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -407,7 +407,7 @@ def build_preview_character(room, name):
 
 def telegraph_pending(room, battle):
     """
-    이번 라운드에 GM이 아직 전조(점령전 다이스 굴리기 / 마스 레이드 칸 공개)를 출력하지
+    이번 라운드에 GM이 아직 전조(공성전 다이스 굴리기 / 마스 레이드 칸 공개)를 출력하지
     않았는지 여부. 전조는 GM의 행동이므로, 이게 True인 동안은 러너의 이동을 막고
     라운드 제한시간도 아직 시작시키지 않습니다.
     """
@@ -530,6 +530,7 @@ def build_public_state(room):
         },
         "music": room.music,
         "map_bg": room.map_bg,
+        "boss_images": room.boss_images or {},
         "shop": shop_mod.shared_shop().public_payload(),
         "telegraph_cells": room.telegraph_cells,
         "preview_teams": preview_teams,
@@ -1340,7 +1341,7 @@ def on_start_battle(data):
         if info.get("room_id") == room.id:
             _sync_team_channel(room, sid, info.get("nickname"), info.get("role"))
 
-    # 점령전 거점 / 마스 레이드 적군(2팀) : 방어가 자동이라 역할과 무관하게 "방어 정산"/"공격"/"힐"만
+    # 공성전 거점 / 마스 레이드 적군(2팀) : 방어가 자동이라 역할과 무관하게 "방어 정산"/"공격"/"힐"만
     # 직접 선택합니다. 포지션이 없으므로 공격/힐 모두 치명타가 발생할 수 있습니다.
     if room.battle_type in ("siege", "mass_raid"):
         for c in room.game.battle.team_b:
@@ -1360,7 +1361,7 @@ def on_start_battle(data):
             if c.skill == config.SKILL_SHIELD:
                 c.shield_permanent = config.SKILL_SHIELD_INITIAL
 
-    # PVP/점령전 가디언 : 어그로 강제 행동을 마스 레이드의 '지휘'와 같은 이름으로 통일합니다
+    # PVP/공성전 가디언 : 어그로 강제 행동을 마스 레이드의 '지휘'와 같은 이름으로 통일합니다
     # (기존 '공격유도'는 본인 지정 시 능동 방어가 함께 붙는 차이만 있을 뿐 같은 어그로 강제
     # 메커닉이라, 웹 버전에서는 이름과 동작을 '지휘'(CommandSkill) 하나로 합칩니다).
     # 레거시 데스크톱 버전(gui.py)은 이 오버라이드를 거치지 않으므로 기존 '공격유도' 그대로입니다.
@@ -1371,7 +1372,7 @@ def on_start_battle(data):
                     config.ACTION_ATTACK, config.ACTION_GUARD, config.ACTION_DEFEND, config.ACTION_COMMAND,
                 ] + config.COMMON_ACTIONS
 
-    # 격자 전투(마스 레이드/점령전) : 중앙에 몹(거점)을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
+    # 격자 전투(마스 레이드/공성전) : 중앙에 몹(거점)을 두고 러너를 나머지 칸에 무작위 배치, 전원 이동 가능.
     if is_grid_battle:
         assign_mass_raid_positions(room.game.battle, grid_width, grid_height)
         for c in room.game.battle.team_a + room.game.battle.team_b:
@@ -1417,7 +1418,7 @@ def on_roll_site_dice(data):
         emit("action_error", {"message": "전투가 시작되지 않았습니다."})
         return
     if room.battle_type != "siege":
-        emit("action_error", {"message": "점령전 방에서만 사용할 수 있습니다."})
+        emit("action_error", {"message": "공성전 방에서만 사용할 수 있습니다."})
         return
     value = random.randint(1, 3)
     room.site_dice_round_no = battle.round_no
@@ -1442,7 +1443,7 @@ def on_telegraph_reveal(data):
         return
     battle = room.game.battle
     if battle is None or battle.grid_width is None:
-        emit("action_error", {"message": "격자 전투(점령전/마스 레이드)에서만 사용할 수 있습니다."})
+        emit("action_error", {"message": "격자 전투(공성전/마스 레이드)에서만 사용할 수 있습니다."})
         return
     cells = []
     for cell in data.get("cells", []):
@@ -1623,7 +1624,7 @@ def _round_reminder_loop():
 
 
 def _maybe_auto_advance_turn(room, battle):
-    """PVP/점령전 : 이번 턴에 행동해야 할 팀원이 전원 행동을 마치면(can_advance_turn), 커맨드
+    """PVP/공성전 : 이번 턴에 행동해야 할 팀원이 전원 행동을 마치면(can_advance_turn), 커맨드
     창에 안내를 남기고 GM이 "다음 턴"을 누르지 않아도 자동으로 턴을 넘깁니다. 메딕은
     battle.can_advance_turn()이 이미 후공 페이즈까지 자동으로 봐주므로(엔진 규칙) 여기서
     따로 처리할 필요가 없습니다 - 메딕이 실제로 행동(또는 후공 페이즈 도달)하기 전까지는
@@ -1725,14 +1726,14 @@ def on_battle_action(data):
 
     payload = data.get("payload", {})
 
-    # 점령전/레이드에서 GM이 거점(2팀) 캐릭터로 행동하면, 결과를 바로 공개하지 않고
+    # 공성전/레이드에서 GM이 거점(2팀) 캐릭터로 행동하면, 결과를 바로 공개하지 않고
     # 운영진 로그에만 미리 보여줍니다. 마음에 들면 "공개하기"로 러너에게 알리고,
     # 마음에 안 들면 "되돌리기"로 없던 일로 만들 수 있습니다.
     actor_field = ACTOR_FIELD.get(action_type)
     actor_name = payload.get(actor_field) if actor_field else None
     actor_char = battle.find_character(actor_name) if actor_name else None
 
-    # 점령전 : 거점이 이번 라운드 행동(방어 정산/공격/힐)을 하려면 먼저 전조(거점 행동 다이스)를
+    # 공성전 : 거점이 이번 라운드 행동(방어 정산/공격/힐)을 하려면 먼저 전조(거점 행동 다이스)를
     # 굴려야 합니다. 안 굴렸다면 굴리라고 안내하고 행동을 막습니다.
     if (
         room.battle_type == "siege"
@@ -1744,8 +1745,8 @@ def on_battle_action(data):
         emit("action_error", {"message": "먼저 🎲 다이스 굴리기로 이번 라운드 거점 행동(전조)을 정해주세요."})
         return
 
-    # 격자 전투(점령전/마스 레이드) : 러너가 이동하려면 먼저 GM이 이번 라운드 전조를
-    # 출력해야 합니다 (점령전 = 거점 다이스, 마스 레이드 = 격자 칸 공개).
+    # 격자 전투(공성전/마스 레이드) : 러너가 이동하려면 먼저 GM이 이번 라운드 전조를
+    # 출력해야 합니다 (공성전 = 거점 다이스, 마스 레이드 = 격자 칸 공개).
     if action_type == "move" and telegraph_pending(room, battle):
         emit("action_error", {"message": "먼저 GM이 이번 라운드 전조를 출력해야 이동할 수 있습니다."})
         return
@@ -1780,7 +1781,7 @@ def on_battle_action(data):
         socketio.emit("gm_state", build_gm_state(room), room=room_channel(room.id, "gm"))
         return
 
-    # 점령전 : 거점(2팀) 캐릭터는 이번 라운드 다이스로 정해진 횟수만큼 반복 행동할 수 있습니다.
+    # 공성전 : 거점(2팀) 캐릭터는 이번 라운드 다이스로 정해진 횟수만큼 반복 행동할 수 있습니다.
     if room.battle_type == "siege" and room.site_dice_round_no == battle.round_no and room.site_dice_value:
         if actor_char is not None and actor_char.team == "B":
             room.site_dice_used += 1
@@ -1822,7 +1823,7 @@ def on_reveal_pending_action(data):
     mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
-    # 점령전 : 거점 다중 행동 소모는 "공개"가 확정된 시점에만 적용됩니다.
+    # 공성전 : 거점 다중 행동 소모는 "공개"가 확정된 시점에만 적용됩니다.
     # (미리보기만 하고 되돌린 굴림은 이번 라운드 행동 횟수를 소모하지 않습니다)
     if room.battle_type == "siege" and room.site_dice_round_no == battle.round_no and room.site_dice_value:
         actor_char = battle.find_character(pending["actor"])
@@ -2143,6 +2144,38 @@ def on_set_map_bg(data):
     if data.get("reset"):
         cfg = dict(MAP_BG_DEFAULT)
     room.map_bg = cfg
+    save_rooms()
+    broadcast_state(room)
+
+
+@socketio.on("set_boss_image")
+def on_set_boss_image(data):
+    """운영진 : 2x2 몹 이미지(4칸이 한 세트) 업로드/삭제. key는 몹 이름(boss_group의 '#' 앞부분)."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 몹 이미지를 바꿀 수 있습니다."})
+        return
+    data = data or {}
+    key = (data.get("key") or "").strip()[:40]
+    if not key:
+        return
+    images = dict(room.boss_images or {})
+    if data.get("clear"):
+        images.pop(key, None)
+    else:
+        blob = data.get("data")
+        ext = os.path.splitext((data.get("filename") or "").lower())[1]
+        if ext not in MAP_BG_ALLOWED_EXTS or not isinstance(blob, (bytes, bytearray)):
+            emit("action_error", {"message": "png/jpg/webp/gif 이미지만 올릴 수 있습니다."})
+            return
+        if len(blob) > MAP_BG_MAX_BYTES:
+            emit("action_error", {"message": "이미지가 너무 큽니다 (최대 6MB)."})
+            return
+        filename = f"boss_{uuid.uuid4().hex}{ext}"
+        with open(os.path.join(MAP_BG_DIR, filename), "wb") as f:
+            f.write(blob)
+        images[key] = f"/static/map_bg/{filename}"
+    room.boss_images = images
     save_rooms()
     broadcast_state(room)
 

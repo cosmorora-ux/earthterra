@@ -26,12 +26,12 @@ class Character:
         clamped, _ = config.clamp_stats(stats)
         self.stats = clamped
         self.color = color or None  # "#RRGGBB" 형태의 구분용 색상 (선택)
-        self.formula_overrides = formula_overrides  # 이 캐릭터가 속한 전투 유형(점령전 등)의 수식 override
+        self.formula_overrides = formula_overrides  # 이 캐릭터가 속한 전투 유형(공성전 등)의 수식 override
 
         self.max_hp = config.calculate_max_hp(self.stats, overrides=self.formula_overrides)
         self.current_hp = self.max_hp
         # None이면 역할(role) 기준 기본 행동 목록을 사용합니다. 리스트를 지정하면 그 행동만
-        # 허용됩니다(예: 점령전 거점은 역할과 무관하게 "공격"/"힐"만) - Skill.can_use도 이 값을 따릅니다.
+        # 허용됩니다(예: 공성전 거점은 역할과 무관하게 "공격"/"힐"만) - Skill.can_use도 이 값을 따릅니다.
         self.forced_actions = None
 
         self.team = None   # "A" 또는 "B" - 전투 시작 시 Battle이 설정
@@ -282,7 +282,7 @@ class AttackSkill(Skill):
         회피(딜러 회피/도주 중 강제 회피) -> 방어(능동 계층 소모/무방비) -> 최종 피해 순으로 처리합니다.
         방어는 부여된 순서대로 한 겹씩(FIFO) 소모됩니다. (요청 13)
         도주 시도 중(STATUS_FLEEING)에는 무방비로 취급되며 회피 확률이 1.5배 적용됩니다. (요청 11)
-        auto_defense=True(점령전 거점 전용)면 방어 선언 여부와 무관하게 공격 1회당 항상
+        auto_defense=True(공성전 거점 전용)면 방어 선언 여부와 무관하게 공격 1회당 항상
         능동 방어 1회(1~30 다이스)가 자동으로 발생합니다.
         defense_stat_mult(편광 전용)는 대상 본인의 방어 스탯(수동 바닥값 계산용)에만 곱해집니다.
         반환값 dict: dodged, dfs(있다면), damage, hp_before, hp_after
@@ -528,7 +528,7 @@ class TimeoutSkill(Skill):
 
 class DefenseSettleSkill(Skill):
     """
-    점령전 거점 전용 - 보류된 공격만 정산합니다(forced_actions로만 부여되며, 일반 캐릭터의
+    공성전 거점 전용 - 보류된 공격만 정산합니다(forced_actions로만 부여되며, 일반 캐릭터의
     행동 목록에는 나타나지 않습니다). 정식 '행동'으로 소모되지 않으므로(has_acted를 건드리지
     않음) 정산 후에도 이어서 공격/힐을 할 수 있습니다.
     """

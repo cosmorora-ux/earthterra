@@ -24,7 +24,7 @@ import random
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 _OVERRIDE_PATH = os.path.join(_THIS_DIR, "formulas.json")           # 기본(PVP) 수식 - 전역
-_PROFILES_PATH = os.path.join(_THIS_DIR, "formula_profiles.json")   # 점령전/레이드 전용 수식
+_PROFILES_PATH = os.path.join(_THIS_DIR, "formula_profiles.json")   # 공성전/레이드 전용 수식
 
 
 def get_value(key, overrides: dict = None):
@@ -43,7 +43,7 @@ def get_value(key, overrides: dict = None):
 # 역할 이름은 가디언/스트라이커/메딕으로 통일합니다 (예전 탱커/딜러/힐러 명칭은 더 이상 쓰지 않습니다).
 # 역할 자체의 정체성(포지션)은 그대로이며, 이 상수들의 "이름"만 바뀐 것입니다 - 그래서 치명타
 # 포지션 판정(role == ROLE_DEALER 등) 같은 기존 로직은 전부 그대로 동작합니다.
-# 다만 "행동 목록"은 전투 유형에 따라 달라집니다: 기본(PVP/점령전/레이드)에서는 아래 ROLE_ACTIONS의
+# 다만 "행동 목록"은 전투 유형에 따라 달라집니다: 기본(PVP/공성전/레이드)에서는 아래 ROLE_ACTIONS의
 # 원래(옛 탱커/딜러/힐러) 행동 그대로이고, 마스 레이드에서만 MASS_RAID_ROLE_ACTIONS로 교체됩니다.
 ROLE_TANKER = "가디언"
 ROLE_DEALER = "스트라이커"
@@ -84,7 +84,7 @@ def stat_total(stats: dict) -> int:
 
 # ----------------------------------------------------------------------
 # 1. 역할별 사용 가능한 행동
-#    기본(PVP/점령전/레이드) - ROLE_ACTIONS. 옛 탱커/딜러/힐러 시절과 완전히 동일한 행동입니다.
+#    기본(PVP/공성전/레이드) - ROLE_ACTIONS. 옛 탱커/딜러/힐러 시절과 완전히 동일한 행동입니다.
 #    - 공격 : 모든 역할 가능 (가디언 포함)
 #    - 방어 : 가디언 전용. 본인 또는 아군 1명(택1)을 지정해 그 대상에게 능동 방어를 부여합니다.
 #             (어그로 효과는 없습니다)
@@ -111,7 +111,7 @@ ACTION_HEAL = "힐"
 ACTION_DODGE = "회피"
 ACTION_TIMEOUT = "시간초과"
 ACTION_FLEE = "도주"
-ACTION_DEFENSE_SETTLE = "방어 정산"  # 점령전 거점 전용 - 보류된 공격을 정산만 하고, 이후 공격/힐을 이어서 할 수 있습니다.
+ACTION_DEFENSE_SETTLE = "방어 정산"  # 공성전 거점 전용 - 보류된 공격을 정산만 하고, 이후 공격/힐을 이어서 할 수 있습니다.
 ACTION_MOVE = "이동"  # 마스 레이드(격자) 전용 - 이번 라운드 행동 전에 먼저 선언합니다. has_acted를 소모하지 않습니다.
 ACTION_COMMAND = "지휘"  # 가디언 전용 - 지정 적군 1인에게 유도 효과 1회 부여(그 적의 다음 행동 1회를 이 가디언 공격으로 강제). 방어 부여 효과는 없습니다.
 ACTION_SWAP = "배치"  # 메딕 전용(마스 레이드) - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 사정거리 제한 없음.
@@ -297,7 +297,7 @@ def roll_attack(stats: dict, role: str = None, overrides: dict = None) -> dict:
     atk_bonus = atk_val * stat_mult
     subtotal = core["subtotal"] + atk_bonus
 
-    # role이 None이면 포지션이 없는 존재(점령전 거점 / 마스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
+    # role이 None이면 포지션이 없는 존재(공성전 거점 / 마스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
     position_match = (role is None) or (role == ROLE_DEALER)
     if position_match:
         crit_chance = (get_value("BASE_CRIT_CHANCE", overrides)
@@ -416,7 +416,7 @@ def roll_defense(target_stats: dict, active: bool, grantor_stats: dict = None,
 
 def roll_site_auto_defense(target_stats: dict, overrides: dict = None) -> dict:
     """
-    점령전 거점 / 마스 레이드 적군 전용 자동 방어입니다. 공격 1회당 무조건 능동 방어 1회가 발생하며
+    공성전 거점 / 마스 레이드 적군 전용 자동 방어입니다. 공격 1회당 무조건 능동 방어 1회가 발생하며
     (방어 선언/능동 방어 계층 유무와 무관), 기본 다이스 공식 대신 1~30 고정 범위로 굴립니다.
     치명타는 발생하지 않습니다.
     """
@@ -498,7 +498,7 @@ def roll_heal(stats: dict, role: str = None, overrides: dict = None) -> dict:
     core = _roll_core_dice(stats, get_value("HEAL_DICE_COUNT", overrides), overrides)
     base_total = round(core["subtotal"] * get_value("HEAL_OUTPUT_MULTIPLIER", overrides))
 
-    # role이 None이면 포지션이 없는 존재(점령전 거점 / 마스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
+    # role이 None이면 포지션이 없는 존재(공성전 거점 / 마스 레이드 적군)이므로 항상 치명타 판정 대상입니다.
     position_match = (role is None) or (role == ROLE_HEALER)
     luck = int(stats.get("행운", 0))
     mental = int(stats.get("정신", 0))
@@ -565,7 +565,7 @@ def is_within_move_shape(dx: int, dy: int, move_range: int, agility: int = 0) ->
 
 
 # ----------------------------------------------------------------------
-# 9.6. "BOSS" 다부위 캐릭터 (격자 전투 - 점령전/마스 레이드 공용)
+# 9.6. "BOSS" 다부위 캐릭터 (격자 전투 - 공성전/마스 레이드 공용)
 #      이름이 BOSS_NAME_PREFIXES 중 하나로 "시작하는"(뒤에 뭐가 더 붙어도 무방) 캐릭터는
 #      전투 시작 시 4부위(북동/북서/남동/남서)로 나뉘어 격자 2x2 칸을 함께 차지합니다.
 #      - 팀 명단에 그런 이름이 한 줄만 있으면: 그 한 줄을 4번 조회해서 부위 4개를 자동 생성.
@@ -705,8 +705,8 @@ _apply_saved_overrides()
 
 
 # ----------------------------------------------------------------------
-# 11. 전투 유형(점령전/레이드 등)별 수식 프로필
-#     PVP는 위의 전역 기본값(formulas.json)을 그대로 씁니다. 점령전/레이드처럼
+# 11. 전투 유형(공성전/레이드 등)별 수식 프로필
+#     PVP는 위의 전역 기본값(formulas.json)을 그대로 씁니다. 공성전/레이드처럼
 #     별도 프로필을 지정한 값이 있으면 그 값이 기본값을 덮어씁니다(get_value 참고).
 # ----------------------------------------------------------------------
 def _load_profiles_file() -> dict:

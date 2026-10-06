@@ -123,7 +123,7 @@ class Battle:
         # 마스 레이드 전용 격자 크기. None이면 이 전투는 격자를 사용하지 않습니다.
         self.grid_width = grid_width
         self.grid_height = grid_height
-        # 점령전 전용 : 2팀(거점) 캐릭터는 공격을 받을 때마다 방어 선언 여부와 무관하게
+        # 공성전 전용 : 2팀(거점) 캐릭터는 공격을 받을 때마다 방어 선언 여부와 무관하게
         # 항상 능동 방어 1회가 자동으로 발생합니다.
         self.site_auto_defense = site_auto_defense
 
@@ -133,11 +133,11 @@ class Battle:
         self._round_summarized = False
 
         # PVP 전용 규칙 : 같은 라운드에 한 대상을 3명 전부가 몰아서 공격할 수 없고, 최대 2명까지만
-        # 공격할 수 있습니다(집중 공격 제한). 점령전/마스 레이드는 다인원이 거점·몹을 공격하는 게
+        # 공격할 수 있습니다(집중 공격 제한). 공성전/마스 레이드는 다인원이 거점·몹을 공격하는 게
         # 핵심 메커닉이라 이 제한을 적용하지 않습니다(site_auto_defense로 구분).
         self._attacks_on_target_this_round = {}
 
-        # PVP 전용 : 라운드마다 선후공을 서로 바꾸는 "선후공 전환제". 점령전/마스 레이드는
+        # PVP 전용 : 라운드마다 선후공을 서로 바꾸는 "선후공 전환제". 공성전/마스 레이드는
         # 거점·BOSS가 항상 같은 위치(선공 또는 후공)를 지켜야 하는 규칙이 있으므로 계속
         # False로 두고, 최초 다이스(또는 forced_first_team)로 정해진 팀을 쭉 유지합니다.
         self.alternate_first_team = alternate_first_team
@@ -564,11 +564,11 @@ class Battle:
 
     def _settle_immediately(self, target: Character) -> bool:
         """공격을 바로 정산할지 여부. 일반 캐릭터는 항상 보류해서 방어할 기회를 줍니다(후공 단계 포함).
-        자동 방어가 붙는 점령전 거점/레이드 적군만, 이미 이번 라운드 행동을 마쳤으면 바로 정산합니다."""
+        자동 방어가 붙는 공성전 거점/레이드 적군만, 이미 이번 라운드 행동을 마쳤으면 바로 정산합니다."""
         return target.has_acted and self._auto_defense_for(target)
 
     def _auto_defense_for(self, target: Character) -> bool:
-        """점령전 거점(2팀) 대상이면 방어 선언 여부와 무관하게 항상 능동 방어가 자동 발생합니다."""
+        """공성전 거점(2팀) 대상이면 방어 선언 여부와 무관하게 항상 능동 방어가 자동 발생합니다."""
         return self.site_auto_defense and target.team == "B"
 
     def _redirect_for_polarize(self, target: Character) -> Character:
@@ -643,7 +643,7 @@ class Battle:
         return False
 
     # ------------------------------------------------------------------
-    # 행동 : 방어 정산 (점령전 거점 전용) - 보류된 공격만 정산하고, 이어서 공격/힐을 할 수 있습니다.
+    # 행동 : 방어 정산 (공성전 거점 전용) - 보류된 공격만 정산하고, 이어서 공격/힐을 할 수 있습니다.
     # ------------------------------------------------------------------
     def perform_defense_settle(self, name: str):
         actor = self.find_character(name)
@@ -1672,7 +1672,7 @@ class Battle:
     def _start_new_round(self):
         self.round_no += 1
         # PVP(alternate_first_team=True)는 라운드마다 선후공을 서로 바꿉니다(선후공 전환제).
-        # 점령전/마스 레이드는 round_first_team이 전투 시작 시 한 번 정해지면 전투 내내
+        # 공성전/마스 레이드는 round_first_team이 전투 시작 시 한 번 정해지면 전투 내내
         # 유지됩니다 - 거점의 "항상 후공" 같은 규칙이 라운드가 넘어가도 계속 지켜지려면
         # 이래야 합니다.
         if self.alternate_first_team:
@@ -1869,9 +1869,9 @@ class GameManager:
                       alternate_first_team: bool = False) -> Battle:
         """
         선공 팀은 기본적으로 민첩 합산을 기준으로 Battle이 자동으로 결정합니다.
-        forced_first_team을 지정하면(예: 점령전의 "거점은 항상 후공" 규칙) 그 팀이 무조건 선공이 됩니다.
+        forced_first_team을 지정하면(예: 공성전의 "거점은 항상 후공" 규칙) 그 팀이 무조건 선공이 됩니다.
         formula_overrides는 이 전투에 적용할 전투 유형별 수식(없으면 전역 기본값을 그대로 씁니다).
-        site_auto_defense=True면 2팀은 공격을 받을 때마다 항상 자동으로 능동 방어합니다(점령전 거점 규칙).
+        site_auto_defense=True면 2팀은 공격을 받을 때마다 항상 자동으로 능동 방어합니다(공성전 거점 규칙).
         grid_width/grid_height를 지정하면 마스 레이드용 격자 전투가 됩니다.
         alternate_first_team=True면(PVP 전용) 라운드마다 선후공을 서로 바꿉니다.
         """
