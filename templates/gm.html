@@ -416,7 +416,7 @@
     <div id="actionPanel" style="padding:8px 18px; border-top:1px solid var(--panel-border);"></div>
     <div class="input-row">
       <input id="chatInput" placeholder="메시지 입력" onkeydown="if(event.key==='Enter') sendChat()">
-      <button class="btn-primary" onclick="sendChat()" style="display:inline-flex;align-items:center;gap:7px;"><i class="fa-solid fa-paper-plane"></i>전송</button>
+      <button class="btn-primary" onclick="sendChat()" aria-label="전송" title="전송" style="display:inline-flex;align-items:center;justify-content:center;width:48px;"><i class="fa-solid fa-paper-plane" style="transform:rotate(45deg) translate(-1px,1px);"></i></button>
     </div>
   </div>
 </div>
