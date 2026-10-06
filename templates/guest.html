@@ -740,9 +740,9 @@
   .stag i { font-size:.92em; width:1.1em; text-align:center; }
 
   /* ================================================================
-     SP8 커서 (by Forse, rw-designer.com/cursor-set/sp8 · CC BY-NC) - .cur/.ani를 PNG로 변환해 씁니다.
+     Blue Aero 커서 (by hlark324, rw-designer.com/cursor-set/blue-aero-cursors · CC BY) - .cur/.ani를 PNG로 변환해 씁니다.
      ================================================================ */
-  html, body, * { cursor: url("/static/cursors/normal.png") 15 8, auto; }
+  html, body, * { cursor: url("/static/cursors/normal.png") 0 0, auto; }
   a, button, select, label, summary, [onclick], [role="button"],
   input[type="range"], input[type="checkbox"], input[type="color"], input[type="file"], input[type="radio"],
   [style*="cursor:pointer"], [style*="cursor: pointer"],
@@ -780,15 +780,15 @@
   .userinfo-eye,
   /* 공용 슬라이더 : 얇은 트랙 + 채워진 부분 + 동그란 손잡이 (--fill 값은 JS가 갱신) */
   input[type="range"].nice-range {
-    cursor: url("/static/cursors/pointer.png") 15 8, pointer !important; }
+    cursor: url("/static/cursors/pointer.png") 5 0, pointer !important; }
   input:not([type]), input[type="text"], input[type="number"], input[type="password"], input[type="search"],
-  textarea, [contenteditable="true"] { cursor: url("/static/cursors/text.png") 24 23, text !important; }
-  button:disabled, input:disabled, select:disabled, [disabled] { cursor: url("/static/cursors/not-allowed.png") 15 8, not-allowed !important; }
-  [style*="cursor:default"], [style*="cursor: default"] { cursor: url("/static/cursors/normal.png") 15 8, default !important; }
-  [style*="cursor:help"], [data-tip-help] { cursor: url("/static/cursors/help.png") 15 8, help !important; }
-  [style*="cursor:move"], [style*="cursor:grab"] { cursor: url("/static/cursors/move.png") 23 23, move !important; }
-  [style*="cursor:crosshair"] { cursor: url("/static/cursors/crosshair.png") 23 27, crosshair !important; }
-  body.is-busy, body.is-busy * { cursor: url("/static/cursors/wait.png") 23 24, wait !important; }
+  textarea, [contenteditable="true"] { cursor: url("/static/cursors/text.png") 15 15, text !important; }
+  button:disabled, input:disabled, select:disabled, [disabled] { cursor: url("/static/cursors/not-allowed.png") 0 8, not-allowed !important; }
+  [style*="cursor:default"], [style*="cursor: default"] { cursor: url("/static/cursors/normal.png") 0 0, default !important; }
+  [style*="cursor:help"], [data-tip-help] { cursor: url("/static/cursors/help.png") 0 7, help !important; }
+  [style*="cursor:move"], [style*="cursor:grab"] { cursor: url("/static/cursors/move.png") 15 15, move !important; }
+  [style*="cursor:crosshair"] { cursor: url("/static/cursors/crosshair.png") 15 15, crosshair !important; }
+  body.is-busy, body.is-busy * { cursor: url("/static/cursors/wait.png") 15 15, wait !important; }
 </style>
 </head>
 <body>
