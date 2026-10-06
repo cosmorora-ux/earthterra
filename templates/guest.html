@@ -276,6 +276,13 @@
   .snd-level .badge { font-size:11px; padding:1px 7px; border-radius:999px; border:1px solid var(--card-border); }
   .snd-level .badge.ok { color: var(--text); }
   .snd-level .badge.loud, .snd-level .badge.quiet { color: var(--text); border-color: var(--text); }
+  /* PVP(격자 없음) : 팀 제목(1팀/2팀)과 음악 플레이어를 같은 높이 줄에, 채팅창과 카드 첫 줄을 같은 높이에 맞춥니다 */
+  .member-col { display:flex; flex-direction:column; }
+  .member-col .member-panel { flex:1; min-height:0; height:auto; }
+  .member-top { height:40px; margin-bottom:10px; display:flex; align-items:center; justify-content:flex-end; flex-shrink:0; }
+  .member-top .bgm-player { padding-top:4px; padding-bottom:4px; }
+  .main-grid:not(.with-grid-map) .team-block h2 { height:40px; display:flex; align-items:center; margin:0 0 10px 2px; }
+  .sort-row:has(> #multiSkillSlot:empty) { display:none; }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
@@ -979,6 +986,7 @@
   <div class="clock" id="liveClock">--:--:--</div>
 </div>
 
+{% if grid_size %}
 <div class="breadcrumb-row">
   {% if grid_size %}
   <div class="grid-notice"><span class="bell"><i class="fa-solid fa-radio"></i></span><span id="gridNoticeText"></span>
@@ -999,6 +1007,7 @@
   </div>
 </div>
 
+{% endif %}
 <div class="layout-grid">
 <div class="teams-col">
 <div class="teams-col-scroll">
@@ -1075,6 +1084,21 @@
 </div>
 
 <div class="member-col">
+{% if not grid_size %}
+<div class="member-top">
+  <div class="bgm-player" id="bgmPlayer">
+    <div class="bgm-eq" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <div class="bgm-info">
+      <div class="bgm-kicker" id="musicKicker">BGM</div>
+      <div class="bgm-title"><span id="musicStatus">재생 없음</span></div>
+    </div>
+    <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()" data-tip="음소거 켜기/끄기 (나에게만 적용)"><i class="fa-solid fa-volume-high"></i></button>
+    <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
+    <span class="bgm-vol-num" id="musicVolumeNum"></span>
+    <button type="button" class="bgm-mute" onclick="openSoundSettings()" data-tip="소리 설정 (효과음)"><i class="fa-solid fa-sliders"></i></button>
+  </div>
+</div>
+{% endif %}
 <div class="member-panel panel">
   <div class="member-header">
     <b>Chat</b>
