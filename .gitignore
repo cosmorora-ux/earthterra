@@ -11,3 +11,7 @@ server.log
 # 전투 진행 상태 저장본(서버 컴퓨터별 실데이터)
 room_runtime.pkl
 room_runtime.pkl.tmp
+# 상점 상품 목록/요청 기록과 상품 이미지(서버 컴퓨터별 실데이터)
+shop.json
+shop.json.tmp
+static/shop_icons/

@@ -35,7 +35,7 @@ from models import (
     CommandSkill, SwapSkill, ProxyDefendSkill, GuardSkill,
     CollapseSkill, EmissionSkill, ShieldSkill, PolarizeSkill, RefluxSkill, RestoreSkill,
 )
-from database import CharacterDatabase
+from database import CharacterDatabase, shared_db
 import config
 
 
@@ -1775,7 +1775,7 @@ class GameManager:
     """
 
     def __init__(self):
-        self.db = CharacterDatabase()
+        self.db = shared_db()
         self.battle = None
 
     # ------------------------------------------------------------------

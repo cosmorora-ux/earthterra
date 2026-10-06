@@ -45,6 +45,30 @@ import config
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "characters.json")
 
 
+# 상점 재화(P)/구매한 아이템 - 다른 필드를 수정하는 호출(add_or_update/재등록)에서도 사라지지 않게 유지합니다.
+SHOP_FIELDS = ("points", "items")
+
+
+def _keep_shop_fields(old: dict, new: dict):
+    if not old:
+        return
+    for k in SHOP_FIELDS:
+        if k in old and k not in new:
+            new[k] = old[k]
+
+
+_SHARED_DB = None
+
+
+def shared_db():
+    """모든 방이 같은 캐릭터 DB 객체를 쓰도록 합니다. 방마다 따로 읽으면 한 방에서 바꾼 내용
+    (프로필 이미지, 재화 등)을 다른 방이 예전 내용으로 덮어써 버릴 수 있습니다."""
+    global _SHARED_DB
+    if _SHARED_DB is None:
+        _SHARED_DB = CharacterDatabase()
+    return _SHARED_DB
+
+
 class CharacterDatabase:
     def __init__(self, path: str = DB_PATH):
         self.path = path
@@ -120,6 +144,7 @@ class CharacterDatabase:
                         errors.append(
                             f"'{current_name}' - '{current_skill}'은(는) {role}의 스킬이 아니라서 무시되었습니다."
                         )
+                _keep_shop_fields(self.characters.get(current_name), entry)
                 self.characters[current_name] = entry
                 registered.append(current_name)
             current_name = None
@@ -189,6 +214,7 @@ class CharacterDatabase:
             entry["sound_effect"] = sound_effect
         if sound_effect_volume is not None:
             entry["sound_effect_volume"] = sound_effect_volume
+        _keep_shop_fields(self.characters.get(name), entry)
         self.characters[name] = entry
         self.save()
         return warns

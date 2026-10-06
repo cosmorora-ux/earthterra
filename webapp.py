@@ -20,6 +20,7 @@ from flask import Flask, request, render_template, redirect, url_for, abort, jso
 from flask_socketio import SocketIO, join_room, leave_room, emit
 
 import config
+import shop as shop_mod
 from battle import Battle, BattleError
 from rooms import (
     create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
@@ -28,13 +29,13 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.3"
+SERVER_BUILD = "2026-10-06.4"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
 # html(templates)을 고치면 서버를 다시 켜지 않아도 브라우저 새로고침(F5)만으로 바로 반영됩니다.
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-socketio = SocketIO(app, async_mode="threading")
+socketio = SocketIO(app, async_mode="threading", max_http_buffer_size=2 * 1024 * 1024)
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 MUSIC_DIR = os.path.join(_THIS_DIR, "static", "music")
@@ -399,6 +400,8 @@ def build_preview_character(room, name):
         "avatar_url": data.get("avatar_url"),
         "sound_effect": data.get("sound_effect"),
         "sound_effect_volume": data.get("sound_effect_volume"),
+        "points": int(data.get("points") or 0),
+        "items": dict(data.get("items") or {}),
     }
 
 
@@ -526,6 +529,7 @@ def build_public_state(room):
             if data.get("color") or data.get("avatar_url")
         },
         "music": room.music,
+        "shop": shop_mod.shared_shop().public_payload(),
         "telegraph_cells": room.telegraph_cells,
         "preview_teams": preview_teams,
         "server_now": time.time(),
@@ -548,6 +552,8 @@ def build_gm_state(room):
     payload["operator_log"] = op_log[-LOG_SEND_CAP:]
     payload["operator_log_total"] = len(op_log)
     payload["can_undo"] = battle.can_undo() if battle else False
+    # 상점 '운영진 처리' 요청 - 최근 것부터
+    payload["shop_requests"] = list(reversed(shop_mod.shared_shop().requests[-100:]))
     payload["roster_detail"] = [
         {"name": name, **room.game.db.get(name)}
         for name in room.game.db.all_names_by_position()
@@ -1830,6 +1836,260 @@ def on_reveal_pending_action(data):
 
     room.pending_reveal = None
     broadcast_state(room)
+
+
+# ----------------------------------------------------------------------
+# 상점 : 구매/사용(참가자), 상품·재화·소지품 관리(운영진)
+# ----------------------------------------------------------------------
+SHOP_ICON_DIR = os.path.join(_THIS_DIR, "static", "shop_icons")
+os.makedirs(SHOP_ICON_DIR, exist_ok=True)
+SHOP_ICON_ALLOWED_EXTS = (".png", ".webp", ".gif", ".jpg", ".jpeg")
+SHOP_ICON_MAX_BYTES = 1 * 1024 * 1024
+
+
+def _broadcast_all_rooms():
+    """상품 목록/재화/소지품은 모든 방이 같이 쓰는 데이터라 모든 방에 다시 보내줍니다."""
+    for r in list_rooms():
+        broadcast_state(r)
+
+
+def _shop_context(data):
+    """(room, info, 대상 캐릭터 이름) - 참가자는 본인만, 운영진은 data["name"]으로 아무 캐릭터나."""
+    info = CONNECTIONS.get(request.sid)
+    if info is None:
+        emit("action_error", {"message": "먼저 입장해주세요."})
+        return None, None, None
+    room = get_room(info["room_id"])
+    if room is None:
+        return None, None, None
+    name = _mypage_target_name(room, info, data or {})
+    if name is None:
+        emit("action_error", {"message": "캐릭터로 로그인한 뒤에 상점을 이용할 수 있습니다."})
+        return room, info, None
+    return room, info, name
+
+
+def _live_battle_char(room, name):
+    """진행 중인(끝나지 않은) 전투에 이 캐릭터가 있으면 그 전투용 캐릭터를 돌려줍니다."""
+    battle = room.game.battle
+    if battle is None or battle.finished:
+        return None
+    return battle.find_character(name)
+
+
+@socketio.on("shop_buy")
+def on_shop_buy(data):
+    room, info, name = _shop_context(data)
+    if name is None:
+        return
+    shop = shop_mod.shared_shop()
+    item = shop.get((data or {}).get("item_id"))
+    if item is None:
+        emit("action_error", {"message": "존재하지 않는 상품입니다."})
+        return
+    try:
+        qty = max(1, min(99, int((data or {}).get("qty") or 1)))
+    except (TypeError, ValueError):
+        qty = 1
+    db = room.game.db
+    cost = item["price"] * qty
+    have = shop_mod.get_points(db, name)
+    if have < cost:
+        emit("action_error", {"message": f"P가 부족합니다. (보유 {have}P / 필요 {cost}P)"})
+        return
+    shop_mod.set_points(db, name, have - cost)
+    shop_mod.change_item_count(db, name, item["id"], qty)
+    emit("shop_result", {"message": f"{item['name']} ×{qty} 구매 완료 (-{cost}P)"})
+    _broadcast_all_rooms()
+
+
+@socketio.on("shop_use")
+def on_shop_use(data):
+    data = data or {}
+    room, info, name = _shop_context(data)
+    if name is None:
+        return
+    shop = shop_mod.shared_shop()
+    item = shop.get(data.get("item_id"))
+    db = room.game.db
+    if item is None or shop_mod.get_items(db, name).get(data.get("item_id"), 0) <= 0:
+        emit("action_error", {"message": "보유하지 않은 아이템입니다."})
+        return
+
+    live = _live_battle_char(room, name)
+    in_battle = live is not None
+    if item["timing"] == "battle" and not in_battle:
+        emit("action_error", {"message": f"{item['name']}은(는) 전투 중에만 사용할 수 있습니다."})
+        return
+    if item["timing"] == "prebattle" and in_battle:
+        emit("action_error", {"message": f"{item['name']}은(는) 전투 전에만 사용할 수 있습니다."})
+        return
+
+    battle = room.game.battle
+    effect = item["effect"]
+    if effect == "heal":
+        if not in_battle:
+            emit("action_error", {"message": "체력 회복 아이템은 전투 중에만 효과가 있습니다."})
+            return
+        if not live.is_alive:
+            emit("action_error", {"message": "전투에서 이탈한 캐릭터는 사용할 수 없습니다."})
+            return
+        amount = max(0, int(item["value"]))
+        if live.current_hp >= live.max_hp and not live.pending_attacks:
+            emit("action_error", {"message": "체력이 가득 차 있어서 사용할 수 없습니다."})
+            return
+        battle._push_history()
+        hp_before = live.current_hp
+        was_downed = live.status == live.STATUS_DOWNED
+        queued = battle._apply_or_queue_heal(live, amount, item["name"])
+        battle.log_event(f"🧪 {name} 아이템 사용 : {item['name']}", tag="heal")
+        if queued:
+            battle.log_event(f"회복 {amount} (피해 정산 후 적용)", tag="heal")
+        else:
+            battle.log_event(f"회복 {amount}", tag="heal")
+            battle.log_event(f"{name} HP {hp_before} → {live.current_hp}", tag="hp")
+            if was_downed and live.status == live.STATUS_ALIVE:
+                battle.log_event(f"{name} 위기를 넘기고 전투에 복귀했습니다!", tag="system")
+        result_msg = f"{item['name']} 사용 : 회복 {amount}" + (" (피해 정산 후 적용)" if queued else "")
+    elif effect == "stat_up":
+        stat = data.get("stat")
+        if stat not in config.STAT_KEYS:
+            emit("action_error", {"message": "올릴 스탯을 골라주세요."})
+            return
+        entry = db.get(name)
+        stats = dict(entry.get("stats") or {})
+        stats[stat] = int(stats.get(stat, 0)) + int(item["value"])
+        entry["stats"], _ = config.clamp_stats(stats)
+        db.save()
+        note = " (다음 전투부터 적용)" if in_battle else ""
+        post_system_chat(room, f"🧪 {name} : {item['name']} 사용 → {stat} +{item['value']}{note}")
+        result_msg = f"{item['name']} 사용 : {stat} +{item['value']}{note}"
+    else:
+        req = shop.add_request(room.id, name, item, data.get("memo"))
+        memo = f" - \"{req['memo']}\"" if req["memo"] else ""
+        post_system_chat(room, f"📦 {name} : {item['name']} 사용{memo} (운영진 처리 대기)")
+        result_msg = f"{item['name']} 사용 요청을 운영진에게 보냈습니다."
+
+    shop_mod.change_item_count(db, name, item["id"], -1)
+    emit("shop_result", {"message": result_msg})
+    _broadcast_all_rooms()
+
+
+@socketio.on("shop_admin_item")
+def on_shop_admin_item(data):
+    """운영진 : 상품 추가/수정/삭제/순서 이동."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 상품을 관리할 수 있습니다."})
+        return
+    data = data or {}
+    shop = shop_mod.shared_shop()
+    action = data.get("action")
+    if action == "add":
+        shop.add_item(data.get("fields") or {})
+    elif action == "update":
+        if shop.update_item(data.get("item_id"), data.get("fields") or {}) is None:
+            emit("action_error", {"message": "존재하지 않는 상품입니다."})
+            return
+    elif action == "delete":
+        shop.delete_item(data.get("item_id"))
+    elif action == "move":
+        shop.move_item(data.get("item_id"), int(data.get("delta") or 0))
+    else:
+        return
+    _broadcast_all_rooms()
+
+
+@socketio.on("shop_admin_icon")
+def on_shop_admin_icon(data):
+    """운영진 : 상품 이미지(도트) 업로드 - 소켓으로 파일 내용을 받아 static/shop_icons/에 저장합니다."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 상품 이미지를 바꿀 수 있습니다."})
+        return
+    data = data or {}
+    shop = shop_mod.shared_shop()
+    item = shop.get(data.get("item_id"))
+    if item is None:
+        return
+    if data.get("clear"):
+        shop.update_item(item["id"], {"icon_url": None})
+        _broadcast_all_rooms()
+        return
+    ext = os.path.splitext((data.get("filename") or "").lower())[1]
+    blob = data.get("data")
+    if ext not in SHOP_ICON_ALLOWED_EXTS or not isinstance(blob, (bytes, bytearray)):
+        emit("action_error", {"message": "png/webp/gif/jpg 이미지만 올릴 수 있습니다."})
+        return
+    if len(blob) > SHOP_ICON_MAX_BYTES:
+        emit("action_error", {"message": "이미지가 너무 큽니다 (최대 1MB)."})
+        return
+    filename = f"{uuid.uuid4().hex}{ext}"
+    with open(os.path.join(SHOP_ICON_DIR, filename), "wb") as f:
+        f.write(blob)
+    shop.update_item(item["id"], {"icon_url": f"/static/shop_icons/{filename}"})
+    _broadcast_all_rooms()
+
+
+@socketio.on("shop_admin_points")
+def on_shop_admin_points(data):
+    """운영진 : 캐릭터 재화(P) 지정(set) 또는 증감(delta)."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 재화를 관리할 수 있습니다."})
+        return
+    data = data or {}
+    db = room.game.db
+    names = data.get("names") or ([data.get("name")] if data.get("name") else [])
+    names = [n for n in names if db.exists(n)]
+    if not names:
+        emit("action_error", {"message": "존재하지 않는 캐릭터입니다."})
+        return
+    try:
+        if "set" in data:
+            for n in names:
+                shop_mod.set_points(db, n, int(data["set"]))
+        else:
+            delta = int(data.get("delta") or 0)
+            for n in names:
+                shop_mod.set_points(db, n, shop_mod.get_points(db, n) + delta)
+    except (TypeError, ValueError):
+        emit("action_error", {"message": "숫자를 입력해주세요."})
+        return
+    _broadcast_all_rooms()
+
+
+@socketio.on("shop_admin_give")
+def on_shop_admin_give(data):
+    """운영진 : 캐릭터 소지품 아이템 지급/회수 (delta 개수)."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 소지품을 관리할 수 있습니다."})
+        return
+    data = data or {}
+    db = room.game.db
+    name = data.get("name")
+    item = shop_mod.shared_shop().get(data.get("item_id"))
+    if not db.exists(name) or item is None:
+        emit("action_error", {"message": "캐릭터 또는 상품이 존재하지 않습니다."})
+        return
+    try:
+        delta = int(data.get("delta") or 0)
+    except (TypeError, ValueError):
+        return
+    shop_mod.change_item_count(db, name, item["id"], delta)
+    _broadcast_all_rooms()
+
+
+@socketio.on("shop_admin_request")
+def on_shop_admin_request(data):
+    """운영진 : '운영진 처리' 요청을 처리 완료/미처리로 표시."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        return
+    data = data or {}
+    if shop_mod.shared_shop().set_request_done(data.get("request_id"), data.get("done", True)):
+        _broadcast_all_rooms()
 
 
 def _runtime_save_loop():

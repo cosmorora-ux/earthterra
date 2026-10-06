@@ -130,6 +130,85 @@
   }
   .mypage-sound-controls { display:flex; align-items:center; gap:8px; padding:4px 0; }
   .mypage-sound-controls #myPageSoundVolume { flex:1; accent-color: var(--accent-blue); }
+  /* ================================================================
+     상점 (P 재화 / 상품 / 소지품 / 운영진 관리)
+     ================================================================ */
+  .modal-box.shop-modal { width:860px; max-width:calc(100vw - 32px); height:80vh; display:flex; flex-direction:column; padding:18px 20px; }
+  .shop-head { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .shop-head .modal-title { margin:0; flex:1; }
+  .shop-wallet { display:flex; align-items:center; gap:8px; font-size:14px; color: var(--muted); }
+  .shop-wallet b { color:#ffd25e; font-size:18px; font-variant-numeric: tabular-nums; }
+  .shop-wallet select { padding:5px 8px; font-size:14px; max-width:160px; }
+  .shop-close { background:none; border:none; color: var(--muted); font-size:20px; cursor:pointer; padding:2px 6px; }
+  .shop-close:hover { color: var(--text); }
+  .shop-tabs { display:flex; gap:4px; border-bottom:1px solid var(--panel-border); margin-bottom:10px; flex-wrap:wrap; }
+  .shop-tab { background:none; border:none; color: var(--muted); padding:8px 12px; font-size:14px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .shop-tab.active { color: var(--text); border-bottom-color: var(--accent-blue); font-weight:700; }
+  .shop-tab.gm { color:#c9a3ff; }
+  .shop-tab.gm.active { border-bottom-color:#9b6bff; }
+  .shop-tab .cnt { display:inline-block; min-width:16px; padding:0 4px; border-radius:8px; background: var(--accent-red); color:#fff; font-size:11px; margin-left:4px; }
+  .shop-body { flex:1 1 auto; min-height:0; overflow-y:auto; padding-right:4px; }
+  .shop-empty { color: var(--muted); text-align:center; padding:40px 0; font-size:14px; }
+  .shop-item { display:flex; align-items:center; gap:12px; padding:10px; border:1px solid var(--card-border); border-radius:10px; margin-bottom:8px; background:rgba(255,255,255,.015); }
+  .shop-icon { width:40px; height:40px; flex:none; border-radius:8px; background:#0c0c0d; border:1px solid var(--card-border);
+    background-size:contain; background-position:center; background-repeat:no-repeat; image-rendering: pixelated;
+    display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:16px; }
+  .shop-icon.editable { cursor:pointer; }
+  .shop-icon.editable:hover { border-color: var(--accent-blue); }
+  .shop-info { flex:1; min-width:0; }
+  .shop-name { font-weight:700; font-size:15px; }
+  .shop-name .count { color:#ffd25e; font-weight:700; margin-left:6px; }
+  .shop-desc { color: var(--muted); font-size:13px; margin-top:2px; }
+  .shop-tags { display:flex; gap:6px; margin-top:5px; flex-wrap:wrap; }
+  .shop-tag { font-size:11px; padding:1px 7px; border-radius:999px; border:1px solid var(--card-border); color: var(--muted); }
+  .shop-tag.t-battle { color:#ff8f8f; border-color:rgba(255,120,120,.35); }
+  .shop-tag.t-prebattle { color:#8fd0ff; border-color:rgba(120,190,255,.35); }
+  .shop-tag.t-any { color:#a5e6a5; border-color:rgba(140,220,140,.35); }
+  .shop-price { font-weight:800; color:#ffd25e; white-space:nowrap; font-variant-numeric: tabular-nums; }
+  .shop-actions { display:flex; align-items:center; gap:6px; flex:none; }
+  .shop-actions select, .shop-actions input { padding:5px 8px; font-size:13px; }
+  .shop-actions input { width:140px; background:#0c0c0d; border:1px solid var(--card-border); color: var(--text); border-radius:6px; }
+  .shop-btn { background: var(--accent-blue); color:#fff; border:none; border-radius:7px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  .shop-btn:disabled { background:#2a2a30; color: var(--muted); cursor:default; }
+  .shop-btn.ghost { background:transparent; border:1px solid var(--card-border); color: var(--text); font-weight:500; }
+  .shop-btn.danger { background:transparent; border:1px solid rgba(255,90,90,.5); color:#ff7a7a; font-weight:500; }
+  .shop-btn.sm { padding:4px 9px; font-size:12px; }
+  /* 운영진 상품 관리 */
+  .shop-edit { display:grid; grid-template-columns: 40px 1.6fr 76px 1fr 1fr 60px auto; gap:6px 8px; align-items:center; padding:8px; border:1px solid var(--card-border); border-radius:10px; margin-bottom:8px; }
+  .shop-edit input, .shop-edit select { width:100%; min-width:0; background:#0c0c0d; border:1px solid var(--card-border); color: var(--text); border-radius:6px; padding:6px 8px; font-size:13px; box-sizing:border-box; }
+  .shop-edit .desc { grid-column: 2 / -1; }
+  .shop-edit .ops { display:flex; gap:4px; }
+  .shop-edit-head { display:grid; grid-template-columns: 40px 1.6fr 76px 1fr 1fr 60px auto; gap:8px; padding:0 9px 4px; font-size:11px; color: var(--muted); }
+  /* 운영진 재화/소지품 관리 */
+  .shop-char { padding:10px; border:1px solid var(--card-border); border-radius:10px; margin-bottom:8px; }
+  .shop-char-top { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .shop-char-name { font-weight:700; flex:1; min-width:100px; }
+  .shop-char-top input[type="number"] { width:90px; background:#0c0c0d; border:1px solid var(--card-border); color:#ffd25e; border-radius:6px; padding:5px 8px; font-size:14px; font-weight:700; text-align:right; }
+  .shop-char-items { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; align-items:center; }
+  .shop-chip { display:inline-flex; align-items:center; gap:4px; font-size:12px; padding:2px 4px 2px 8px; border-radius:999px; background:rgba(255,255,255,.06); }
+  .shop-chip button { background:none; border:none; color: var(--muted); cursor:pointer; font-size:12px; padding:0 4px; }
+  .shop-chip button:hover { color: var(--text); }
+  .shop-req { display:flex; gap:10px; align-items:center; padding:9px 10px; border-bottom:1px solid var(--panel-border); font-size:14px; }
+  .shop-req.done { opacity:.45; }
+  .shop-req .when { color: var(--muted); font-size:12px; width:78px; flex:none; }
+  .shop-req .what { flex:1; min-width:0; }
+  .shop-req .memo { color: var(--muted); font-size:13px; }
+  .shop-toolbar { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; font-size:13px; color: var(--muted); }
+  .shop-toolbar input { width:90px; background:#0c0c0d; border:1px solid var(--card-border); color: var(--text); border-radius:6px; padding:5px 8px; font-size:13px; }
+  /* .modal-box input 기본(가로 100%, 큰 글씨)을 상점 안에서는 작게 덮어씁니다 */
+  .modal-box.shop-modal input:not([type="checkbox"]) { width:auto; font-size:13px; padding:6px 8px; }
+  .modal-box.shop-modal .shop-edit input { width:100%; }
+  .modal-box.shop-modal .shop-toolbar input { width:90px; }
+  .modal-box.shop-modal .shop-actions input { width:150px; }
+  .modal-box.shop-modal .shop-char-top input[type="number"] { width:90px; font-size:14px; }
+  #shopToast { position:fixed; left:50%; bottom:40px; transform:translateX(-50%) translateY(20px); opacity:0; pointer-events:none; z-index:300;
+    background:#1d2a1f; border:1px solid #3ecf6a; color:#cfffd9; padding:10px 18px; border-radius:10px; font-size:14px; transition: all .25s; }
+  #shopToast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  @media (max-width: 640px) {
+    .shop-edit, .shop-edit-head { grid-template-columns: 40px 1fr 70px; }
+    .shop-edit-head { display:none; }
+    .shop-item { flex-wrap:wrap; }
+  }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
@@ -523,7 +602,7 @@
   <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i></button>
   <button class="sidebar-icon active"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
-  <button class="sidebar-icon muted" disabled><i class="fa-solid fa-briefcase"></i></button>
+  <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" data-tip="상점"><i class="fa-solid fa-briefcase"></i></button>
   <div class="sidebar-grow"></div>
   <button class="sidebar-icon" onclick="openMyPage()"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
@@ -531,6 +610,19 @@
 <div class="content-area">
 <div class="shell">
 
+<div id="shopToast"></div>
+<div id="shopModal" class="modal-overlay" onclick="if(event.target===this) closeShop()">
+  <div class="modal-box shop-modal panel">
+    <div class="shop-head">
+      <div class="modal-title">상점</div>
+      <div class="shop-wallet" id="shopWallet"></div>
+      <button class="shop-close" onclick="closeShop()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="shop-tabs" id="shopTabs"></div>
+    <div class="shop-body" id="shopBody"></div>
+  </div>
+</div>
+<input type="file" id="shopIconFileInput" accept="image/png,image/webp,image/gif,image/jpeg" style="display:none;" onchange="onShopIconChosen(event)">
 <div id="globalError"><span class="err-icon">i</span><span id="globalErrorText"></span></div>
 
 <div id="joinModal" class="modal-overlay">
@@ -631,6 +723,16 @@
     <div class="hpbar-track"><div class="hpbar-fill" id="myPageHpBar" style="width:0%;"></div></div>
 
     <div class="mypage-divider"></div>
+
+    <div class="mypage-row">
+      <span class="mypage-label">재화</span>
+      <span class="mypage-value" id="myPagePointsView" style="color:#ffd25e;font-weight:700;">0P</span>
+      <input type="number" id="myPagePointsInput" min="0" style="display:none;" onchange="onMyPagePointsChange()">
+    </div>
+    <div class="mypage-row">
+      <span class="mypage-label">아이템</span>
+      <span class="mypage-value" id="myPageItemsView" style="cursor:pointer;" onclick="openShopFromMyPage()" data-tip="클릭하면 소지품(상점)을 열어요">-</span>
+    </div>
 
     <div class="mypage-row">
       <span class="mypage-label">소지품</span>
@@ -1136,7 +1238,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-06.3";
+const EXPECTED_SERVER_BUILD = "2026-10-06.4";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -1146,6 +1248,7 @@ socket.on('public_state', (state) => {
   lastUserInfoHidden = new Set(state.userinfo_hidden || []);
   lastRosterProfiles = state.roster_profiles || {};
   lastRosterMypage = state.roster_mypage || {};
+  lastShop = state.shop || lastShop;
   lastOnlineCharacters = state.online_characters || [];
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
   lastSiteDice = state.site_dice || null;
@@ -1160,6 +1263,8 @@ socket.on('public_state', (state) => {
   renderPubLog(state.log, state.log_total);
   renderChat(state.chat);
   renderMusic(state.music, state.server_now);
+  renderShop();
+  renderMyPagePoints();
 });
 
 socket.on('battle_starting', () => {
@@ -2243,6 +2348,8 @@ socket.on('formulas_saved', (d) => {
 let lastRosterDetail = [];  // GM 전용 - 등록된 캐릭터 전체 정보(전투에 없는 캐릭터의 마이페이지용)
 socket.on('gm_state', (state) => {
   lastRosterDetail = state.roster_detail || [];
+  lastShopRequests = state.shop_requests || [];
+  renderShop();
   lastOperatorLog = state.operator_log || [];
   lastOperatorLogTotal = state.operator_log_total != null ? state.operator_log_total : lastOperatorLog.length;
   if (logView === 'operator') {
@@ -2872,6 +2979,7 @@ function openMyPageFor(name) {
   myPageViewName = name;
   document.getElementById('myPageModal').style.display = 'flex';
   renderMyPage();
+  renderMyPagePoints();
 }
 
 function myPageTargetChar() {
@@ -2897,6 +3005,7 @@ function openMyPage() {
   myPageViewName = null;
   document.getElementById('myPageModal').style.display = 'flex';
   renderMyPage();
+  renderMyPagePoints();
 }
 
 function closeMyPage() {
@@ -3281,6 +3390,259 @@ function startMusicPlayback() {
       }, 200);
     }
   }
+}
+// ==================================================================
+// 상점 : 참가자(상점/소지품) + 운영진(상품 관리/재화·소지품/처리 요청)
+// ==================================================================
+let lastShop = null;          // {items, effect_labels, timing_labels, stat_keys}
+let lastShopRequests = [];    // 운영진 전용
+let shopTab = 'shop';
+let shopGmTarget = '';        // 운영진이 상점/소지품 탭에서 대신 조작할 캐릭터
+let shopIconTargetId = null;
+
+function shopIsGm() { return myControlInfo(lastBattleForPanel).scope === 'all'; }
+function shopEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function shopTargetName() { return shopIsGm() ? (shopGmTarget || null) : myLoggedInName(); }
+function shopCharData(name) { return name ? (lastRosterMypage[name] || null) : null; }
+function shopItemById(id) { return (lastShop && lastShop.items || []).find(it => it.id === id) || null; }
+
+function showShopToast(msg) {
+  const el = document.getElementById('shopToast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(showShopToast._t);
+  showShopToast._t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+socket.on('shop_result', (d) => showShopToast(d.message));
+
+function openShop(tab) {
+  if (tab) shopTab = tab;
+  document.getElementById('shopModal').style.display = 'flex';
+  renderShop();
+}
+function closeShop() { document.getElementById('shopModal').style.display = 'none'; }
+function setShopTab(tab) { shopTab = tab; renderShop(); }
+
+function shopIconHtml(it, editable) {
+  const style = it && it.icon_url ? ` style="background-image:url('${shopEsc(it.icon_url)}')"` : '';
+  const inner = it && it.icon_url ? '' : '<i class="fa-solid fa-box"></i>';
+  const attrs = editable ? ` class="shop-icon editable" data-tip="클릭해서 이미지 등록 (도트 권장)" onclick="pickShopIcon('${it.id}')"` : ' class="shop-icon"';
+  return `<div${attrs}${style}>${inner}</div>`;
+}
+function shopTagsHtml(it) {
+  const tl = (lastShop && lastShop.timing_labels) || {};
+  const el = (lastShop && lastShop.effect_labels) || {};
+  let eff = el[it.effect] || it.effect;
+  if (it.effect === 'heal') eff += ` ${it.value}`;
+  if (it.effect === 'stat_up') eff += ` +${it.value}`;
+  return `<div class="shop-tags"><span class="shop-tag t-${it.timing}">${shopEsc(tl[it.timing] || it.timing)}</span><span class="shop-tag">${shopEsc(eff)}</span></div>`;
+}
+
+function renderShop() {
+  const modal = document.getElementById('shopModal');
+  if (!modal || modal.style.display !== 'flex') return;
+  const gm = shopIsGm();
+  if (!gm && ['items', 'wallets', 'requests'].includes(shopTab)) shopTab = 'shop';
+
+  // 상단 지갑 : 참가자는 본인 P, 운영진은 대신 조작할 캐릭터 선택
+  const wallet = document.getElementById('shopWallet');
+  const target = shopTargetName();
+  const data = shopCharData(target);
+  if (gm) {
+    const opts = ['<option value="">(캐릭터 선택)</option>'].concat(
+      (lastRoster || []).map(n => `<option value="${shopEsc(n)}" ${n === shopGmTarget ? 'selected' : ''}>${shopEsc(n)}</option>`));
+    wallet.innerHTML = `<span>대상</span><select onchange="shopGmTarget=this.value; renderShop();">${opts.join('')}</select>` +
+      (data ? `<b>${data.points || 0}P</b>` : '');
+  } else {
+    wallet.innerHTML = target ? `<span>${shopEsc(target)}</span><b>${data ? (data.points || 0) : 0}P</b>` : '<span>로그인 필요</span>';
+  }
+
+  const pending = (lastShopRequests || []).filter(r => !r.done).length;
+  const tabs = [['shop', '상점'], ['inventory', '소지품']];
+  if (gm) tabs.push(['items', '상품 관리', 'gm'], ['wallets', '재화·소지품 관리', 'gm'], ['requests', '처리 요청', 'gm', pending]);
+  document.getElementById('shopTabs').innerHTML = tabs.map(([k, label, cls, cnt]) =>
+    `<button class="shop-tab ${cls || ''} ${shopTab === k ? 'active' : ''}" onclick="setShopTab('${k}')">${label}${cnt ? `<span class="cnt">${cnt}</span>` : ''}</button>`).join('');
+
+  const body = document.getElementById('shopBody');
+  // 입력 중인 칸이 있으면(운영진 편집) 다시 그리지 않아 입력이 끊기지 않게 합니다.
+  if (body.contains(document.activeElement) && ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+  const scroll = body.scrollTop;
+  if (!lastShop) { body.innerHTML = '<div class="shop-empty">상점 정보를 불러오는 중...</div>'; return; }
+  if (shopTab === 'shop') body.innerHTML = renderShopList(target, data);
+  else if (shopTab === 'inventory') body.innerHTML = renderShopInventory(target, data);
+  else if (shopTab === 'items') body.innerHTML = renderShopItemsAdmin();
+  else if (shopTab === 'wallets') body.innerHTML = renderShopWallets();
+  else if (shopTab === 'requests') body.innerHTML = renderShopRequests();
+  body.scrollTop = scroll;
+}
+
+function renderShopList(target, data) {
+  const items = lastShop.items || [];
+  if (!items.length) return '<div class="shop-empty">판매 중인 상품이 없어요.</div>';
+  const points = data ? (data.points || 0) : 0;
+  return items.map(it => {
+    const can = !!target && points >= it.price;
+    const owned = data && data.items ? (data.items[it.id] || 0) : 0;
+    return `<div class="shop-item">${shopIconHtml(it, false)}
+      <div class="shop-info"><div class="shop-name">${shopEsc(it.name)}${owned ? `<span class="count" data-tip="보유 개수">×${owned}</span>` : ''}</div>
+        <div class="shop-desc">${shopEsc(it.desc)}</div>${shopTagsHtml(it)}</div>
+      <div class="shop-actions"><span class="shop-price">${it.price}P</span>
+        <button class="shop-btn" ${can ? '' : 'disabled'} onclick="shopBuy('${it.id}')">구매</button></div>
+    </div>`;
+  }).join('') + (target ? '' : '<div class="shop-empty">캐릭터로 로그인하면 구매할 수 있어요.</div>');
+}
+
+function renderShopInventory(target, data) {
+  if (!target) return `<div class="shop-empty">${shopIsGm() ? '위에서 캐릭터를 골라주세요.' : '캐릭터로 로그인하면 소지품을 볼 수 있어요.'}</div>`;
+  const owned = Object.entries((data && data.items) || {}).filter(([, n]) => n > 0);
+  if (!owned.length) return '<div class="shop-empty">가진 아이템이 없어요. 상점에서 구매해 보세요.</div>';
+  const statKeys = lastShop.stat_keys || [];
+  return owned.map(([id, n]) => {
+    const it = shopItemById(id);
+    if (!it) return `<div class="shop-item"><div class="shop-icon"><i class="fa-solid fa-ban"></i></div><div class="shop-info"><div class="shop-name">삭제된 상품<span class="count">×${n}</span></div></div></div>`;
+    let extra = '';
+    if (it.effect === 'stat_up') extra = `<select id="shopStat_${it.id}">${statKeys.map(k => `<option>${k}</option>`).join('')}</select>`;
+    if (it.effect === 'request') extra = `<input id="shopMemo_${it.id}" maxlength="200" placeholder="요청 내용 (선택)">`;
+    return `<div class="shop-item">${shopIconHtml(it, false)}
+      <div class="shop-info"><div class="shop-name">${shopEsc(it.name)}<span class="count">×${n}</span></div>
+        <div class="shop-desc">${shopEsc(it.desc)}</div>${shopTagsHtml(it)}</div>
+      <div class="shop-actions">${extra}<button class="shop-btn" onclick="shopUse('${it.id}')">사용</button></div>
+    </div>`;
+  }).join('');
+}
+
+function renderShopItemsAdmin() {
+  const el = lastShop.effect_labels || {}, tl = lastShop.timing_labels || {};
+  const sel = (map, cur) => Object.entries(map).map(([k, v]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${shopEsc(v)}</option>`).join('');
+  const rows = (lastShop.items || []).map(it => `<div class="shop-edit">
+      ${shopIconHtml(it, true)}
+      <input value="${shopEsc(it.name)}" maxlength="30" onchange="shopEditItem('${it.id}', {name:this.value})" placeholder="이름">
+      <input type="number" min="0" value="${it.price}" onchange="shopEditItem('${it.id}', {price:this.value})" data-tip="가격(P)">
+      <select onchange="shopEditItem('${it.id}', {effect:this.value})">${sel(el, it.effect)}</select>
+      <select onchange="shopEditItem('${it.id}', {timing:this.value})">${sel(tl, it.timing)}</select>
+      <input type="number" value="${it.value}" onchange="shopEditItem('${it.id}', {value:this.value})" data-tip="효과 수치 (회복량 / 스탯 증가량)" ${it.effect === 'request' ? 'disabled' : ''}>
+      <div class="ops">
+        <button class="shop-btn ghost sm" onclick="shopMoveItem('${it.id}',-1)" data-tip="위로">▲</button>
+        <button class="shop-btn ghost sm" onclick="shopMoveItem('${it.id}',1)" data-tip="아래로">▼</button>
+        ${it.icon_url ? `<button class="shop-btn ghost sm" onclick="shopClearIcon('${it.id}')" data-tip="이미지 지우기"><i class="fa-solid fa-image"></i>✕</button>` : ''}
+        <button class="shop-btn danger sm" onclick="shopDeleteItem('${it.id}')">삭제</button>
+      </div>
+      <input class="desc" value="${shopEsc(it.desc)}" maxlength="200" onchange="shopEditItem('${it.id}', {desc:this.value})" placeholder="설명">
+    </div>`).join('');
+  return `<div class="shop-toolbar"><span>칸을 고치면 바로 저장돼요. 이미지 칸을 클릭하면 도트 이미지를 올릴 수 있어요.</span>
+      <div style="flex:1"></div><button class="shop-btn" onclick="shopAddItem()">+ 상품 추가</button></div>
+    <div class="shop-edit-head"><span>이미지</span><span>이름</span><span>가격(P)</span><span>효과</span><span>사용 시점</span><span>수치</span><span></span></div>
+    ${rows || '<div class="shop-empty">상품이 없어요.</div>'}`;
+}
+
+function renderShopWallets() {
+  const names = lastRoster || [];
+  if (!names.length) return '<div class="shop-empty">등록된 캐릭터가 없어요.</div>';
+  const itemOpts = (lastShop.items || []).map(it => `<option value="${it.id}">${shopEsc(it.name)}</option>`).join('');
+  const rows = names.map(n => {
+    const d = lastRosterMypage[n] || {};
+    const chips = Object.entries(d.items || {}).filter(([, c]) => c > 0).map(([id, c]) => {
+      const it = shopItemById(id);
+      const nm = it ? it.name : '삭제된 상품';
+      return `<span class="shop-chip">${shopEsc(nm)} ×${c}<button onclick="shopGive('${shopEsc(n)}','${id}',-1)" data-tip="1개 회수">−</button><button onclick="shopGive('${shopEsc(n)}','${id}',1)" data-tip="1개 지급">+</button></span>`;
+    }).join('');
+    const key = encodeURIComponent(n).replace(/[^a-zA-Z0-9]/g, '_');
+    return `<div class="shop-char">
+      <div class="shop-char-top"><span class="shop-char-name">${shopEsc(n)}</span>
+        <input type="number" min="0" value="${d.points || 0}" onchange="shopSetPoints('${shopEsc(n)}', this.value)" data-tip="보유 P (고치면 바로 저장)"><span style="color:var(--muted)">P</span>
+        <select id="shopGiveSel_${key}">${itemOpts}</select>
+        <button class="shop-btn ghost sm" onclick="shopGive('${shopEsc(n)}', document.getElementById('shopGiveSel_${key}').value, 1)">아이템 지급</button>
+      </div>
+      ${chips ? `<div class="shop-char-items">${chips}</div>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="shop-toolbar"><span>전원에게 P 일괄 지급</span><input type="number" id="shopBulkPoints" value="100">
+      <button class="shop-btn ghost sm" onclick="shopBulkPoints(1)">+ 지급</button>
+      <button class="shop-btn ghost sm" onclick="shopBulkPoints(-1)">− 차감</button></div>${rows}`;
+}
+
+function renderShopRequests() {
+  const reqs = lastShopRequests || [];
+  if (!reqs.length) return '<div class="shop-empty">들어온 요청이 없어요.</div>';
+  return reqs.map(r => `<div class="shop-req ${r.done ? 'done' : ''}">
+      <span class="when">${shopEsc(r.time)}</span>
+      <div class="what"><b>${shopEsc(r.character)}</b> · ${shopEsc(r.item_name)}${r.memo ? `<div class="memo">${shopEsc(r.memo)}</div>` : ''}</div>
+      <button class="shop-btn ${r.done ? 'ghost' : ''} sm" onclick="shopReqDone('${r.id}', ${!r.done})">${r.done ? '되돌리기' : '처리 완료'}</button>
+    </div>`).join('');
+}
+
+// ---- 참가자 동작 ----
+function shopPayloadName() { return shopIsGm() ? { name: shopGmTarget } : {}; }
+function shopBuy(itemId) {
+  const it = shopItemById(itemId);
+  if (!it || !shopTargetName()) return;
+  if (!confirm(`${it.name}을(를) ${it.price}P에 구매할까요?`)) return;
+  socket.emit('shop_buy', { item_id: itemId, qty: 1, ...shopPayloadName() });
+}
+function shopUse(itemId) {
+  const it = shopItemById(itemId);
+  if (!it) return;
+  const payload = { item_id: itemId, ...shopPayloadName() };
+  if (it.effect === 'stat_up') payload.stat = document.getElementById(`shopStat_${itemId}`).value;
+  if (it.effect === 'request') payload.memo = document.getElementById(`shopMemo_${itemId}`).value;
+  const what = it.effect === 'stat_up' ? ` (${payload.stat} +${it.value})` : '';
+  if (!confirm(`${it.name}${what}을(를) 사용할까요?`)) return;
+  socket.emit('shop_use', payload);
+}
+
+// ---- 운영진 동작 ----
+function shopEditItem(id, fields) { socket.emit('shop_admin_item', { action: 'update', item_id: id, fields }); }
+function shopAddItem() { socket.emit('shop_admin_item', { action: 'add', fields: { name: '새 상품', price: 100 } }); }
+function shopMoveItem(id, delta) { socket.emit('shop_admin_item', { action: 'move', item_id: id, delta }); }
+function shopDeleteItem(id) {
+  const it = shopItemById(id);
+  if (confirm(`'${it ? it.name : ''}' 상품을 삭제할까요? (이미 산 사람의 소지품에는 '삭제된 상품'으로 남아요)`)) socket.emit('shop_admin_item', { action: 'delete', item_id: id });
+}
+function pickShopIcon(id) { shopIconTargetId = id; document.getElementById('shopIconFileInput').click(); }
+function shopClearIcon(id) { socket.emit('shop_admin_icon', { item_id: id, clear: true }); }
+function onShopIconChosen(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!f || !shopIconTargetId) return;
+  if (f.size > 1024 * 1024) { showError('이미지가 너무 커요 (최대 1MB).'); return; }
+  f.arrayBuffer().then(buf => socket.emit('shop_admin_icon', { item_id: shopIconTargetId, filename: f.name, data: buf }));
+}
+function shopSetPoints(name, v) { socket.emit('shop_admin_points', { name, set: parseInt(v || '0', 10) }); }
+function shopBulkPoints(sign) {
+  const v = parseInt(document.getElementById('shopBulkPoints').value || '0', 10) * sign;
+  if (!v) return;
+  if (!confirm(`등록된 캐릭터 전원에게 ${v > 0 ? '+' : ''}${v}P 할까요?`)) return;
+  socket.emit('shop_admin_points', { names: lastRoster || [], delta: v });
+}
+function shopGive(name, itemId, delta) { socket.emit('shop_admin_give', { name, item_id: itemId, delta }); }
+function shopReqDone(id, done) { socket.emit('shop_admin_request', { request_id: id, done }); }
+
+// ---- 마이페이지 재화/아이템 ----
+function renderMyPagePoints() {
+  if (document.getElementById('myPageModal').style.display !== 'flex') return;
+  const c = myPageTargetChar();
+  const d = c ? (lastRosterMypage[c.name] || {}) : {};
+  const view = document.getElementById('myPagePointsView');
+  const input = document.getElementById('myPagePointsInput');
+  const gm = shopIsGm();
+  view.textContent = `${d.points || 0}P`;
+  view.style.display = gm ? 'none' : '';
+  input.style.display = gm ? '' : 'none';
+  if (document.activeElement !== input) input.value = d.points || 0;
+  const items = Object.entries(d.items || {}).filter(([, n]) => n > 0)
+    .map(([id, n]) => { const it = shopItemById(id); return `${it ? it.name : '삭제된 상품'} ×${n}`; });
+  document.getElementById('myPageItemsView').textContent = items.length ? items.join(', ') : '(없음)';
+}
+function openShopFromMyPage() {
+  const c = myPageTargetChar();
+  if (shopIsGm() && c) shopGmTarget = c.name;
+  closeMyPage();
+  openShop('inventory');
+}
+function onMyPagePointsChange() {
+  const c = myPageTargetChar();
+  if (!c) return;
+  socket.emit('shop_admin_points', { name: c.name, set: parseInt(document.getElementById('myPagePointsInput').value || '0', 10) });
 }
 </script>
 </body>
