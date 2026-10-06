@@ -171,6 +171,13 @@ RUNTIME_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "room_ru
 # rooms.json에 따로 저장하는 값 + 방 식별자 + 캐릭터 DB(characters.json에 따로 저장)는 제외합니다.
 _RUNTIME_SKIP = set(_PERSISTED_FIELDS) | {"id", "game"}
 _last_runtime_blob = None
+_runtime_dirty = True
+
+
+def mark_runtime_dirty():
+    """전투 상태/채팅 등이 바뀌었음을 표시합니다. 바뀐 게 없으면 저장 루프가 아무 일도 하지 않습니다."""
+    global _runtime_dirty
+    _runtime_dirty = True
 
 
 def _runtime_payload():
@@ -185,7 +192,10 @@ def _runtime_payload():
 
 def save_runtime(force: bool = False) -> bool:
     """모든 방의 전투 진행 상태를 저장합니다. 지난 저장 이후 바뀐 게 없으면 건너뜁니다."""
-    global _last_runtime_blob
+    global _last_runtime_blob, _runtime_dirty
+    if not force and not _runtime_dirty:
+        return False
+    _runtime_dirty = False
     try:
         blob = pickle.dumps(_runtime_payload(), protocol=pickle.HIGHEST_PROTOCOL)
     except Exception as e:  # 저장 실패가 전투 진행을 막으면 안 됩니다.

@@ -22,13 +22,13 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 import config
 from battle import Battle, BattleError
 from rooms import (
-    create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime,
+    create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
     ROOMS, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES,
 )
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.2"
+SERVER_BUILD = "2026-10-06.3"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -110,6 +110,7 @@ def post_system_chat(room, text: str, nickname: str = "system"):
         "text": text,
     }
     room.chat_log.append(entry)
+    mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
 
@@ -563,7 +564,10 @@ def _mirror_round_logs(room):
         return
     # 어디까지 옮겼는지는 전투 객체에 기록합니다(새 전투가 시작되면 0부터 다시).
     mirrored = getattr(battle, "_chat_mirrored_len", 0)
-    battle_key = id(battle)
+    # 서버를 다시 켜서 전투가 복원돼도 같은 값이 유지되도록 id() 대신 전투마다 고정 키를 씁니다.
+    battle_key = getattr(battle, "_chat_key", None)
+    if battle_key is None:
+        battle_key = battle._chat_key = uuid.uuid4().hex
     log = battle.public_log
     if len(log) < mirrored:
         room.chat_log = [
@@ -584,11 +588,13 @@ def _mirror_round_logs(room):
                 "battle_key": battle_key,
             }
             room.chat_log.append(entry)
+            mark_runtime_dirty()
             socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
     battle._chat_mirrored_len = len(log)
 
 
 def broadcast_state(room):
+    mark_runtime_dirty()
     _mirror_round_logs(room)
     socketio.emit("public_state", build_public_state(room), room=room_channel(room.id, "all"))
     socketio.emit("gm_state", build_gm_state(room), room=room_channel(room.id, "gm"))
@@ -713,6 +719,7 @@ def on_join(data):
             "text": f"{previous_nickname}님이 퇴장했습니다",
         }
         room.chat_log.append(entry)
+        mark_runtime_dirty()
         socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
     elif nickname != "익명":
         entry = {
@@ -723,6 +730,7 @@ def on_join(data):
             "text": f"{nickname}님이 입장했습니다 ({'운영진' if role == 'gm' else '참가자'})",
         }
         room.chat_log.append(entry)
+        mark_runtime_dirty()
         socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
 
     emit("joined", {"role": role, "room_id": room_id})
@@ -747,6 +755,7 @@ def on_disconnect():
             "text": f"{info['nickname']}님이 퇴장했습니다",
         }
         room.chat_log.append(entry)
+        mark_runtime_dirty()
         socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
     # 온라인 표시(유저 접속정보 팝업)가 끊기자마자 바로 반영되도록 상태를 다시 보냅니다.
     broadcast_state(room)
@@ -826,6 +835,7 @@ def on_chat_message(data):
         "text": text[:500],
     }
     room.chat_log.append(entry)
+    mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
 
 
@@ -1383,6 +1393,7 @@ def on_start_battle(data):
         "text": f"전투가 시작됩니다. 선공 팀은 {first_team_label}입니다.\n제한시간 내 행동해 주세요.",
     }
     room.chat_log.append(entry)
+    mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
     broadcast_state(room)
@@ -1547,6 +1558,7 @@ def _post_mass_raid_reminder(room, battle, threshold):
         "text": f"제한시간 {minutes}분 남았습니다 ({acted_count}/{len(living)}명 행동 완료) · 미완료: {names}",
     }
     room.chat_log.append(entry)
+    mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
 
@@ -1622,6 +1634,7 @@ def _maybe_auto_advance_turn(room, battle):
         "text": f"{battle.current_turn_team} 전원 행동 완료 — 자동으로 다음 턴으로 넘어갑니다.",
     }
     room.chat_log.append(entry)
+    mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
     try:
         battle.advance_turn()
@@ -1799,6 +1812,7 @@ def on_reveal_pending_action(data):
         "text": summary,
     }
     room.chat_log.append(entry)
+    mark_runtime_dirty()
     socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
     # 점령전 : 거점 다중 행동 소모는 "공개"가 확정된 시점에만 적용됩니다.
