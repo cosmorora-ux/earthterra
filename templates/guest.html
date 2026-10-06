@@ -1020,7 +1020,7 @@
       <input type="range" class="nice-range" id="sfxVolumeSlider" min="0" max="100" oninput="onSfxVolumeChange(this.value)">
       <span class="bgm-vol-num" id="sfxVolumeNum"></span>
     </div>
-    <div class="snd-hint">효과음 적정 크기는 <b>-22 dB (±3)</b>예요. 마이페이지에 소리를 올리면 크기가 표시되고 "적정 크기로 맞추기"로 음량을 자동으로 맞출 수 있어요.</div>
+    <div class="snd-hint">효과음 적정 크기는 <b>-20 dB (±3)</b>예요. 배경음악과 함께 들려도 묻히거나 튀지 않는 크기예요. 마이페이지에 소리를 올리면 크기가 표시되고 "적정 크기로 맞추기"로 음량을 자동으로 맞출 수 있어요.</div>
     <div class="snd-hint">공격·방어·지휘·회복 같은 행동을 하면 그 캐릭터의 효과음이 모두에게 들려요. 캐릭터가 마이페이지에 자기 소리를 등록했으면 그 소리로, 아니면 아래 기본 소리로 나와요.</div>
     <div id="sfxDefaultsSection"></div>
     <input type="file" id="sfxDefaultFileInput" accept=".mp3,.wav,.ogg,.m4a,.aac,audio/*" style="display:none;" onchange="onSfxDefaultFileChosen(event)">
@@ -4554,7 +4554,10 @@ function onSfxDefaultFileChosen(ev) {
 // 기본 효과음 기준으로 정한 적정 크기(SFX_TARGET_DB)에 맞추면 모든 캐릭터 효과음 크기가 비슷해집니다.
 // 표시하는 값은 '음량 슬라이더까지 적용한 실제 크기'입니다.
 // ==================================================================
-const SFX_TARGET_DB = -22;     // 적정 크기 (기본 효과음 공격/방어 ≈ -22 dB)
+// 적정 크기 : 배경음악(보통 -14 LUFS 내외로 마스터링된 곡을 기본 음량 70%로 틀면 소리 구간 평균 약 -17 dB)
+// 위에 겹쳐 들릴 때 묻히지도, 튀지도 않는 수준. 효과음은 짧고 어택이 있어 같은 평균값이면 더 크게 들리므로
+// 음악보다 약간 낮은 -20 dB를 기준으로 ±3 dB를 '적정'으로 봅니다(-23 ~ -17 dB).
+const SFX_TARGET_DB = -20;
 const SFX_TOLERANCE_DB = 3;    // ±3 dB 안이면 '적정'
 const sfxLoudnessCache = {};
 function analyzeLoudness(url) {

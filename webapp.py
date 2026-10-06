@@ -618,8 +618,8 @@ def _mirror_round_logs(room):
 # ----------------------------------------------------------------------
 SFX_CONFIG_PATH = os.path.join(_THIS_DIR, "sfx.json")
 SFX_DEFAULTS = {
-    "combat": {"label": "공격 / 방어", "url": "/static/sfx/default_combat.wav", "volume": 80},
-    "support": {"label": "지휘 / 회복", "url": "/static/sfx/default_support.wav", "volume": 80},
+    "combat": {"label": "공격 / 방어", "url": "/static/sfx/default_combat.wav", "volume": 100},
+    "support": {"label": "지휘 / 회복", "url": "/static/sfx/default_support.wav", "volume": 100},
 }
 # 행동 종류 → 효과음 종류 (이동/배치/시간초과/도주 등은 소리 없음)
 ACTION_SFX_KIND = {
