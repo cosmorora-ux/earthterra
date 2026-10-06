@@ -22,13 +22,13 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 import config
 from battle import Battle, BattleError
 from rooms import (
-    create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms,
+    create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime,
     ROOMS, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES,
 )
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.1"
+SERVER_BUILD = "2026-10-06.2"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -1818,8 +1818,20 @@ def on_reveal_pending_action(data):
     broadcast_state(room)
 
 
+def _runtime_save_loop():
+    """전투 진행 상태(HP/턴/로그/채팅/음악 등)를 3초마다 디스크에 저장합니다(바뀐 게 있을 때만)."""
+    while True:
+        socketio.sleep(3)
+        try:
+            save_runtime()
+        except Exception as e:
+            print(f"[runtime save] 실패: {e}")
+
+
 if __name__ == "__main__":
     load_rooms()
+    load_runtime()
     socketio.start_background_task(_round_reminder_loop)
+    socketio.start_background_task(_runtime_save_loop)
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)

@@ -8,16 +8,18 @@ rooms.py
 
 import json
 import os
+import pickle
 import secrets
 import time
 
-from battle import GameManager
+from battle import Battle, GameManager
+from models import Character
 
 ROOMS = {}
 
 # 방 자체(이름/전투 유형/키 등)를 디스크에 저장해서 서버를 껐다 켜도 링크가 그대로
-# 유지되게 합니다. 전투 진행 상태(HP/턴/로그 등)는 저장하지 않습니다 - 서버가 재시작되면
-# 그 방은 "전투 시작 전" 상태로 돌아가고, 운영진이 다시 "전투 시작"을 누르면 됩니다.
+# 유지되게 합니다. 전투 진행 상태(HP/턴/로그/채팅/음악 등)는 room_runtime.pkl에 따로 몇 초마다
+# 저장해서, 서버를 다시 켜도 하던 전투를 그대로 이어갈 수 있습니다(save_runtime/load_runtime).
 ROOMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rooms.json")
 
 # RoomState의 필드 중 이 목록만 rooms.json에 저장/복원합니다.
@@ -160,3 +162,89 @@ def load_rooms():
             if field in fields:
                 setattr(room, field, fields[field])
         ROOMS[room_id] = room
+
+
+# ----------------------------------------------------------------------
+# 전투 진행 상태(런타임) 저장/복원
+# ----------------------------------------------------------------------
+RUNTIME_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "room_runtime.pkl")
+# rooms.json에 따로 저장하는 값 + 방 식별자 + 캐릭터 DB(characters.json에 따로 저장)는 제외합니다.
+_RUNTIME_SKIP = set(_PERSISTED_FIELDS) | {"id", "game"}
+_last_runtime_blob = None
+
+
+def _runtime_payload():
+    return {
+        room_id: {
+            "attrs": {k: v for k, v in room.__dict__.items() if k not in _RUNTIME_SKIP},
+            "battle": room.game.battle,
+        }
+        for room_id, room in ROOMS.items()
+    }
+
+
+def save_runtime(force: bool = False) -> bool:
+    """모든 방의 전투 진행 상태를 저장합니다. 지난 저장 이후 바뀐 게 없으면 건너뜁니다."""
+    global _last_runtime_blob
+    try:
+        blob = pickle.dumps(_runtime_payload(), protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception as e:  # 저장 실패가 전투 진행을 막으면 안 됩니다.
+        print(f"[runtime save] 실패: {e}")
+        return False
+    if not force and blob == _last_runtime_blob:
+        return False
+    tmp_path = RUNTIME_FILE + ".tmp"
+    with open(tmp_path, "wb") as f:
+        f.write(blob)
+    os.replace(tmp_path, RUNTIME_FILE)
+    _last_runtime_blob = blob
+    return True
+
+
+def _fill_missing_attrs(obj, template):
+    """코드가 업데이트되어 새로 생긴 속성이 저장본에 없으면 기본값으로 채워 넣습니다."""
+    for k, v in template.__dict__.items():
+        if k not in obj.__dict__:
+            obj.__dict__[k] = v
+
+
+def _upgrade_battle(battle):
+    chars = battle.team_a + battle.team_b
+    for c in chars:
+        _fill_missing_attrs(c, Character(c.name, c.role, c.stats))
+    try:
+        fresh_a = [Character(c.name, c.role, c.stats) for c in battle.team_a]
+        fresh_b = [Character(c.name, c.role, c.stats) for c in battle.team_b]
+        _fill_missing_attrs(battle, Battle(fresh_a, fresh_b))
+    except Exception as e:
+        print(f"[runtime load] 전투 기본값 보충 실패(무시): {e}")
+
+
+def load_runtime():
+    """서버 시작 시 저장된 전투 진행 상태를 각 방에 되돌려 놓습니다. 파일이 깨졌거나 코드와 맞지 않으면
+    그 방은 '전투 시작 전' 상태로 둡니다."""
+    global _last_runtime_blob
+    if not os.path.exists(RUNTIME_FILE):
+        return
+    try:
+        with open(RUNTIME_FILE, "rb") as f:
+            blob = f.read()
+        data = pickle.loads(blob)
+    except Exception as e:
+        print(f"[runtime load] 저장된 전투 상태를 읽지 못했습니다: {e}")
+        return
+    for room_id, saved in data.items():
+        room = ROOMS.get(room_id)
+        if room is None:
+            continue
+        try:
+            for k, v in saved.get("attrs", {}).items():
+                setattr(room, k, v)
+            battle = saved.get("battle")
+            if battle is not None:
+                _upgrade_battle(battle)
+            room.game.battle = battle
+        except Exception as e:
+            print(f"[runtime load] 방 {room_id} 복원 실패(전투 시작 전 상태로 둡니다): {e}")
+            room.game.battle = None
+    _last_runtime_blob = blob
