@@ -284,21 +284,24 @@
   .main-grid:not(.with-grid-map) .team-block h2 { height:40px; display:flex; align-items:center; margin:0 0 10px 2px; }
   .sort-row:has(> #multiSkillSlot:empty) { display:none; }
   /* ================================================================
-     홀로그램(글리터) 카드 효과 : 카드 영역에 마우스를 올리면 모든 카드 테두리에 무지개빛이 돌고,
-     포인터 주변이 밝게 비칩니다. 카드 안쪽은 반짝이 질감이 깔린 어두운 면이 됩니다.
-     (JS가 카드마다 --mouse-x/--mouse-y(px), --ratio-x/--ratio-y(0~1)를 넣어줍니다)
+     홀로그램(글리터) 효과 : 카드·채팅창·상단바·행동 블럭·지도 등에 마우스를 올리면 테두리에 무지개빛이 돌고,
+     포인터 주변이 밝게 비칩니다. 안쪽은 반짝이 질감이 깔린 어두운 면이 됩니다(지도는 테두리 빛만).
+     카드 영역(.holo-zone)은 영역 안 카드 전부가 함께 반응합니다.
+     (JS가 요소마다 --mouse-x/--mouse-y(px), --ratio-x/--ratio-y(0~1)를 넣고 .holo-on을 붙입니다)
      ================================================================ */
-  .char-card, .site-card {
+  .char-card, .site-card, .compact-card, .member-panel, .topbar.v2, .action-bar-bottom, .map-frame, .bgm-player {
     --mouse-x: -999px; --mouse-y: -999px; --ratio-x: .5; --ratio-y: .75; --light-size: 300px;
-    --glitter: url("/static/fx/glitter.png");
-    isolation: isolate; overflow: visible;
+    --glitter: url("/static/fx/glitter.png"); --holo-base: var(--card);
+    isolation: isolate;
   }
-  .site-card { position: relative; }
-  .char-card::before, .site-card::before, .char-card::after, .site-card::after {
+  .member-panel, .topbar.v2, .action-bar-bottom, .bgm-player { --holo-base: var(--panel); }
+  .site-card, .topbar.v2, .action-bar-bottom, .map-frame, .bgm-player { position: relative; }
+  .compact-card { border-radius: 8px; }
+  .char-card::before, .site-card::before, .compact-card::before, .member-panel::before, .topbar.v2::before, .action-bar-bottom::before, .map-frame::before, .bgm-player::before, .char-card::after, .site-card::after, .compact-card::after, .member-panel::after, .topbar.v2::after, .action-bar-bottom::after, .map-frame::after, .bgm-player::after {
     content:""; position:absolute; pointer-events:none; opacity:0; transition: opacity 500ms ease;
   }
-  /* 무지개 테두리 + 포인터 빛 (카드 전체) */
-  .char-card::before, .site-card::before {
+  /* 무지개 테두리 + 포인터 빛 */
+  .char-card::before, .site-card::before, .compact-card::before, .member-panel::before, .topbar.v2::before, .action-bar-bottom::before, .map-frame::before, .bgm-player::before {
     inset:0; border-radius: inherit; z-index:-2;
     background-image:
       conic-gradient(from 0deg at var(--mouse-x) var(--mouse-y),
@@ -310,11 +313,11 @@
     transition-delay: 0s;
   }
   /* 안쪽 면 : 반짝이 질감 + 포인터 쪽이 조금 밝은 어두운 면 (테두리 1px만 남기고 덮음) */
-  .char-card::after, .site-card::after {
+  .char-card::after, .site-card::after, .compact-card::after, .member-panel::after, .topbar.v2::after, .action-bar-bottom::after, .map-frame::after, .bgm-player::after {
     --bgoffsetx: calc(3px * var(--ratio-x)); --bgoffsety: calc(3px * var(--ratio-y));
     --pointerx: calc(100% * var(--ratio-x)); --pointery: calc(100% * var(--ratio-y));
-    inset:1px; border-radius: calc(14px - 1px); z-index:-1;
-    background-color: var(--card);
+    inset:1px; border-radius: inherit; z-index:-1;
+    background-color: var(--holo-base);
     background-image:
       radial-gradient(var(--light-size) circle at var(--pointerx) var(--pointery), rgba(0,0,0,.75), black),
       radial-gradient(var(--light-size) circle at var(--pointerx) var(--pointery), #252525cc, rgb(16,16,16) var(--light-size)),
@@ -326,8 +329,15 @@
     filter: brightness(1.4) contrast(.725);
     transition-delay: .1s;
   }
-  .holo-zone.holo-hover .char-card::before, .holo-zone.holo-hover .site-card::before { opacity:1; transition-delay:.1s; }
-  .holo-zone.holo-hover .char-card::after, .holo-zone.holo-hover .site-card::after { opacity:.925; transition-delay:0s; }
+  /* 지도는 배경 이미지를 가리지 않도록 테두리(1px) 빛만 */
+  .map-frame::before {
+    padding:2px;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+  .map-frame::after { display:none; }
+  .char-card.holo-on::before, .site-card.holo-on::before, .compact-card.holo-on::before, .member-panel.holo-on::before, .topbar.v2.holo-on::before, .action-bar-bottom.holo-on::before, .map-frame.holo-on::before, .bgm-player.holo-on::before { opacity:1; transition-delay:.1s; }
+  .char-card.holo-on::after, .site-card.holo-on::after, .compact-card.holo-on::after, .member-panel.holo-on::after, .topbar.v2.holo-on::after, .action-bar-bottom.holo-on::after, .map-frame.holo-on::after, .bgm-player.holo-on::after { opacity:.925; transition-delay:0s; }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
@@ -4455,33 +4465,35 @@ function autoLevelMySound(need) {
   updateMyPageSoundLevel();
 }
 // ==================================================================
-// 홀로그램(글리터) 카드 효과 : 카드 영역(.holo-zone)에 마우스가 있으면 영역 안 모든 카드에
-// 포인터 위치를 넣어줘서, 빛이 카드 사이를 넘나드는 것처럼 보이게 합니다. 카드는 자주 다시
-// 그려지므로 문서 전체에서 이벤트를 받아 처리합니다.
+// 홀로그램(글리터) 효과 : 마우스가 있는 영역(카드 영역 .holo-zone이면 그 안 카드 전부, 아니면 그 블럭 하나)에
+// 포인터 위치를 넣고 .holo-on을 붙입니다. 화면이 자주 다시 그려지므로 문서 전체에서 이벤트를 받아 처리합니다.
 // ==================================================================
 (function setupHoloCards() {
-  const CARD_SEL = '.char-card, .site-card';
-  let zone = null;
-  function apply(z, e) {
-    for (const card of z.querySelectorAll(CARD_SEL)) {
-      const r = card.getBoundingClientRect();
-      const x = e.clientX - r.left, y = e.clientY - r.top;
-      card.style.setProperty('--mouse-x', `${x}px`);
-      card.style.setProperty('--mouse-y', `${y}px`);
-      card.style.setProperty('--ratio-x', (x / r.width).toFixed(3));
-      card.style.setProperty('--ratio-y', (y / r.height).toFixed(3));
-    }
-  }
+  const SEL = '.char-card, .site-card, .compact-card, .member-panel, .topbar.v2, .action-bar-bottom, .map-frame, .bgm-player';
+  let activeEls = [];
+  function clear() { activeEls.forEach(el => el.classList.remove('holo-on')); activeEls = []; }
   document.addEventListener('pointermove', (e) => {
     if (e.pointerType === 'touch') return;
-    const z = e.target.closest ? e.target.closest('.holo-zone') : null;
-    if (zone && zone !== z) zone.classList.remove('holo-hover');
-    zone = z;
-    if (!z) return;
-    z.classList.add('holo-hover');
-    apply(z, e);
+    const t = e.target;
+    if (!t || !t.closest || t.closest('.modal-overlay')) { clear(); return; }
+    const zone = t.closest('.holo-zone');
+    let els;
+    if (zone) els = [...zone.querySelectorAll(SEL)];
+    else { const one = t.closest(SEL); els = one ? [one] : []; }
+    activeEls.forEach(el => { if (!els.includes(el)) el.classList.remove('holo-on'); });
+    activeEls = els;
+    for (const el of els) {
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      el.style.setProperty('--mouse-x', `${x}px`);
+      el.style.setProperty('--mouse-y', `${y}px`);
+      el.style.setProperty('--ratio-x', (x / r.width).toFixed(3));
+      el.style.setProperty('--ratio-y', (y / r.height).toFixed(3));
+      el.classList.add('holo-on');
+    }
   }, { passive: true });
-  document.addEventListener('pointerleave', () => { if (zone) zone.classList.remove('holo-hover'); zone = null; });
+  document.addEventListener('pointerleave', clear);
+  window.addEventListener('blur', clear);
 })();
 </script>
 </body>
