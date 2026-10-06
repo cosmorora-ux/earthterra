@@ -363,11 +363,18 @@
      라운드 트랙 (PVP) : 라운드별 선공/후공 진행을 보여주는 블럭. 아래 손잡이를 끌어서 높이를 바꿀 수 있고
      (내 화면에만 저장), 운영진이 배경 이미지를 깔 수 있습니다.
      ================================================================ */
-  .round-track { position:relative; margin-top:16px; border-radius:14px; border:1px solid var(--card-border);
-    background: linear-gradient(90deg, #161a24, #1c1824); overflow:hidden; height:var(--rt-h, 120px); min-height:72px;
-    flex-shrink:0; isolation:isolate; }
+  .round-track { position:relative; border-radius:14px; border:1px solid var(--card-border);
+    background: linear-gradient(90deg, #161a24, #1c1824); overflow:hidden;
+    flex: 1 1 0; min-height:72px; max-height:420px; isolation:isolate; }
+  /* PVP 왼쪽 열 : [카드(내용만큼, 넘치면 스크롤)] [라운드 트랙(남는 높이를 채움)] [행동 블럭] - 사이 여백은 모두 같게 */
+  .teams-col { gap:14px; }
+  .teams-col:has(> .round-track) > .teams-col-scroll { flex: 0 1 auto; }
+  .teams-col > .round-track, .teams-col > .action-bar-bottom { margin-top:0; }
+  .teams-col > .action-bar-bottom { flex: none; }
+  .main-grid:not(.with-grid-map) .teams-columns .team-block { margin-bottom:0; }
+  .teams-col:has(> .round-track) .main-grid { margin-bottom:0; }
   .round-track .rt-bg { position:absolute; inset:0; z-index:-1; background-size:cover; background-position:center; }
-  .round-track .rt-inner { position:relative; height:100%; display:flex; align-items:center; gap:22px; padding:12px 22px 16px; box-sizing:border-box; }
+  .round-track .rt-inner { position:relative; height:100%; display:flex; align-items:center; gap:22px; padding:12px 22px; box-sizing:border-box; }
   .rt-round { flex:none; display:flex; flex-direction:column; justify-content:center; min-width:86px; }
   .rt-round .k { font-size:10px; letter-spacing:.16em; color: var(--muted); font-weight:700; }
   .rt-round .n { font-size:34px; font-weight:800; line-height:1; font-variant-numeric: tabular-nums; }
@@ -395,9 +402,6 @@
   .round-track .rt-bg-btn { position:absolute; top:8px; right:10px; width:28px; height:28px; border-radius:8px; border:1px solid var(--card-border);
     background:rgba(0,0,0,.35); color: var(--text); font-size:12px; display:none; align-items:center; justify-content:center; z-index:2; }
   .round-track:hover .rt-bg-btn.gm { display:flex; }
-  .round-track .rt-resize { position:absolute; left:0; right:0; bottom:0; height:8px; cursor:ns-resize; z-index:2; }
-  .round-track .rt-resize::after { content:""; position:absolute; left:50%; bottom:3px; width:36px; height:3px; margin-left:-18px; border-radius:2px; background:rgba(255,255,255,.18); }
-  .round-track:hover .rt-resize::after { background:rgba(255,255,255,.4); }
   .round-track.compact .rt-node .teams, .round-track.compact .rt-round .ph { display:none; }
   .round-track.compact .rt-round .n { font-size:24px; }
   @media (max-width: 760px) { .rt-side { display:none; } }
@@ -1266,7 +1270,6 @@
       <div class="rt-bg" id="roundTrackBg"></div>
       <div class="rt-inner" id="roundTrackInner"></div>
       <button type="button" class="rt-bg-btn" id="roundTrackBgBtn" onclick="openTrackBgModal()" data-tip="라운드 트랙 배경 이미지 (운영진)"><i class="fa-solid fa-image"></i></button>
-      <div class="rt-resize" id="roundTrackResize" aria-label="끌어서 높이 조절"></div>
     </div>
 {% endif %}
 <div id="commandSendBar" class="action-bar-bottom panel">
@@ -4645,33 +4648,15 @@ document.addEventListener('keydown', (e) => {
 }, true);
 // ==================================================================
 // 라운드 트랙 (PVP) : 라운드마다 [선공 | 후공] 두 칸, 진행한 칸은 채우고 지금 칸은 행동한 비율만큼 채웁니다.
-// 높이는 아래 손잡이로 조절(이 브라우저에 저장), 배경 이미지는 운영진이 설정(모두에게 적용).
+// 높이는 창 크기에 맞춰 카드와 행동 블럭 사이 남는 공간을 채우고, 배경 이미지는 운영진이 설정(모두에게 적용).
 // ==================================================================
 let lastTrackBg = null;
 const RT_WINDOW = 8;  // 한 번에 보여줄 라운드 수
-(function initRoundTrackHeight() {
+(function initRoundTrackSizing() {
+  // 창 크기에 따라 트랙 높이가 바뀌므로, 낮아지면 작은 글씨를 숨기는 compact 모드를 자동으로 켭니다.
   const el = document.getElementById('roundTrack');
-  if (!el) return;
-  let h = 120;
-  try { const v = parseInt(localStorage.getItem('roundTrackHeight') || '', 10); if (v) h = v; } catch (e) {}
-  el.style.setProperty('--rt-h', `${h}px`);
-  el.classList.toggle('compact', h < 104);
-  const handle = document.getElementById('roundTrackResize');
-  handle.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    const startY = e.clientY, startH = el.getBoundingClientRect().height;
-    handle.setPointerCapture(e.pointerId);
-    const move = (ev) => {
-      const nh = Math.max(72, Math.min(420, Math.round(startH + ev.clientY - startY)));
-      el.style.setProperty('--rt-h', `${nh}px`);
-      el.classList.toggle('compact', nh < 104);
-    };
-    const up = () => {
-      handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up);
-      try { localStorage.setItem('roundTrackHeight', String(Math.round(el.getBoundingClientRect().height))); } catch (e) {}
-    };
-    handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', up);
-  });
+  if (!el || !window.ResizeObserver) return;
+  new ResizeObserver(() => el.classList.toggle('compact', el.getBoundingClientRect().height < 104)).observe(el);
 })();
 
 function renderRoundTrack() {
