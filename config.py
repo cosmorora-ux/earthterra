@@ -159,9 +159,12 @@ SKILL_OPTIONS = {
 }
 ALL_SKILLS = [SKILL_COLLAPSE, SKILL_EMISSION, SKILL_SHIELD, SKILL_POLARIZE, SKILL_REFLUX, SKILL_RESTORE]
 
-# 붕괴/방출 : 기본 공격 다이스 개수(ATTACK_DICE_COUNT)에 곱하는 배율
+# 붕괴/방출 : 기본 공격 다이스 개수(ATTACK_DICE_COUNT, 크리티컬 적용 전 이능·정신 다이스 굴림 수)에 곱하는 배율
 SKILL_COLLAPSE_DICE_MULT = 3
-SKILL_EMISSION_DICE_MULT = 2
+SKILL_COLLAPSE_HITS = 2              # 붕괴 공격 횟수 (그중 최소 1회 크리티컬 보장)
+SKILL_EMISSION_DICE_MULT = 1         # 방출 : 적이 여럿일 때 (모든 적에게)
+SKILL_EMISSION_SINGLE_DICE_MULT = 2  # 방출 : 살아있는 적이 1명뿐일 때
+SKILL_EMISSION_HITS = 2              # 방출 : 적 1명당 공격 횟수
 
 # 차폐 : 전투 시작 시 본인에게 붙는 영구 보호막(데미지로만 소모되며 시간 만료가 없습니다)
 SKILL_SHIELD_INITIAL = 150
@@ -189,6 +192,11 @@ SKILL_REFLUX_BUFF_PCT_LOW = 10
 SKILL_REFLUX_BUFF_PCT_MID = 20
 SKILL_REFLUX_BUFF_PCT_HIGH = 30
 
+# 환류 : 메딕 직군 아군 전원 회복 판정에 쓰는 다이스 배율 (기본 힐 다이스 개수 × 이 값)
+SKILL_REFLUX_MEDIC_DICE_MULT = 1
+
+# 복원 : 모든 아군 회복 판정 다이스 배율 (기본 힐 다이스 개수 × 이 값)
+SKILL_RESTORE_DICE_MULT = 1
 # 복원 : 지정 아군 1인에게 추가로 붙는 회복 보너스 (%)
 SKILL_RESTORE_BONUS_PCT = 50
 
@@ -599,6 +607,7 @@ FORMULA_CATEGORIES = [
     {"key": "attack", "label": "공격 · 회피", "desc": "스트라이커의 공격/치명타, 회피 관련 값"},
     {"key": "defense", "label": "방어", "desc": "가디언의 능동 방어/치명타 관련 값"},
     {"key": "heal", "label": "힐", "desc": "메딕의 회복/치명타 관련 값"},
+    {"key": "skill", "label": "스킬", "desc": "마스 레이드 스킬(붕괴/방출/차폐/편광/환류/복원) 효과 값. 다이스 배율은 기본 다이스 개수(크리티컬 적용 전 이능·정신 다이스 굴림 수)에 곱해집니다"},
     {"key": "flow", "label": "전투 진행", "desc": "제한시간, 마스 레이드 이동 등 전투 진행 관련 값"},
 ]
 
@@ -661,6 +670,25 @@ FORMULA_FIELDS = [
      "desc": "치명타 배율 = 기본 배율 + 민첩 × 배율(주 요인) + 이능 × 배율(부 요인)", "type": float, "category": "heal"},
     {"key": "HEAL_CRIT_AGI_MULT", "label": "힐 치명타 민첩 배율 (주 요인)", "desc": "힐 치명타 배율에 더해지는 민첩 가중치", "type": float, "category": "heal"},
     {"key": "HEAL_CRIT_ABILITY_MULT", "label": "힐 치명타 이능 배율 (부 요인)", "desc": "힐 치명타 배율에 더해지는 이능 가중치", "type": float, "category": "heal"},
+
+    {"key": "SKILL_COLLAPSE_DICE_MULT", "label": "【붕괴】 다이스 배율", "desc": "붕괴 다이스 개수 = 공격 다이스 개수(스트라이커) × 이 배율", "type": int, "category": "skill"},
+    {"key": "SKILL_COLLAPSE_HITS", "label": "【붕괴】 공격 횟수", "desc": "단일 적에게 공격 판정하는 횟수 (그중 최소 1회 크리티컬 보장)", "type": int, "category": "skill"},
+    {"key": "SKILL_EMISSION_DICE_MULT", "label": "【방출】 다이스 배율 (적 여럿)", "desc": "모든 적에게 공격할 때 다이스 개수 = 공격 다이스 개수 × 이 배율", "type": int, "category": "skill"},
+    {"key": "SKILL_EMISSION_SINGLE_DICE_MULT", "label": "【방출】 다이스 배율 (적 1명)", "desc": "살아있는 적이 1명뿐일 때 다이스 개수 = 공격 다이스 개수 × 이 배율", "type": int, "category": "skill"},
+    {"key": "SKILL_EMISSION_HITS", "label": "【방출】 적 1명당 공격 횟수", "desc": "각 적에게 공격 판정하는 횟수", "type": int, "category": "skill"},
+    {"key": "SKILL_SHIELD_INITIAL", "label": "【차폐】 시작 보호막 (영구)", "desc": "전투 시작 시 본인에게 붙는 영구 보호막 HP", "type": int, "category": "skill"},
+    {"key": "SKILL_SHIELD_GRANT_ALLY", "label": "【차폐】 아군 보호막", "desc": "지정 아군에게 방어와 함께 붙는 보호막 HP", "type": int, "category": "skill"},
+    {"key": "SKILL_SHIELD_GRANT_SELF", "label": "【차폐】 본인 보호막", "desc": "지정 대상이 본인일 때 붙는 보호막 HP", "type": int, "category": "skill"},
+    {"key": "SKILL_SHIELD_GRANT_DURATION", "label": "【차폐】 보호막 지속(턴)", "desc": "사용으로 붙인 보호막이 유지되는 라운드 수", "type": int, "category": "skill"},
+    {"key": "SKILL_POLARIZE_DURATION", "label": "【편광】 지속(턴)", "desc": "아군 전원의 피해를 본인에게 집중하는 라운드 수", "type": int, "category": "skill"},
+    {"key": "SKILL_REFLUX_SELF_HEAL_PCT", "label": "【환류】 본인 회복(%)", "desc": "본인 최대 HP 대비 회복량(%)", "type": int, "category": "skill"},
+    {"key": "SKILL_REFLUX_MEDIC_DICE_MULT", "label": "【환류】 메딕 전원 회복 다이스 배율", "desc": "메딕 직군 아군 전원 회복 다이스 개수 = 힐 다이스 개수 × 이 배율", "type": int, "category": "skill"},
+    {"key": "SKILL_REFLUX_BUFF_DURATION", "label": "【환류】 흡수 지속(턴)", "desc": "지정 아군에게 부여하는 흡수 버프의 라운드 수", "type": int, "category": "skill"},
+    {"key": "SKILL_REFLUX_BUFF_PCT_LOW", "label": "【환류】 흡수 회복(%) 하", "desc": "흡수 판정이 '하'일 때 최대 HP 대비 회복(%)", "type": int, "category": "skill"},
+    {"key": "SKILL_REFLUX_BUFF_PCT_MID", "label": "【환류】 흡수 회복(%) 중", "desc": "흡수 판정이 '중'일 때 최대 HP 대비 회복(%)", "type": int, "category": "skill"},
+    {"key": "SKILL_REFLUX_BUFF_PCT_HIGH", "label": "【환류】 흡수 회복(%) 상", "desc": "흡수 판정이 '상'일 때 최대 HP 대비 회복(%)", "type": int, "category": "skill"},
+    {"key": "SKILL_RESTORE_DICE_MULT", "label": "【복원】 다이스 배율", "desc": "모든 아군 회복 다이스 개수 = 힐 다이스 개수 × 이 배율", "type": int, "category": "skill"},
+    {"key": "SKILL_RESTORE_BONUS_PCT", "label": "【복원】 지정 아군 추가 회복(%)", "desc": "지정 아군 1명은 회복량에 이 %만큼 더 받습니다", "type": int, "category": "skill"},
 
     {"key": "ROUND_TIME_LIMIT_SECONDS", "label": "라운드 제한시간(초)", "desc": "매 라운드마다 행동을 선언해야 하는 제한시간", "type": int, "category": "flow"},
     {"key": "AGILITY_MOVE_BASE", "label": "이동 가능 칸수 기본값 (마스 레이드)",

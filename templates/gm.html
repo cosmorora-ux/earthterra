@@ -893,7 +893,7 @@ function refreshActTypeOptions() {
   if (!actor) { typeSel.innerHTML = ''; refreshActTargetOptions(); return; }
   const prevType = typeSel.value;
   const labels = actor.available_actions.filter(label => label !== '이동');  // 이동은 지도 클릭으로만 처리합니다.
-  if (canDeclareDefer(lastBattleForPanel, actor)) labels.push('후공');
+
   typeSel.innerHTML = labels
     .map(label => `<option value="${resolveActionType(label, actor.role)}">${label}</option>`)
     .join('');

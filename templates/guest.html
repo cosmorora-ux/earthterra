@@ -1012,6 +1012,8 @@
 <div id="commandSendBar" class="action-bar-bottom panel">
   <select id="cmdActionSelect" onchange="refreshCmdTargetOptions()"></select>
   <select id="cmdTargetSelect" onchange="onCmdTargetChange()"></select>
+  <select id="cmdTarget2" style="display:none;"></select>
+  <select id="cmdTarget3" style="display:none;"></select>
   <button class="btn-primary" id="cmdSendBtn" disabled onclick="submitCmd()">전송</button>
 </div>
 
@@ -1393,7 +1395,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-06.7";
+const EXPECTED_SERVER_BUILD = "2026-10-06.8";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -1850,7 +1852,7 @@ function refreshCmdPanel() {
   const actorName = myActorName(lastBattleForPanel);
   const actor = lastAllForCards.find(c => c.name === actorName);
   if (!actor) { actionSel.innerHTML = ''; targetSel.innerHTML = ''; return; }
-  const labels = actor.available_actions.filter(l => l !== '이동' && l !== '시간초과' && !MULTI_TARGET_ACTIONS[l]);
+  const labels = actor.available_actions.filter(l => l !== '이동' && l !== '시간초과');
   const prevLabel = actionSel.value;
   actionSel.innerHTML = labels.map(l => `<option value="${l}">${l}</option>`).join('');
   if (labels.includes(prevLabel)) actionSel.value = prevLabel;
@@ -1863,7 +1865,21 @@ function refreshCmdTargetOptions() {
   const actorName = myActorName(lastBattleForPanel);
   const actor = lastAllForCards.find(c => c.name === actorName);
   const label = document.getElementById('cmdActionSelect').value;
+  const t2 = document.getElementById('cmdTarget2'), t3 = document.getElementById('cmdTarget3');
+  const multi = actor && label ? MULTI_TARGET_ACTIONS[label] : 0;
+  t2.style.display = t3.style.display = multi === 3 ? '' : 'none';
   if (!actor || !label) { targetSel.innerHTML = '<option value="">-</option>'; return; }
+  if (multi === 3) {
+    // 환류 : 아군 3명을 각각 고릅니다.
+    const allies = lastAllForCards.filter(c => c.teamLabel === actor.teamLabel && !isDefeatedStatus(c));
+    const opts = '<option value="">대상 선택</option>' + allies.map(c => `<option value="${c.name}">${c.name === actor.name ? '본인' : displayNameOf(c)}</option>`).join('');
+    [targetSel, t2, t3].forEach(sel => {
+      const prev = sel.value;
+      sel.innerHTML = opts;
+      if (allies.some(c => c.name === prev)) sel.value = prev;
+    });
+    return;
+  }
   const pool = targetsForAction(actor, label);
   const prevTarget = targetSel.value;
   targetSel.innerHTML = pool.map(c => `<option value="${c.name}">${c.name === actor.name ? '본인' : displayNameOf(c)}</option>`).join('')
@@ -1890,7 +1906,7 @@ function syncCmdPanelFromCardClick() {
   if (!target) { refreshCmdPanel(); return; }
 
   const validLabels = actionLabelsForTarget(actor, target);
-  const allLabels = actor.available_actions.filter(l => l !== '이동' && l !== '시간초과' && !MULTI_TARGET_ACTIONS[l]);
+  const allLabels = actor.available_actions.filter(l => l !== '이동' && l !== '시간초과');
   const currentLabel = actionSel.value;
   const nextLabel = validLabels.includes(currentLabel) ? currentLabel : (validLabels[0] || allLabels[0] || '');
   actionSel.innerHTML = allLabels.map(l => `<option value="${l}">${l}</option>`).join('');
@@ -1988,6 +2004,17 @@ function submitCmd() {
   const targetName = document.getElementById('cmdTargetSelect').value;
   if (!actorName || !label) {
     showError('행동을 선택해주세요.');
+    return;
+  }
+  const need = MULTI_TARGET_ACTIONS[label];
+  if (need) {
+    const targets = ['cmdTargetSelect', 'cmdTarget2', 'cmdTarget3'].slice(0, need)
+      .map(id => document.getElementById(id).value).filter(Boolean);
+    if (targets.length !== need || new Set(targets).size !== need) {
+      showError(`${label}은(는) 서로 다른 아군 ${need}명을 골라야 합니다.`);
+      return;
+    }
+    doActionThenAnnounce(ACTION_LABELS[label], { name: actorName, targets }, actorName, label, targets.join(', '));
     return;
   }
   commitAction(label, actorName, targetName || actorName);
@@ -2917,7 +2944,6 @@ function refreshGmActTypeOptions() {
   if (!actor) { typeSel.innerHTML = ''; refreshGmActTargetOptions(); return; }
   const prevType = typeSel.value;
   const labels = actor.available_actions.filter(label => label !== '이동');
-  if (canDeclareDefer(lastBattleForPanel, actor)) labels.push('후공');
   typeSel.innerHTML = labels.map(label => `<option value="${label}">${label}</option>`).join('');
   if ([...typeSel.options].some(o => o.value === prevType)) typeSel.value = prevType;
   refreshGmActTargetOptions();
@@ -3003,11 +3029,8 @@ function renderMultiSkillTrigger() {
   const actorName = myActorName(battle);
   const actor = lastAllForCards.find(c => c.name === actorName);
   if (!actor) return '';
-  let html = '';
-  html += renderDeferButton(battle, actor);
-  const label = actor.available_actions.find(l => MULTI_TARGET_ACTIONS[l]);
-  if (label) html += `<button class="sort-btn" onclick="startMultiAction('${label}')">${label} 사용</button>`;
-  return html;
+  // 메딕 '후공' 버튼은 쓰지 않고, 환류 같은 다중 지정 스킬도 아래 행동 블럭(전송 버튼)에서 고릅니다.
+  return '';
 }
 
 // 1라운드 선공팀 힐러만 "후공" 버튼으로 이번 라운드 행동을 후공 페이즈까지 미루겠다고

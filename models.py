@@ -480,8 +480,12 @@ class ShieldSkill(Skill):
     requires_skill = config.SKILL_SHIELD
     allowed_roles = [config.ROLE_TANKER]
 
-    def execute(self, actor: Character, target: Character):
-        amount = config.SKILL_SHIELD_GRANT_SELF if target is actor else config.SKILL_SHIELD_GRANT_ALLY
+    def execute(self, actor: Character, target: Character, ally_amount: int = None, self_amount: int = None):
+        if ally_amount is None:
+            ally_amount = config.SKILL_SHIELD_GRANT_ALLY
+        if self_amount is None:
+            self_amount = config.SKILL_SHIELD_GRANT_SELF
+        amount = self_amount if target is actor else ally_amount
         target.shield_temp += amount
         target.defended_this_round = True
         target.defense_grants.append(actor)

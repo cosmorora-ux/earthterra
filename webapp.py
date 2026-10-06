@@ -30,7 +30,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.7"
+SERVER_BUILD = "2026-10-06.8"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -1361,7 +1361,7 @@ def on_start_battle(data):
             c.forced_actions = base_actions + skill_actions + config.COMMON_ACTIONS
             # 차폐(가디언) 스킬을 선택한 캐릭터는 마스 레이드 전투 시작 시에만 영구 보호막을 자동으로 얻습니다.
             if c.skill == config.SKILL_SHIELD:
-                c.shield_permanent = config.SKILL_SHIELD_INITIAL
+                c.shield_permanent = config.get_value("SKILL_SHIELD_INITIAL", formula_overrides)
 
     # PVP/공성전 가디언 : 어그로 강제 행동을 마스 레이드의 '지휘'와 같은 이름으로 통일합니다
     # (기존 '공격유도'는 본인 지정 시 능동 방어가 함께 붙는 차이만 있을 뿐 같은 어그로 강제

@@ -590,17 +590,17 @@ class Battle:
             return
         luck = int(actor.stats.get("행운", 0))
         if luck <= 0:
-            pct = config.SKILL_REFLUX_BUFF_PCT_LOW
+            pct = config.get_value('SKILL_REFLUX_BUFF_PCT_LOW', self.formula_overrides)
             roll_desc = "행운 0 - 고정"
         else:
             sides = luck * config.SKILL_REFLUX_BUFF_DICE_PER_LUCK
             roll = random.randint(1, sides)
             if roll <= luck:
-                pct = config.SKILL_REFLUX_BUFF_PCT_LOW
+                pct = config.get_value('SKILL_REFLUX_BUFF_PCT_LOW', self.formula_overrides)
             elif roll <= luck * 2:
-                pct = config.SKILL_REFLUX_BUFF_PCT_MID
+                pct = config.get_value('SKILL_REFLUX_BUFF_PCT_MID', self.formula_overrides)
             else:
-                pct = config.SKILL_REFLUX_BUFF_PCT_HIGH
+                pct = config.get_value('SKILL_REFLUX_BUFF_PCT_HIGH', self.formula_overrides)
             roll_desc = f"1d{sides} 굴림 {roll}"
         heal_amount = round(actor.max_hp * pct / 100)
         hp_before = actor.current_hp
@@ -921,17 +921,19 @@ class Battle:
 
         base_count = config.get_value("ATTACK_DICE_COUNT", self.formula_overrides)
         merged = dict(self.formula_overrides or {})
-        merged["ATTACK_DICE_COUNT"] = base_count * config.SKILL_COLLAPSE_DICE_MULT
-        hits = [self.attack_skill.roll(attacker, overrides=merged) for _ in range(2)]
+        collapse_mult = config.get_value('SKILL_COLLAPSE_DICE_MULT', self.formula_overrides)
+        collapse_hits = max(1, int(config.get_value('SKILL_COLLAPSE_HITS', self.formula_overrides)))
+        merged["ATTACK_DICE_COUNT"] = base_count * collapse_mult
+        hits = [self.attack_skill.roll(attacker, overrides=merged) for _ in range(collapse_hits)]
         forced_crit_applied = False
         if not any(h["is_crit"] for h in hits):
-            hits[1]["is_crit"] = True
-            hits[1]["total"] = round(hits[1]["subtotal"] * hits[1]["crit_mult"])
+            hits[-1]["is_crit"] = True
+            hits[-1]["total"] = round(hits[-1]["subtotal"] * hits[-1]["crit_mult"])
             forced_crit_applied = True
         attacker.has_acted = True
 
         self._log(
-            f"{attacker.name} 【붕괴】 → {target.name} (다이스 ×{config.SKILL_COLLAPSE_DICE_MULT}, 2회 공격)",
+            f"{attacker.name} 【붕괴】 → {target.name} (다이스 ×{collapse_mult}, {collapse_hits}회 공격)",
             tag="action",
         )
 
@@ -939,12 +941,12 @@ class Battle:
         def_mult = resolved_target.polarize_ally_count if resolved_target.polarize_active else 1.0
 
         for i, atk in enumerate(hits, 1):
-            note = " (강제 크리티컬 적용)" if forced_crit_applied and i == 2 else ""
+            note = " (강제 크리티컬 적용)" if forced_crit_applied and i == len(hits) else ""
             if atk["is_crit"]:
                 self._log_public_only("크리티컬!", tag="crit")
-                self._log(f"[붕괴 {i}/2] 공격 수치 {atk['total']}{note}", tag="damage", role=attacker.role)
+                self._log(f"[붕괴 {i}/{len(hits)}] 공격 수치 {atk['total']}{note}", tag="damage", role=attacker.role)
             else:
-                self._log(f"[붕괴 {i}/2] 공격 수치 {atk['total']}{note}", tag="damage")
+                self._log(f"[붕괴 {i}/{len(hits)}] 공격 수치 {atk['total']}{note}", tag="damage")
             if self._settle_immediately(resolved_target):
                 self._resolve_hit(atk, resolved_target, def_mult)
             else:
@@ -993,25 +995,30 @@ class Battle:
 
         base_count = config.get_value("ATTACK_DICE_COUNT", self.formula_overrides)
         merged = dict(self.formula_overrides or {})
-        merged["ATTACK_DICE_COUNT"] = base_count * config.SKILL_EMISSION_DICE_MULT
+        emission_mult = config.get_value(
+            "SKILL_EMISSION_SINGLE_DICE_MULT" if len(enemies) == 1 else "SKILL_EMISSION_DICE_MULT",
+            self.formula_overrides,
+        )
+        emission_hits = max(1, int(config.get_value('SKILL_EMISSION_HITS', self.formula_overrides)))
+        merged["ATTACK_DICE_COUNT"] = base_count * emission_mult
         attacker.has_acted = True
 
         self._log(
             f"{attacker.name} 【방출】 → 적 전원({len(enemies)}명) "
-            f"(다이스 ×{config.SKILL_EMISSION_DICE_MULT}, 각 2회 공격)",
+            f"(다이스 ×{emission_mult}, 각 {emission_hits}회 공격)",
             tag="action",
         )
 
         for enemy in enemies:
             resolved_target = self._redirect_for_polarize(enemy)
             def_mult = resolved_target.polarize_ally_count if resolved_target.polarize_active else 1.0
-            for i in range(1, 3):
+            for i in range(1, emission_hits + 1):
                 atk = self.attack_skill.roll(attacker, overrides=merged)
                 if atk["is_crit"]:
                     self._log_public_only("크리티컬!", tag="crit")
-                    self._log(f"[방출 → {enemy.name} {i}/2] 공격 수치 {atk['total']}", tag="damage", role=attacker.role)
+                    self._log(f"[방출 → {enemy.name} {i}/{emission_hits}] 공격 수치 {atk['total']}", tag="damage", role=attacker.role)
                 else:
-                    self._log(f"[방출 → {enemy.name} {i}/2] 공격 수치 {atk['total']}", tag="damage")
+                    self._log(f"[방출 → {enemy.name} {i}/{emission_hits}] 공격 수치 {atk['total']}", tag="damage")
                 if self._settle_immediately(resolved_target):
                     self._resolve_hit(atk, resolved_target, def_mult)
                 else:
@@ -1234,8 +1241,12 @@ class Battle:
             raise BattleError("차폐 대상은 같은 팀의 캐릭터여야 합니다.")
 
         self._push_history()
-        result = self.shield_skill.execute(actor, target)
-        target.shield_temp_expires_round = self.round_no + config.SKILL_SHIELD_GRANT_DURATION
+        result = self.shield_skill.execute(
+            actor, target,
+            ally_amount=config.get_value('SKILL_SHIELD_GRANT_ALLY', self.formula_overrides),
+            self_amount=config.get_value('SKILL_SHIELD_GRANT_SELF', self.formula_overrides),
+        )
+        target.shield_temp_expires_round = self.round_no + config.get_value('SKILL_SHIELD_GRANT_DURATION', self.formula_overrides)
 
         if target is actor:
             self._log(f"{actor.name} 【차폐】(본인) : 보호막 +{result['amount']}, 능동 방어 부여", tag="defend")
@@ -1265,11 +1276,11 @@ class Battle:
 
         allies = [c for c in self.team_members(self.team_label_of(actor)) if c.is_alive]
         actor.polarize_active = True
-        actor.polarize_expires_round = self.round_no + config.SKILL_POLARIZE_DURATION
+        actor.polarize_expires_round = self.round_no + config.get_value('SKILL_POLARIZE_DURATION', self.formula_overrides)
         actor.polarize_ally_count = max(1, len(allies))
 
         self._log(
-            f"{actor.name} 【편광】 : {config.SKILL_POLARIZE_DURATION}턴간 아군 전원의 피해를 집중시킵니다 "
+            f"{actor.name} 【편광】 : {config.get_value('SKILL_POLARIZE_DURATION', self.formula_overrides)}턴간 아군 전원의 피해를 집중시킵니다 "
             f"(방어력 ×{actor.polarize_ally_count}, 이 효과로는 죽지 않습니다).",
             tag="defend",
         )
@@ -1400,7 +1411,7 @@ class Battle:
         self._resolve_pending_attacks(actor)
 
         # 1) 본인 회복
-        self_heal = round(actor.max_hp * config.SKILL_REFLUX_SELF_HEAL_PCT / 100)
+        self_heal = round(actor.max_hp * config.get_value('SKILL_REFLUX_SELF_HEAL_PCT', self.formula_overrides) / 100)
         hp_before = actor.current_hp
         actor.heal(self_heal)
         self._log(
@@ -1413,7 +1424,8 @@ class Battle:
             if c.is_alive and c.role == config.ROLE_HEALER
         ]
         merged = dict(self.formula_overrides or {})
-        merged["HEAL_DICE_COUNT"] = 1
+        merged["HEAL_DICE_COUNT"] = config.get_value("HEAL_DICE_COUNT", self.formula_overrides) * \
+            config.get_value('SKILL_REFLUX_MEDIC_DICE_MULT', self.formula_overrides)
         for medic in medics:
             heal = config.roll_heal(actor.stats, role=actor.role, overrides=merged)
             hp_before = medic.current_hp
@@ -1426,10 +1438,10 @@ class Battle:
 
         # 3) 지정 아군 3인에게 3턴 흡수 버프 부여
         for t in targets:
-            t.leech_buff_expires_round = self.round_no + config.SKILL_REFLUX_BUFF_DURATION
+            t.leech_buff_expires_round = self.round_no + config.get_value('SKILL_REFLUX_BUFF_DURATION', self.formula_overrides)
         self._log(
             f"{actor.name} 【환류】 흡수 버프 부여 → {', '.join(t.name for t in targets)} "
-            f"({config.SKILL_REFLUX_BUFF_DURATION}턴)",
+            f"({config.get_value('SKILL_REFLUX_BUFF_DURATION', self.formula_overrides)}턴)",
             tag="defend",
         )
 
@@ -1464,16 +1476,17 @@ class Battle:
 
         allies = [c for c in self.team_members(self.team_label_of(actor)) if c.is_alive]
         merged = dict(self.formula_overrides or {})
-        merged["HEAL_DICE_COUNT"] = 1
+        merged["HEAL_DICE_COUNT"] = config.get_value("HEAL_DICE_COUNT", self.formula_overrides) * \
+            config.get_value('SKILL_RESTORE_DICE_MULT', self.formula_overrides)
         self._log(f"{actor.name} 【복원】 → 아군 전원({len(allies)}명) 회복", tag="heal")
         for ally in allies:
             heal = config.roll_heal(actor.stats, role=actor.role, overrides=merged)
             total = heal["total"]
             if bonus_target is not None and ally is bonus_target:
-                total = round(total * (1 + config.SKILL_RESTORE_BONUS_PCT / 100))
+                total = round(total * (1 + config.get_value('SKILL_RESTORE_BONUS_PCT', self.formula_overrides) / 100))
             hp_before = ally.current_hp
             queued = self._apply_or_queue_heal(ally, total, f"{actor.name} 복원")
-            bonus_note = f" (+{config.SKILL_RESTORE_BONUS_PCT}% 보너스)" if ally is bonus_target else ""
+            bonus_note = f" (+{config.get_value('SKILL_RESTORE_BONUS_PCT', self.formula_overrides)}% 보너스)" if ally is bonus_target else ""
             hp_note = "(피해 정산 후 적용)" if queued else f"({hp_before}→{ally.current_hp})"
             self._log(f"[복원] {ally.name} +{total}{bonus_note} {hp_note}", tag="heal")
 
