@@ -10,6 +10,7 @@ Flask-SocketIO로 방(room) 단위 실시간 동기화 + 역할(운영진/참가
     .venv\\Scripts\\python.exe webapp.py
 """
 
+import json
 import os
 import random
 import re
@@ -30,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.10"
+SERVER_BUILD = "2026-10-06.11"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -531,6 +532,7 @@ def build_public_state(room):
         },
         "music": room.music,
         "map_bg": room.map_bg,
+        "sfx_defaults": SFX_CONFIG,
         "boss_images": room.boss_images or {},
         "shop": shop_mod.shared_shop().public_payload(),
         "telegraph_cells": room.telegraph_cells,
@@ -600,6 +602,51 @@ def _mirror_round_logs(room):
             mark_runtime_dirty()
             socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
     battle._chat_mirrored_len = len(log)
+
+
+# ----------------------------------------------------------------------
+# 행동 효과음 : 기본 소리 2종(공격/방어, 지휘/회복). 캐릭터가 마이페이지에 자기 소리를 등록하면 그걸로 재생.
+# 기본 소리 파일/음량은 운영진이 바꿀 수 있고 sfx.json에 저장됩니다(모든 방 공통).
+# ----------------------------------------------------------------------
+SFX_CONFIG_PATH = os.path.join(_THIS_DIR, "sfx.json")
+SFX_DEFAULTS = {
+    "combat": {"label": "공격 / 방어", "url": "/static/sfx/default_combat.wav", "volume": 80},
+    "support": {"label": "지휘 / 회복", "url": "/static/sfx/default_support.wav", "volume": 80},
+}
+# 행동 종류 → 효과음 종류 (이동/배치/시간초과/도주 등은 소리 없음)
+ACTION_SFX_KIND = {
+    "attack": "combat", "collapse": "combat", "emission": "combat",
+    "defend": "combat", "self_defend": "combat", "guard": "combat", "shield": "combat",
+    "polarize": "combat", "dodge": "combat", "defense_settle": "combat",
+    "command": "support", "heal": "support", "restore": "support", "reflux": "support",
+}
+
+
+def _load_sfx_config():
+    cfg = {k: dict(v) for k, v in SFX_DEFAULTS.items()}
+    try:
+        with open(SFX_CONFIG_PATH, "r", encoding="utf-8") as f:
+            saved = json.load(f)
+        for k in cfg:
+            if isinstance(saved.get(k), dict):
+                cfg[k].update({kk: saved[k][kk] for kk in ("url", "volume") if kk in saved[k]})
+    except (OSError, ValueError):
+        pass
+    return cfg
+
+
+SFX_CONFIG = _load_sfx_config()
+
+
+def _save_sfx_config():
+    with open(SFX_CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump({k: {"url": v["url"], "volume": v["volume"]} for k, v in SFX_CONFIG.items()}, f, ensure_ascii=False, indent=2)
+
+
+def emit_action_sfx(room, actor_name, action_type):
+    kind = ACTION_SFX_KIND.get(action_type)
+    if kind and actor_name:
+        socketio.emit("action_sfx", {"actor": actor_name, "kind": kind}, room=room_channel(room.id, "all"))
 
 
 def broadcast_state(room):
@@ -1779,7 +1826,7 @@ def on_battle_action(data):
         return
 
     if should_preview:
-        room.pending_reveal = {"actor": actor_char.name, "pub_len_before": pub_len_before}
+        room.pending_reveal = {"actor": actor_char.name, "pub_len_before": pub_len_before, "action_type": action_type}
         socketio.emit("gm_state", build_gm_state(room), room=room_channel(room.id, "gm"))
         return
 
@@ -1794,6 +1841,7 @@ def on_battle_action(data):
             else:
                 battle.log_event("거점의 이번 라운드 행동이 모두 끝났습니다.", tag="system")
 
+    emit_action_sfx(room, actor_char.name if actor_char else actor_name, action_type)
     _maybe_relocate_boss(battle, actor_char)
     _maybe_auto_advance_turn(room, battle)
     _maybe_resolve_telegraph_damage(room, battle)
@@ -1829,6 +1877,7 @@ def on_reveal_pending_action(data):
     # (미리보기만 하고 되돌린 굴림은 이번 라운드 행동 횟수를 소모하지 않습니다)
     if room.battle_type == "siege" and room.site_dice_round_no == battle.round_no and room.site_dice_value:
         actor_char = battle.find_character(pending["actor"])
+        emit_action_sfx(room, pending["actor"], pending.get("action_type"))
         if actor_char is not None and actor_char.team == "B":
             room.site_dice_used += 1
             remaining = room.site_dice_value - room.site_dice_used
@@ -2217,6 +2266,39 @@ def on_notice_delete(data):
         return
     if notices_mod.shared_board().delete((data or {}).get("id")):
         _broadcast_notices()
+
+
+@socketio.on("set_default_sfx")
+def on_set_default_sfx(data):
+    """운영진 : 기본 효과음(공격/방어, 지휘/회복) 파일 교체·음량 조절·초기화."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 기본 효과음을 바꿀 수 있습니다."})
+        return
+    data = data or {}
+    kind = data.get("kind")
+    if kind not in SFX_CONFIG:
+        return
+    if data.get("reset"):
+        SFX_CONFIG[kind].update({"url": SFX_DEFAULTS[kind]["url"], "volume": SFX_DEFAULTS[kind]["volume"]})
+    if "volume" in data:
+        SFX_CONFIG[kind]["volume"] = _clamp_int(data["volume"], 0, 100, SFX_CONFIG[kind]["volume"])
+    blob = data.get("data")
+    if blob is not None:
+        ext = os.path.splitext((data.get("filename") or "").lower())[1]
+        if ext not in SOUND_EFFECT_ALLOWED_EXTS or not isinstance(blob, (bytes, bytearray)):
+            emit("action_error", {"message": "mp3/wav/ogg/m4a/aac 소리 파일만 올릴 수 있습니다."})
+            return
+        if len(blob) > SOUND_EFFECT_MAX_BYTES:
+            emit("action_error", {"message": "파일이 너무 큽니다."})
+            return
+        filename = f"sfx_{kind}_{uuid.uuid4().hex}{ext}"
+        with open(os.path.join(SOUND_EFFECT_DIR, filename), "wb") as f:
+            f.write(blob)
+        SFX_CONFIG[kind]["url"] = f"/static/sound_effects/{filename}"
+    _save_sfx_config()
+    for r in list_rooms():
+        broadcast_state(r)
 
 
 def _runtime_save_loop():

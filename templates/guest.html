@@ -260,6 +260,16 @@
   .modal-box.formula-modal .fml-top input, .modal-box.formula-modal .fml-top select { width:110px !important; flex:none; padding:6px 10px; font-size:15px; text-align:right; }
   .fml-desc { font-size:12.5px; color: var(--muted); margin-top:6px; line-height:1.45; }
   #formulaCategoryTabs { flex-wrap:wrap; }
+  /* 소리 설정 */
+  .modal-box.sound-modal { width:440px; max-height:86vh; overflow-y:auto; }
+  .snd-sec-title { font-weight:700; font-size:14px; margin:6px 0 8px; }
+  .snd-sec-title span { color: var(--muted); font-weight:400; font-size:12px; }
+  .snd-row { display:flex; align-items:center; gap:10px; }
+  .snd-row input[type="range"].nice-range { flex:1; width:auto; }
+  .snd-hint { font-size:12px; color: var(--muted); margin:8px 0 4px; line-height:1.5; }
+  .snd-default { border:1px solid var(--card-border); border-radius:10px; padding:10px 12px; margin-top:8px; }
+  .snd-default-top { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .snd-default-top b { flex:1; font-size:14px; }
   .chat-tab-cfg-row:last-of-type { border-bottom:none; }
   .chat-tab-cfg-row label { display:inline-flex; align-items:center; margin-right:10px; white-space:nowrap; }
   .chat-tab-cfg-row input[type="text"] { width:auto; display:inline-block; margin-bottom:0; }
@@ -770,6 +780,23 @@
     </div>
   </div>
 </div>
+<div id="soundModal" class="modal-overlay" onclick="if(event.target===this) closeSoundSettings()">
+  <div class="modal-box sound-modal panel">
+    <div class="notice-head">
+      <div class="modal-title">소리 설정</div>
+      <button class="shop-close" onclick="closeSoundSettings()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="snd-sec-title">내 효과음 <span>(나에게만 적용)</span></div>
+    <div class="snd-row">
+      <button type="button" class="bgm-mute" id="sfxMuteBtn" onclick="toggleSfxMute()"><i class="fa-solid fa-volume-high"></i></button>
+      <input type="range" class="nice-range" id="sfxVolumeSlider" min="0" max="100" oninput="onSfxVolumeChange(this.value)">
+      <span class="bgm-vol-num" id="sfxVolumeNum"></span>
+    </div>
+    <div class="snd-hint">공격·방어·지휘·회복 같은 행동을 하면 그 캐릭터의 효과음이 모두에게 들려요. 캐릭터가 마이페이지에 자기 소리를 등록했으면 그 소리로, 아니면 아래 기본 소리로 나와요.</div>
+    <div id="sfxDefaultsSection"></div>
+    <input type="file" id="sfxDefaultFileInput" accept=".mp3,.wav,.ogg,.m4a,.aac,audio/*" style="display:none;" onchange="onSfxDefaultFileChosen(event)">
+  </div>
+</div>
 <div id="shopToast"></div>
 <div id="shopModal" class="modal-overlay" onclick="if(event.target===this) closeShop()">
   <div class="modal-box shop-modal panel">
@@ -960,6 +987,7 @@
     <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()" data-tip="음소거 켜기/끄기 (나에게만 적용)"><i class="fa-solid fa-volume-high"></i></button>
     <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
     <span class="bgm-vol-num" id="musicVolumeNum"></span>
+    <button type="button" class="bgm-mute" onclick="openSoundSettings()" data-tip="소리 설정 (효과음)"><i class="fa-solid fa-sliders"></i></button>
   </div>
 </div>
 
@@ -1404,7 +1432,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-06.10";
+const EXPECTED_SERVER_BUILD = "2026-10-06.11";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -1416,6 +1444,7 @@ socket.on('public_state', (state) => {
   lastRosterMypage = state.roster_mypage || {};
   lastShop = state.shop || lastShop;
   lastMapBg = state.map_bg || null;
+  if (state.sfx_defaults) lastSfxDefaults = state.sfx_defaults;
   lastBossImages = state.boss_images || {};
   lastOnlineCharacters = state.online_characters || [];
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
@@ -1435,6 +1464,7 @@ socket.on('public_state', (state) => {
   renderMyPagePoints();
   applyMapBackground();
   renderMapBgModal();
+  renderSoundSettings();
 });
 
 socket.on('battle_starting', () => {
@@ -4124,6 +4154,92 @@ function makeStatusTag(kind, text) {
 // 아이콘 폰트가 늦게 로드될 수 있어서, 로드 후 한 번 더 확인하고 화면을 다시 그립니다.
 if (document.fonts && document.fonts.ready) {
   document.fonts.ready.then(() => { detectStatusIcons(); if (typeof renderBattle === 'function' && lastBattleForPanel !== undefined) renderBattle(lastBattleForPanel); });
+}
+// ==================================================================
+// 행동 효과음 : 서버가 행동 성공 시 action_sfx를 보내면, 그 캐릭터의 개인 소리(마이페이지 등록)
+// 또는 기본 소리(공격/방어, 지휘/회복)를 재생합니다. 내 효과음 음량은 이 브라우저에만 저장됩니다.
+// ==================================================================
+let lastSfxDefaults = {};
+let sfxVolume = 70;
+try { const v = localStorage.getItem('sfxVolume'); if (v != null) sfxVolume = parseInt(v, 10); } catch (e) {}
+let sfxVolumeBeforeMute = null;
+let sfxDefaultTargetKind = null;
+
+function sfxCharacter(name) {
+  return (lastAllForCards || []).find(c => c.name === name) || (lastRosterMypage || {})[name] || null;
+}
+function playSfx(url, vol) {
+  if (!url || vol <= 0) return;
+  const audio = new Audio(url);
+  audio.volume = Math.max(0, Math.min(1, vol));
+  audio.play().catch(() => {});
+  setTimeout(() => audio.pause(), (typeof SOUND_EFFECT_MAX_SECONDS !== 'undefined' ? SOUND_EFFECT_MAX_SECONDS : 6) * 1000);
+}
+socket.on('action_sfx', (d) => {
+  if (sfxVolume <= 0) return;
+  const c = sfxCharacter(d.actor);
+  const def = lastSfxDefaults[d.kind];
+  if (c && c.sound_effect) {
+    playSfx(c.sound_effect, ((c.sound_effect_volume != null ? c.sound_effect_volume : 100) / 100) * (sfxVolume / 100));
+  } else if (def) {
+    playSfx(def.url, ((def.volume != null ? def.volume : 100) / 100) * (sfxVolume / 100));
+  }
+});
+
+function openSoundSettings() { document.getElementById('soundModal').style.display = 'flex'; renderSoundSettings(); }
+function closeSoundSettings() { document.getElementById('soundModal').style.display = 'none'; }
+function onSfxVolumeChange(v) {
+  sfxVolume = parseInt(v, 10);
+  try { localStorage.setItem('sfxVolume', String(sfxVolume)); } catch (e) {}
+  refreshSfxVolumeUi();
+}
+function toggleSfxMute() {
+  if (sfxVolume > 0) { sfxVolumeBeforeMute = sfxVolume; onSfxVolumeChange(0); }
+  else onSfxVolumeChange(sfxVolumeBeforeMute || 70);
+  document.getElementById('sfxVolumeSlider').value = sfxVolume;
+  refreshSfxVolumeUi();
+}
+function refreshSfxVolumeUi() {
+  const slider = document.getElementById('sfxVolumeSlider');
+  if (document.activeElement !== slider) slider.value = sfxVolume;
+  paintRange(slider);
+  document.getElementById('sfxVolumeNum').textContent = sfxVolume;
+  const icon = sfxVolume === 0 ? 'fa-volume-xmark' : (sfxVolume < 40 ? 'fa-volume-low' : 'fa-volume-high');
+  document.getElementById('sfxMuteBtn').innerHTML = `<i class="fa-solid ${icon}"></i>`;
+}
+function renderSoundSettings() {
+  if (document.getElementById('soundModal').style.display !== 'flex') return;
+  refreshSfxVolumeUi();
+  const box = document.getElementById('sfxDefaultsSection');
+  const gm = myControlInfo(lastBattleForPanel).scope === 'all';
+  const kinds = Object.entries(lastSfxDefaults || {});
+  if (!kinds.length) { box.innerHTML = ''; return; }
+  if (box.contains(document.activeElement)) return;
+  box.innerHTML = `<div class="snd-sec-title" style="margin-top:14px;">기본 효과음 ${gm ? '<span>(운영진 설정 · 모두에게 적용)</span>' : ''}</div>` +
+    kinds.map(([kind, d]) => `<div class="snd-default">
+      <div class="snd-default-top"><b>${shopEsc(d.label || kind)}</b>
+        <button class="shop-btn ghost sm" onclick="previewDefaultSfx('${kind}')"><i class="fa-solid fa-play"></i> 듣기</button>
+        ${gm ? `<button class="shop-btn ghost sm" onclick="pickSfxDefault('${kind}')">파일 바꾸기</button>
+        <button class="shop-btn ghost sm" onclick="if(confirm('처음 기본 소리로 되돌릴까요?')) socket.emit('set_default_sfx', {kind:'${kind}', reset:true})">초기화</button>` : ''}
+      </div>
+      ${gm ? `<div class="snd-row"><span class="snd-hint" style="margin:0;width:56px;">기본 음량</span>
+        <input type="range" class="nice-range" min="0" max="100" value="${d.volume}" oninput="paintRange(this); this.nextElementSibling.textContent=this.value"
+          onchange="socket.emit('set_default_sfx', {kind:'${kind}', volume:parseInt(this.value,10)})">
+        <span class="bgm-vol-num">${d.volume}</span></div>` : ''}
+    </div>`).join('');
+  box.querySelectorAll('input[type="range"]').forEach(paintRange);
+}
+function previewDefaultSfx(kind) {
+  const d = lastSfxDefaults[kind];
+  if (d) playSfx(d.url, ((d.volume != null ? d.volume : 100) / 100) * (Math.max(sfxVolume, 1) / 100));
+}
+function pickSfxDefault(kind) { sfxDefaultTargetKind = kind; document.getElementById('sfxDefaultFileInput').click(); }
+function onSfxDefaultFileChosen(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!f || !sfxDefaultTargetKind) return;
+  if (f.size > 5 * 1024 * 1024) { showError('파일이 너무 커요 (최대 5MB).'); return; }
+  f.arrayBuffer().then(buf => socket.emit('set_default_sfx', { kind: sfxDefaultTargetKind, filename: f.name, data: buf }));
 }
 </script>
 </body>
