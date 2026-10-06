@@ -16,3 +16,6 @@ shop.json
 shop.json.tmp
 static/shop_icons/
 static/map_bg/
+# 공지사항(서버 컴퓨터별 실데이터)
+notices.json
+notices.json.tmp

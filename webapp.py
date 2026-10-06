@@ -21,6 +21,7 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 
 import config
 import shop as shop_mod
+import notices as notices_mod
 from battle import Battle, BattleError
 from rooms import (
     create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
@@ -29,7 +30,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.6"
+SERVER_BUILD = "2026-10-06.7"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -742,6 +743,7 @@ def on_join(data):
         socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
 
     emit("joined", {"role": role, "room_id": room_id})
+    emit("notices", {"notices": notices_mod.shared_board().payload()})
     # 누가 로그인/로그아웃하면 유저 접속정보(초록 점)가 모든 접속자 화면에 같이 바뀌도록 방 전체에 다시 보냅니다.
     broadcast_state(room)
 
@@ -2178,6 +2180,43 @@ def on_set_boss_image(data):
     room.boss_images = images
     save_rooms()
     broadcast_state(room)
+
+
+# ----------------------------------------------------------------------
+# 공지사항 (운영진이 작성, 모든 방 공통)
+# ----------------------------------------------------------------------
+def _broadcast_notices():
+    payload = {"notices": notices_mod.shared_board().payload()}
+    for r in list_rooms():
+        socketio.emit("notices", payload, room=room_channel(r.id, "all"))
+
+
+@socketio.on("notice_save")
+def on_notice_save(data):
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 공지사항을 쓸 수 있습니다."})
+        return
+    data = data or {}
+    info = CONNECTIONS.get(request.sid) or {}
+    notice, is_new = notices_mod.shared_board().upsert(
+        data.get("id"), data.get("title"), data.get("html"), data.get("pinned"), info.get("nickname") or "GM",
+    )
+    _broadcast_notices()
+    emit("notice_saved", {"id": notice["id"]})
+    if is_new:
+        for r in list_rooms():
+            post_system_chat(r, f"새 공지사항이 올라왔어요 : {notice['title']}")
+
+
+@socketio.on("notice_delete")
+def on_notice_delete(data):
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 공지사항을 지울 수 있습니다."})
+        return
+    if notices_mod.shared_board().delete((data or {}).get("id")):
+        _broadcast_notices()
 
 
 def _runtime_save_loop():
