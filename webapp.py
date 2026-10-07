@@ -31,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-07.5"
+SERVER_BUILD = "2026-10-07.6"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -742,7 +742,48 @@ def skill_cutin_payload(entry):
     return {"type": "text", "title": title, "body": body}
 
 
+def _emit_fx_numbers(room):
+    """새로 쌓인 공개 로그에서 '공격 수치 / 회복 / 방어 값 / 피해량'을 뽑아, 카드 위에 띄울 수치로 보냅니다.
+    (되돌리기로 로그가 줄었거나 서버를 막 켠 경우에는 띄우지 않고 위치만 맞춥니다)"""
+    battle = room.game.battle
+    if battle is None:
+        room._fx_log_idx = None
+        return
+    n = len(battle.public_log)
+    idx = getattr(room, "_fx_log_idx", None)
+    room._fx_log_idx = n
+    if idx is None or idx >= n:
+        return
+    names = sorted((c.name for c in battle.team_a + battle.team_b), key=len, reverse=True)
+
+    def name_at_start(text):
+        return next((nm for nm in names if text.startswith(nm)), None)
+
+    events, target = [], None
+    for line in battle.public_log[idx:n]:
+        tag, text = line.get("tag"), (line.get("text") or "").strip()
+        if tag in ("action", "defend"):
+            body = text.replace("[피해 정산]", "").strip()
+            target = None
+            if "→" in body:
+                after = body.rsplit("→", 1)[1].strip()
+                target = name_at_start(after)
+            continue
+        m = re.search(r"(공격 수치|피해량|회복|방어 값)\s*(\d+)", text)
+        if not m or tag not in ("damage", "heal", "defend_value"):
+            continue
+        who = name_at_start(text) or target
+        if not who:
+            continue
+        value = int(m.group(2))
+        kind = {"공격 수치": "atk", "피해량": "atk", "회복": "heal", "방어 값": "def"}[m.group(1)]
+        events.append({"target": who, "kind": kind, "value": -value if kind == "atk" else value})
+    if events:
+        socketio.emit("fx_numbers", events, room=room_channel(room.id, "all"))
+
+
 def broadcast_state(room):
+    _emit_fx_numbers(room)
     mark_runtime_dirty()
     _mirror_round_logs(room)
     socketio.emit("public_state", build_public_state(room), room=room_channel(room.id, "all"))
