@@ -1900,7 +1900,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-07.4";
+const EXPECTED_SERVER_BUILD = "2026-10-07.5";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -2860,7 +2860,7 @@ function roundHeadHtml(text, fmt) {
   return `<span class="rh"><span class="rh-mark"></span><span class="rh-sub">${f(t.replace(/^▶\s*/, ''))}</span></span>`;
 }
 // 예전에 저장된 안내 문구에 남아 있는 구슬 이모지는 표시할 때 지웁니다.
-function stripLegacyEmoji(t) { return typeof t === 'string' ? t.replace(/\u{1F52E}\s*/gu, '') : t; }
+function stripLegacyEmoji(t) { return typeof t === 'string' ? t.replace(/\u{1F52E}\s*/gu, '').replace('[규칙] 1팀이 항상 선공입니다.', '[규칙] 러너 팀이 항상 선공입니다.') : t; }
 // 공성전 : 거점(2팀)의 2x2 부위 이름(BOSS-NW 등)은 행동 문구에서 거점 이름 하나(BOSS)로 보여줍니다.
 // (체력 변화 줄은 어느 부위가 맞았는지 알 수 있도록 부위 이름을 그대로 둡니다)
 function siteLabelize(text) {

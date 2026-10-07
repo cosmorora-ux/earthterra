@@ -144,7 +144,8 @@ class Battle:
 
         if forced_first_team is not None:
             first_team = forced_first_team
-            explain_lines = [(f"[규칙] {first_team}이 항상 선공입니다.", "system")]
+            explain_lines = [("[규칙] 러너 팀이 항상 선공입니다." if first_team == self.TEAM_A
+                              else f"[규칙] {first_team}이 항상 선공입니다.", "system")]
         else:
             first_team, explain_lines = decide_first_team(team_a, team_b)
 
@@ -1508,7 +1509,7 @@ class Battle:
     # ------------------------------------------------------------------
     # 행동 : 시간 초과 / 도주 (전원 공통)
     # ------------------------------------------------------------------
-    def perform_timeout(self, name: str):
+    def perform_timeout(self, name: str, _batch: bool = False):
         actor = self.find_character(name)
         if actor is None:
             raise BattleError("대상이 존재하지 않습니다.")
@@ -1518,12 +1519,14 @@ class Battle:
         if not ok:
             raise BattleError(reason)
 
-        self._push_history()
+        if not _batch:
+            self._push_history()
         self.timeout_skill.execute(actor)
         self._resolve_pending_attacks(actor)
         actor.has_acted = True
         actor.commanded_by = None  # 지휘로 강제된 행동 기회도 시간 초과로 사라집니다.
-        self._log(f"{actor.name} 시간 초과", tag="wait")
+        if not _batch:
+            self._log(f"{actor.name} 시간 초과", tag="wait")
         self._check_finish()
 
     def perform_timeout_unacted_runners(self):
@@ -1532,8 +1535,13 @@ class Battle:
         (운영진이 응답 없는 러너를 한 번에 넘기기 위한 기능)
         """
         names = [name for name in self.unacted_members() if name in {c.name for c in self.team_a}]
+        if not names:
+            return
+        # 되돌리기 한 번에 전부 돌아오도록 기록은 한 번만, 로그도 한 줄로 묶어서 남깁니다.
+        self._push_history()
         for name in names:
-            self.perform_timeout(name)
+            self.perform_timeout(name, _batch=True)
+        self._log(f"시간 초과 : {', '.join(names)}", tag="wait")
 
     def perform_flee(self, name: str):
         """
