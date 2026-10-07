@@ -86,39 +86,72 @@
   .chat-tab-cfg-row { padding:10px 0; border-bottom:1px solid var(--card-border); }
 
   /* ---------- 마이페이지 팝업 ---------- */
-  .modal-box.mypage { width:820px; max-width:calc(100vw - 32px); max-height:88vh; overflow-y:auto; }
-  .mypage-cols { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+  .modal-box.mypage { width:1020px; max-width:calc(100vw - 32px); max-height:90vh; overflow-y:auto; padding:30px 40px 34px; }
+  .idc-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; }
+  .idc-title { font-size:34px; font-weight:800; letter-spacing:-.01em; }
+  .idc-close { background:none; border:none; color: var(--muted); font-size:22px; cursor:pointer; padding:4px 6px; }
+  .idc-close:hover { color: var(--text); }
+  .mypage-cols { display:grid; grid-template-columns:1fr 1fr; gap:36px; }
   .mypage-col { min-width:0; }
-  .mypage-col + .mypage-col { border-left:1px solid var(--panel-border); padding-left:28px; }
-  @media (max-width:720px) { .mypage-cols { grid-template-columns:1fr; } .mypage-col + .mypage-col { border-left:none; padding-left:0; } }
-  .mypage-head { display:flex; gap:16px; align-items:center; margin-bottom:6px; }
+  .mypage-col + .mypage-col { border-left:1px solid var(--panel-border); padding-left:36px; }
+  @media (max-width:760px) { .mypage-cols { grid-template-columns:1fr; } .mypage-col + .mypage-col { border-left:none; padding-left:0; } .modal-box.mypage { padding:22px 18px; } }
+  .mypage-head { display:flex; gap:24px; align-items:flex-start; padding-bottom:20px; }
   .mypage-head-info { flex:1; min-width:0; }
-  .mypage-head .mypage-name { text-align:left; margin-bottom:2px; }
-  .mypage-head .mypage-row { padding:6px 0; }
-  .mypage-row.top { padding-bottom:4px; }
-  .mypage-raid-input.mypage-raid-input { width:64px !important; text-align:center !important; letter-spacing:2px; }
-  .mypage-roles { display:flex; gap:6px; }
-  .mypage-roles button { background:#151517; color: var(--muted); border:1px solid var(--card-border); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer; }
-  .mypage-roles button.on { color: var(--text); border-color: var(--role-color); box-shadow: inset 0 -2px 0 var(--role-color); font-weight:700; }
-  .mypage-roles button:not(.on):hover:not(:disabled) { color: var(--text); }
-  .mypage-roles button:disabled { cursor:not-allowed; opacity:.5; }
-  .mypage-items { display:flex; flex-wrap:wrap; gap:6px; min-height:32px; }
-  .mypage-items .chip { display:inline-flex; align-items:center; gap:6px; background:#151517; border:1px solid var(--card-border); border-radius:8px; padding:5px 10px; font-size:14px; }
-  .mypage-items .chip b { color: var(--muted); font-weight:500; }
-  .mypage-items .empty { color: var(--muted); font-size:14px; }
-  .btn-plain.btn-xs { padding:4px 10px; font-size:13px; }
-  .seg-toggle { display:inline-flex; border:1px solid var(--card-border); border-radius:8px; overflow:hidden; }
-  .seg-toggle button { background:#151517; color: var(--muted); border:none; padding:6px 14px; font-size:14px; cursor:pointer; }
-  .seg-toggle button + button { border-left:1px solid var(--card-border); }
+  .mypage-head .mypage-name { text-align:left; font-size:26px; font-weight:800; margin:2px 0 14px; }
+  .idc-kv { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; font-size:15px; }
+  .idc-kv .mypage-label { color: var(--muted); }
+  .modal-box input.idc-inline { width:70px; background:none; border:1px solid transparent; border-radius:6px; padding:3px 6px; font-size:15px; font-weight:700; color: var(--text); text-align:right; }
+  .modal-box input.idc-inline:hover:not(:disabled), .modal-box input.idc-inline:focus { border-color: var(--card-border); background:#0c0c0d; outline:none; }
+  .idc-color { display:inline-flex; align-items:center; gap:8px; cursor:pointer; color: var(--text); }
+  .idc-color-dot { width:14px; height:14px; border-radius:50%; border:1px solid var(--card-border); }
+  .idc-sec { border-top:1px solid var(--panel-border); }
+  .idc-row { display:flex; align-items:center; gap:12px; padding:20px 0; }
+  .idc-row.last { border-bottom:1px solid var(--panel-border); }
+  .idc-label { white-space:nowrap; font-size:15px; font-weight:600; color: var(--text); flex-shrink:0; }
+  .idc-value { margin-left:auto; font-size:15px; text-align:right; }
+  .idc-sec .idc-inline { margin-left:auto; }
+  .idc-link { cursor:pointer; }
+  .idc-link:hover { text-decoration:underline; text-underline-offset:3px; }
+  #myPagePointsView { color:#ffd25e; font-weight:700; }
+  .mypage-roles { display:flex; gap:22px; margin-left:auto; }
+  .mypage-roles button { background:none; border:none; padding:2px 0; color: var(--muted); font-size:16px; cursor:pointer; opacity:.55; }
+  .mypage-roles button.on { color: var(--role-color); font-weight:700; opacity:1; }
+  .mypage-roles button:not(.on):hover:not(:disabled) { opacity:1; color: var(--text); }
+  .mypage-roles button:disabled { cursor:default; }
+  .idc-sec .mypage-hp-row { padding:22px 0 10px; }
+  .mypage-hp-row .idc-label { font-weight:500; }
+  .mypage-hp-num { font-size:20px; font-weight:600; margin-top:8px; font-variant-numeric: tabular-nums; }
+  .idc-hpbar { height:12px; border-radius:999px; background:#2a2a2e; overflow:hidden; margin-bottom:24px; }
+  .idc-hpbar > div { height:100%; border-radius:999px; background:#b9b9bd; transition:width .3s; }
+  .seg-toggle { display:inline-flex; background:#0c0c0d; border:1px solid var(--card-border); border-radius:4px; padding:3px; gap:2px; }
+  .seg-toggle button { white-space:nowrap; background:none; color: var(--muted); border:none; border-radius:3px; padding:5px 14px; font-size:13px; cursor:pointer; }
   .seg-toggle button.on { background:#2a2a2f; color: var(--text); font-weight:700; }
-  .mypage-field { width:100%; box-sizing:border-box; background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:9px 12px; font-size:15px; font-family:inherit; }
-  .modal-box input.mypage-field { font-size:15px; }
-  .rich-mini-bar { display:flex; gap:4px; margin:8px 0 6px; }
-  .mypage-field.rich { min-height:110px; max-height:220px; overflow-y:auto; line-height:1.6; outline:none; white-space:pre-wrap; word-break:break-word; }
-  .mypage-field.rich:empty::before { content: attr(data-placeholder); color: var(--muted); }
-  .mypage-field[contenteditable="false"] { opacity:.6; }
-  .mypage-fx-image { height:170px; border:1px dashed var(--card-border); border-radius:10px; background:#0c0c0d; display:flex; align-items:center; justify-content:center; text-align:center; color: var(--muted); font-size:14px; line-height:1.6; cursor:pointer; overflow:hidden; }
+  .idc-textbtn { white-space:nowrap; background:none; border:none; color: var(--text); font-size:15px; cursor:pointer; padding:2px 0; display:inline-flex; align-items:center; gap:8px; }
+  .idc-textbtn:hover:not(:disabled) { text-decoration:underline; text-underline-offset:3px; }
+  .idc-textbtn:disabled { opacity:.4; cursor:default; }
+  .modal-box input.idc-field { width:100%; box-sizing:border-box; background:#151517; border:none; border-radius:2px; color: var(--text); padding:16px 18px; font-size:15px; margin-top:4px; }
+  .modal-box input.idc-field:focus { outline:1px solid var(--card-border); }
+  .idc-editor { background:#151517; margin-top:10px; border-radius:2px; }
+  .idc-editor .rich-mini-bar { display:flex; gap:2px; padding:8px 14px; border-bottom:1px solid var(--panel-border); }
+  .idc-editor .rich-mini-bar button { background:#0c0c0d; border:none; color: var(--text); width:30px; height:28px; border-radius:3px; cursor:pointer; font-size:12px; }
+  .idc-editor .rich-mini-bar button:hover { background:#2a2a2f; }
+  .idc-editor .rich { min-height:160px; max-height:280px; overflow-y:auto; padding:18px; line-height:1.7; outline:none; white-space:pre-wrap; word-break:break-word; font-size:15px; }
+  .idc-editor .rich:empty::before { content: attr(data-placeholder); color: var(--muted); }
+  .idc-editor .rich[contenteditable="false"] { opacity:.6; }
+  .mypage-fx-image { height:226px; border:1px dashed var(--card-border); border-radius:4px; background:#151517; display:flex; align-items:center; justify-content:center; text-align:center; color: var(--muted); font-size:14px; line-height:1.6; cursor:pointer; overflow:hidden; margin-top:4px; }
   .mypage-fx-image img { max-width:100%; max-height:100%; object-fit:contain; }
+  .idc-sound { display:flex; gap:14px; }
+  .idc-upload { flex:1; background:none; border:1.5px dashed var(--card-border); border-radius:8px; color: var(--muted); font-size:15px; padding:16px; cursor:pointer; }
+  .idc-upload:hover:not(:disabled) { color: var(--text); border-color: var(--muted); }
+  .idc-upload.has { color: var(--text); }
+  .idc-fill-btn { white-space:nowrap; width:140px; background:#232327; border:none; border-radius:8px; color: var(--text); font-size:15px; cursor:pointer; }
+  .idc-fill-btn:hover:not(:disabled) { background:#2c2c31; }
+  .idc-upload:disabled, .idc-fill-btn:disabled { opacity:.4; cursor:default; }
+  .idc-level { display:flex; align-items:center; gap:10px; margin-top:14px; font-size:15px; }
+  .idc-level .lbl { font-weight:600; }
+  .idc-level .db { margin-left:auto; font-variant-numeric: tabular-nums; }
+  .idc-level .st { width:150px; text-align:right; color: var(--muted); }
+  .idc-level .st.ok { color: var(--text); }
 
   /* ---------- 스킬 이펙트 컷인 (딤 + 화면 중앙) ---------- */
   .skill-cutin { position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0); pointer-events:none; }
@@ -147,35 +180,19 @@
   .userinfo-row.is-hidden .userinfo-name { color: var(--muted); text-decoration: line-through; }
   .userinfo-eye { background:none; border:none; color: var(--muted); cursor:pointer; font-size:14px; padding:2px 4px; }
   .userinfo-eye:hover { color: var(--text); }
-  .mypage-portrait-wrap { display:flex; justify-content:center; margin-bottom:14px; }
   .mypage-portrait {
-    width:120px; height:120px; border-radius:16px; background:#0c0c0d;
+    width:116px; height:116px; flex-shrink:0; border-radius:12px; background:#000;
     border:1px solid var(--card-border); cursor:pointer; position:relative;
-    background-size:contain; background-position:center; background-repeat:no-repeat;
+    background-size:cover; background-position:center; background-repeat:no-repeat;
   }
   .mypage-portrait-icon {
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-size:36px; opacity:.45; pointer-events:none;
+    font-size:32px; opacity:.35; pointer-events:none;
   }
-  .mypage-name { text-align:center; font-size:22px; font-weight:700; margin-bottom:16px; }
-  .mypage-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; font-size:15px; }
-  .mypage-label { color: var(--muted); flex-shrink:0; }
-  .mypage-value { text-align:right; }
-  .mypage-value.editable { cursor:pointer; border-bottom:1px dashed var(--card-border); }
-  .mypage-value .hint { display:block; font-size:12px; color: var(--muted); font-weight:400; }
-  .mypage-row input:not([type="checkbox"]) { width:auto; max-width:160px; text-align:right; padding:6px 10px; font-size:15px; }
-  .mypage-color-dot { width:22px; height:22px; cursor:pointer; }
-  .mypage-divider { border-top:1px solid var(--panel-border); margin:4px 0; }
-  .mypage-hp-row { display:flex; justify-content:space-between; padding:10px 0 2px; }
+  .mypage-hp-row { display:flex; justify-content:space-between; }
   .mypage-hp-col { text-align:left; }
   .mypage-hp-col.right { text-align:right; }
-  .mypage-hp-num { font-size:20px; font-weight:700; margin-top:2px; }
-  .mypage-hp-row input[type="number"] {
-    width:80px; font-size:20px; font-weight:700; padding:4px 8px; text-align:left;
-  }
-  .mypage-hp-row .mypage-hp-col.right input[type="number"] { text-align:right; }
-  .mypage-sound-controls { display:flex; align-items:center; gap:8px; padding:4px 0; }
-  .mypage-sound-controls #myPageSoundVolume { flex:1; accent-color: var(--accent-blue); }
+  .mypage-hp-row input[type="number"] { width:90px; font-size:18px; font-weight:600; padding:4px 8px; margin-top:6px; }
   /* ================================================================
      상점 (P 재화 / 상품 / 소지품 / 운영진 관리)
      ================================================================ */
@@ -1168,7 +1185,10 @@
 </div>
 <div id="myPageModal" class="modal-overlay">
   <div class="modal-box mypage panel">
-    <div class="modal-title">마이페이지</div>
+    <div class="idc-head">
+      <div class="idc-title">ID card</div>
+      <button class="idc-close" onclick="closeMyPage()" data-tip="닫기"><i class="fa-solid fa-xmark"></i></button>
+    </div>
     <div class="mypage-cols">
     <div class="mypage-col">
     <div class="mypage-head">
@@ -1177,101 +1197,99 @@
       </div>
       <div class="mypage-head-info">
         <div class="mypage-name" id="myPageName">-</div>
-        <div class="mypage-row">
-          <span class="mypage-label">표시컬러</span>
-          <span class="mypage-value"><div class="avatar-dot mypage-color-dot" id="myPageColorDot" data-tip="클릭해서 색상 변경" onclick="document.getElementById('myColorInput').click()"></div></span>
-        </div>
-        <div class="mypage-row">
-          <span class="mypage-label">마스레이드 이름 표기</span>
-          <input type="text" id="myPageRaidNameInput" class="mypage-raid-input" maxlength="3" placeholder="-"
+        <div class="idc-kv">
+          <span class="mypage-label">마스 이름 표기</span>
+          <input type="text" id="myPageRaidNameInput" class="idc-inline" maxlength="3" placeholder="-"
             onchange="commitRaidName()" onkeydown="if(event.key==='Enter') this.blur()">
+        </div>
+        <div class="idc-kv">
+          <span class="mypage-label">표시컬러</span>
+          <span class="idc-color" id="myPageColorBtn" data-tip="클릭해서 색상 변경" onclick="if(canEditMyPage()) document.getElementById('myColorInput').click()">
+            <span class="idc-color-dot" id="myPageColorDot"></span><span id="myPageColorText">기본 흰색</span>
+          </span>
         </div>
       </div>
     </div>
     <input type="file" id="myAvatarFileInput" accept="image/png,image/webp,image/gif" style="display:none;" onchange="onMyAvatarFileChosen(event)">
 
-    <div class="mypage-row">
-      <span class="mypage-label">포지션</span>
+    <div class="idc-sec idc-row">
+      <span class="idc-label">포지션</span>
       <div class="mypage-roles" id="myPageRoles"></div>
     </div>
 
-    <div class="mypage-divider"></div>
-
-    <div class="mypage-hp-row">
-      <div class="mypage-hp-col">
-        <span class="mypage-label">현재 체력</span>
-        <div class="mypage-hp-num" id="myPageCurrentHpView">000</div>
-        <input type="number" id="myPageCurrentHpInput" style="display:none;" onchange="onMyPageGmFieldChange()">
+    <div class="idc-sec">
+      <div class="mypage-hp-row">
+        <div class="mypage-hp-col">
+          <span class="idc-label">현재 체력</span>
+          <div class="mypage-hp-num" id="myPageCurrentHpView">000</div>
+          <input type="number" id="myPageCurrentHpInput" style="display:none;" onchange="onMyPageGmFieldChange()">
+        </div>
+        <div class="mypage-hp-col right">
+          <span class="idc-label">최대 체력</span>
+          <div class="mypage-hp-num" id="myPageMaxHp">000</div>
+        </div>
       </div>
-      <div class="mypage-hp-col right">
-        <span class="mypage-label">최대 체력</span>
-        <div class="mypage-hp-num" id="myPageMaxHp">000</div>
-      </div>
+      <div class="idc-hpbar"><div id="myPageHpBar" style="width:0%;"></div></div>
     </div>
-    <div class="hpbar-track"><div class="hpbar-fill" id="myPageHpBar" style="width:0%;"></div></div>
 
-    <div class="mypage-divider"></div>
-
-    <div class="mypage-row">
-      <span class="mypage-label">재화</span>
-      <span class="mypage-value" id="myPagePointsView" style="color:#ffd25e;font-weight:700;">0P</span>
-      <input type="number" id="myPagePointsInput" min="0" style="display:none;" onchange="onMyPagePointsChange()">
+    <div class="idc-sec idc-row">
+      <span class="idc-label">재화</span>
+      <span class="idc-value" id="myPagePointsView">0P</span>
+      <input type="number" id="myPagePointsInput" class="idc-inline" min="0" style="display:none; width:110px;" onchange="onMyPagePointsChange()">
     </div>
-    <div class="mypage-row top">
-      <span class="mypage-label">소지품</span>
-      <button class="btn-plain btn-xs" onclick="openShopFromMyPage()"><i class="fa-solid fa-store"></i> 상점</button>
+    <div class="idc-sec idc-row last">
+      <span class="idc-label">소지품</span>
+      <span class="idc-value idc-link" id="myPageItemsView" onclick="openShopFromMyPage()" data-tip="클릭하면 상점이 열려요">-</span>
     </div>
-    <div class="mypage-items" id="myPageItemsView"></div>
     </div>
 
     <div class="mypage-col">
-    <div class="mypage-row">
-      <span class="mypage-label">스킬 이펙트</span>
+    <div class="idc-row" style="padding-top:0;">
+      <span class="idc-label">스킬 로그 타입</span>
       <div class="seg-toggle" id="myPageSkillLogType">
         <button data-v="text" onclick="setSkillLogType('text')"><i class="fa-solid fa-font"></i> 글</button>
         <button data-v="image" onclick="setSkillLogType('image')"><i class="fa-solid fa-image"></i> 이미지</button>
       </div>
+      <span style="flex:1"></span>
+      <button class="idc-textbtn" onclick="previewSkillCutin()"><i class="fa-solid fa-eye"></i> 컷인 미리 보기</button>
     </div>
     <div id="myPageSkillText">
-      <input type="text" id="myPageSkillLogTitle" class="mypage-field" maxlength="30" placeholder="제목" onchange="saveSkillLogText()">
-      <div class="rich-mini-bar">
-        <button class="btn-plain btn-xs" onmousedown="event.preventDefault()" onclick="skillLogFormat('bold')" data-tip="굵게"><i class="fa-solid fa-bold"></i></button>
-        <button class="btn-plain btn-xs" onmousedown="event.preventDefault()" onclick="skillLogFormat('italic')" data-tip="기울임"><i class="fa-solid fa-italic"></i></button>
+      <input type="text" id="myPageSkillLogTitle" class="idc-field" maxlength="30" placeholder="스킬명" onchange="saveSkillLogText()">
+      <div class="idc-editor">
+        <div class="rich-mini-bar">
+          <button onmousedown="event.preventDefault()" onclick="skillLogFormat('bold')" data-tip="굵게"><i class="fa-solid fa-bold"></i></button>
+          <button onmousedown="event.preventDefault()" onclick="skillLogFormat('italic')" data-tip="기울임"><i class="fa-solid fa-italic"></i></button>
+        </div>
+        <div id="myPageSkillLogText" class="rich" contenteditable="true" data-placeholder="텍스트를 작성해 주세요." onblur="saveSkillLogText()"></div>
       </div>
-      <div id="myPageSkillLogText" class="mypage-field rich" contenteditable="true" data-placeholder="본문" onblur="saveSkillLogText()"></div>
     </div>
     <div id="myPageSkillImage" style="display:none;">
-      <div class="mypage-fx-image" id="myPageSkillImageBox" onclick="document.getElementById('mySkillImageInput').click()">
+      <div class="mypage-fx-image" id="myPageSkillImageBox" onclick="if(canEditMyPage()) document.getElementById('mySkillImageInput').click()">
         <img id="myPageSkillImagePreview" alt="" style="display:none;">
         <span id="myPageSkillImageEmpty"><i class="fa-solid fa-upload"></i><br>클릭해서 이미지 올리기<br><small>png · apng · gif · webp / 5MB까지</small></span>
       </div>
-      <div class="row" style="justify-content:flex-start; margin-top:6px;">
-        <button class="btn-plain btn-xs" id="myPageSkillImageClear" onclick="clearSkillLogImage()"><i class="fa-solid fa-trash"></i> 이미지 삭제</button>
+      <div style="margin-top:8px;">
+        <button class="idc-textbtn" id="myPageSkillImageClear" onclick="clearSkillLogImage()"><i class="fa-solid fa-trash"></i> 이미지 삭제</button>
       </div>
       <input type="file" id="mySkillImageInput" accept="image/png,image/apng,image/gif,image/webp,.apng" style="display:none;" onchange="onSkillImageChosen(event)">
     </div>
-    <div class="row" style="justify-content:flex-start;">
-      <button class="btn-plain" onclick="previewSkillCutin()"><i class="fa-solid fa-eye"></i> 스킬 이펙트 미리 보기</button>
-    </div>
 
-    <div class="mypage-divider" style="margin-top:12px;"></div>
-
-    <div class="mypage-row">
-      <span class="mypage-label">효과음</span>
-      <span class="mypage-value" id="myPageSoundStatus">미등록</span>
+    <div class="idc-sec idc-row" style="margin-top:18px;">
+      <span class="idc-label">효과음</span>
+      <span style="flex:1"></span>
+      <button class="idc-textbtn" id="myPageSoundPreviewBtn" onclick="previewMySoundEffect()" disabled><i class="fa-solid fa-headphones"></i> 효과음 미리 듣기</button>
     </div>
-    <div class="mypage-sound-controls">
-      <button class="btn-plain" id="myPageSoundUploadBtn" onclick="document.getElementById('mySoundFileInput').click()">업로드</button>
-      <button class="btn-plain" id="myPageSoundPreviewBtn" onclick="previewMySoundEffect()" disabled><i class="fa-solid fa-headphones"></i> 미리듣기</button>
-      <input type="range" class="nice-range" id="myPageSoundVolume" min="0" max="100" value="100" oninput="paintRange(this); updateMyPageSoundLevel()" onchange="onMySoundEffectVolumeChange()" data-tip="이 캐릭터 효과음 음량 (모두에게 적용)">
+    <div class="idc-sound">
+      <button class="idc-upload" id="myPageSoundUploadBtn" onclick="document.getElementById('mySoundFileInput').click()">
+        <span id="myPageSoundStatus">파일 업로드 (5mb 제한)</span>
+      </button>
+      <button class="idc-fill-btn" id="myPageSoundFitBtn" onclick="fitMySoundVolume()">음량 맞추기</button>
     </div>
-    <div class="snd-level" id="myPageSoundLevel"></div>
-    <div class="hint" style="margin-top:4px; font-size:13px; color:var(--muted);">최대 6초만 재생되고, 업로드 파일은 5MB까지 가능합니다.</div>
+    <div class="idc-level" id="myPageSoundLevel"></div>
+    <input type="range" id="myPageSoundVolume" min="0" max="100" value="100" style="display:none;">
     <input type="file" id="mySoundFileInput" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,.mp3,.wav,.ogg,.m4a,.aac" style="display:none;" onchange="onMySoundEffectFileChosen(event)">
     </div>
     </div>
-
-    <div class="row"><button class="btn-plain" onclick="closeMyPage()">닫기</button></div>
   </div>
 </div>
 <div id="skillCutin" class="skill-cutin" onclick="hideSkillCutin()">
@@ -3610,7 +3628,8 @@ function renderMyPage() {
     document.getElementById('myPageName').textContent = '미로그인';
     document.getElementById('myPagePortrait').style.backgroundImage = 'none';
     document.getElementById('myPagePortraitIcon').style.display = '';
-    document.getElementById('myPageColorDot').style.background = '#0c0c0d';
+    document.getElementById('myPageColorDot').style.background = '#fff';
+    document.getElementById('myPageColorText').textContent = '-';
     document.getElementById('myPageRaidNameInput').value = '';
     document.getElementById('myPageRaidNameInput').disabled = true;
     document.getElementById('myPageRoles').innerHTML = '';
@@ -3618,7 +3637,8 @@ function renderMyPage() {
     document.getElementById('myPageMaxHp').textContent = '000';
     document.getElementById('myPageHpBar').style.width = '0%';
     hpView.style.display = ''; hpInput.style.display = 'none';
-    document.getElementById('myPageSoundStatus').textContent = '미등록';
+    document.getElementById('myPageSoundStatus').textContent = '파일 업로드 (5mb 제한)';
+    document.getElementById('myPageSoundFitBtn').disabled = true;
     document.getElementById('myPageSoundPreviewBtn').disabled = true;
     document.getElementById('myPageSoundUploadBtn').disabled = true;
     document.getElementById('myPageSoundVolume').disabled = true;
@@ -3634,7 +3654,8 @@ function renderMyPage() {
     portraitEl.style.backgroundImage = 'none';
     document.getElementById('myPagePortraitIcon').style.display = '';
   }
-  document.getElementById('myPageColorDot').style.background = c.color || '#0c0c0d';
+  document.getElementById('myPageColorDot').style.background = c.color || '#fff';
+  document.getElementById('myPageColorText').textContent = c.color ? c.color.toUpperCase() : '기본 흰색';
   const raidInput = document.getElementById('myPageRaidNameInput');
   raidInput.disabled = !canEdit;
   if (document.activeElement !== raidInput) raidInput.value = c.raid_display_name || '';
@@ -3659,19 +3680,18 @@ function renderMyPage() {
 
   // 표기 이름/색상/스킬 로그는 본인(그 캐릭터로 직접 로그인한 사람)만 수정 가능합니다.
   document.getElementById('myPagePortrait').style.cursor = canEdit ? 'pointer' : 'default';
-  document.getElementById('myPageColorDot').style.cursor = canEdit ? 'pointer' : 'default';
+  document.getElementById('myPageColorBtn').style.cursor = canEdit ? 'pointer' : 'default';
   renderMyPageSkillLog(c, canEdit);
 
-  document.getElementById('myPageSoundStatus').textContent = c.sound_effect ? '등록됨' : '미등록';
+  document.getElementById('myPageSoundStatus').textContent = c.sound_effect ? '등록됨 (클릭해서 교체)' : '파일 업로드 (5mb 제한)';
+  document.getElementById('myPageSoundUploadBtn').classList.toggle('has', !!c.sound_effect);
+  document.getElementById('myPageSoundFitBtn').disabled = !canEdit || !c.sound_effect;
   setTimeout(updateMyPageSoundLevel, 0);
   document.getElementById('myPageSoundPreviewBtn').disabled = !c.sound_effect;
   document.getElementById('myPageSoundUploadBtn').disabled = !canEdit;
   const soundVolume = document.getElementById('myPageSoundVolume');
   soundVolume.disabled = !canEdit;
-  if (document.activeElement !== soundVolume) {
-    soundVolume.value = c.sound_effect_volume != null ? c.sound_effect_volume : 100;
-    paintRange(soundVolume);
-  }
+  soundVolume.value = c.sound_effect_volume != null ? c.sound_effect_volume : 100;
 }
 
 function commitRaidName() {
@@ -4324,8 +4344,8 @@ function renderMyPagePoints() {
   if (document.activeElement !== input) input.value = d.points || 0;
   const esc = t => String(t).replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
   const items = Object.entries(d.items || {}).filter(([, n]) => n > 0)
-    .map(([id, n]) => { const it = shopItemById(id); return `<span class="chip">${esc(it ? it.name : '삭제된 상품')} <b>×${n}</b></span>`; });
-  document.getElementById('myPageItemsView').innerHTML = items.length ? items.join('') : '<span class="empty">소지품이 없어요.</span>';
+    .map(([id, n]) => { const it = shopItemById(id); return `${esc(it ? it.name : '삭제된 상품')} ${n}`; });
+  document.getElementById('myPageItemsView').innerHTML = items.length ? items.join(', ') : '<span style="color:var(--muted)">없음</span>';
 }
 function openShopFromMyPage() {
   const c = myPageTargetChar();
@@ -4777,33 +4797,34 @@ function loudnessBadge(effDb) {
 function volumeForTarget(rmsDb) {
   return Math.round(100 * Math.pow(10, (SFX_TARGET_DB - rmsDb) / 20));
 }
+let myPageSoundNeed = null;  // 적정 크기에 맞추려면 필요한 음량(%) - '음량 맞추기' 버튼이 씁니다.
 function updateMyPageSoundLevel() {
   const el = document.getElementById('myPageSoundLevel');
   if (!el || document.getElementById('myPageModal').style.display !== 'flex') return;
+  const row = (db, st, cls) => `<span class="lbl">파일 음량:</span><span class="db">${db}</span><span class="st ${cls || ''}">${st}</span>`;
   const c = myPageTargetChar();
-  if (!c || !c.sound_effect) { el.innerHTML = `적정 크기 ${SFX_TARGET_DB} dB (±${SFX_TOLERANCE_DB}). 소리를 올리면 크기를 재서 보여줘요.`; return; }
+  myPageSoundNeed = null;
+  if (!c || !c.sound_effect) { el.innerHTML = row('-', `*적정 ${SFX_TARGET_DB} dB`); return; }
   const vol = parseInt(document.getElementById('myPageSoundVolume').value, 10);
   const url = c.sound_effect;
-  el.textContent = '크기 측정 중...';
+  el.innerHTML = row('측정 중...', '');
   analyzeLoudness(url).then(m => {
     if (myPageTargetChar() !== c && (!myPageTargetChar() || myPageTargetChar().sound_effect !== url)) return;
-    if (!m) { el.textContent = '이 파일은 크기를 측정할 수 없어요.'; return; }
+    if (!m) { el.innerHTML = row('측정 불가', ''); return; }
     const eff = m.rms_db + 20 * Math.log10(Math.max(vol, 1) / 100);
-    const need = volumeForTarget(m.rms_db);
-    const canEdit = canEditMyPage();
-    el.innerHTML = `크기 <span class="lv">${isFinite(eff) ? eff.toFixed(1) : '-'} dB</span> ${loudnessBadge(eff)}
-      <span>적정 ${SFX_TARGET_DB} dB (±${SFX_TOLERANCE_DB})</span>
-      ${canEdit ? `<button class="shop-btn ghost sm" onclick="autoLevelMySound(${need})">적정 크기로 맞추기</button>` : ''}
-      ${need > 100 ? '<span>원본이 작아서 100%로도 부족해요. 더 큰 파일을 권장해요.</span>' : ''}`;
+    myPageSoundNeed = volumeForTarget(m.rms_db);
+    const st = eff > SFX_TARGET_DB + SFX_TOLERANCE_DB ? ['*큼', ''] : eff < SFX_TARGET_DB - SFX_TOLERANCE_DB ? ['*작음', ''] : ['*적정', 'ok'];
+    el.innerHTML = row(isFinite(eff) ? `${eff.toFixed(1)} dB` : '-', st[0], st[1]);
   });
 }
-function autoLevelMySound(need) {
-  const v = Math.max(0, Math.min(100, need));
-  const slider = document.getElementById('myPageSoundVolume');
-  slider.value = v;
-  paintRange(slider);
+function fitMySoundVolume() {
+  if (!canEditMyPage() || myPageSoundNeed == null) return;
+  const v = Math.max(0, Math.min(100, myPageSoundNeed));
+  document.getElementById('myPageSoundVolume').value = v;
   onMySoundEffectVolumeChange();
   updateMyPageSoundLevel();
+  if (myPageSoundNeed > 100) showShopToast('원본 소리가 작아서 최대 음량으로 맞췄어요. 더 큰 파일을 권장해요.');
+  else showShopToast(`음량을 ${v}%로 맞췄어요.`);
 }
 // ==================================================================
 // 홀로그램(글리터) 효과 : 마우스가 있는 영역(카드 영역 .holo-zone이면 그 안 카드 전부, 아니면 그 블럭 하나)에
