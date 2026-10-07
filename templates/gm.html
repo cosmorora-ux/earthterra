@@ -203,6 +203,14 @@
   [style*="cursor:move"], [style*="cursor:grab"] { cursor: move !important; }
   [style*="cursor:crosshair"] { cursor: url("/static/cursors/crosshair.png") 16 16, crosshair !important; }
   body.is-busy, body.is-busy * { cursor: url("/static/cursors/wait.png") 16 16, wait !important; }
+
+  /* ================================================================
+     타이포그래피 : 크기 · 행간 · 자간을 함께 맞춥니다.
+     한글은 기본 자간이 넓어 보여서 본문은 살짝, 제목은 더 좁히고
+     행간은 본문 1.5 / 제목 1.2 정도로 정리합니다.
+     ================================================================ */
+  body { letter-spacing:-0.01em; line-height:1.5; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; }
+  input, textarea, select, button { letter-spacing:inherit; }
 </style>
 </head>
 <body>
