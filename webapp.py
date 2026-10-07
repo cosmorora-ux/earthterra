@@ -31,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-06.15"
+SERVER_BUILD = "2026-10-07.1"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -671,6 +671,28 @@ def emit_action_sfx(room, actor_name, action_type):
         fx = skill_cutin_payload(room.game.db.get(actor_name))
         if fx:
             socketio.emit("skill_cutin", dict(fx, actor=actor_name), room=room_channel(room.id, "all"))
+
+
+# 격자 전투(공성전/마스 레이드)에서 보스·거점(2팀)이 공격하면, 지도에 공격자 → 피격자 방향의
+# 빨간 점선을 그리도록 모두에게 알립니다.
+ATTACK_LINE_ACTIONS = ("attack", "collapse", "emission")
+
+
+def emit_attack_lines(room, action_type, payload):
+    if room.battle_type not in ("siege", "mass_raid") or action_type not in ATTACK_LINE_ACTIONS:
+        return
+    battle = room.game.battle
+    if battle is None:
+        return
+    actor = battle.find_character((payload or {}).get("attacker") or "")
+    if actor is None or actor.team != "B":
+        return
+    if action_type == "emission":
+        targets = [c.name for c in battle.team_a if c.grid_pos and c.status not in ("dead", "fled")]
+    else:
+        targets = [payload.get("target")] if payload.get("target") else []
+    if targets:
+        socketio.emit("attack_line", {"from": actor.name, "to": targets}, room=room_channel(room.id, "all"))
 
 
 def skill_cutin_payload(entry):
@@ -1957,7 +1979,8 @@ def on_battle_action(data):
         return
 
     if should_preview:
-        room.pending_reveal = {"actor": actor_char.name, "pub_len_before": pub_len_before, "action_type": action_type}
+        room.pending_reveal = {"actor": actor_char.name, "pub_len_before": pub_len_before, "action_type": action_type,
+                               "payload": dict(payload)}
         socketio.emit("gm_state", build_gm_state(room), room=room_channel(room.id, "gm"))
         return
 
@@ -1973,6 +1996,7 @@ def on_battle_action(data):
                 battle.log_event("거점의 이번 라운드 행동이 모두 끝났습니다.", tag="system")
 
     emit_action_sfx(room, actor_char.name if actor_char else actor_name, action_type)
+    emit_attack_lines(room, action_type, payload)
     _maybe_relocate_boss(battle, actor_char)
     _maybe_auto_advance_turn(room, battle)
     _maybe_resolve_telegraph_damage(room, battle)
@@ -2006,9 +2030,10 @@ def on_reveal_pending_action(data):
 
     # 공성전 : 거점 다중 행동 소모는 "공개"가 확정된 시점에만 적용됩니다.
     # (미리보기만 하고 되돌린 굴림은 이번 라운드 행동 횟수를 소모하지 않습니다)
+    emit_action_sfx(room, pending["actor"], pending.get("action_type"))
+    emit_attack_lines(room, pending.get("action_type"), pending.get("payload") or {})
     if room.battle_type == "siege" and room.site_dice_round_no == battle.round_no and room.site_dice_value:
         actor_char = battle.find_character(pending["actor"])
-        emit_action_sfx(room, pending["actor"], pending.get("action_type"))
         if actor_char is not None and actor_char.team == "B":
             room.site_dice_used += 1
             remaining = room.site_dice_value - room.site_dice_used

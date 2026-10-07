@@ -113,6 +113,14 @@
   @keyframes fxFloat { 0% { opacity:0; transform:translate(-50%, 6px) scale(.8); } 15% { opacity:1; transform:translate(-50%, -6px) scale(1.08); }
                        70% { opacity:1; transform:translate(-50%, -26px) scale(1); } 100% { opacity:0; transform:translate(-50%, -40px); } }
 
+  .atk-lines { position:absolute; left:0; top:0; pointer-events:none; z-index:6; overflow:visible; transition: opacity .6s ease; animation: fxFadeIn .2s ease; }
+  .atk-lines.out { opacity:0; }
+  .atk-line { stroke:#ff4d4d; stroke-width:2.5; stroke-linecap:round; stroke-dasharray:9 7;
+              filter: drop-shadow(0 0 3px rgba(255,60,60,.7)); animation: atkFlow .5s linear infinite; }
+  @keyframes atkFlow { from { stroke-dashoffset:16; } to { stroke-dashoffset:0; } }
+  .atk-ring { fill:none; stroke:#ff4d4d; stroke-width:2; transform-box: fill-box; transform-origin:center; animation: atkRing 1s ease-out infinite; }
+  @keyframes atkRing { from { opacity:.9; transform:scale(.6); } to { opacity:0; transform:scale(3); } }
+  @keyframes fxFadeIn { from { opacity:0; } }
   .fx-round { position:fixed; left:0; right:0; top:42%; z-index:9400; pointer-events:none; display:flex; flex-direction:column; align-items:center;
               padding:18px 0; background:linear-gradient(90deg, transparent, rgba(10,10,12,.82) 25%, rgba(10,10,12,.82) 75%, transparent);
               border-top:1px solid rgba(255,255,255,.08); border-bottom:1px solid rgba(255,255,255,.08); animation: fxRoundBand 1.9s ease forwards; }
@@ -1871,7 +1879,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-06.15";
+const EXPECTED_SERVER_BUILD = "2026-10-07.1";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -2166,7 +2174,7 @@ function renderCompactCardHtml(c) {
   return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
-        <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
+        ${canSeeStats ? `<div class="stat-tip">${statsTitle(c)}</div>` : ''}
       </div>
       <div class="cname-sm">${displayNameOf(c)}${statusTagFor(c)}</div>
       <div class="chp-sm">${c.current_hp}/${c.max_hp}</div>
@@ -2240,9 +2248,9 @@ function renderCardHtml(c) {
         <span class="cname">${displayNameOf(c)}${isMine ? ' <span style="color:var(--accent-blue); font-size:13px;">(나)</span>' : ''}</span>
         <span class="crole" style="color:${roleColorVar(c.role)}">${c.role}${(c.skill && BATTLE_TYPE === 'mass_raid') ? ' 【' + c.skill + '】' : ''}</span>
       </div>
-      <div class="card-info-icon">${CARD_INFO_ICON_SVG}
-        <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
-      </div>
+      ${canSeeStats ? `<div class="card-info-icon">${CARD_INFO_ICON_SVG}
+        <div class="stat-tip">${statsTitle(c)}</div>
+      </div>` : ''}
     </div>
     <div class="portrait-row">
       <div class="portrait" style="${c.avatar_url ? `background-image:url('${c.avatar_url}');` : ''}"></div>
@@ -5242,6 +5250,65 @@ function maybeShowRoundBanner(battle) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2000);
 }
+</script>
+<script>
+// ==================================================================
+// 격자 지도 공격선 : 보스·거점이 공격하면 공격자 → 피격자로 빨간 점선을 긋고,
+// 점선이 공격 방향으로 흐르다가 사라집니다.
+// ==================================================================
+function gridCellCenter(frame, x, y) {
+  const table = document.querySelector('#gridMap table.gmap');
+  const cell = table && table.rows[y] && table.rows[y].cells[x];
+  if (!cell) return null;
+  const r = cell.getBoundingClientRect(), f = frame.getBoundingClientRect();
+  return { x: r.left - f.left + r.width / 2, y: r.top - f.top + r.height / 2 };
+}
+function gridCharCenter(frame, name) {
+  const all = lastAllForCards || [];
+  const c = all.find(k => k.name === name);
+  if (!c) return null;
+  // 2x2 보스는 부위 4칸의 가운데에서 선이 나갑니다.
+  const parts = c.boss_group ? all.filter(k => k.boss_group === c.boss_group && k.grid_pos) : [c];
+  const pts = parts.filter(k => k.grid_pos).map(k => gridCellCenter(frame, k.grid_pos[0], k.grid_pos[1])).filter(Boolean);
+  if (!pts.length) return null;
+  return { x: pts.reduce((a, p) => a + p.x, 0) / pts.length, y: pts.reduce((a, p) => a + p.y, 0) / pts.length };
+}
+function drawAttackLines(d) {
+  const frame = document.querySelector('#gridSection .map-frame');
+  if (!frame || !frame.offsetWidth) return;
+  const from = gridCharCenter(frame, d.from);
+  if (!from) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', 'atk-lines');
+  svg.setAttribute('width', frame.clientWidth);
+  svg.setAttribute('height', frame.clientHeight);
+  svg.innerHTML = `<defs><marker id="atkArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#ff4d4d"/></marker></defs>`;
+  (d.to || []).forEach(name => {
+    const to = gridCharCenter(frame, name);
+    if (!to) return;
+    // 칸 가운데까지 가지 않고 피격 칸 가장자리 쯤에서 멈춰서 화살촉이 가려지지 않게 합니다.
+    const dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1;
+    const cut = Math.min(18, len / 3);
+    const ex = to.x - dx / len * cut, ey = to.y - dy / len * cut;
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
+    line.setAttribute('x2', ex); line.setAttribute('y2', ey);
+    line.setAttribute('class', 'atk-line');
+    line.setAttribute('marker-end', 'url(#atkArrow)');
+    svg.appendChild(line);
+    const ring = document.createElementNS(NS, 'circle');
+    ring.setAttribute('cx', to.x); ring.setAttribute('cy', to.y); ring.setAttribute('r', 6);
+    ring.setAttribute('class', 'atk-ring');
+    svg.appendChild(ring);
+  });
+  frame.appendChild(svg);
+  setTimeout(() => svg.classList.add('out'), 2600);
+  setTimeout(() => svg.remove(), 3200);
+}
+// 공격 직후 상태(이동·HP)가 바로 뒤따라 오므로, 지도가 다시 그려진 다음에 긋습니다.
+socket.on('attack_line', (d) => setTimeout(() => drawAttackLines(d), 120));
 </script>
 <div id="floatTip"></div>
 <script>
