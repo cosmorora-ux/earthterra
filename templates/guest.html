@@ -79,6 +79,49 @@
     box-shadow:0 6px 18px rgba(0,0,0,.5); z-index:10000; pointer-events:none;
   }
 
+  /* ================================================================
+     모션 : 피해/회복 연출, 팝업 열림, 채팅, 라운드 배너, 버튼 눌림 (과하지 않게, 짧게)
+     ================================================================ */
+  .modal-overlay { animation: fxOverlayIn .18s ease-out; }
+  .modal-overlay > .modal-box, .modal-overlay > div > .modal-box { animation: fxBoxIn .26s cubic-bezier(.2,.9,.25,1); }
+  @keyframes fxOverlayIn { from { background:rgba(0,0,0,0); } }
+  @keyframes fxBoxIn { from { opacity:0; transform:translateY(14px) scale(.98); } }
+  button:not(:disabled):active, .btn:active, .shop-btn:active { transform: scale(.96); }
+  button { transition: transform .08s ease, background-color .15s, color .15s, opacity .15s; }
+  .fx-chat-in { animation: fxChatIn .32s cubic-bezier(.2,.9,.25,1); }
+  @keyframes fxChatIn { from { opacity:0; transform:translateY(8px); } }
+
+  .hpbar-track, .hpbar-track-sm { position:relative; }
+  .hpbar-fill, .hpbar-fill-sm { position:relative; z-index:1; }
+  .fx-hp-ghost { position:absolute; left:0; top:0; height:100%; background:rgba(255,255,255,.55); border-radius:inherit; z-index:0;
+                 transition: width .7s cubic-bezier(.4,0,.2,1) .35s, opacity .4s ease 1s; }
+  .fx-hp-grow { transition: width .7s cubic-bezier(.2,.9,.25,1); }
+  .fx-hit { animation: fxHit .36s ease; }
+  .fx-flash { position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; z-index:5; animation: fxFade 1.1s ease forwards; }
+  .fx-flash.dmg { box-shadow: inset 0 0 0 1px rgba(226,87,74,.9), 0 0 18px rgba(226,87,74,.35); }
+  .fx-flash.heal { box-shadow: inset 0 0 0 1px rgba(255,255,255,.7), 0 0 18px rgba(255,255,255,.18); }
+  @keyframes fxHit { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-4px); } 45% { transform:translateX(3px); } 70% { transform:translateX(-2px); } }
+  @keyframes fxFade { 0% { opacity:1; } 100% { opacity:0; } }
+  .fx-float { position:fixed; z-index:9500; pointer-events:none; font-weight:800; font-size:22px; letter-spacing:.02em;
+              text-shadow:0 2px 8px rgba(0,0,0,.8); font-variant-numeric: tabular-nums; animation: fxFloat 1.2s cubic-bezier(.2,.9,.25,1) forwards; }
+  .fx-float.dmg { color:#ff8a7e; }
+  .fx-float.heal { color:#ffffff; }
+  @keyframes fxFloat { 0% { opacity:0; transform:translate(-50%, 6px) scale(.8); } 15% { opacity:1; transform:translate(-50%, -6px) scale(1.08); }
+                       70% { opacity:1; transform:translate(-50%, -26px) scale(1); } 100% { opacity:0; transform:translate(-50%, -40px); } }
+
+  .fx-round { position:fixed; left:0; right:0; top:42%; z-index:9400; pointer-events:none; display:flex; flex-direction:column; align-items:center;
+              padding:18px 0; background:linear-gradient(90deg, transparent, rgba(10,10,12,.82) 25%, rgba(10,10,12,.82) 75%, transparent);
+              border-top:1px solid rgba(255,255,255,.08); border-bottom:1px solid rgba(255,255,255,.08); animation: fxRoundBand 1.9s ease forwards; }
+  .fx-round b { font-size:34px; font-weight:800; letter-spacing:.32em; animation: fxRoundText 1.9s cubic-bezier(.2,.9,.25,1) forwards; }
+  .fx-round span { margin-top:4px; font-size:14px; letter-spacing:.2em; color: var(--muted); animation: fxRoundText 1.9s cubic-bezier(.2,.9,.25,1) .06s both; }
+  @keyframes fxRoundBand { 0% { opacity:0; transform:scaleY(.3); } 12% { opacity:1; transform:scaleY(1); } 80% { opacity:1; } 100% { opacity:0; } }
+  @keyframes fxRoundText { 0% { opacity:0; letter-spacing:.6em; filter:blur(4px); } 20% { opacity:1; letter-spacing:.32em; filter:blur(0); } 80% { opacity:1; } 100% { opacity:0; transform:translateX(30px); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+    .fx-float, .fx-round { display:none !important; }
+  }
+
   /* ---------- 캐릭터 입장 / 색상 선택 모달 ---------- */
   .modal-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); align-items:center; justify-content:center; }
   .modal-box { width:300px; padding:20px; }
@@ -1929,6 +1972,8 @@ function renderSiteStatusCard(battle) {
     `;
     el.classList.toggle('is-defeated', mobs.every(isDefeatedStatus));
     el.style.display = '';
+    el.dataset.fx = 'group:' + groupLabel; el.dataset.hp = totalCurrent; el.dataset.max = totalMax;
+    runHpFx(el.parentNode || el);
     return;
   }
 
@@ -1956,6 +2001,8 @@ function renderSiteStatusCard(battle) {
   `;
   el.classList.toggle('is-defeated', isDefeatedStatus(site));
   el.style.display = '';
+  el.dataset.fx = site.name; el.dataset.hp = site.current_hp; el.dataset.max = site.max_hp;
+  runHpFx(el.parentNode || el);
 }
 
 function setSiteViewMode(mode) {
@@ -2013,6 +2060,8 @@ function renderBattle(battle) {
       document.getElementById('teamsB').innerHTML = '';
     }
     lastAllForCards = [];
+    fxHpMemory = {};
+    fxLastRound = null;
     renderSiteStatusCard(null);
     renderGrid(null, []);
     return;
@@ -2023,6 +2072,7 @@ function renderBattle(battle) {
     : `Round ${battle.round_no} · ${battle.current_turn_team === battle.round_first_team ? '선공' : '후공'} · ${battle.current_turn_team} 행동`;
   roundDeadlineAt = battle.finished ? null : battle.round_deadline_at;
   tickTimer();
+  maybeShowRoundBanner(battle);
 
   const control = myControlInfo(battle);
   const seesAll = control.scope === 'all';
@@ -2052,6 +2102,7 @@ function renderCards() {
   const renderOne = useCompact ? renderCompactCardHtml : renderCardHtml;
   // 공성전/마스 레이드는 러너(1팀)만 이 칸에 넣습니다(2팀은 siteStatusCard에서 따로 보여줍니다).
   splitAndRenderTeams(lastAllForCards, renderOne);
+  if (lastBattleForPanel) runHpFx(document);
   const slot = document.getElementById('multiSkillSlot');
   if (slot) slot.innerHTML = renderMultiSkillTrigger();
 }
@@ -2084,7 +2135,7 @@ function renderCompactCardHtml(c) {
   if (c.pending_heals) badges.push(makeStatusTag('heal', `회복 +${c.pending_heals}`));
   if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`));
   if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`));
-  return `<div class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
+  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
         <div class="stat-tip">${canSeeStats ? statsTitle(c) : '상대 팀 정보는 비공개입니다'}</div>
@@ -2155,7 +2206,7 @@ function renderCardHtml(c) {
   if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`));
   if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`));
 
-  return `<div class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
+  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">
       <div>
         <span class="cname">${displayNameOf(c)}${isMine ? ' <span style="color:var(--accent-blue); font-size:13px;">(나)</span>' : ''}</span>
@@ -3183,7 +3234,11 @@ function appendChat(entry) {
   if (!matchesFilter(entry) || !matchesChatSearch(entry)) return;
   const el = document.getElementById('chatLog');
   // 내가 보낸 글이면 맨 아래로, 남이 보낸 글이면 보던 위치 유지
-  scrollKeepingView(el, () => { el.innerHTML += fmtChat(entry); }, entry.nickname === MY_NICKNAME);
+  scrollKeepingView(el, () => {
+    el.insertAdjacentHTML('beforeend', fmtChat(entry));
+    const last = el.lastElementChild;
+    if (last) last.classList.add('fx-chat-in');
+  }, entry.nickname === MY_NICKNAME);
 }
 
 function sendChat() {
@@ -5043,6 +5098,94 @@ socket.on('chat_deleted', (d) => {
     root.style.setProperty('--cur-arrow', `url("${urls[i]}") 0 0`);
   }, MS);
 })();
+</script>
+<script>
+// ==================================================================
+// 피해/회복 연출 : 카드가 다시 그려질 때마다 이전 HP와 비교해서, 바뀐 카드에만
+// HP 막대 잔상 · 숫자 카운트 · 떠오르는 숫자 · 흔들림/빛남을 줍니다.
+// ==================================================================
+var fxHpMemory = {};
+var fxLastRound = null;
+const FX_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function runHpFx(root) {
+  (root || document).querySelectorAll('[data-fx]').forEach(el => {
+    const key = el.dataset.fx;
+    const hp = parseInt(el.dataset.hp, 10);
+    if (isNaN(hp)) return;
+    const prev = fxHpMemory[key];
+    fxHpMemory[key] = hp;
+    if (prev == null || prev === hp || FX_REDUCED) return;
+    playHpFx(el, prev, hp);
+  });
+}
+function playHpFx(el, prev, hp) {
+  const delta = hp - prev;
+  const fill = el.querySelector('.hpbar-fill, .hpbar-fill-sm');
+  if (fill) {
+    const newW = fill.style.width;
+    const max = parseInt(el.dataset.max, 10) || 0;
+    const oldW = max > 0 ? Math.max(0, Math.min(100, prev / max * 100)) + '%' : newW;
+    if (delta < 0) {
+      // 피해 : 막대는 바로 줄고, 밝은 잔상이 잠깐 남았다가 따라 줄어듭니다.
+      const ghost = document.createElement('div');
+      ghost.className = 'fx-hp-ghost';
+      ghost.style.width = oldW;
+      fill.parentNode.insertBefore(ghost, fill);
+      requestAnimationFrame(() => requestAnimationFrame(() => { ghost.style.width = newW; ghost.style.opacity = '0'; }));
+      setTimeout(() => ghost.remove(), 1600);
+    } else {
+      // 회복 : 막대가 이전 길이에서 부드럽게 차오릅니다.
+      fill.style.width = oldW;
+      fill.classList.add('fx-hp-grow');
+      requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = newW; }));
+    }
+  }
+  const num = el.querySelector('.hpnum, .chp-sm, .site-hp');
+  if (num) countHpText(num, prev, hp);
+  el.classList.remove('fx-hit');
+  void el.offsetWidth;
+  if (delta < 0) el.classList.add('fx-hit');
+  setTimeout(() => el.classList.remove('fx-hit'), 400);
+  const flash = document.createElement('div');
+  flash.className = 'fx-flash ' + (delta < 0 ? 'dmg' : 'heal');
+  el.appendChild(flash);
+  setTimeout(() => flash.remove(), 1200);
+  const r = el.getBoundingClientRect();
+  if (r.width && r.bottom > 0 && r.top < window.innerHeight) {
+    const f = document.createElement('div');
+    f.className = 'fx-float ' + (delta < 0 ? 'dmg' : 'heal');
+    f.textContent = (delta < 0 ? '−' : '+') + Math.abs(delta);
+    f.style.left = (r.left + r.width / 2) + 'px';
+    f.style.top = (r.top + Math.min(r.height * 0.35, 60)) + 'px';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 1300);
+  }
+}
+function countHpText(node, from, to) {
+  const m = node.textContent.match(/^(\d+)(\/.*)$/);
+  if (!m) return;
+  const rest = m[2], t0 = performance.now(), dur = 600;
+  function step(t) {
+    if (!node.isConnected) return;
+    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    node.textContent = Math.round(from + (to - from) * e) + rest;
+    if (k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+// 라운드가 바뀌면 화면 가운데에 짧게 "ROUND n" 띠가 지나갑니다(처음 접속했을 때는 띄우지 않음).
+function maybeShowRoundBanner(battle) {
+  const r = battle.finished ? null : battle.round_no;
+  if (r == null) { fxLastRound = null; return; }
+  const prev = fxLastRound;
+  fxLastRound = r;
+  if (prev == null || prev === r || FX_REDUCED) return;
+  const el = document.createElement('div');
+  el.className = 'fx-round';
+  el.innerHTML = `<b>ROUND ${r}</b><span>${battle.round_first_team === battle.current_turn_team ? '선공' : '후공'} · ${battle.current_turn_team}</span>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
 </script>
 <div id="floatTip"></div>
 <script>
