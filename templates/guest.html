@@ -555,11 +555,12 @@
     background:#000; border:1px solid var(--card-border); color:#cfd2d8; font-size:14px; opacity:1; }
   .gear.icon-btn:hover { background:#111; color:#fff; border-color:#3a3a40; }
   /* ---------- BGM 플레이어 : 음소거 · 제목 · 음량 · 설정만 ---------- */
-  .bgm-player { gap:10px !important; padding:5px 6px 5px 6px !important; background: var(--panel) !important;
-    border:1px solid var(--card-border) !important; border-radius:999px !important; }
+  /* 박스(배경·테두리·라운드) 없이 아이콘 · 제목 · 음량 바만 */
+  .bgm-player { gap:10px !important; padding:0 !important; background:none !important;
+    border:none !important; border-radius:0 !important; box-shadow:none !important; }
   .bgm-player::before, .bgm-player::after { display:none !important; }
   .bgm-player .bgm-mute { width:30px; height:30px; background:transparent; color: var(--text); font-size:13px; }
-  .bgm-player .bgm-mute:hover { background:rgba(255,255,255,.08); }
+  .bgm-player .bgm-mute:hover { background:none; opacity:.75; }
   .bgm-player .bgm-title { font-size:13px; max-width:160px; min-width:60px; color: var(--muted); }
   .bgm-player.playing .bgm-title { color: var(--text); }
   .bgm-player input[type="range"].nice-range { width:80px; }
@@ -1064,6 +1065,7 @@
   <button class="sidebar-icon active"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
+  <button class="sidebar-icon" id="sidebarSoundBtn" onclick="openSoundSettings()"><i class="fa-solid fa-sliders"></i></button>
   <div class="sidebar-grow"></div>
   <button class="sidebar-icon" onclick="openMyPage()"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
@@ -1408,7 +1410,6 @@
     <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()"><i class="fa-solid fa-volume-high"></i></button>
     <div class="bgm-title"><span id="musicStatus">재생 없음</span></div>
     <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
-    <button type="button" class="gear icon-btn" onclick="openSoundSettings()"><i class="fa-solid fa-gear"></i></button>
   </div>
 </div>
 
@@ -1501,7 +1502,6 @@
     <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()"><i class="fa-solid fa-volume-high"></i></button>
     <div class="bgm-title"><span id="musicStatus">재생 없음</span></div>
     <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
-    <button type="button" class="gear icon-btn" onclick="openSoundSettings()"><i class="fa-solid fa-gear"></i></button>
   </div>
 </div>
 {% endif %}
@@ -4870,7 +4870,11 @@ function analyzeLoudness(url) {
   const p = fetch(url).then(r => r.arrayBuffer()).then(buf => {
     const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     const ctx = new Ctx(1, 44100, 44100);
-    return new Promise((res, rej) => ctx.decodeAudioData(buf, res, rej));
+    return new Promise((res, rej) => {
+      // 콜백과 함께 Promise도 돌려주는 브라우저에서 실패 시 '처리 안 된 오류'가 따로 뜨지 않도록 막아 둡니다.
+      const pr = ctx.decodeAudioData(buf, res, rej);
+      if (pr && pr.catch) pr.catch(() => {});
+    });
   }).then(audio => {
     const sr = audio.sampleRate;
     const maxLen = Math.min(audio.length, Math.floor(sr * SOUND_EFFECT_MAX_SECONDS));  // 실제로 재생되는 6초까지만
