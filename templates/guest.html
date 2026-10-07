@@ -28,10 +28,9 @@
     --role-메딕: #ffd166;
     --role-힐러: #ffd166;
   }
-  /* 큰 영문 제목 폰트 : Baunk (static/fonts/ 에 파일을 넣으면 적용, 없으면 기본 폰트로 표시) */
+  /* 큰 영문 제목 폰트 : Baunk (static/fonts/Baunk.ttf) */
   @font-face { font-family:"Baunk"; font-display:swap;
-    src: url("/static/fonts/Baunk.woff2") format("woff2"), url("/static/fonts/Baunk.woff") format("woff"),
-         url("/static/fonts/Baunk.otf") format("opentype"), url("/static/fonts/Baunk.ttf") format("truetype"); }
+    src: url("/static/fonts/Baunk.ttf") format("truetype"); }
   :root { --font-title: "Baunk", "42dot Sans", "Pretendard", sans-serif; }
   /* 브라우저 기본 UI(자동완성 목록, 색상 선택기, 숫자 칸 등)도 다크모드로 */
   :root { color-scheme: dark; }
