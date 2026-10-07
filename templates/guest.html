@@ -118,8 +118,6 @@
   .atk-line { stroke:#ff4d4d; stroke-width:2.5; stroke-linecap:round; stroke-dasharray:9 7;
               filter: drop-shadow(0 0 3px rgba(255,60,60,.7)); animation: atkFlow .5s linear infinite; }
   @keyframes atkFlow { from { stroke-dashoffset:16; } to { stroke-dashoffset:0; } }
-  .atk-ring { fill:none; stroke:#ff4d4d; stroke-width:2; transform-box: fill-box; transform-origin:center; animation: atkRing 1s ease-out infinite; }
-  @keyframes atkRing { from { opacity:.9; transform:scale(.6); } to { opacity:0; transform:scale(3); } }
   @keyframes fxFadeIn { from { opacity:0; } }
   .fx-round { position:fixed; left:0; right:0; top:42%; z-index:9400; pointer-events:none; display:flex; flex-direction:column; align-items:center;
               padding:18px 0; background:linear-gradient(90deg, transparent, rgba(10,10,12,.82) 25%, rgba(10,10,12,.82) 75%, transparent);
@@ -843,7 +841,8 @@
   .gmap .gcell.ally { background:rgba(120,120,126,.55); }
   .gmap .gcell.enemy { background:rgba(150,60,60,.45); }
   .gmap .gcell.boss { background-color:#0c0c0d; background-repeat:no-repeat; }
-  .gmap .gname { color:#fff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:92%; text-shadow:0 1px 3px rgba(0,0,0,.8); }
+  /* 공격선(.atk-lines, z-index 6)보다 위에 이름이 보이도록 */
+  .gmap .gname { position:relative; z-index:8; color:#fff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:92%; text-shadow:0 1px 3px rgba(0,0,0,.8); }
   .gmap .ghp { position:absolute; left:0; right:0; bottom:0; height:12%; min-height:4px; max-height:10px; background:rgba(0,0,0,.35); }
   .gmap .ghp > div { height:100%; background:#ffffff; }
   .gmap .ghp > div.mid { background:#f5a524; }
@@ -5283,25 +5282,15 @@ function drawAttackLines(d) {
   svg.setAttribute('class', 'atk-lines');
   svg.setAttribute('width', frame.clientWidth);
   svg.setAttribute('height', frame.clientHeight);
-  svg.innerHTML = `<defs><marker id="atkArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-    <path d="M0,0 L10,5 L0,10 z" fill="#ff4d4d"/></marker></defs>`;
   (d.to || []).forEach(name => {
     const to = gridCharCenter(frame, name);
     if (!to) return;
-    // 칸 가운데까지 가지 않고 피격 칸 가장자리 쯤에서 멈춰서 화살촉이 가려지지 않게 합니다.
-    const dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1;
-    const cut = Math.min(18, len / 3);
-    const ex = to.x - dx / len * cut, ey = to.y - dy / len * cut;
+    const ex = to.x, ey = to.y;
     const line = document.createElementNS(NS, 'line');
     line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
     line.setAttribute('x2', ex); line.setAttribute('y2', ey);
     line.setAttribute('class', 'atk-line');
-    line.setAttribute('marker-end', 'url(#atkArrow)');
     svg.appendChild(line);
-    const ring = document.createElementNS(NS, 'circle');
-    ring.setAttribute('cx', to.x); ring.setAttribute('cy', to.y); ring.setAttribute('r', 6);
-    ring.setAttribute('class', 'atk-ring');
-    svg.appendChild(ring);
   });
   frame.appendChild(svg);
   setTimeout(() => svg.classList.add('out'), 2600);
