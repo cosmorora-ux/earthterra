@@ -882,6 +882,24 @@
   .topbar.v2 .seg { font-size:20px; font-weight:800; }
   .topbar.v2 .play-icon { color: var(--accent-blue); font-size:15px; }
   .topbar.v2 #roundTimerLabel { font-size:30px; font-weight:700; }
+  /* ---------- 플립 시계 (라운드 제한시간) ---------- */
+  #roundTimerLabel:has(.flip-clock) { background:none; border:none; padding:0; }
+  .flip-clock { display:inline-flex; align-items:center; gap:3px; line-height:1; }
+  .flip-sep { width:.36em; text-align:center; opacity:.7; transform: translateY(-.04em); }
+  .flip { --h:1.3em; position:relative; display:inline-block; width:.78em; height:var(--h); perspective:3em;
+          border-radius:6px; background:#151518; box-shadow: inset 0 0 0 1px var(--card-border), 0 2px 6px rgba(0,0,0,.45); }
+  .f-half { position:absolute; left:0; right:0; height:50%; overflow:hidden; background:#151518; backface-visibility:hidden; }
+  .f-half > span { position:absolute; left:0; right:0; height:var(--h); line-height:var(--h); text-align:center; }
+  .f-top { top:0; border-radius:6px 6px 0 0; transform-origin:50% 100%; }
+  .f-top > span { top:0; }
+  .f-bot { bottom:0; border-radius:0 0 6px 6px; transform-origin:50% 0; background:#18181c; }
+  .f-bot > span { top:calc(var(--h) / -2); }
+  .flip::after { content:""; position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(0,0,0,.65); z-index:3; }
+  .f-flip { z-index:2; }
+  .f-out { animation: flipOut .3s ease-in forwards; }
+  .f-in { transform: rotateX(90deg); animation: flipIn .3s ease-out .3s forwards; }
+  @keyframes flipOut { from { transform: rotateX(0); } to { transform: rotateX(-90deg); filter:brightness(.6); } }
+  @keyframes flipIn { from { transform: rotateX(90deg); filter:brightness(.6); } to { transform: rotateX(0); } }
 
   /* 본문을 좌(팀 카드) / 우(Member 패널)로 나눕니다 */
   .layout-grid { display:flex; gap:16px; align-items:stretch; flex:1; min-height:0; }
@@ -1395,7 +1413,7 @@
   <div class="seg" id="formatLabel">-</div>
   <span class="sep">▶</span>
   <div class="seg" id="roundInfo">-</div>
-  <span class="label" id="roundTimerLabel"><span id="roundTimer">--:--</span></span>
+  <span class="label" id="roundTimerLabel"><span id="roundTimer" class="flip-clock"></span></span>
   <div class="spacer"></div>
   <div class="clock" id="liveClock">--:--:--</div>
 </div>
@@ -2777,15 +2795,45 @@ function closeGridSelection() {
 function tickTimer() {
   const el = document.getElementById('roundTimer');
   if (roundDeadlineAt == null) {
-    el.textContent = '--:--';
+    setFlipClock(el, '--:--');
     el.style.color = '';
     return;
   }
   const remain = Math.max(0, Math.ceil(roundDeadlineAt - serverNowSec()));
   const m = String(Math.floor(remain / 60)).padStart(2, '0');
   const s = String(remain % 60).padStart(2, '0');
-  el.textContent = `${m}:${s}`;
+  setFlipClock(el, `${m}:${s}`);
   el.style.color = remain <= 30 ? '#ff8080' : '';
+}
+
+// 플립 시계 : 숫자가 바뀌면 윗장이 아래로 넘어가며 새 숫자가 드러납니다.
+function setFlipClock(el, text) {
+  if (el.dataset.flipText === text) return;
+  const chars = [...text];
+  if (!el.querySelector('.flip') || el.children.length !== chars.length) {
+    el.innerHTML = chars.map(ch => ch === ':'
+      ? '<span class="flip-sep">:</span>'
+      : `<span class="flip" data-v="${ch}"><span class="f-half f-top"><span>${ch}</span></span><span class="f-half f-bot"><span>${ch}</span></span></span>`).join('');
+    el.dataset.flipText = text;
+    return;
+  }
+  chars.forEach((ch, i) => {
+    const card = el.children[i];
+    if (!card.classList.contains('flip') || card.dataset.v === ch) return;
+    const old = card.dataset.v;
+    card.dataset.v = ch;
+    card.querySelectorAll('.f-flip').forEach(n => n.remove());
+    card.querySelector('.f-top > span').textContent = ch;          // 뒤에 있는 윗장 = 새 숫자
+    card.querySelector('.f-bot > span').textContent = old;         // 아랫장은 넘어올 때까지 옛 숫자
+    card.insertAdjacentHTML('beforeend',
+      `<span class="f-half f-top f-flip f-out"><span>${old}</span></span><span class="f-half f-bot f-flip f-in"><span>${ch}</span></span>`);
+    setTimeout(() => {
+      if (card.dataset.v !== ch) return;
+      card.querySelector('.f-bot:not(.f-flip) > span').textContent = ch;
+      card.querySelectorAll('.f-flip').forEach(n => n.remove());
+    }, 620);
+  });
+  el.dataset.flipText = text;
 }
 setInterval(tickTimer, 200);
 
