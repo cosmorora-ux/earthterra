@@ -711,6 +711,25 @@
   .logline.tag-crit { color:#fff; font-weight:700; }
   .logline.tag-system, .logline.tag-wait { color: var(--muted); font-size:14px; }
   .logline.tag-round { opacity:1; margin-top:2px; }
+  /* 라운드 최종 결과 표 */
+  .round-summary { margin:6px 0 12px 22px; padding:8px 12px 10px; border:1px solid var(--card-border); border-radius:10px; background:rgba(255,255,255,.02); font-size:14px; }
+  .rs-row { display:grid; grid-template-columns: minmax(0,1fr) 40px 16px 40px 48px 64px; align-items:center; column-gap:6px; padding:4px 0; font-variant-numeric: tabular-nums; }
+  .rs-row + .rs-row { border-top:1px solid rgba(255,255,255,.05); }
+  .rs-head { font-size:12px; color: var(--muted); padding-bottom:6px; }
+  .rs-head .rs-num, .rs-head .rs-num.end, .rs-head .rs-delta { color: var(--muted); font-weight:400; }
+  .rs-team { font-size:12px; font-weight:700; color: var(--muted); letter-spacing:.04em; margin:8px 0 2px; }
+  .rs-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+  .rs-name em { font-style:normal; font-weight:400; color: var(--muted); font-size:12px; }
+  .rs-num { text-align:right; color: var(--muted); }
+  .rs-num.end { color: var(--text); font-weight:700; }
+  .rs-arrow { text-align:center; color: var(--muted); font-size:12px; }
+  .rs-delta { text-align:right; color: var(--muted); }
+  .rs-delta.minus { color:#ff8a7e; font-weight:700; }
+  .rs-delta.plus { color:#ffffff; font-weight:700; }
+  .rs-bar { position:relative; height:5px; border-radius:3px; background:#2a2a2e; overflow:hidden; }
+  .rs-fill { position:absolute; left:0; top:0; bottom:0; background:#d8d8dc; }
+  .rs-lost { position:absolute; top:0; bottom:0; background:rgba(226,87,74,.75); }
+  .rs-row.out { opacity:.55; }
   .logline.tag-round.is-round-main { margin-top:16px; }
   /* 블록 첫 줄(누가 무엇을 했는지)만 흰색, 그 아래 결과 줄들은 살짝 연하게 합니다.
      직군 색으로 칠해진 수치(span)는 그 색 그대로 유지됩니다. */
@@ -2899,9 +2918,49 @@ function logActionClass(head) {
   return '';
 }
 // 캐릭터 한 명의 행동(공격 → 크리티컬 → 공격 수치 …)을 하나의 블록으로 묶어 보여줍니다.
+// 라운드 최종 결과 : "이름  시작 → 종료 (상태)" 줄들을 표로 정리합니다(팀별로 나누고, 변화량과 체력 막대 표시).
+function formatRoundSummaryHtml(section) {
+  const head = section[0];
+  const esc = t => String(t).replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
+  const rows = [];
+  const rest = [];
+  section.slice(1).forEach(l => {
+    const m = l.tag === 'summary' && (l.text || '').match(/^(.+?)\s+(\d+)\s*→\s*(\d+)(?:\s*\((.+)\))?\s*$/);
+    if (m) rows.push({ name: m[1].trim(), start: +m[2], end: +m[3], state: m[4] || '' });
+    else if (l.tag !== 'system' || !/시작 체력/.test(l.text || '')) rest.push(l);
+  });
+  if (!rows.length) return section.map(formatLogLineHtml).join('');
+  const chars = lastAllForCards || [];
+  const info = n => chars.find(c => c.name === n) || {};
+  const rowHtml = r => {
+    const c = info(r.name);
+    const max = c.max_hp || Math.max(r.start, r.end, 1);
+    const d = r.end - r.start;
+    const endPct = Math.max(0, Math.min(100, r.end / max * 100));
+    const startPct = Math.max(0, Math.min(100, r.start / max * 100));
+    const lost = d < 0 ? `<div class="rs-lost" style="left:${endPct}%; width:${startPct - endPct}%;"></div>` : '';
+    const label = c.name ? displayNameOf(c) : r.name;
+    return `<div class="rs-row${r.state ? ' out' : ''}">
+      <span class="rs-name">${esc(label)}${r.state ? ` <em>${esc(r.state)}</em>` : ''}</span>
+      <span class="rs-num">${r.start}</span><span class="rs-arrow">→</span><span class="rs-num end">${r.end}</span>
+      <span class="rs-delta ${d < 0 ? 'minus' : d > 0 ? 'plus' : ''}">${d < 0 ? '−' + Math.abs(d) : d > 0 ? '+' + d : '–'}</span>
+      <div class="rs-bar"><div class="rs-fill" style="width:${endPct}%;"></div>${lost}</div>
+    </div>`;
+  };
+  const teamA = rows.filter(r => info(r.name).teamLabel !== 'B');
+  const teamB = rows.filter(r => info(r.name).teamLabel === 'B');
+  const block = (title, list) => list.length ? `<div class="rs-team">${title}</div>${list.map(rowHtml).join('')}` : '';
+  return formatLogLineHtml(head)
+    + `<div class="round-summary">
+        <div class="rs-row rs-head"><span class="rs-name"></span><span class="rs-num">시작</span><span class="rs-arrow"></span><span class="rs-num end">종료</span><span class="rs-delta">변화</span><div></div></div>
+        ${block(BATTLE_TYPE === 'pvp' ? 'Team 1' : '러너', teamA)}${block(BATTLE_TYPE === 'pvp' ? 'Team 2' : (BATTLE_TYPE === 'siege' ? '거점' : '보스'), teamB)}
+      </div>`
+    + rest.map(formatLogLineHtml).join('');
+}
 function formatLogHtml(lines) {
   return splitLogIntoSections(lines || []).map(section => {
     const head = section[0];
+    if (head.tag === 'round' && /최종 결과/.test(head.text || '')) return formatRoundSummaryHtml(section);
     if (head.tag === 'round') return section.map(formatLogLineHtml).join('');
     const isGroup = LOG_GROUP_START_TAGS.has(head.tag);
     const actionCls = isGroup ? logActionClass(head) : '';
