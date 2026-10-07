@@ -9,7 +9,7 @@
 <!-- 좌측 패널 아이콘 (Font Awesome 무료 버전) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@300..800&family=Do+Hyeon&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@300..800&display=swap">
 <style>
   :root {
     --bg: #050505;
@@ -28,6 +28,11 @@
     --role-메딕: #ffd166;
     --role-힐러: #ffd166;
   }
+  /* 큰 영문 제목 폰트 : Baunk (static/fonts/ 에 파일을 넣으면 적용, 없으면 기본 폰트로 표시) */
+  @font-face { font-family:"Baunk"; font-display:swap;
+    src: url("/static/fonts/Baunk.woff2") format("woff2"), url("/static/fonts/Baunk.woff") format("woff"),
+         url("/static/fonts/Baunk.otf") format("opentype"), url("/static/fonts/Baunk.ttf") format("truetype"); }
+  :root { --font-title: "Baunk", "42dot Sans", "Pretendard", sans-serif; }
   /* 브라우저 기본 UI(자동완성 목록, 색상 선택기, 숫자 칸 등)도 다크모드로 */
   :root { color-scheme: dark; }
   input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
@@ -112,7 +117,7 @@
   .fx-round { position:fixed; left:0; right:0; top:42%; z-index:9400; pointer-events:none; display:flex; flex-direction:column; align-items:center;
               padding:18px 0; background:linear-gradient(90deg, transparent, rgba(10,10,12,.82) 25%, rgba(10,10,12,.82) 75%, transparent);
               border-top:1px solid rgba(255,255,255,.08); border-bottom:1px solid rgba(255,255,255,.08); animation: fxRoundBand 1.9s ease forwards; }
-  .fx-round b { font-size:34px; font-weight:800; letter-spacing:.32em; animation: fxRoundText 1.9s cubic-bezier(.2,.9,.25,1) forwards; }
+  .fx-round b { font-family: var(--font-title); font-size:34px; font-weight:400; letter-spacing:.32em; animation: fxRoundText 1.9s cubic-bezier(.2,.9,.25,1) forwards; }
   .fx-round span { margin-top:4px; font-size:14px; letter-spacing:.2em; color: var(--muted); animation: fxRoundText 1.9s cubic-bezier(.2,.9,.25,1) .06s both; }
   @keyframes fxRoundBand { 0% { opacity:0; transform:scaleY(.3); } 12% { opacity:1; transform:scaleY(1); } 80% { opacity:1; } 100% { opacity:0; } }
   @keyframes fxRoundText { 0% { opacity:0; letter-spacing:.6em; filter:blur(4px); } 20% { opacity:1; letter-spacing:.32em; filter:blur(0); } 80% { opacity:1; } 100% { opacity:0; transform:translateX(30px); } }
@@ -489,7 +494,7 @@
   .round-track .rt-inner { position:relative; height:100%; display:flex; align-items:center; gap:22px; padding:12px 22px; box-sizing:border-box; }
   .rt-round { flex:none; display:flex; flex-direction:column; justify-content:center; min-width:86px; }
   .rt-round .k { font-size:10px; letter-spacing:.16em; color: var(--muted); font-weight:700; }
-  .rt-round .n { font-size:34px; font-weight:800; line-height:1; font-variant-numeric: tabular-nums; }
+  .rt-round .n { font-family: var(--font-title); font-size:34px; font-weight:400; line-height:1; font-variant-numeric: tabular-nums; }
   .rt-round .ph { font-size:12px; color: var(--muted); margin-top:4px; white-space:nowrap; }
   .rt-track { flex:1; min-width:0; display:flex; align-items:center; gap:0; overflow:hidden; }
   .rt-node { flex:1 1 0; min-width:54px; display:flex; flex-direction:column; align-items:stretch; gap:6px; position:relative; }
@@ -732,9 +737,8 @@
   .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
   .chat-line.is-round { margin:6px 0 8px; }
   /* 라운드/단계 안내는 본문과 구분되는 제목 폰트로 크게 */
-  .chat-line.is-round .round-text { color: var(--accent-blue); font-family:"Do Hyeon", "42dot Sans", sans-serif; font-weight:400; font-size:18px; letter-spacing:.02em; line-height:1.3; }
-  .chat-line.is-round.is-round-main { margin:18px 0 4px; }
-  .chat-line.is-round.is-round-main .round-text { font-size:26px; letter-spacing:.04em; }
+  .chat-line.is-round .round-text { color: var(--accent-blue); font-weight:700; }
+  .chat-line.is-round.is-round-main .round-text { font-family: var(--font-title); font-weight:400; }
   /* 안내 문구 안의 줄바꿈(\n)을 그대로 보여줍니다. */
   .chat-text { white-space: pre-line; }
 
@@ -1029,7 +1033,7 @@
   body { letter-spacing:-0.01em; line-height:1.5; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; }
   input, textarea, select, button { letter-spacing:inherit; }
   .modal-box .modal-title { font-size:19px; line-height:1.3; letter-spacing:-0.02em; }
-  .idc-title { line-height:1.1; letter-spacing:-0.03em; }
+  .idc-title { font-family: var(--font-title); font-weight:400; line-height:1.1; letter-spacing:0; }
   .mypage-head .mypage-name { line-height:1.2; letter-spacing:-0.025em; }
   .topbar.v2 .seg { line-height:1.2; letter-spacing:-0.025em; }
   .char-card .cname, .char-card.v2 .cname { line-height:1.25; letter-spacing:-0.02em; }
@@ -1038,9 +1042,9 @@
   .chat-text { font-size:15px; line-height:1.55; letter-spacing:-0.012em; }
   .chat-line { margin-bottom:12px; }
   /* 라운드/단계 안내(제목 폰트) */
-  .chat-line.is-round .round-text { font-size:19px; line-height:1.25; letter-spacing:-0.01em; }
-  .chat-line.is-round.is-round-main { margin:22px 0 2px; }
-  .chat-line.is-round.is-round-main .round-text { font-size:28px; line-height:1.1; letter-spacing:-0.015em; }
+  .chat-line.is-round .round-text { font-size:16px; line-height:1.35; letter-spacing:-0.015em; }
+  .chat-line.is-round.is-round-main { margin:20px 0 2px; }
+  .chat-line.is-round.is-round-main .round-text { font-size:24px; line-height:1.1; letter-spacing:0; }
   .skill-cutin-title { line-height:1.15; letter-spacing:-0.025em; }
   .skill-cutin-body { letter-spacing:-0.01em; }
 </style>
