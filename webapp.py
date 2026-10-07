@@ -31,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-07.3"
+SERVER_BUILD = "2026-10-07.4"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -686,6 +686,16 @@ def emit_action_sfx(room, actor_name, action_type):
 # 격자 전투(공성전/마스 레이드)에서 보스·거점(2팀)이 공격하면, 지도에 공격자 → 피격자 방향의
 # 빨간 점선을 그리도록 모두에게 알립니다.
 ATTACK_LINE_ACTIONS = ("attack", "collapse", "emission")
+
+
+def _set_site_group_acted(battle, actor_char, acted: bool):
+    """공성전 거점 : 행동한 캐릭터가 2x2 부위 중 하나면 같은 거점의 모든 부위 행동 여부를 함께 맞춥니다."""
+    group = [actor_char]
+    if actor_char.boss_group:
+        group = [c for c in battle.team_b if c.boss_group == actor_char.boss_group]
+    for c in group:
+        if c.is_alive:
+            c.has_acted = acted
 
 
 def emit_attack_lines(room, action_type, payload):
@@ -2014,8 +2024,10 @@ def on_battle_action(data):
         if actor_char is not None and actor_char.team == "B":
             room.site_dice_used += 1
             remaining = room.site_dice_value - room.site_dice_used
+            # 거점은 부위(2x2)가 나뉘어 있어도 '거점 하나'로 행동합니다 - 다이스 횟수를 거점 전체가
+            # 함께 쓰고, 남은 횟수가 있으면 모든 부위가 다시 행동 가능, 다 쓰면 모든 부위가 행동 완료.
+            _set_site_group_acted(battle, actor_char, acted=remaining <= 0)
             if remaining > 0:
-                actor_char.has_acted = False
                 battle.log_event(f"거점 추가 행동 가능 (이번 라운드 남은 횟수 {remaining}회)", tag="system")
             else:
                 battle.log_event("거점의 이번 라운드 행동이 모두 끝났습니다.", tag="system")
@@ -2062,8 +2074,10 @@ def on_reveal_pending_action(data):
         if actor_char is not None and actor_char.team == "B":
             room.site_dice_used += 1
             remaining = room.site_dice_value - room.site_dice_used
+            # 거점은 부위(2x2)가 나뉘어 있어도 '거점 하나'로 행동합니다 - 다이스 횟수를 거점 전체가
+            # 함께 쓰고, 남은 횟수가 있으면 모든 부위가 다시 행동 가능, 다 쓰면 모든 부위가 행동 완료.
+            _set_site_group_acted(battle, actor_char, acted=remaining <= 0)
             if remaining > 0:
-                actor_char.has_acted = False
                 battle.log_event(f"거점 추가 행동 가능 (이번 라운드 남은 횟수 {remaining}회)", tag="system")
             else:
                 battle.log_event("거점의 이번 라운드 행동이 모두 끝났습니다.", tag="system")
