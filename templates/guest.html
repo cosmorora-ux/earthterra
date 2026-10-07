@@ -9,7 +9,7 @@
 <!-- 좌측 패널 아이콘 (Font Awesome 무료 버전) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@300..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@300..800&family=Do+Hyeon&display=swap">
 <style>
   :root {
     --bg: #050505;
@@ -731,7 +731,10 @@
   .chat-line.is-command .chat-text { color: var(--text); font-family: inherit; font-size:14px; }
   .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
   .chat-line.is-round { margin:6px 0 8px; }
-  .chat-line.is-round .round-text { color: var(--accent-blue); font-weight:700; font-size:14px; }
+  /* 라운드/단계 안내는 본문과 구분되는 제목 폰트로 크게 */
+  .chat-line.is-round .round-text { color: var(--accent-blue); font-family:"Do Hyeon", "42dot Sans", sans-serif; font-weight:400; font-size:18px; letter-spacing:.02em; line-height:1.3; }
+  .chat-line.is-round.is-round-main { margin:18px 0 4px; }
+  .chat-line.is-round.is-round-main .round-text { font-size:26px; letter-spacing:.04em; }
   /* 안내 문구 안의 줄바꿈(\n)을 그대로 보여줍니다. */
   .chat-text { white-space: pre-line; }
 
@@ -3198,7 +3201,8 @@ function fmtChat(entry) {
   const delBtn = canDel ? `<button class="chat-del" onclick="deleteChatMessage('${entry.id}')" data-tip="메시지 삭제"><i class="fa-solid fa-trash-can"></i></button>` : '';
   const idAttr = entry.id ? ` data-chat-id="${entry.id}"` : '';
   if (entry.category === 'round') {
-    return `<div class="chat-line is-round"${idAttr}><span class="round-text">✶ ${highlightChat(entry.text)}</span>${delBtn}</div>`;
+    const main = /^round\s*\d+/i.test((entry.text || '').trim());
+    return `<div class="chat-line is-round${main ? ' is-round-main' : ''}"${idAttr}><span class="round-text">${main ? '✶ ' : ''}${highlightChat(entry.text)}</span>${delBtn}</div>`;
   }
   const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:') || (entry.text || '').startsWith('[행동:');
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
