@@ -113,8 +113,7 @@
   @keyframes fxFloat { 0% { opacity:0; transform:translate(-50%, 6px) scale(.8); } 15% { opacity:1; transform:translate(-50%, -6px) scale(1.08); }
                        70% { opacity:1; transform:translate(-50%, -26px) scale(1); } 100% { opacity:0; transform:translate(-50%, -40px); } }
 
-  .atk-lines { position:absolute; left:0; top:0; pointer-events:none; z-index:6; overflow:visible; transition: opacity .6s ease; animation: fxFadeIn .2s ease; }
-  .atk-lines.out { opacity:0; }
+  .atk-lines { position:absolute; left:0; top:0; pointer-events:none; z-index:6; overflow:visible; }
   .atk-line { stroke:#ff4d4d; stroke-width:2.5; stroke-linecap:round; stroke-dasharray:9 7;
               filter: drop-shadow(0 0 3px rgba(255,60,60,.7)); animation: atkFlow .5s linear infinite; }
   @keyframes atkFlow { from { stroke-dashoffset:16; } to { stroke-dashoffset:0; } }
@@ -127,10 +126,6 @@
   @keyframes fxRoundBand { 0% { opacity:0; transform:scaleY(.3); } 12% { opacity:1; transform:scaleY(1); } 80% { opacity:1; } 100% { opacity:0; } }
   @keyframes fxRoundText { 0% { opacity:0; letter-spacing:.6em; filter:blur(4px); } 20% { opacity:1; letter-spacing:.32em; filter:blur(0); } 80% { opacity:1; } 100% { opacity:0; transform:translateX(30px); } }
 
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
-    .fx-float, .fx-round { display:none !important; }
-  }
 
   /* ---------- 캐릭터 입장 / 색상 선택 모달 ---------- */
   .modal-overlay { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); align-items:center; justify-content:center; }
@@ -1878,7 +1873,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-07.1";
+const EXPECTED_SERVER_BUILD = "2026-10-07.2";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -1896,6 +1891,7 @@ socket.on('public_state', (state) => {
   lastOnlineCharacters = state.online_characters || [];
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
   lastSiteDice = state.site_dice || null;
+  lastAttackLines = state.attack_lines || [];
   lastPreviewTeams = state.preview_teams || null;
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
   lastBattleForPanel = state.battle;
@@ -2187,6 +2183,7 @@ let lastAllForCards = [];
 let lastMyTeam = null;
 let lastSeesAll = false;
 let lastForcedTargetNames = new Set();
+let lastAttackLines = [];  // 이번 라운드 보스·거점 공격선 [{from, to}]
 let lastSiteDice = null;  // 공성전 : { round_no, value, used, stale }
 
 function roleColorVar(role) {
@@ -2695,6 +2692,7 @@ function renderGrid(battle, all) {
   html += '</table>';
   el.innerHTML = html;
   applyMapBackground();
+  drawAttackLines();
   // 이동/사거리 안내는 지도 아래가 아니라 지도 위 알림줄(라디오 아이콘 옆)에 함께 보여줍니다.
   const guide = (isEnemyTurn && !medicFreeTurn)
     ? '적 턴에는 범위가 안 보여요. 내 턴에 다시 확인하세요.'
@@ -5173,7 +5171,7 @@ socket.on('chat_deleted', (d) => {
 // ==================================================================
 var fxHpMemory = {};
 var fxLastRound = null;
-const FX_REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FX_REDUCED = false;  // 윈도우 '애니메이션 효과' 설정과 상관없이 연출은 항상 보여줍니다.
 function runHpFx(root) {
   (root || document).querySelectorAll('[data-fx]').forEach(el => {
     const key = el.dataset.fx;
@@ -5276,32 +5274,29 @@ function gridCharCenter(frame, name) {
   if (!pts.length) return null;
   return { x: pts.reduce((a, p) => a + p.x, 0) / pts.length, y: pts.reduce((a, p) => a + p.y, 0) / pts.length };
 }
-function drawAttackLines(d) {
+function drawAttackLines() {
   const frame = document.querySelector('#gridSection .map-frame');
-  if (!frame || !frame.offsetWidth) return;
-  const from = gridCharCenter(frame, d.from);
-  if (!from) return;
+  if (!frame) return;
+  const old = frame.querySelector('svg.atk-lines');
+  if (old) old.remove();
+  if (!lastAttackLines.length || !frame.offsetWidth) return;
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('class', 'atk-lines');
   svg.setAttribute('width', frame.clientWidth);
   svg.setAttribute('height', frame.clientHeight);
-  (d.to || []).forEach(name => {
-    const to = gridCharCenter(frame, name);
-    if (!to) return;
-    const ex = to.x, ey = to.y;
+  lastAttackLines.forEach(l => {
+    const from = gridCharCenter(frame, l.from), to = gridCharCenter(frame, l.to);
+    if (!from || !to) return;
     const line = document.createElementNS(NS, 'line');
     line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
-    line.setAttribute('x2', ex); line.setAttribute('y2', ey);
+    line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
     line.setAttribute('class', 'atk-line');
     svg.appendChild(line);
   });
   frame.appendChild(svg);
-  setTimeout(() => svg.classList.add('out'), 2600);
-  setTimeout(() => svg.remove(), 3200);
 }
-// 공격 직후 상태(이동·HP)가 바로 뒤따라 오므로, 지도가 다시 그려진 다음에 긋습니다.
-socket.on('attack_line', (d) => setTimeout(() => drawAttackLines(d), 120));
+window.addEventListener('resize', () => setTimeout(drawAttackLines, 50));
 </script>
 <div id="floatTip"></div>
 <script>

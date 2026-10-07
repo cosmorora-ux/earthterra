@@ -31,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-07.1"
+SERVER_BUILD = "2026-10-07.2"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -524,6 +524,7 @@ def build_public_state(room):
         "room_id": room.id,
         "room_name": room.name,
         "battle": battle_payload,
+        "attack_lines": [{"from": l["from"], "to": l["to"]} for l in _current_attack_lines(room)],
         # 세션이 길어지면(다인원 장시간) 로그가 수천 줄까지 쌓일 수 있어서, 매번 전체를 다
         # 보내면 매 행동마다 전송량이 계속 불어납니다. 최근 LOG_SEND_CAP줄만 보내고
         # log_total(누적 총 줄 수)을 같이 보내서, 클라이언트가 "새로 추가된 부분"만 골라
@@ -691,8 +692,23 @@ def emit_attack_lines(room, action_type, payload):
         targets = [c.name for c in battle.team_a if c.grid_pos and c.status not in ("dead", "fled")]
     else:
         targets = [payload.get("target")] if payload.get("target") else []
-    if targets:
-        socketio.emit("attack_line", {"from": actor.name, "to": targets}, room=room_channel(room.id, "all"))
+    if not targets:
+        return
+    # 라운드가 끝날 때까지 지도에 남깁니다. 되돌리기로 이 행동이 취소되면(로그가 그 앞으로 줄어들면) 함께 사라집니다.
+    lines = [l for l in _current_attack_lines(room) if not (l["from"] == actor.name and l["to"] in targets)]
+    log_len = len(battle.public_log)
+    lines += [{"from": actor.name, "to": t, "log_len": log_len} for t in targets]
+    room.attack_lines = lines
+    room.attack_lines_round = battle.round_no
+
+
+def _current_attack_lines(room):
+    """지금 라운드에 그려야 하는 공격선 목록(지난 라운드 것이나 되돌리기로 취소된 것은 뺍니다)."""
+    battle = room.game.battle
+    if battle is None or getattr(room, "attack_lines_round", None) != battle.round_no:
+        return []
+    n = len(battle.public_log)
+    return [l for l in (getattr(room, "attack_lines", None) or []) if l["log_len"] <= n]
 
 
 def skill_cutin_payload(entry):
