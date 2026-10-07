@@ -1891,7 +1891,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-07.2";
+const EXPECTED_SERVER_BUILD = "2026-10-07.3";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -4842,7 +4842,9 @@ socket.on('action_sfx', (d) => {
   if (sfxVolume <= 0) return;
   const c = sfxCharacter(d.actor);
   const def = lastSfxDefaults[d.kind];
-  if (c && c.sound_effect) {
+  if (d.kind === 'boss_hit' && def && def.url) {
+    playSfx(def.url, ((def.volume != null ? def.volume : 100) / 100) * (sfxVolume / 100));
+  } else if (c && c.sound_effect) {
     playSfx(c.sound_effect, ((c.sound_effect_volume != null ? c.sound_effect_volume : 100) / 100) * (sfxVolume / 100));
   } else if (def) {
     playSfx(def.url, ((def.volume != null ? def.volume : 100) / 100) * (sfxVolume / 100));
@@ -4870,20 +4872,22 @@ function refreshSfxVolumeUi() {
   const icon = sfxVolume === 0 ? 'fa-volume-xmark' : (sfxVolume < 40 ? 'fa-volume-low' : 'fa-volume-high');
   document.getElementById('sfxMuteBtn').innerHTML = `<i class="fa-solid ${icon}"></i>`;
 }
+const SFX_OPTIONAL_KINDS = ['round', 'boss_hit'];  // 기본 소리 없이, 운영진이 등록해야 울리는 종류
 function renderSoundSettings() {
   if (document.getElementById('soundModal').style.display !== 'flex') return;
   refreshSfxVolumeUi();
   const box = document.getElementById('sfxDefaultsSection');
   const gm = myControlInfo(lastBattleForPanel).scope === 'all';
-  const kinds = Object.entries(lastSfxDefaults || {});
+  // 러너에게는 운영진이 아직 등록하지 않은 소리(라운드 전환·보스 타격)는 보여주지 않습니다.
+  const kinds = Object.entries(lastSfxDefaults || {}).filter(([, d]) => gm || d.url);
   if (!kinds.length) { box.innerHTML = ''; return; }
   if (box.contains(document.activeElement)) return;
   box.innerHTML = `<div class="snd-sec-title" style="margin-top:14px;">기본 효과음 ${gm ? '<span>(운영진 설정 · 모두에게 적용)</span>' : ''}</div>` +
     kinds.map(([kind, d]) => `<div class="snd-default">
       <div class="snd-default-top"><b>${shopEsc(d.label || kind)}</b><span class="snd-level" id="sfxLevel_${kind}" style="margin:0;"></span>
-        <button class="shop-btn ghost sm" onclick="previewDefaultSfx('${kind}')"><i class="fa-solid fa-play"></i> 듣기</button>
-        ${gm ? `<button class="shop-btn ghost sm" onclick="pickSfxDefault('${kind}')">파일 바꾸기</button>
-        <button class="shop-btn ghost sm" onclick="uiConfirm('처음 기본 소리로 되돌릴까요?', {title:'효과음 초기화', okText:'초기화', danger:true}).then(ok => ok && socket.emit('set_default_sfx', {kind:'${kind}', reset:true}))">초기화</button>` : ''}
+        ${d.url ? `<button class="shop-btn ghost sm" onclick="previewDefaultSfx('${kind}')"><i class="fa-solid fa-play"></i> 듣기</button>` : '<span class="snd-hint" style="margin:0;">미등록</span>'}
+        ${gm ? `<button class="shop-btn ghost sm" onclick="pickSfxDefault('${kind}')">${d.url ? '파일 바꾸기' : '파일 등록'}</button>
+        ${d.url ? `<button class="shop-btn ghost sm" onclick="uiConfirm('${SFX_OPTIONAL_KINDS.includes(kind) ? '등록한 소리를 지울까요?' : '처음 기본 소리로 되돌릴까요?'}', {title:'효과음 초기화', okText:'${SFX_OPTIONAL_KINDS.includes(kind) ? '지우기' : '초기화'}', danger:true}).then(ok => ok && socket.emit('set_default_sfx', {kind:'${kind}', reset:true}))">${SFX_OPTIONAL_KINDS.includes(kind) ? '지우기' : '초기화'}</button>` : ''}` : ''}
       </div>
       ${gm ? `<div class="snd-row"><span class="snd-hint" style="margin:0;width:56px;">기본 음량</span>
         <input type="range" class="nice-range" min="0" max="100" value="${d.volume}" oninput="paintRange(this); this.nextElementSibling.textContent=this.value"
@@ -5293,6 +5297,8 @@ function maybeShowRoundBanner(battle) {
   const prev = fxLastRound;
   fxLastRound = r;
   if (prev == null || prev === r || FX_REDUCED) return;
+  const snd = (lastSfxDefaults || {}).round;
+  if (snd && snd.url && sfxVolume > 0) playSfx(snd.url, ((snd.volume != null ? snd.volume : 100) / 100) * (sfxVolume / 100));
   const el = document.createElement('div');
   el.className = 'fx-round';
   el.innerHTML = `<b>ROUND ${r}</b><span>${battle.round_first_team === battle.current_turn_team ? '선공' : '후공'} · ${battle.current_turn_team}</span>`;

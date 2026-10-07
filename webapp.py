@@ -31,7 +31,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-07.2"
+SERVER_BUILD = "2026-10-07.3"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -633,6 +633,9 @@ SFX_CONFIG_PATH = os.path.join(_THIS_DIR, "sfx.json")
 SFX_DEFAULTS = {
     "combat": {"label": "공격 / 방어", "url": "/static/sfx/default_combat.wav", "volume": 100},
     "support": {"label": "지휘 / 회복", "url": "/static/sfx/default_support.wav", "volume": 100},
+    # 운영진이 파일을 등록해야 울립니다(기본은 소리 없음).
+    "round": {"label": "라운드 전환", "url": None, "volume": 100},
+    "boss_hit": {"label": "보스 타격 (공성전·마스 레이드)", "url": None, "volume": 100},
 }
 # 행동 종류 → 효과음 종류 (이동/배치/시간초과/도주 등은 소리 없음)
 ACTION_SFX_KIND = {
@@ -666,6 +669,12 @@ def _save_sfx_config():
 
 def emit_action_sfx(room, actor_name, action_type):
     kind = ACTION_SFX_KIND.get(action_type)
+    # 공성전·마스 레이드에서 보스·거점(2팀)이 공격하면, 운영진이 등록한 '보스 타격' 소리를 씁니다.
+    if (kind and actor_name and action_type in ATTACK_LINE_ACTIONS and room.battle_type in ("siege", "mass_raid")
+            and SFX_CONFIG.get("boss_hit", {}).get("url") and room.game.battle is not None):
+        actor = room.game.battle.find_character(actor_name)
+        if actor is not None and actor.team == "B":
+            kind = "boss_hit"
     if kind and actor_name:
         socketio.emit("action_sfx", {"actor": actor_name, "kind": kind}, room=room_channel(room.id, "all"))
     if action_type in SKILL_ACTIONS and actor_name:
@@ -2445,7 +2454,7 @@ def on_notice_delete(data):
 
 @socketio.on("set_default_sfx")
 def on_set_default_sfx(data):
-    """운영진 : 기본 효과음(공격/방어, 지휘/회복) 파일 교체·음량 조절·초기화."""
+    """운영진 : 기본 효과음(공격/방어, 지휘/회복, 라운드 전환, 보스 타격) 파일 교체·음량 조절·초기화."""
     room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "운영진만 기본 효과음을 바꿀 수 있습니다."})
