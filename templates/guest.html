@@ -881,7 +881,7 @@
   .teams-columns { display:flex; gap:16px; align-items:flex-start; }
   .team-block { flex:1; min-width:0; margin-bottom:18px; }
   .team-block:last-of-type { margin-bottom:0; }
-  .team-block h2 { font-size:20px; margin:0 0 10px 2px; }
+  .team-block h2 { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; margin:0 0 10px 2px; }
   .team-block .card-grid { grid-template-columns: 1fr; }
 
   /* 캐릭터 카드 새 디자인 - 큰 정사각 아바타가 왼쪽 아래, HP는 아바타 옆에 */
@@ -1042,8 +1042,8 @@
   .chat-line { margin-bottom:12px; }
   /* 라운드/단계 안내(제목 폰트) */
   .chat-line.is-round .round-text { font-size:16px; line-height:1.35; letter-spacing:-0.015em; }
-  .chat-line.is-round.is-round-main { margin:20px 0 2px; }
-  .chat-line.is-round.is-round-main .round-text { font-size:24px; line-height:1.1; letter-spacing:0; }
+  .chat-line.is-round.is-round-main { margin:16px 0 2px; }
+  .chat-line.is-round.is-round-main .round-text { font-size:18px; line-height:1.2; letter-spacing:0; }
   .skill-cutin-title { line-height:1.15; letter-spacing:-0.025em; }
   .skill-cutin-body { letter-spacing:-0.01em; }
 </style>
@@ -1447,11 +1447,11 @@
 
     <div class="teams-columns holo-zone">
       <div class="team-block">
-        <h2 id="teamALabel">1팀</h2>
+        <h2 id="teamALabel">Team 1</h2>
         <div id="teamsA" class="card-grid {% if battle_type == 'mass_raid' %}compact-list{% endif %}"></div>
       </div>
       <div class="team-block" id="teamBBlock" style="display:none;">
-        <h2 id="teamBLabel">2팀</h2>
+        <h2 id="teamBLabel">Team 2</h2>
         <div id="teamsB" class="card-grid"></div>
       </div>
     </div>
