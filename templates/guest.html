@@ -703,7 +703,8 @@
   .logblock .logline.group-start:last-child { border-bottom:none; padding-bottom:0; margin-bottom:0; }
   .logline.tag-crit { color:#fff; font-weight:700; }
   .logline.tag-system, .logline.tag-wait { color: var(--muted); font-size:14px; }
-  .logline.tag-round { color:#7fb0ff; font-weight:700; margin-top:14px; }
+  .logline.tag-round { opacity:1; margin-top:2px; }
+  .logline.tag-round.is-round-main { margin-top:16px; }
   /* 블록 첫 줄(누가 무엇을 했는지)만 흰색, 그 아래 결과 줄들은 살짝 연하게 합니다.
      직군 색으로 칠해진 수치(span)는 그 색 그대로 유지됩니다. */
   .logblock .logline.group-start { color:#ffffff; opacity:1; }
@@ -736,8 +737,10 @@
   .chat-line.is-system .chat-text { color: var(--muted); font-style:italic; }
   .chat-line.is-round { margin:6px 0 8px; }
   /* 라운드/단계 안내는 본문과 구분되는 제목 폰트로 크게 */
-  .chat-line.is-round .round-text { color: var(--accent-blue); font-weight:700; }
-  .chat-line.is-round.is-round-main .round-text { font-family: var(--font-title); font-weight:400; }
+  .rh { display:flex; align-items:baseline; }
+  .rh-mark { width:22px; flex-shrink:0; color: var(--accent-blue); font-size:16px; }
+  .rh-main { font-family: var(--font-title); font-weight:400; color: var(--accent-blue); font-size:18px; line-height:1.2; letter-spacing:0; }
+  .rh-sub { color: var(--text); font-weight:700; font-size:15px; line-height:1.4; letter-spacing:-0.015em; }
   /* 안내 문구 안의 줄바꿈(\n)을 그대로 보여줍니다. */
   .chat-text { white-space: pre-line; }
 
@@ -1041,9 +1044,8 @@
   .chat-text { font-size:15px; line-height:1.55; letter-spacing:-0.012em; }
   .chat-line { margin-bottom:12px; }
   /* 라운드/단계 안내(제목 폰트) */
-  .chat-line.is-round .round-text { font-size:16px; line-height:1.35; letter-spacing:-0.015em; }
+  .chat-line.is-round { margin:0 0 8px; }
   .chat-line.is-round.is-round-main { margin:16px 0 2px; }
-  .chat-line.is-round.is-round-main .round-text { font-size:18px; line-height:1.2; letter-spacing:0; }
   .skill-cutin-title { line-height:1.15; letter-spacing:-0.025em; }
   .skill-cutin-body { letter-spacing:-0.01em; }
 </style>
@@ -2790,7 +2792,19 @@ const LOG_TAG_ICON = {
   round: '✶', action: '⚔', damage: '⚔', defend: '🛡', defend_value: '🛡', taunt: '🎯',
   heal: '✚', crit: '✦', system: '·', wait: '⏸', hp: '❤', formula: '', summary: '',
 };
+// 라운드/단계 안내 한 줄 (채팅창·로그창 공통) : "✶ Round 1"은 기호 + Baunk 제목,
+// "선공 단계 : 2팀"은 기호 없이 Round 글자의 왼쪽 선에 맞춰 흰색으로 씁니다.
+function roundHeadHtml(text, fmt) {
+  const t = (text || '').trim();
+  const f = fmt || (x => x);
+  if (/^round\s*\d+/i.test(t)) return `<span class="rh"><span class="rh-mark">✶</span><span class="rh-main">${f(t)}</span></span>`;
+  return `<span class="rh"><span class="rh-mark"></span><span class="rh-sub">${f(t.replace(/^▶\s*/, ''))}</span></span>`;
+}
 function formatLogLineHtml(l) {
+  if (l.tag === 'round') {
+    const main = /^round\s*\d+/i.test((l.text || '').trim());
+    return `<div class="logline tag-round${main ? ' is-round-main' : ''}">${roundHeadHtml(l.text)}</div>`;
+  }
   const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
   const icon = LOG_TAG_ICON[l.tag] || '';
   const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${l.text}</span>` : l.text;
@@ -3228,7 +3242,7 @@ function fmtChat(entry) {
   const idAttr = entry.id ? ` data-chat-id="${entry.id}"` : '';
   if (entry.category === 'round') {
     const main = /^round\s*\d+/i.test((entry.text || '').trim());
-    return `<div class="chat-line is-round${main ? ' is-round-main' : ''}"${idAttr}><span class="round-text">${main ? '✶ ' : ''}${highlightChat(entry.text)}</span>${delBtn}</div>`;
+    return `<div class="chat-line is-round${main ? ' is-round-main' : ''}"${idAttr}>${roundHeadHtml(entry.text, highlightChat)}${delBtn}</div>`;
   }
   const isCommand = (entry.text || '').startsWith('[스킬:') || (entry.text || '').startsWith('[액션:') || (entry.text || '').startsWith('[행동:');
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
