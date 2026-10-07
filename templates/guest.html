@@ -712,7 +712,7 @@
   .logline.tag-system, .logline.tag-wait { color: var(--muted); font-size:14px; }
   .logline.tag-round { opacity:1; margin-top:2px; }
   /* 라운드 최종 결과 표 */
-  .round-summary { margin:6px 0 12px 22px; padding:8px 12px 10px; border:1px solid var(--card-border); border-radius:10px; background:rgba(255,255,255,.02); font-size:14px; }
+  .round-summary { margin:6px 0 12px; padding:8px 12px 10px; border:1px solid var(--card-border); border-radius:10px; background:rgba(255,255,255,.02); font-size:14px; }
   .rs-row { display:grid; grid-template-columns: minmax(0,1fr) 40px 16px 40px 60px; align-items:center; column-gap:6px; padding:4px 0; font-variant-numeric: tabular-nums; }
   .rs-row + .rs-row { border-top:1px solid rgba(255,255,255,.05); }
   .rs-team { font-size:12px; font-weight:700; color: var(--muted); letter-spacing:.04em; margin:8px 0 2px; }
@@ -2889,7 +2889,7 @@ function siteLabelize(text) {
   });
   return out;
 }
-function formatLogLineHtml(l) {
+function formatLogLineHtml(l, noIcon) {
   l = { ...l, text: stripLegacyEmoji(l.text) };
   if (l.tag !== 'hp') l.text = siteLabelize(l.text);
   if (l.tag === 'round') {
@@ -2897,7 +2897,7 @@ function formatLogLineHtml(l) {
     return `<div class="logline tag-round${main ? ' is-round-main' : ''}">${roundHeadHtml(l.text)}</div>`;
   }
   const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
-  const icon = LOG_TAG_ICON[l.tag] || '';
+  const icon = noIcon ? '' : (LOG_TAG_ICON[l.tag] || '');
   const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${l.text}</span>` : l.text;
   return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${body}</div>`;
 }
@@ -2956,7 +2956,8 @@ function formatLogHtml(lines) {
     const isGroup = LOG_GROUP_START_TAGS.has(head.tag);
     const actionCls = isGroup ? logActionClass(head) : '';
     const cls = `logblock${isGroup ? '' : ' cont'}${actionCls ? ' ' + actionCls : ''}`;
-    return `<div class="${cls}">${section.map(formatLogLineHtml).join('')}</div>`;
+    // 블록 첫 줄(⚔ NOVA 공격 → E)과 바로 아래 줄(⚔ 공격 수치)의 아이콘이 겹치므로, 아래 줄이 있으면 첫 줄 아이콘은 뺍니다.
+    return `<div class="${cls}">${section.map((l, i) => formatLogLineHtml(l, i === 0 && isGroup && section.length > 1)).join('')}</div>`;
   }).join('');
 }
 
