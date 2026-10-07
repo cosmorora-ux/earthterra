@@ -352,7 +352,7 @@
 
 {% if battle_type == 'siege' %}
 <div class="panel row" style="padding:10px 16px; margin-bottom:12px;">
-  <b>🔮 거점 행동 다이스</b>
+  <b>거점 행동 다이스</b>
   <button onclick="rollSiteDice()">🎲 다이스 굴리기</button>
   <span id="siteDiceStatus" class="hint">아직 굴리지 않았습니다</span>
 </div>
@@ -370,7 +370,7 @@
   <b>🗺 마스 맵</b>
   {% if battle_type == 'mass_raid' %}
   <div class="row">
-    <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">🔮 전조 출력</button>
+    <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">전조 출력</button>
     <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;">📢 전조 공개 (러너에게 표시)</button>
     <button onclick="clearTelegraph()" id="telegraphClearBtn" style="display:none;">✖ 전조 해제</button>
     <span id="telegraphStatus" class="hint"></span>
@@ -1144,7 +1144,7 @@ function renderTelegraphControls() {
   const clearBtn = document.getElementById('telegraphClearBtn');
   const status = document.getElementById('telegraphStatus');
   if (!modeBtn) return;
-  modeBtn.textContent = telegraphMode ? '🔮 전조 출력 중 (칸을 클릭해 선택)' : '🔮 전조 출력';
+  modeBtn.textContent = telegraphMode ? '전조 출력 중 (칸을 클릭해 선택)' : '전조 출력';
   revealBtn.style.display = telegraphMode ? '' : 'none';
   clearBtn.style.display = telegraphRevealedCells.size > 0 ? '' : 'none';
   status.textContent = telegraphMode
@@ -1296,7 +1296,7 @@ function renderGrid(battle, all) {
       }
       const label = c ? (c.boss_section || c.name.slice(0, 2)) : '';
       const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
-      const telegraphText = telegraphRevealedCells.has(key) ? ' · 🔮 전조(곧 피해)' : (telegraphSelectedCells.has(key) ? ' · 전조 선택됨(미공개)' : '');
+      const telegraphText = telegraphRevealedCells.has(key) ? ' · 전조(곧 피해)' : (telegraphSelectedCells.has(key) ? ' · 전조 선택됨(미공개)' : '');
       const title = c ? `${displayNameOf(c)} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
       html += `<td ${onclick} title="${title}" style="width:${GRID_CELL_PX}px; height:${GRID_CELL_PX}px; ${borderStyle} background:${bg}; ${glow} text-align:center; font-size:14px; vertical-align:middle; cursor:${cursor};">${label}</td>`;
     }

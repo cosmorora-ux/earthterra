@@ -1450,7 +1450,7 @@
       <span id="siteDiceStatusGm" class="hint"></span>
       {% endif %}
       {% if battle_type == 'mass_raid' %}
-      <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">🔮 전조 출력</button>
+      <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">전조 출력</button>
       <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;">📢 전조 공개</button>
       <button onclick="clearTelegraph()" id="telegraphClearBtn" style="display:none;">✖ 전조 해제</button>
       <span id="telegraphStatus" class="hint"></span>
@@ -2794,7 +2794,7 @@ setInterval(tickTimer, 200);
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round', 'wait']);
 const LOG_TAG_ICON = {
   round: '✶', action: '⚔', damage: '⚔', defend: '🛡', defend_value: '🛡', taunt: '🎯',
-  heal: '✚', crit: '✦', system: '·', wait: '⏸', hp: '❤', formula: '', summary: '',
+  heal: '✚', crit: '✦', system: '', wait: '⏸', hp: '❤', formula: '', summary: '',
 };
 // 라운드/단계 안내 한 줄 (채팅창·로그창 공통) : "✶ Round 1"은 기호 + Baunk 제목,
 // "선공 단계 : 2팀"은 기호 없이 Round 글자의 왼쪽 선에 맞춰 흰색으로 씁니다.
@@ -2804,7 +2804,10 @@ function roundHeadHtml(text, fmt) {
   if (/^round\s*\d+/i.test(t)) return `<span class="rh"><span class="rh-mark">✶</span><span class="rh-main">${f(t)}</span></span>`;
   return `<span class="rh"><span class="rh-mark"></span><span class="rh-sub">${f(t.replace(/^▶\s*/, ''))}</span></span>`;
 }
+// 예전에 저장된 안내 문구에 남아 있는 구슬 이모지는 표시할 때 지웁니다.
+function stripLegacyEmoji(t) { return typeof t === 'string' ? t.replace(/\u{1F52E}\s*/gu, '') : t; }
 function formatLogLineHtml(l) {
+  l = { ...l, text: stripLegacyEmoji(l.text) };
   if (l.tag === 'round') {
     const main = /^round\s*\d+/i.test((l.text || '').trim());
     return `<div class="logline tag-round${main ? ' is-round-main' : ''}">${roundHeadHtml(l.text)}</div>`;
@@ -3249,6 +3252,7 @@ function formatChatTime(timeStr) {
 }
 
 function fmtChat(entry) {
+  entry = { ...entry, text: stripLegacyEmoji(entry.text), nickname: stripLegacyEmoji(entry.nickname) };
   // 전투 진행 안내(✶ Round N / ▶ 선공 단계 등)는 아바타 없이 포인트 컬러로 한 줄 표시합니다.
   const canDel = entry.id && myControlInfo(lastBattleForPanel).scope === 'all';
   const delBtn = canDel ? `<button class="chat-del" onclick="deleteChatMessage('${entry.id}')"><i class="fa-solid fa-trash-can"></i></button>` : '';
@@ -3435,7 +3439,7 @@ function renderTelegraphControls() {
   const revealBtn = document.getElementById('telegraphRevealBtn');
   const clearBtn = document.getElementById('telegraphClearBtn');
   const status = document.getElementById('telegraphStatus');
-  modeBtn.textContent = telegraphMode ? '🔮 전조 출력 중 (칸을 클릭해 선택)' : '🔮 전조 출력';
+  modeBtn.textContent = telegraphMode ? '전조 출력 중 (칸을 클릭해 선택)' : '전조 출력';
   revealBtn.style.display = telegraphMode ? '' : 'none';
   clearBtn.style.display = telegraphRevealedCells.size > 0 ? '' : 'none';
   status.textContent = telegraphMode
