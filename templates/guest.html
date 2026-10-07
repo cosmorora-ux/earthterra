@@ -1055,12 +1055,12 @@
 <body>
 <div class="app-shell">
 <div class="sidebar">
-  <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()" data-tip="공지사항"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
+  <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
   <div class="sidebar-gap"></div>
   <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i></button>
   <button class="sidebar-icon active"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
-  <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" data-tip="상점"><i class="fa-solid fa-briefcase"></i></button>
+  <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
   <div class="sidebar-grow"></div>
   <button class="sidebar-icon" onclick="openMyPage()"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
@@ -1071,7 +1071,7 @@
 <div id="mapBgModal" class="modal-overlay" onclick="if(event.target===this) closeMapBgModal()">
   <div class="modal-box mapbg-modal panel">
     <div class="modal-title">지도 배경 · 몹 이미지 설정</div>
-    <div class="mapbg-preview" id="mapBgPreview" onclick="document.getElementById('mapBgFileInput').click()" data-tip="클릭해서 이미지 올리기">
+    <div class="mapbg-preview" id="mapBgPreview" onclick="document.getElementById('mapBgFileInput').click()">
       <div class="dim" id="mapBgPreviewDim"></div><span id="mapBgPreviewText">클릭해서 배경 이미지 올리기 (최대 6MB)</span>
     </div>
     <input type="file" id="mapBgFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onMapBgFileChosen(event)">
@@ -1111,33 +1111,33 @@
     <div class="notice-editor" id="noticeEditor" style="display:none;">
       <input type="text" class="title" id="noticeTitleInput" maxlength="80" placeholder="제목">
       <div class="notice-toolbar" id="noticeToolbar">
-        <select onchange="noticeCmd('fontSize', this.value); this.selectedIndex=0;" data-tip="글자 크기">
+        <select onchange="noticeCmd('fontSize', this.value); this.selectedIndex=0;">
           <option value="">크기</option><option value="1">아주 작게</option><option value="2">작게</option><option value="3">보통</option>
           <option value="4">조금 크게</option><option value="5">크게</option><option value="6">아주 크게</option><option value="7">제일 크게</option>
         </select>
-        <select onchange="noticeCmd('formatBlock', this.value); this.selectedIndex=0;" data-tip="문단 형식">
+        <select onchange="noticeCmd('formatBlock', this.value); this.selectedIndex=0;">
           <option value="">문단</option><option value="P">본문</option><option value="H1">제목 1</option><option value="H2">제목 2</option><option value="H3">제목 3</option><option value="BLOCKQUOTE">인용</option>
         </select>
         <span class="sep"></span>
-        <button data-cmd="bold" onclick="noticeCmd('bold')" data-tip="굵게 (Ctrl+B)"><b>B</b></button>
-        <button data-cmd="italic" onclick="noticeCmd('italic')" data-tip="기울임 (Ctrl+I)"><i>I</i></button>
-        <button data-cmd="underline" onclick="noticeCmd('underline')" data-tip="밑줄 (Ctrl+U)"><u>U</u></button>
-        <button data-cmd="strikeThrough" onclick="noticeCmd('strikeThrough')" data-tip="취소선"><s>S</s></button>
+        <button data-cmd="bold" onclick="noticeCmd('bold')"><b>B</b></button>
+        <button data-cmd="italic" onclick="noticeCmd('italic')"><i>I</i></button>
+        <button data-cmd="underline" onclick="noticeCmd('underline')"><u>U</u></button>
+        <button data-cmd="strikeThrough" onclick="noticeCmd('strikeThrough')"><s>S</s></button>
         <span class="sep"></span>
         <input type="color" value="#ffd25e" onchange="noticeCmd('foreColor', this.value)" data-tip="글자 색">
         <input type="color" value="#3a2a00" onchange="noticeCmd('hiliteColor', this.value)" data-tip="형광펜(배경 색)">
         <span class="sep"></span>
-        <button data-cmd="justifyLeft" onclick="noticeCmd('justifyLeft')" data-tip="왼쪽 정렬"><i class="fa-solid fa-align-left"></i></button>
-        <button data-cmd="justifyCenter" onclick="noticeCmd('justifyCenter')" data-tip="가운데 정렬"><i class="fa-solid fa-align-center"></i></button>
-        <button data-cmd="justifyRight" onclick="noticeCmd('justifyRight')" data-tip="오른쪽 정렬"><i class="fa-solid fa-align-right"></i></button>
+        <button data-cmd="justifyLeft" onclick="noticeCmd('justifyLeft')"><i class="fa-solid fa-align-left"></i></button>
+        <button data-cmd="justifyCenter" onclick="noticeCmd('justifyCenter')"><i class="fa-solid fa-align-center"></i></button>
+        <button data-cmd="justifyRight" onclick="noticeCmd('justifyRight')"><i class="fa-solid fa-align-right"></i></button>
         <span class="sep"></span>
-        <button data-cmd="insertUnorderedList" onclick="noticeCmd('insertUnorderedList')" data-tip="글머리 목록"><i class="fa-solid fa-list-ul"></i></button>
-        <button data-cmd="insertOrderedList" onclick="noticeCmd('insertOrderedList')" data-tip="번호 목록"><i class="fa-solid fa-list-ol"></i></button>
-        <button onclick="noticeCmd('insertHorizontalRule')" data-tip="구분선"><i class="fa-solid fa-minus"></i></button>
+        <button data-cmd="insertUnorderedList" onclick="noticeCmd('insertUnorderedList')"><i class="fa-solid fa-list-ul"></i></button>
+        <button data-cmd="insertOrderedList" onclick="noticeCmd('insertOrderedList')"><i class="fa-solid fa-list-ol"></i></button>
+        <button onclick="noticeCmd('insertHorizontalRule')"><i class="fa-solid fa-minus"></i></button>
         <button onclick="noticeLink()" data-tip="링크 넣기"><i class="fa-solid fa-link"></i></button>
         <span class="sep"></span>
-        <button onclick="noticeCmd('undo')" data-tip="되돌리기 (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
-        <button onclick="noticeCmd('redo')" data-tip="다시 실행"><i class="fa-solid fa-rotate-right"></i></button>
+        <button onclick="noticeCmd('undo')"><i class="fa-solid fa-rotate-left"></i></button>
+        <button onclick="noticeCmd('redo')"><i class="fa-solid fa-rotate-right"></i></button>
         <button onclick="noticeCmd('removeFormat')" data-tip="서식 지우기"><i class="fa-solid fa-text-slash"></i></button>
       </div>
       <div class="notice-edit-area" id="noticeEditArea" contenteditable="true" data-placeholder="공지 내용을 입력하세요." oninput="refreshNoticeToolbar()" onkeyup="refreshNoticeToolbar()" onmouseup="refreshNoticeToolbar()"></div>
@@ -1171,7 +1171,7 @@
 <div id="trackBgModal" class="modal-overlay" onclick="if(event.target===this) closeTrackBgModal()">
   <div class="modal-box mapbg-modal panel">
     <div class="modal-title">라운드 트랙 배경</div>
-    <div class="mapbg-preview" id="trackBgPreview" onclick="document.getElementById('trackBgFileInput').click()" data-tip="클릭해서 이미지 올리기">
+    <div class="mapbg-preview" id="trackBgPreview" onclick="document.getElementById('trackBgFileInput').click()">
       <div class="dim" id="trackBgPreviewDim"></div><span id="trackBgPreviewText">클릭해서 배경 이미지 올리기 (최대 6MB)</span>
     </div>
     <input type="file" id="trackBgFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onTrackBgFileChosen(event)">
@@ -1269,12 +1269,12 @@
   <div class="modal-box mypage panel">
     <div class="idc-head">
       <div class="idc-title">ID card</div>
-      <button class="idc-close" onclick="closeMyPage()" data-tip="닫기"><i class="fa-solid fa-xmark"></i></button>
+      <button class="idc-close" onclick="closeMyPage()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="mypage-cols">
     <div class="mypage-col">
     <div class="mypage-head">
-      <div class="mypage-portrait" id="myPagePortrait" data-tip="클릭해서 프로필 이미지 등록 (정사각형, 투명 배경 지원 png/webp/gif)" onclick="document.getElementById('myAvatarFileInput').click()">
+      <div class="mypage-portrait" id="myPagePortrait" data-tip="프로필 이미지 (정사각형 png/webp/gif)" onclick="document.getElementById('myAvatarFileInput').click()">
         <span class="mypage-portrait-icon" id="myPagePortraitIcon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
       </div>
       <div class="mypage-head-info">
@@ -1286,7 +1286,7 @@
         </div>
         <div class="idc-kv">
           <span class="mypage-label">표시컬러</span>
-          <span class="idc-color" id="myPageColorBtn" data-tip="클릭해서 색상 변경" onclick="if(canEditMyPage()) document.getElementById('myColorInput').click()">
+          <span class="idc-color" id="myPageColorBtn" onclick="if(canEditMyPage()) document.getElementById('myColorInput').click()">
             <span class="idc-color-dot" id="myPageColorDot"></span>
           </span>
         </div>
@@ -1321,7 +1321,7 @@
     </div>
     <div class="idc-sec idc-row last">
       <span class="idc-label">소지품</span>
-      <span class="idc-value idc-link" id="myPageItemsView" onclick="openShopFromMyPage()" data-tip="클릭하면 상점이 열려요">-</span>
+      <span class="idc-value idc-link" id="myPageItemsView" onclick="openShopFromMyPage()">-</span>
     </div>
     </div>
 
@@ -1339,8 +1339,8 @@
       <input type="text" id="myPageSkillLogTitle" class="idc-field" maxlength="30" placeholder="스킬명" onchange="saveSkillLogText()">
       <div class="idc-editor">
         <div class="rich-mini-bar">
-          <button onmousedown="event.preventDefault()" onclick="skillLogFormat('bold')" data-tip="굵게"><i class="fa-solid fa-bold"></i></button>
-          <button onmousedown="event.preventDefault()" onclick="skillLogFormat('italic')" data-tip="기울임"><i class="fa-solid fa-italic"></i></button>
+          <button onmousedown="event.preventDefault()" onclick="skillLogFormat('bold')"><i class="fa-solid fa-bold"></i></button>
+          <button onmousedown="event.preventDefault()" onclick="skillLogFormat('italic')"><i class="fa-solid fa-italic"></i></button>
         </div>
         <div id="myPageSkillLogText" class="rich" contenteditable="true" data-placeholder="텍스트를 작성해 주세요." onblur="saveSkillLogText()"></div>
       </div>
@@ -1402,10 +1402,10 @@
   <div></div>
   {% endif %}
   <div class="bgm-player" id="bgmPlayer">
-    <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()" data-tip="음소거 (나에게만 적용)"><i class="fa-solid fa-volume-high"></i></button>
+    <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()"><i class="fa-solid fa-volume-high"></i></button>
     <div class="bgm-title"><span id="musicStatus">재생 없음</span></div>
     <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
-    <button type="button" class="gear icon-btn" onclick="openSoundSettings()" data-tip="소리 설정"><i class="fa-solid fa-gear"></i></button>
+    <button type="button" class="gear icon-btn" onclick="openSoundSettings()"><i class="fa-solid fa-gear"></i></button>
   </div>
 </div>
 
@@ -1476,7 +1476,7 @@
   <select id="cmdTargetSelect" onchange="onCmdTargetChange()"></select>
   <select id="cmdTarget2" style="display:none;"></select>
   <select id="cmdTarget3" style="display:none;"></select>
-  <button class="btn-primary send-btn icon-only" id="cmdSendBtn" disabled onclick="submitCmd()" aria-label="전송" data-tip="전송"><i class="fa-solid fa-paper-plane"></i></button>
+  <button class="btn-primary send-btn icon-only" id="cmdSendBtn" disabled onclick="submitCmd()" aria-label="전송"><i class="fa-solid fa-paper-plane"></i></button>
 </div>
 
 <div id="gmActPanel" class="gm-act-row action-bar-bottom panel" style="display:none;">
@@ -1495,10 +1495,10 @@
 {% if not grid_size %}
 <div class="member-top">
   <div class="bgm-player" id="bgmPlayer">
-    <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()" data-tip="음소거 (나에게만 적용)"><i class="fa-solid fa-volume-high"></i></button>
+    <button type="button" class="bgm-mute" id="musicMuteBtn" onclick="toggleMusicMute()"><i class="fa-solid fa-volume-high"></i></button>
     <div class="bgm-title"><span id="musicStatus">재생 없음</span></div>
     <input type="range" class="nice-range" id="musicVolumeSlider" min="0" max="100" oninput="onVolumeChange(this.value)" data-tip="내 음량 (나에게만 적용)">
-    <button type="button" class="gear icon-btn" onclick="openSoundSettings()" data-tip="소리 설정"><i class="fa-solid fa-gear"></i></button>
+    <button type="button" class="gear icon-btn" onclick="openSoundSettings()"><i class="fa-solid fa-gear"></i></button>
   </div>
 </div>
 {% endif %}
@@ -1511,7 +1511,7 @@
       <span class="cnt" id="chatSearchCount"></span>
     </div>
     <span class="member-header-tools">
-      <button class="chat-search-btn" id="chatSearchBtn" onclick="toggleChatSearch()" data-tip="채팅 검색"><i class="fa-solid fa-magnifying-glass"></i></button>
+      <button class="chat-search-btn" id="chatSearchBtn" onclick="toggleChatSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
       <button class="gear icon-btn" id="chatTabSettingsBtn" style="display:none;" onclick="toggleChatTabSettings()" data-tip="채팅 탭 설정"><i class="fa-solid fa-gear"></i></button>
     </span>
   </div>
@@ -2665,7 +2665,7 @@ function renderGrid(battle, all) {
       const glow = telegraphRevealedCells.has(key) ? 'background-color:rgba(255,80,80,.28); box-shadow: inset 0 0 12px 3px rgba(255,120,120,0.55);' : '';
       const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
       const telegraphText = telegraphRevealedCells.has(key) ? ' · 전조(곧 피해)' : '';
-      const title = c ? `${displayNameOf(c)} (${c.role}) HP ${c.current_hp}/${c.max_hp} · ${cellLabel(x, y)}${stateText}${telegraphText}` : `${cellLabel(x, y)}${telegraphText}`;
+      const title = c ? `${displayNameOf(c)} (${c.role}) HP ${c.current_hp}/${c.max_hp}${stateText}${telegraphText}` : (telegraphText ? telegraphText.replace(/^\s*·\s*/, '') : '');
       let inner = '';
       if (c) {
         // BOSS 부위는 칸이 4개라 이름 앞 두 글자만(예: NOVA → NO) 씁니다. 본인이 정한 표기 이름이 있으면 그걸 우선합니다.
@@ -3241,7 +3241,7 @@ function formatChatTime(timeStr) {
 function fmtChat(entry) {
   // 전투 진행 안내(✶ Round N / ▶ 선공 단계 등)는 아바타 없이 포인트 컬러로 한 줄 표시합니다.
   const canDel = entry.id && myControlInfo(lastBattleForPanel).scope === 'all';
-  const delBtn = canDel ? `<button class="chat-del" onclick="deleteChatMessage('${entry.id}')" data-tip="메시지 삭제"><i class="fa-solid fa-trash-can"></i></button>` : '';
+  const delBtn = canDel ? `<button class="chat-del" onclick="deleteChatMessage('${entry.id}')"><i class="fa-solid fa-trash-can"></i></button>` : '';
   const idAttr = entry.id ? ` data-chat-id="${entry.id}"` : '';
   if (entry.category === 'round') {
     const main = /^round\s*\d+/i.test((entry.text || '').trim());
@@ -4242,7 +4242,7 @@ function setShopTab(tab) { shopTab = tab; renderShop(); }
 function shopIconHtml(it, editable) {
   const style = it && it.icon_url ? ` style="background-image:url('${shopEsc(it.icon_url)}')"` : '';
   const inner = it && it.icon_url ? '' : '<i class="fa-solid fa-box"></i>';
-  const attrs = editable ? ` class="shop-icon editable" data-tip="클릭해서 이미지 등록 (도트 권장)" onclick="pickShopIcon('${it.id}')"` : ' class="shop-icon"';
+  const attrs = editable ? ` class="shop-icon editable" onclick="pickShopIcon('${it.id}')"` : ' class="shop-icon"';
   return `<div${attrs}${style}>${inner}</div>`;
 }
 function shopTagsHtml(it) {
@@ -4340,9 +4340,9 @@ function renderShopItemsAdmin() {
       <select onchange="shopEditItem('${it.id}', {timing:this.value})">${sel(tl, it.timing)}</select>
       <input type="number" value="${it.value}" onchange="shopEditItem('${it.id}', {value:this.value})" data-tip="효과 수치 (회복량 / 스탯 증가량)" ${it.effect === 'request' ? 'disabled' : ''}>
       <div class="ops">
-        <button class="shop-btn ghost sm" onclick="shopMoveItem('${it.id}',-1)" data-tip="위로">▲</button>
-        <button class="shop-btn ghost sm" onclick="shopMoveItem('${it.id}',1)" data-tip="아래로">▼</button>
-        ${it.icon_url ? `<button class="shop-btn ghost sm" onclick="shopClearIcon('${it.id}')" data-tip="이미지 지우기"><i class="fa-solid fa-image"></i>✕</button>` : ''}
+        <button class="shop-btn ghost sm" onclick="shopMoveItem('${it.id}',-1)">▲</button>
+        <button class="shop-btn ghost sm" onclick="shopMoveItem('${it.id}',1)">▼</button>
+        ${it.icon_url ? `<button class="shop-btn ghost sm" onclick="shopClearIcon('${it.id}')"><i class="fa-solid fa-image"></i>✕</button>` : ''}
         <button class="shop-btn danger sm" onclick="shopDeleteItem('${it.id}')">삭제</button>
       </div>
       <input class="desc" value="${shopEsc(it.desc)}" maxlength="200" onchange="shopEditItem('${it.id}', {desc:this.value})" placeholder="설명">
@@ -4559,7 +4559,7 @@ function renderBossImgSection() {
     const url = lastBossImages[g.key] || null;
     const esc = shopEsc(g.key);
     return `<div class="boss-img-row">
-      <div class="boss-img-thumb" style="${url ? `background-image:url('${url}')` : ''}" onclick="pickBossImg('${esc}')" data-tip="클릭해서 이미지 올리기"><i></i><i></i><i></i><i></i></div>
+      <div class="boss-img-thumb" style="${url ? `background-image:url('${url}')` : ''}" onclick="pickBossImg('${esc}')"><i></i><i></i><i></i><i></i></div>
       <div class="boss-img-name">${esc}<small>${g.members.length ? `지금 전투: ${g.members.map(shopEsc).join(', ')}` : '지금 전투에는 없음'}${!url && g.fallback ? ' · 현재 프로필 이미지 사용 중' : ''}</small></div>
       ${url ? `<button class="shop-btn danger sm" onclick="clearBossImg('${esc}')">지우기</button>` : `<button class="shop-btn ghost sm" onclick="pickBossImg('${esc}')">등록</button>`}
     </div>`;
@@ -5110,7 +5110,6 @@ function toggleChatSearch(force) {
   header.classList.toggle('searching', open);
   const btn = document.getElementById('chatSearchBtn');
   btn.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-magnifying-glass"></i>';
-  btn.setAttribute('data-tip', open ? '검색 닫기' : '채팅 검색');
   const input = document.getElementById('chatSearchInput');
   if (open) { input.focus(); input.select(); }
   else {
