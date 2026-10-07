@@ -883,13 +883,16 @@
   .topbar.v2 .play-icon { color: var(--accent-blue); font-size:15px; }
   .topbar.v2 #roundTimerLabel { font-size:30px; font-weight:700; }
   /* ---------- 플립 시계 (라운드 제한시간) ---------- */
-  #roundTimerLabel:has(.flip-clock) { background:none; border:none; padding:0; }
-  .flip-clock { display:inline-flex; align-items:center; gap:3px; line-height:1; }
-  .flip-sep { width:.36em; text-align:center; opacity:.7; transform: translateY(-.04em); }
-  .flip { --h:1.3em; position:relative; display:inline-block; width:.78em; height:var(--h); perspective:3em;
+  #roundTimerLabel:has(.flip-clock) { display:inline-flex; align-items:center; align-self:center; line-height:1;
+    background:none; border:none; padding:0; font-size:24px; }
+  .flip-clock { display:inline-flex; align-items:center; gap:4px; line-height:1; }
+  .flip-sep { width:.42em; text-align:center; opacity:.65; line-height:1; }
+  /* 카드 : 높이 1.6em, 폭 1.05em → 숫자 좌우 여백 약 .25em, 위아래 여백 약 .3em */
+  .flip { --h:1.6em; position:relative; display:inline-block; width:1.05em; height:var(--h); perspective:3em;
           border-radius:6px; background:#151518; box-shadow: inset 0 0 0 1px var(--card-border), 0 2px 6px rgba(0,0,0,.45); }
   .f-half { position:absolute; left:0; right:0; height:50%; overflow:hidden; background:#151518; backface-visibility:hidden; }
-  .f-half > span { position:absolute; left:0; right:0; height:var(--h); line-height:var(--h); text-align:center; }
+  /* 숫자 글리프가 글줄 위쪽에 붙어 있어서, 카드 정중앙에 오도록 살짝 내립니다 */
+  .f-half > span { position:absolute; left:0; right:0; height:var(--h); line-height:var(--h); text-align:center; padding-top:.06em; box-sizing:border-box; }
   .f-top { top:0; border-radius:6px 6px 0 0; transform-origin:50% 100%; }
   .f-top > span { top:0; }
   .f-bot { bottom:0; border-radius:0 0 6px 6px; transform-origin:50% 0; background:#18181c; }
