@@ -525,10 +525,12 @@
   .member-header-tools { display:flex; align-items:center; gap:6px; }
   .chat-search-btn { background:none; border:1px solid transparent; color: var(--muted); width:30px; height:30px; border-radius:8px; font-size:14px; }
   .chat-search-btn:hover, .chat-search-btn.on { color: var(--text); background:rgba(255,255,255,.06); }
-  .chat-search-bar { display:none; align-items:center; gap:8px; margin:10px 14px 0; padding:6px 10px; border:1px solid var(--card-border); border-radius:10px; background:#0c0c0d; flex-shrink:0; }
-  .chat-search-bar.open { display:flex; }
-  .chat-search-bar > i { color: var(--muted); font-size:13px; }
-  .chat-search-bar input { flex:1; min-width:0; background:none; border:none; outline:none; color: var(--text); font-size:14px; padding:2px 0; }
+  .chat-search-bar { display:none; flex:1; min-width:0; align-items:center; gap:8px; margin-right:8px; }
+  .member-header.searching #memberTitle { display:none; }
+  .member-header.searching .chat-search-bar { display:flex; animation: fxSearchIn .22s cubic-bezier(.2,.9,.25,1); }
+  @keyframes fxSearchIn { from { opacity:0; transform:translateX(-8px); } }
+  .chat-search-bar input { flex:1; min-width:0; height:30px; background:none; border:none; border-bottom:1px solid var(--card-border); outline:none; color: var(--text); font-size:16px; padding:0 2px; }
+  .chat-search-bar input:focus { border-bottom-color: var(--muted); }
   .chat-search-bar .cnt { font-size:12px; color: var(--muted); white-space:nowrap; }
   .chat-search-bar button { background:none; border:none; color: var(--muted); font-size:13px; padding:2px 4px; }
   .chat-search-bar button:hover { color: var(--text); }
@@ -1502,17 +1504,16 @@
 {% endif %}
 <div class="member-panel panel">
   <div class="member-header">
-    <b>Chat</b>
+    <b id="memberTitle">Chat</b>
+    <div class="chat-search-bar" id="chatSearchBar">
+      <input type="text" id="chatSearchInput" placeholder="이름이나 내용으로 검색" autocomplete="off"
+        onkeydown="if(event.key==='Enter') runChatSearch(); else if(event.key==='Escape') toggleChatSearch(false)">
+      <span class="cnt" id="chatSearchCount"></span>
+    </div>
     <span class="member-header-tools">
       <button class="chat-search-btn" id="chatSearchBtn" onclick="toggleChatSearch()" data-tip="채팅 검색"><i class="fa-solid fa-magnifying-glass"></i></button>
       <button class="gear icon-btn" id="chatTabSettingsBtn" style="display:none;" onclick="toggleChatTabSettings()" data-tip="채팅 탭 설정"><i class="fa-solid fa-gear"></i></button>
     </span>
-  </div>
-  <div class="chat-search-bar" id="chatSearchBar">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <input type="text" id="chatSearchInput" placeholder="이름이나 내용으로 검색" oninput="onChatSearchInput()" onkeydown="if(event.key==='Escape') toggleChatSearch(false)">
-    <span class="cnt" id="chatSearchCount"></span>
-    <button onclick="toggleChatSearch(false)" aria-label="검색 닫기"><i class="fa-solid fa-xmark"></i></button>
   </div>
 
   <div class="member-body">
@@ -1521,8 +1522,7 @@
     </div>
 
     <div class="member-tabview" id="memberTabLog">
-      <div class="panel-head">
-        <b>출력 창</b><span class="hint" id="pubLogHint">러너 전용 로그</span>
+      <div class="panel-head" id="logToolsHead" style="display:none;">
         <span class="chat-tabs" id="logViewTabs" style="display:none;">
           <button id="logTabPublic" class="active" onclick="setLogView('public')">러너 로그</button>
           <button id="logTabOperator" onclick="setLogView('operator')">운영진 로그</button>
@@ -1533,16 +1533,10 @@
     </div>
 
     <div class="member-tabview" id="memberTabMeeting">
-      <div class="panel-head">
-        <b>아군 회의</b><span class="hint">우리 팀에게만 보여요</span>
-      </div>
       <div id="chatLogMountMeeting"></div>
     </div>
 
     <div class="member-tabview" id="memberTabSpectate">
-      <div class="panel-head">
-        <b>전투 관전</b><span class="hint">전투에 참여하지 않는 인원만 모여요</span>
-      </div>
       <div id="chatLogMountSpectate"></div>
     </div>
   </div>
@@ -2949,6 +2943,8 @@ function refreshLogViewControls() {
   const gear = document.getElementById('formulaGearBtn');
   if (tabs) tabs.style.display = show ? '' : 'none';
   if (gear) gear.style.display = show ? '' : 'none';
+  const head = document.getElementById('logToolsHead');
+  if (head) head.style.display = show ? '' : 'none';
   if (!show) {
     logView = 'public';
     closeFormulaPanel();
@@ -3087,8 +3083,15 @@ setChatFilter('general');
 // 채팅창/로그창/회의창/전투 관전 - Member 패널 상단 4탭. chatLog(채팅 로그)는 실제로는
 // 하나뿐이라, 탭을 옮길 때마다 해당 탭의 마운트 지점으로 DOM을 그대로 옮겨서 재사용합니다.
 // 입력창은 탭과 무관하게 항상 같은 자리(패널 맨 아래)에 고정되어 계속 보입니다.
+const MEMBER_TAB_TITLES = { chat: 'Chat', log: 'Log', meeting: 'Council', spectate: 'Spectators' };
 function setMemberTab(view) {
   currentMemberView = view;
+  const titleEl = document.getElementById('memberTitle');
+  if (titleEl) titleEl.textContent = MEMBER_TAB_TITLES[view] || 'Chat';
+  // 로그창에는 검색이 없으므로 검색 모드를 끄고 아이콘도 숨깁니다.
+  if (view === 'log' && typeof toggleChatSearch === 'function') toggleChatSearch(false);
+  const sb = document.getElementById('chatSearchBtn');
+  if (sb) sb.style.display = view === 'log' ? 'none' : '';
   // 지금 연 탭의 안 읽음 표시는 지웁니다.
   const readKey = { chat: 'general', meeting: 'team', spectate: 'spectator', log: 'log' }[view];
   if (readKey) { unreadChat[readKey] = false; updateUnreadBadges(); }
@@ -5100,22 +5103,25 @@ function highlightChat(html) {
   const re = new RegExp(esc, 'gi');
   return s.split(/(<[^>]*>)/).map(part => part.startsWith('<') ? part : part.replace(re, m => `<mark>${m}</mark>`)).join('');
 }
+// 검색 아이콘을 누르면 상단 제목 자리가 검색칸으로 바뀌고 아이콘은 X가 됩니다(X = 검색 모드 해제).
 function toggleChatSearch(force) {
-  const bar = document.getElementById('chatSearchBar');
-  const open = force === undefined ? !bar.classList.contains('open') : !!force;
-  bar.classList.toggle('open', open);
-  document.getElementById('chatSearchBtn').classList.toggle('on', open);
+  const header = document.querySelector('.member-panel .member-header');
+  const open = force === undefined ? !header.classList.contains('searching') : !!force;
+  header.classList.toggle('searching', open);
+  const btn = document.getElementById('chatSearchBtn');
+  btn.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-magnifying-glass"></i>';
+  btn.setAttribute('data-tip', open ? '검색 닫기' : '채팅 검색');
   const input = document.getElementById('chatSearchInput');
   if (open) { input.focus(); input.select(); }
-  else if (chatSearchQuery) { input.value = ''; chatSearchQuery = ''; renderChatFiltered(); }
+  else {
+    input.value = '';
+    if (chatSearchQuery) { chatSearchQuery = ''; renderChatFiltered(); }
+    updateChatSearchCount(0);
+  }
 }
-let chatSearchTimer = null;
-function onChatSearchInput() {
-  clearTimeout(chatSearchTimer);
-  chatSearchTimer = setTimeout(() => {
-    chatSearchQuery = document.getElementById('chatSearchInput').value.trim();
-    renderChatFiltered();
-  }, 120);
+function runChatSearch() {
+  chatSearchQuery = document.getElementById('chatSearchInput').value.trim();
+  renderChatFiltered();
 }
 function updateChatSearchCount(n) {
   const el = document.getElementById('chatSearchCount');
