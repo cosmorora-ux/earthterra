@@ -28,6 +28,12 @@
     --role-메딕: #ffd166;
     --role-힐러: #ffd166;
   }
+  /* 브라우저 기본 UI(자동완성 목록, 색상 선택기, 숫자 칸 등)도 다크모드로 */
+  :root { color-scheme: dark; }
+  input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text); caret-color: var(--text);
+    -webkit-box-shadow: 0 0 0 1000px #0c0c0d inset; transition: background-color 9999s;
+  }
   * { box-sizing: border-box; }
   input, select, textarea, button { font-family: inherit; }
   body { font-family: "42dot Sans", "Pretendard", -apple-system, "Segoe UI", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
@@ -65,12 +71,12 @@
 
   /* ---------- 다크모드 툴팁 (title 속성 대신 data-tip 사용, 스탯 툴팁과 같은 스타일) ---------- */
   [data-tip] { position:relative; }
-  [data-tip]:hover::after {
-    content: attr(data-tip);
-    position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%);
+  /* 툴팁은 화면 맨 위 레이어에 띄워서, 팝업(마이페이지 등) 영역에 잘리지 않고 글자가 다 보이게 합니다. */
+  #floatTip {
+    position:fixed; left:0; top:0; display:none; max-width:min(420px, calc(100vw - 16px));
     background:#0c0c0d; border:1px solid var(--card-border); color:var(--text);
-    border-radius:10px; padding:8px 12px; font-size:14px; white-space:nowrap;
-    box-shadow:0 6px 18px rgba(0,0,0,.5); z-index:60; pointer-events:none;
+    border-radius:10px; padding:8px 12px; font-size:14px; line-height:1.45; white-space:normal; word-break:keep-all;
+    box-shadow:0 6px 18px rgba(0,0,0,.5); z-index:10000; pointer-events:none;
   }
 
   /* ---------- 캐릭터 입장 / 색상 선택 모달 ---------- */
@@ -103,7 +109,7 @@
   .modal-box input.idc-inline { width:70px; background:none; border:1px solid transparent; border-radius:6px; padding:3px 6px; font-size:15px; font-weight:700; color: var(--text); text-align:right; }
   .modal-box input.idc-inline:hover:not(:disabled), .modal-box input.idc-inline:focus { border-color: var(--card-border); background:#0c0c0d; outline:none; }
   .idc-color { display:inline-flex; align-items:center; gap:8px; cursor:pointer; color: var(--text); }
-  .idc-color-dot { width:14px; height:14px; border-radius:50%; border:1px solid var(--card-border); }
+  .idc-color-dot { width:20px; height:20px; border-radius:50%; border:1px solid var(--card-border); }
   .idc-sec { border-top:1px solid var(--panel-border); }
   .idc-row { display:flex; align-items:center; gap:12px; padding:20px 0; }
   .idc-row.last { border-bottom:1px solid var(--panel-border); }
@@ -112,7 +118,7 @@
   .idc-sec .idc-inline { margin-left:auto; }
   .idc-link { cursor:pointer; }
   .idc-link:hover { text-decoration:underline; text-underline-offset:3px; }
-  #myPagePointsView { color:#ffd25e; font-weight:700; }
+  #myPagePointsView { color: var(--accent-blue); font-weight:700; }
   .mypage-roles { display:flex; gap:22px; margin-left:auto; }
   .mypage-roles button { background:none; border:none; padding:2px 0; color: var(--muted); font-size:16px; cursor:pointer; opacity:.55; }
   .mypage-roles button.on { color: var(--role-color); font-weight:700; opacity:1; }
@@ -1199,13 +1205,13 @@
         <div class="mypage-name" id="myPageName">-</div>
         <div class="idc-kv">
           <span class="mypage-label">마스 이름 표기</span>
-          <input type="text" id="myPageRaidNameInput" class="idc-inline" maxlength="3" placeholder="-"
+          <input type="text" id="myPageRaidNameInput" class="idc-inline" maxlength="3" placeholder="-" autocomplete="off" name="raid-short-name"
             onchange="commitRaidName()" onkeydown="if(event.key==='Enter') this.blur()">
         </div>
         <div class="idc-kv">
           <span class="mypage-label">표시컬러</span>
           <span class="idc-color" id="myPageColorBtn" data-tip="클릭해서 색상 변경" onclick="if(canEditMyPage()) document.getElementById('myColorInput').click()">
-            <span class="idc-color-dot" id="myPageColorDot"></span><span id="myPageColorText">기본 흰색</span>
+            <span class="idc-color-dot" id="myPageColorDot"></span>
           </span>
         </div>
       </div>
@@ -3629,7 +3635,6 @@ function renderMyPage() {
     document.getElementById('myPagePortrait').style.backgroundImage = 'none';
     document.getElementById('myPagePortraitIcon').style.display = '';
     document.getElementById('myPageColorDot').style.background = '#fff';
-    document.getElementById('myPageColorText').textContent = '-';
     document.getElementById('myPageRaidNameInput').value = '';
     document.getElementById('myPageRaidNameInput').disabled = true;
     document.getElementById('myPageRoles').innerHTML = '';
@@ -3655,7 +3660,6 @@ function renderMyPage() {
     document.getElementById('myPagePortraitIcon').style.display = '';
   }
   document.getElementById('myPageColorDot').style.background = c.color || '#fff';
-  document.getElementById('myPageColorText').textContent = c.color ? c.color.toUpperCase() : '기본 흰색';
   const raidInput = document.getElementById('myPageRaidNameInput');
   raidInput.disabled = !canEdit;
   if (document.activeElement !== raidInput) raidInput.value = c.raid_display_name || '';
@@ -5038,6 +5042,32 @@ socket.on('chat_deleted', (d) => {
     i = (i + 1) % N;
     root.style.setProperty('--cur-arrow', `url("${urls[i]}") 0 0`);
   }, MS);
+})();
+</script>
+<div id="floatTip"></div>
+<script>
+(function setupFloatTip() {
+  const tip = document.getElementById('floatTip');
+  let cur = null;
+  function show(el) {
+    cur = el;
+    tip.textContent = el.getAttribute('data-tip');
+    tip.style.display = 'block';
+    const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, m = 8;
+    const left = Math.max(m, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - m));
+    let top = r.bottom + 8;
+    if (top + h > window.innerHeight - m) top = Math.max(m, r.top - h - 8);  // 아래 공간이 없으면 위로
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  }
+  function hide() { cur = null; tip.style.display = 'none'; }
+  document.addEventListener('mouseover', (e) => {
+    const el = e.target.closest && e.target.closest('[data-tip]');
+    if (el === cur) return;
+    if (el && el.getAttribute('data-tip')) show(el); else hide();
+  });
+  document.addEventListener('mousedown', hide);
+  document.addEventListener('scroll', hide, true);
+  setInterval(() => { if (cur && !document.body.contains(cur)) hide(); }, 500);
 })();
 </script>
 </body>
