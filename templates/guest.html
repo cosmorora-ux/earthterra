@@ -713,10 +713,8 @@
   .logline.tag-round { opacity:1; margin-top:2px; }
   /* 라운드 최종 결과 표 */
   .round-summary { margin:6px 0 12px 22px; padding:8px 12px 10px; border:1px solid var(--card-border); border-radius:10px; background:rgba(255,255,255,.02); font-size:14px; }
-  .rs-row { display:grid; grid-template-columns: minmax(0,1fr) 36px 14px 36px 54px 48px; align-items:center; column-gap:6px; padding:4px 0; font-variant-numeric: tabular-nums; }
+  .rs-row { display:grid; grid-template-columns: minmax(0,1fr) 40px 16px 40px 60px; align-items:center; column-gap:6px; padding:4px 0; font-variant-numeric: tabular-nums; }
   .rs-row + .rs-row { border-top:1px solid rgba(255,255,255,.05); }
-  .rs-head { font-size:12px; color: var(--muted); padding-bottom:6px; }
-  .rs-head .rs-num, .rs-head .rs-num.end, .rs-head .rs-delta { color: var(--muted); font-weight:400; }
   .rs-team { font-size:12px; font-weight:700; color: var(--muted); letter-spacing:.04em; margin:8px 0 2px; }
   .rs-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
   .rs-name em { font-style:normal; font-weight:400; color: var(--muted); font-size:12px; }
@@ -728,9 +726,6 @@
   .rs-delta i { font-size:11px; margin-right:3px; vertical-align:1px; }
   .rs-delta.plus { color:#ff5a5a; font-weight:700; }
   .rs-delta.minus { color:#4a8dff; font-weight:700; }
-  .rs-bar { position:relative; height:5px; border-radius:3px; background:#2a2a2e; overflow:hidden; }
-  .rs-fill { position:absolute; left:0; top:0; bottom:0; background:#d8d8dc; }
-  .rs-lost { position:absolute; top:0; bottom:0; background:rgba(74,141,255,.75); }
   .rs-row.out { opacity:.55; }
   .logline.tag-round.is-round-main { margin-top:16px; }
   /* 블록 첫 줄(누가 무엇을 했는지)만 흰색, 그 아래 결과 줄들은 살짝 연하게 합니다.
@@ -2936,17 +2931,12 @@ function formatRoundSummaryHtml(section) {
   const info = n => chars.find(c => c.name === n) || {};
   const rowHtml = r => {
     const c = info(r.name);
-    const max = c.max_hp || Math.max(r.start, r.end, 1);
     const d = r.end - r.start;
-    const endPct = Math.max(0, Math.min(100, r.end / max * 100));
-    const startPct = Math.max(0, Math.min(100, r.start / max * 100));
-    const lost = d < 0 ? `<div class="rs-lost" style="left:${endPct}%; width:${startPct - endPct}%;"></div>` : '';
     const label = c.name ? displayNameOf(c) : r.name;
     return `<div class="rs-row${r.state ? ' out' : ''}">
       <span class="rs-name">${esc(label)}${r.state ? ` <em>${esc(r.state)}</em>` : ''}</span>
       <span class="rs-num">${r.start}</span><span class="rs-arrow">→</span><span class="rs-num end">${r.end}</span>
       <span class="rs-delta ${d < 0 ? 'minus' : d > 0 ? 'plus' : ''}">${d < 0 ? '<i class="fa-solid fa-caret-down"></i>' + Math.abs(d) : d > 0 ? '<i class="fa-solid fa-caret-up"></i>' + d : '–'}</span>
-      <div class="rs-bar"><div class="rs-fill" style="width:${endPct}%;"></div>${lost}</div>
     </div>`;
   };
   const teamA = rows.filter(r => info(r.name).teamLabel !== 'B');
@@ -2954,7 +2944,6 @@ function formatRoundSummaryHtml(section) {
   const block = (title, list) => list.length ? `<div class="rs-team">${title}</div>${list.map(rowHtml).join('')}` : '';
   return formatLogLineHtml(head)
     + `<div class="round-summary">
-        <div class="rs-row rs-head"><span class="rs-name"></span><span class="rs-num">시작</span><span class="rs-arrow"></span><span class="rs-num end">종료</span><span class="rs-delta">변화</span><div></div></div>
         ${block(BATTLE_TYPE === 'pvp' ? 'Team 1' : '러너', teamA)}${block(BATTLE_TYPE === 'pvp' ? 'Team 2' : (BATTLE_TYPE === 'siege' ? '거점' : '보스'), teamB)}
       </div>`
     + rest.map(formatLogLineHtml).join('');
