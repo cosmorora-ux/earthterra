@@ -1077,6 +1077,12 @@
   .chat-line.is-round.is-round-main { margin:16px 0 2px; }
   .skill-cutin-title { line-height:1.15; letter-spacing:-0.025em; }
   .skill-cutin-body { letter-spacing:-0.01em; }
+
+  /* 마우스 클릭 물결(Ripple) : 누른 자리에서 옅은 원이 퍼지며 사라집니다 */
+  .click-ripple { position:fixed; left:0; top:0; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%;
+    pointer-events:none; z-index:20000; border:1.5px solid rgba(255,255,255,.55); background:rgba(255,255,255,.08);
+    animation: clickRipple .55s cubic-bezier(.2,.7,.3,1) forwards; }
+  @keyframes clickRipple { from { transform:scale(.4); opacity:1; } to { transform:scale(4.2); opacity:0; } }
 </style>
 </head>
 <body>
@@ -5380,6 +5386,18 @@ window.addEventListener('resize', () => setTimeout(drawAttackLines, 50));
   document.addEventListener('scroll', hide, true);
   setInterval(() => { if (cur && !document.body.contains(cur)) hide(); }, 500);
 })();
+</script>
+<script>
+// 마우스 클릭 물결 효과
+document.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) return;
+  const r = document.createElement('span');
+  r.className = 'click-ripple';
+  r.style.left = e.clientX + 'px';
+  r.style.top = e.clientY + 'px';
+  document.body.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+}, true);
 </script>
 </body>
 </html>
