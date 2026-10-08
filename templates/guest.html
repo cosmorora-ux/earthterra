@@ -1158,9 +1158,8 @@
   <button class="sidebar-icon active"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
-  <button class="sidebar-icon" id="sidebarSoundBtn" onclick="openSoundSettings()"><i class="fa-solid fa-sliders"></i></button>
   <div class="sidebar-grow"></div>
-  <button class="sidebar-icon" onclick="openMyPage()"><i class="fa-solid fa-user"></i></button>
+  <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
 </div>
 <div class="content-area">
@@ -1466,6 +1465,7 @@
     <div class="idc-sec idc-row" style="margin-top:18px;">
       <span class="idc-label">효과음</span>
       <span style="flex:1"></span>
+      <button class="idc-textbtn" onclick="openSoundSettings()" style="color:var(--muted); margin-right:14px;"><i class="fa-solid fa-sliders"></i> 소리 설정</button>
       <button class="idc-textbtn" id="myPageSoundPreviewBtn" onclick="previewMySoundEffect()" disabled><i class="fa-solid fa-headphones"></i> 효과음 미리 듣기</button>
     </div>
     <div class="idc-sound">
@@ -1809,6 +1809,7 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
     if (inBattle || inRoster) {
       explicitlyJoined = true;
       updateChatVisibility();
+      updateAvatarDots();
       localStorage.setItem(SAVED_NAME_KEY, MY_NICKNAME);
       // 전투 시작 전(팀 편성 미리보기 단계)에 입장하면 lastAllForCards가 아직 비어있으므로,
       // renderCards() 대신 미리보기 카드를 다시 그려줘야 방금 그렸던 카드가 사라지지 않습니다.
@@ -1952,6 +1953,9 @@ function updateAvatarDots(battle) {
   // 좌측 패널 입장/로그아웃 버튼 : 로그인 전에는 들어가기(→]), 로그인 후에는 나가기([→) 아이콘
   const loginIcon = document.querySelector('#sidebarLoginBtn i');
   if (loginIcon) loginIcon.className = explicitlyJoined ? 'fa-solid fa-right-from-bracket' : 'fa-solid fa-right-to-bracket';
+  // 로그인(캐릭터 또는 GM)하지 않았으면 마이페이지 아이콘을 아예 숨깁니다.
+  const myBtn = document.getElementById('sidebarMyPageBtn');
+  if (myBtn) myBtn.style.display = explicitlyJoined && (myLoggedInName() || myControlInfo(lastBattleForPanel).scope === 'all') ? '' : 'none';
 }
 
 socket.on('connect', () => {
