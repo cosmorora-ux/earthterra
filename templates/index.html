@@ -2,37 +2,73 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<title>방 목록</title>
+<title>Rooms</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@300..800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <style>
+  @font-face { font-family:"Baunk"; font-display:swap; src: url("/static/fonts/Baunk.ttf") format("truetype"); }
+  :root {
+    color-scheme: dark;
+    --bg:#050505; --panel:#141416; --panel-border:#262629; --card:#17171a; --card-border:#2a2a2e;
+    --text:#f2f2f2; --muted:#8b8b90; --accent-blue:#0043FF; --accent-red:#e2574a;
+    --font-title: "Baunk", "42dot Sans", "Pretendard", sans-serif;
+  }
+  * { box-sizing:border-box; }
   input, select, textarea, button { font-family: inherit; }
-  body { font-family: "42dot Sans", "Pretendard", "Malgun Gothic", sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; background: #1e1e1e; color: #eee; }
-  h1 { margin-bottom: 4px; }
-  .sub { color: #999; margin-top: 0; margin-bottom: 24px; }
-  .room-card {
-    display: flex; align-items: center; gap: 12px; border: 1px solid #444; border-radius: 8px;
-    padding: 12px 14px; margin-bottom: 10px; background: #262626;
-  }
-  .room-card .info { flex: 1; text-align: left; }
-  .room-card .room-name { font-weight: bold; font-size: 16px; }
-  .room-card .room-type { color: #999; font-size: 13px; margin-top: 2px; }
-  .room-card .actions { display: flex; gap: 6px; flex-wrap: wrap; }
-  .room-card .actions a, .room-card .actions button {
-    font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid #555;
-    background: #333; color: #eee; text-decoration: none; cursor: pointer;
-  }
-  .room-card .actions a:hover, .room-card .actions button:hover { background: #3a3a3a; }
-  .room-card .actions .danger { border-color: #663; color: #f88; }
-  .empty { color: #888; text-align: center; padding: 24px 0; border: 1px dashed #444; border-radius: 8px; margin-bottom: 16px; }
+  body { font-family: "42dot Sans", "Pretendard", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 56px 20px 64px; }
+  .head { margin-bottom: 28px; }
+  .head h1 { font-family: var(--font-title); font-weight:400; font-size: 34px; letter-spacing:.02em; margin:0 0 8px; }
+  .head p { margin:0; color: var(--muted); font-size:15px; }
+  .sec-title { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color: var(--muted); letter-spacing:.08em; margin: 0 0 12px; }
+  .sec-title .count { color: var(--text); }
 
-  .new-room { border-top: 1px solid #333; margin-top: 28px; padding-top: 20px; }
-  .type-option { display: block; text-align: left; border: 1px solid #444; border-radius: 6px; padding: 10px; margin: 8px 0; cursor: pointer; }
-  .type-option small { display: block; opacity: 0.7; margin-top: 2px; }
-  input[type="text"] {
-    width: 100%; box-sizing: border-box; background: #111; color: #eee; border: 1px solid #444;
-    border-radius: 6px; padding: 9px 10px; font-size: 15px; margin-bottom: 10px;
+  .room-card {
+    display:flex; align-items:center; gap:16px; border:1px solid var(--card-border); border-radius:14px;
+    padding:16px 18px; margin-bottom:10px; background: var(--card); transition: border-color .15s, background .15s;
   }
+  .room-card:hover { border-color:#3a3a40; background:#1b1b1f; }
+  .room-card .ico { width:42px; height:42px; border-radius:10px; background:#0c0c0d; border:1px solid var(--card-border);
+    display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:16px; flex-shrink:0; }
+  .room-card .info { flex:1; min-width:0; }
+  .room-card .room-name { font-weight:700; font-size:17px; letter-spacing:-0.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .room-card .room-type { color: var(--muted); font-size:13px; margin-top:2px; }
+  .room-card .actions { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+  .btn { display:inline-flex; align-items:center; gap:7px; font-size:14px; font-weight:600; padding:8px 14px; border-radius:8px;
+    border:1px solid var(--card-border); background:#232327; color: var(--text); text-decoration:none; cursor:pointer; white-space:nowrap; }
+  .btn:hover { background:#2c2c31; }
+  .btn.primary { background: var(--accent-blue); border-color: var(--accent-blue); color:#fff; }
+  .btn.primary:hover { filter: brightness(1.12); }
+  .btn.icon { width:36px; padding:8px 0; justify-content:center; background:none; border-color:transparent; color: var(--muted); }
+  .btn.icon:hover { color: var(--text); background:#232327; }
+  .empty { color: var(--muted); text-align:center; padding:32px 0; border:1px dashed var(--card-border); border-radius:14px; font-size:15px; }
+
+  .new-room { margin-top:40px; }
+  .field { width:100%; background:#0c0c0d; color: var(--text); border:1px solid var(--card-border); border-radius:10px;
+    padding:12px 14px; font-size:15px; margin-bottom:14px; outline:none; }
+  .field:focus { border-color:#4a4a52; }
+  .types { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+  @media (max-width:640px) { .types { grid-template-columns:1fr; } .room-card { flex-wrap:wrap; } }
+  .type-option { position:relative; display:block; border:1px solid var(--card-border); border-radius:12px; padding:16px; background: var(--card); cursor:pointer; transition: border-color .15s, background .15s; }
+  .type-option:hover { border-color:#3a3a40; }
+  .type-option input { position:absolute; opacity:0; pointer-events:none; }
+  .type-option .t { display:flex; align-items:center; gap:8px; font-weight:700; font-size:16px; margin-bottom:6px; }
+  .type-option .t i { color: var(--muted); font-size:14px; width:16px; text-align:center; }
+  .type-option .d { color: var(--muted); font-size:13px; line-height:1.55; }
+  .type-option:has(input:checked) { border-color: var(--accent-blue); background: rgba(0,67,255,.07); }
+  .type-option:has(input:checked) .t i { color: #6f95ff; }
+  .create-row { display:flex; justify-content:flex-end; margin-top:16px; }
+  .create-row .btn { font-size:15px; padding:11px 22px; }
+
+  /* 확인 팝업 */
+  .dlg-ov { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:100; }
+  .dlg { width:360px; max-width:calc(100vw - 32px); background: var(--panel); border:1px solid var(--panel-border); border-radius:16px; padding:22px; }
+  .dlg h3 { margin:0 0 6px; font-size:17px; }
+  .dlg p { margin:0 0 18px; color: var(--muted); font-size:14.5px; line-height:1.55; }
+  .dlg .row { display:flex; justify-content:flex-end; gap:8px; }
+  .btn.danger { background:#3a1414; border-color:#5a2020; color:#ff9a9a; }
+  .btn.danger:hover { background:#4a1818; }
 
   /* 스크롤바 공통 : 브라우저 기본(굵은 흰 바) 대신 화면 톤에 맞춘 얇고 어두운 바.
      평소엔 은은하게, 마우스를 올리면 조금 밝아집니다. 위아래 화살표 버튼은 없앱니다. */
@@ -84,20 +120,25 @@
 </style>
 </head>
 <body>
-  <h1>방 목록</h1>
-  <p class="sub">기존 방으로 바로 들어가거나, 아래에서 새 방을 만드세요. 방은 서버를 재시작해도 계속 저장됩니다.</p>
+<div class="wrap">
+  <div class="head">
+    <h1>Rooms</h1>
+    <p>기존 방으로 들어가거나 새 방을 만드세요. 방은 서버를 다시 켜도 그대로 남아 있어요.</p>
+  </div>
 
+  <div class="sec-title">방 목록 <span class="count">{{ rooms|length }}</span></div>
   {% if rooms %}
     {% for room in rooms %}
     <div class="room-card">
+      <div class="ico"><i class="fa-solid {% if room.battle_type == 'siege' %}fa-chess-rook{% elif room.battle_type == 'mass_raid' %}fa-border-all{% else %}fa-people-arrows{% endif %}"></i></div>
       <div class="info">
         <div class="room-name">{{ room.name }}</div>
         <div class="room-type">{{ room.battle_type_label }}</div>
       </div>
       <div class="actions">
-        <a href="{{ room.gm_url }}">운영진으로 입장</a>
-        <button type="button" onclick="copyLink('{{ room.guest_url }}', this)">참가자 링크 복사</button>
-        <button type="button" class="danger" onclick="confirmDelete('{{ room.id }}', '{{ room.name }}', 'deleteForm-{{ room.id }}')">삭제</button>
+        <a class="btn primary" href="{{ room.gm_url }}"><i class="fa-solid fa-right-to-bracket"></i> 운영진 입장</a>
+        <button type="button" class="btn" onclick="copyLink('{{ room.guest_url }}', this)"><i class="fa-solid fa-link"></i> <span>참가자 링크</span></button>
+        <button type="button" class="btn icon" onclick="confirmDelete('{{ room.name }}', 'deleteForm-{{ room.id }}')"><i class="fa-solid fa-trash-can"></i></button>
       </div>
       <form method="post" action="/delete_room" id="deleteForm-{{ room.id }}" style="display:none;">
         <input type="hidden" name="room_id" value="{{ room.id }}">
@@ -106,50 +147,61 @@
     </div>
     {% endfor %}
   {% else %}
-    <div class="empty">아직 만든 방이 없습니다. 아래에서 새 방을 만들어보세요.</div>
+    <div class="empty">아직 만든 방이 없어요. 아래에서 새 방을 만들어 보세요.</div>
   {% endif %}
 
   <div class="new-room">
-    <h2>새 방 만들기</h2>
+    <div class="sec-title">새 방 만들기</div>
     <form method="post" action="/create_room">
-      <input type="text" name="room_name" placeholder="방 이름 (비워두면 자동 생성)" maxlength="30">
-      <label class="type-option">
-        <input type="radio" name="battle_type" value="pvp" checked>
-        <b>PVP</b> — 러너 vs 러너
-        <small>양쪽 팀 모두 참가자가 각자 캐릭터를 조작합니다.</small>
-      </label>
-      <label class="type-option">
-        <input type="radio" name="battle_type" value="siege">
-        <b>공성전</b> — GM vs 러너 5~6인
-        <small>GM이 상대편(적)을 조작하고, 러너들이 5~6인 팀으로 맞섭니다.</small>
-      </label>
-      <label class="type-option">
-        <input type="radio" name="battle_type" value="mass_raid">
-        <b>마스 레이드</b> — GM vs 러너 다인 (격자 이동)
-        <small>격자 지도 위에 몹은 중앙, 러너 최대 30인은 나머지 칸에 배치됩니다.
-        매 라운드 행동 전에 민첩에 따라 1~6칸 이동을 먼저 선언할 수 있습니다.</small>
-      </label>
-      <button type="submit" style="font-size: 18px; padding: 10px 20px; margin-top: 12px;">방 만들기</button>
+      <input class="field" type="text" name="room_name" placeholder="방 이름 (비워두면 자동으로 지어요)" maxlength="30" autocomplete="off">
+      <div class="types">
+        <label class="type-option">
+          <input type="radio" name="battle_type" value="pvp" checked>
+          <div class="t"><i class="fa-solid fa-people-arrows"></i>PVP</div>
+          <div class="d">러너 대 러너. 양쪽 팀 모두 참가자가 각자 캐릭터를 조작해요.</div>
+        </label>
+        <label class="type-option">
+          <input type="radio" name="battle_type" value="siege">
+          <div class="t"><i class="fa-solid fa-chess-rook"></i>공성전</div>
+          <div class="d">GM이 거점을 조작하고, 러너 5~6인이 한 팀으로 맞서요.</div>
+        </label>
+        <label class="type-option">
+          <input type="radio" name="battle_type" value="mass_raid">
+          <div class="t"><i class="fa-solid fa-border-all"></i>마스 레이드</div>
+          <div class="d">격자 지도에서 보스 대 러너 최대 30인. 민첩에 따라 1~6칸 이동해요.</div>
+        </label>
+      </div>
+      <div class="create-row"><button type="submit" class="btn primary"><i class="fa-solid fa-plus"></i> 방 만들기</button></div>
     </form>
   </div>
+</div>
 
-  <p style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #333;">
-    <a href="/yacht" style="color: #ffd166; font-size: 16px; text-decoration: none;">🎲 요트다이스 (태블릿 돌려쓰기) 바로가기</a>
-  </p>
+<div class="dlg-ov" id="dlg" onclick="if(event.target===this) closeDlg()">
+  <div class="dlg">
+    <h3>방 삭제</h3>
+    <p id="dlgMsg"></p>
+    <div class="row">
+      <button class="btn" onclick="closeDlg()">취소</button>
+      <button class="btn danger" id="dlgOk">삭제</button>
+    </div>
+  </div>
+</div>
 
 <script>
 function copyLink(url, btn) {
   navigator.clipboard.writeText(url).then(() => {
-    const original = btn.textContent;
-    btn.textContent = '복사됨!';
-    setTimeout(() => { btn.textContent = original; }, 1500);
+    const label = btn.querySelector('span');
+    const original = label.textContent;
+    label.textContent = '복사됨';
+    setTimeout(() => { label.textContent = original; }, 1500);
   });
 }
-function confirmDelete(roomId, roomName, formId) {
-  if (confirm(`"${roomName}" 방을 삭제할까요? 되돌릴 수 없습니다.`)) {
-    document.getElementById(formId).submit();
-  }
+function confirmDelete(roomName, formId) {
+  document.getElementById('dlgMsg').textContent = `"${roomName}" 방을 삭제할까요? 되돌릴 수 없어요.`;
+  document.getElementById('dlgOk').onclick = () => document.getElementById(formId).submit();
+  document.getElementById('dlg').style.display = 'flex';
 }
+function closeDlg() { document.getElementById('dlg').style.display = 'none'; }
 </script>
 <script>
 // Science 커서 : 기본 화살표(원자 회전 20장면)를 50ms마다 바꿔서 움직이는 커서처럼 보이게 합니다.
