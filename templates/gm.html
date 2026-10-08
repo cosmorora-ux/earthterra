@@ -333,6 +333,8 @@
     <button onclick="doAction('advance_turn', {})"><i class="fa-solid fa-forward-step"></i> 다음 턴</button>
     <button onclick="doAction('undo', {})"><i class="fa-solid fa-rotate-left"></i> 행동 취소</button>
     <button onclick="doAction('timeout_unacted_runners', {})"><i class="fa-solid fa-hourglass-end"></i> 미행동 러너 일괄 시간 초과</button>
+    <span style="flex:1"></span>
+    <button onclick="downloadLogs()"><i class="fa-solid fa-download"></i> 로그 내려받기</button>
   </div>
   <div class="sub-h">행동 실행</div>
   <div class="act-grid">
@@ -2109,6 +2111,20 @@ document.addEventListener('pointerdown', (e) => {
   document.body.appendChild(r);
   setTimeout(() => r.remove(), 600);
 }, true);
+</script>
+<script>
+// ---- 로그 내려받기 (운영진) : 서버가 만든 HTML을 파일로 저장합니다 ----
+function downloadLogs() { socket.emit('export_log', {}); }
+socket.on('export_log_result', (d) => {
+  const blob = new Blob([d.html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = d.filename || 'log.html';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+});
 </script>
 </body>
 </html>

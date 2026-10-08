@@ -58,6 +58,8 @@ class RoomState:
         self.guest_key = secrets.token_urlsafe(8)
         self.game = GameManager()
         self.chat_log = []  # [{"time","nickname","role","text"}, ...]
+        self.team_chat_log = []  # 아군 회의 기록(로그 내려받기 전용 - 다른 팀에게 보내지 않음)
+        self.past_battles = []   # 지난 전투 로그 보관(로그 내려받기용, 최근 10개)
         self.created_at = time.time()
         self.round_deadline = None   # 현재 라운드의 제한시간이 끝나는 epoch 시각
         self.last_round_no = None    # round_deadline을 언제 다시 계산해야 하는지 판단하는 기준

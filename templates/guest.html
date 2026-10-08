@@ -1640,6 +1640,7 @@
           <button id="logTabPublic" class="active" onclick="setLogView('public')">러너 로그</button>
           <button id="logTabOperator" onclick="setLogView('operator')">운영진 로그</button>
         </span>
+        <button class="gear icon-btn" onclick="downloadLogs()" data-tip="로그 내려받기 (HTML)"><i class="fa-solid fa-download"></i></button>
         <button class="gear icon-btn" id="formulaGearBtn" style="display:none;" onclick="toggleFormulaPanel()" data-tip="전투 수식 설정"><i class="fa-solid fa-gear"></i></button>
       </div>
       <div id="pubLog"></div>
@@ -1981,7 +1982,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-07.6";
+const EXPECTED_SERVER_BUILD = "2026-10-08.1";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5575,6 +5576,20 @@ function drawAttackLines() {
   frame.appendChild(svg);
 }
 window.addEventListener('resize', () => setTimeout(drawAttackLines, 50));
+</script>
+<script>
+// ---- 로그 내려받기 (운영진) : 서버가 만든 HTML을 파일로 저장합니다 ----
+function downloadLogs() { socket.emit('export_log', {}); }
+socket.on('export_log_result', (d) => {
+  const blob = new Blob([d.html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = d.filename || 'log.html';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+});
 </script>
 <div id="floatTip"></div>
 <script>

@@ -23,6 +23,7 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 import config
 import shop as shop_mod
 import notices as notices_mod
+import log_export
 from battle import Battle, BattleError
 from rooms import (
     create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
@@ -31,7 +32,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-07.6"
+SERVER_BUILD = "2026-10-08.1"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -742,6 +743,47 @@ def skill_cutin_payload(entry):
     return {"type": "text", "title": title, "body": body}
 
 
+def _archive_battle_logs(room):
+    """새 전투를 시작하기 전에 지금 전투의 로그를 보관해 둡니다(로그 내려받기용, 최근 10개)."""
+    battle = room.game.battle
+    if battle is None or not battle.public_log:
+        return
+    past = getattr(room, "past_battles", None)
+    if past is None:
+        past = room.past_battles = []
+    started = getattr(battle, "_started_label", None) or time.strftime("%m-%d %H:%M")
+    past.append({
+        "label": f"{started} 전투 ({len(battle.team_a)}:{len(battle.team_b)})",
+        "public_log": list(battle.public_log),
+        "operator_log": list(battle.operator_log),
+    })
+    del past[:-10]
+
+
+@socketio.on("export_log")
+def on_export_log(data):
+    """운영진 : 채팅 · 아군 회의 · 전투 로그 · 운영진 로그를 HTML 파일 하나로 만들어 보내줍니다."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 로그를 내려받을 수 있습니다."})
+        return
+    battles = list(getattr(room, "past_battles", None) or [])
+    battle = room.game.battle
+    if battle is not None and battle.public_log:
+        started = getattr(battle, "_started_label", None) or "현재"
+        battles.append({
+            "label": f"{started} 전투 ({len(battle.team_a)}:{len(battle.team_b)}) · 진행 중" if not battle.finished
+                     else f"{started} 전투 ({len(battle.team_a)}:{len(battle.team_b)})",
+            "public_log": battle.public_log, "operator_log": battle.operator_log,
+        })
+    doc = log_export.build_export_html(
+        room.name, BATTLE_TYPE_LABELS.get(room.battle_type, room.battle_type),
+        room.chat_log, getattr(room, "team_chat_log", None) or [], battles,
+    )
+    # 파일 이름은 브라우저마다 한글 처리가 달라 영문으로 만듭니다(방 이름은 파일 안 제목에 들어갑니다).
+    emit("export_log_result", {"filename": f"battle_log_{room.id}_{time.strftime('%Y%m%d_%H%M')}.html", "html": doc})
+
+
 def _emit_fx_numbers(room):
     """새로 쌓인 공개 로그에서 '공격 수치 / 회복 / 방어 값 / 피해량'을 뽑아, 카드 위에 띄울 수치로 보냅니다.
     (되돌리기로 로그가 줄었거나 서버를 막 켠 경우에는 띄우지 않고 위치만 맞춥니다)"""
@@ -1011,6 +1053,12 @@ def on_chat_message(data):
         # 필드는 방 전체에 그대로 재전송되는 공용 스냅샷이라, 여기에 남기면 재접속/새로고침
         # 시 상대 팀의 아군 회의 내용까지 함께 전송돼 버립니다(팀 채널로만 실시간 전달).
         _with_chat_id(entry)
+        team_log = getattr(room, "team_chat_log", None)
+        if team_log is None:
+            team_log = room.team_chat_log = []
+        team_log.append(entry)
+        del team_log[:-2000]
+        mark_runtime_dirty()
         socketio.emit("chat_message", entry, room=_team_channel(info["room_id"], speaker.team))
         return
 
@@ -1586,6 +1634,7 @@ def on_start_battle(data):
         emit("action_error", {"message": f"격자 칸({grid_width}×{grid_height})보다 인원이 많습니다."})
         return
 
+    _archive_battle_logs(room)
     try:
         room.game.start_battle(
             team_a, team_b,
@@ -1598,6 +1647,8 @@ def on_start_battle(data):
     except BattleError as e:
         emit("action_error", {"message": str(e)})
         return
+    if room.game.battle is not None:
+        room.game.battle._started_label = time.strftime("%m-%d %H:%M")
 
     # 전투가 방금 막 만들어져서 팀이 정해졌으므로, 이미 접속해 있던 소켓들의 아군 회의
     # 채널 소속도 다시 계산해줍니다(전투 시작 전에는 팀이 없어서 못 넣었을 것이므로).
