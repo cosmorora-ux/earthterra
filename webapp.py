@@ -756,6 +756,7 @@ def _archive_battle_logs(room):
         "label": f"{started} 전투 ({len(battle.team_a)}:{len(battle.team_b)})",
         "public_log": list(battle.public_log),
         "operator_log": list(battle.operator_log),
+        "teams": {c.name: c.team for c in battle.team_a + battle.team_b},
     })
     del past[:-10]
 
@@ -775,10 +776,14 @@ def on_export_log(data):
             "label": f"{started} 전투 ({len(battle.team_a)}:{len(battle.team_b)}) · 진행 중" if not battle.finished
                      else f"{started} 전투 ({len(battle.team_a)}:{len(battle.team_b)})",
             "public_log": battle.public_log, "operator_log": battle.operator_log,
+            "teams": {c.name: c.team for c in battle.team_a + battle.team_b},
         })
+    colors = {n: d.get("color") for n, d in room.game.db.characters.items() if d.get("color")}
+    if battle is not None:
+        colors.update({c.name: c.color for c in battle.team_a + battle.team_b if c.color})
     doc = log_export.build_export_html(
         room.name, BATTLE_TYPE_LABELS.get(room.battle_type, room.battle_type),
-        room.chat_log, getattr(room, "team_chat_log", None) or [], battles,
+        room.chat_log, getattr(room, "team_chat_log", None) or [], battles, colors,
     )
     # 파일 이름은 브라우저마다 한글 처리가 달라 영문으로 만듭니다(방 이름은 파일 안 제목에 들어갑니다).
     emit("export_log_result", {"filename": f"battle_log_{room.id}_{time.strftime('%Y%m%d_%H%M')}.html", "html": doc})
@@ -940,30 +945,7 @@ def on_join(data):
         leave_room(room_channel(room_id, "gm"))
     _sync_team_channel(room, request.sid, nickname, role)
 
-    # 익명(조용히 관전만 하는 접속)은 입장/퇴장 알림을 남기지 않습니다 - 로그인한 이름만 표시합니다.
-    # 아바타 동그라미를 눌러 로그아웃하면(이름 있음 → 익명으로 재입장) 퇴장 알림을 남깁니다.
-    if previous_nickname and previous_nickname != "익명" and nickname == "익명":
-        entry = {
-            "time": time.strftime("%H:%M:%S"),
-            "nickname": "system",
-            "role": "system",
-            "category": "presence",
-            "text": f"{previous_nickname}님이 퇴장했습니다",
-        }
-        room.chat_log.append(_with_chat_id(entry))
-        mark_runtime_dirty()
-        socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
-    elif nickname != "익명":
-        entry = {
-            "time": time.strftime("%H:%M:%S"),
-            "nickname": "system",
-            "role": "system",
-            "category": "presence",
-            "text": f"{nickname}님이 입장했습니다 ({'운영진' if role == 'gm' else '참가자'})",
-        }
-        room.chat_log.append(_with_chat_id(entry))
-        mark_runtime_dirty()
-        socketio.emit("chat_message", entry, room=room_channel(room_id, "all"))
+    # 입장/퇴장 알림은 쓰지 않으므로 채팅 기록에도 남기지 않습니다.
 
     emit("joined", {"role": role, "room_id": room_id})
     emit("notices", {"notices": notices_mod.shared_board().payload()})
@@ -979,17 +961,6 @@ def on_disconnect():
     room = get_room(info["room_id"])
     if room is None:
         return
-    if info["nickname"] != "익명":
-        entry = {
-            "time": time.strftime("%H:%M:%S"),
-            "nickname": "system",
-            "role": "system",
-            "category": "presence",
-            "text": f"{info['nickname']}님이 퇴장했습니다",
-        }
-        room.chat_log.append(_with_chat_id(entry))
-        mark_runtime_dirty()
-        socketio.emit("chat_message", entry, room=room_channel(info["room_id"], "all"))
     # 온라인 표시(유저 접속정보 팝업)가 끊기자마자 바로 반영되도록 상태를 다시 보냅니다.
     broadcast_state(room)
 
