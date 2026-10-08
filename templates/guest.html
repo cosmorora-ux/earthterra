@@ -547,32 +547,24 @@
   .rt-round .k { font-size:10px; letter-spacing:.16em; color: var(--muted); font-weight:700; }
   .rt-round .n { font-family: var(--font-title); font-size:34px; font-weight:400; line-height:1; font-variant-numeric: tabular-nums; }
   .rt-round .ph { font-size:12px; color: var(--muted); margin-top:4px; white-space:nowrap; }
-  .rt-track { flex:1; min-width:0; display:flex; align-items:center; gap:0; overflow:hidden; }
-  .rt-node { flex:1 1 0; min-width:54px; display:flex; flex-direction:column; align-items:stretch; gap:6px; position:relative; }
-  .rt-node .lab { font-size:11px; color: var(--muted); text-align:center; white-space:nowrap; font-variant-numeric: tabular-nums; }
-  .rt-node .bar { display:flex; gap:3px; height:8px; padding:0 3px; }
-  .rt-node .seg { flex:1; border-radius:4px; background:rgba(255,255,255,.08); position:relative; overflow:hidden; }
-  .rt-node .seg.done { background:rgba(255,255,255,.45); }
-  .rt-node .seg.now { background:rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(255,255,255,.75) inset; }
-  .rt-node .seg.now::after { content:""; position:absolute; inset:0; width:var(--rt-prog, 0%); background:#fff; border-radius:4px; transition: width .4s ease; }
-  .rt-node .teams { display:flex; gap:3px; padding:0 3px; font-size:10px; color: var(--muted); }
-  .rt-node .teams span { flex:1; text-align:center; white-space:nowrap; }
-  .rt-node.current .lab { color: var(--text); font-weight:700; }
-  .rt-node.future { opacity:.45; }
-  .rt-side { flex:none; display:flex; flex-direction:column; gap:6px; min-width:150px; }
-  .rt-team { display:flex; align-items:center; gap:8px; font-size:12px; color: var(--muted); }
-  .rt-team b { color: var(--text); font-weight:700; min-width:28px; }
-  .rt-team .dots { display:flex; gap:3px; }
-  .rt-team .dots i { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.14); display:block; }
-  .rt-team .dots i.on { background:#fff; }
-  .rt-team.active b::after { content:" ●"; font-size:9px; vertical-align:middle; }
+  .rt-stars { flex:1; min-width:0; position:relative; display:flex; align-items:flex-start; justify-content:space-between; padding:0 6px; }
+  /* 별 사이를 잇는 가는 선 : 지난 라운드까지는 밝게 */
+  .rt-stars::before, .rt-stars::after { content:""; position:absolute; top:13px; left:18px; right:18px; height:1px; background:rgba(255,255,255,.12); }
+  .rt-stars::after { right:auto; width:calc((100% - 36px) * var(--rt-fill)); background:linear-gradient(90deg, rgba(255,255,255,.35), color-mix(in srgb, var(--point) 80%, transparent)); }
+  .rt-star { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:4px; width:24px; }
+  .rt-star .s { font-size:18px; line-height:26px; height:26px; width:26px; text-align:center; color: var(--muted); }
+  .rt-star .r { font-size:11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .rt-star.past .s { color:#d8d8dc; }
+  .rt-star.next .s { opacity:.6; }
+  .rt-star.next .r { opacity:.5; }
+  .rt-star.now .s { color: var(--point); font-size:24px; text-shadow:0 0 10px color-mix(in srgb, var(--point) 70%, transparent); animation: rtStarPulse 2.4s ease-in-out infinite; }
+  .rt-star.now .r { color: var(--text); font-weight:700; }
+  @keyframes rtStarPulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.15) rotate(45deg); opacity:.85; } }
   .rt-empty { color: var(--muted); font-size:14px; }
   .round-track .rt-bg-btn { position:absolute; top:8px; right:10px; width:28px; height:28px; border-radius:8px; border:1px solid var(--card-border);
     background:rgba(0,0,0,.35); color: var(--text); font-size:12px; display:none; align-items:center; justify-content:center; z-index:2; }
   .round-track:hover .rt-bg-btn.gm { display:flex; }
-  .round-track.compact .rt-node .teams, .round-track.compact .rt-round .ph { display:none; }
   .round-track.compact .rt-round .n { font-size:24px; }
-  @media (max-width: 760px) { .rt-side { display:none; } }
   /* ---------- 채팅 검색 / 운영진 메시지 삭제 ---------- */
   .member-header-tools { display:flex; align-items:center; gap:6px; }
   .chat-search-btn { background:none; border:1px solid transparent; color: var(--muted); width:30px; height:30px; border-radius:8px; font-size:14px; }
@@ -5286,33 +5278,18 @@ function renderRoundTrack() {
   const first = b.round_first_team || '1팀';
   const second = first === '1팀' ? '2팀' : '1팀';
   const inSecond = !b.finished && b.current_turn_team && b.current_turn_team !== first;
-  const teamMembers = (label) => (label === '1팀' ? b.team_a : b.team_b) || [];
-  const alive = (c) => !['dead', 'fled'].includes(c.status);
   const turnTeam = b.current_turn_team;
-  const acting = teamMembers(turnTeam).filter(alive);
-  const prog = acting.length ? Math.round(acting.filter(c => c.has_acted).length / acting.length * 100) : 0;
-  const start = Math.max(1, cur - RT_WINDOW + 2);
-  const nodes = [];
+  const start = Math.max(1, cur - RT_WINDOW + 3);
+  // 별 : 지난 라운드 ✦ / 지금 라운드 ✦(포인트 컬러, 은은하게 빛남) / 남은 라운드 ✧
+  const stars = [];
   for (let r = start; r < start + RT_WINDOW; r++) {
-    // PVP는 선후공이 라운드마다 바뀔 수 있어서, 지난/다음 라운드는 팀 이름 대신 '선/후'로만 표시합니다.
-    const isCur = r === cur, past = r < cur || (isCur && b.finished), future = r > cur;
-    const segA = past ? 'done' : (isCur ? (inSecond ? 'done' : 'now') : '');
-    const segB = past ? 'done' : (isCur && inSecond ? 'now' : '');
-    nodes.push(`<div class="rt-node ${isCur ? 'current' : ''} ${future ? 'future' : ''}">
-      <div class="lab">R${r}</div>
-      <div class="bar"><div class="seg ${segA}" ${segA === 'now' ? `style="--rt-prog:${prog}%"` : ''}></div><div class="seg ${segB}" ${segB === 'now' ? `style="--rt-prog:${prog}%"` : ''}></div></div>
-      <div class="teams"><span>${isCur ? first : '선'}</span><span>${isCur ? second : '후'}</span></div>
-    </div>`);
+    const state = r < cur || (r === cur && b.finished) ? 'past' : (r === cur ? 'now' : 'next');
+    stars.push(`<div class="rt-star ${state}"><span class="s">${state === 'next' ? '✧' : '✦'}</span><span class="r">${r}</span></div>`);
   }
-  const teamRow = (label) => {
-    const ms = teamMembers(label).filter(alive);
-    const dots = ms.map(c => `<i class="${c.has_acted ? 'on' : ''}"></i>`).join('');
-    return `<div class="rt-team ${label === turnTeam && !b.finished ? 'active' : ''}"><b>${label}</b><span class="dots">${dots}</span><span>${ms.filter(c => c.has_acted).length}/${ms.length}</span></div>`;
-  };
+  const fill = Math.max(0, Math.min(1, (cur - start) / (RT_WINDOW - 1)));
   const phase = b.finished ? (b.winner ? `종료 · ${b.winner} 승리` : '종료') : `${inSecond ? '후공' : '선공'} · ${turnTeam} 행동`;
   inner.innerHTML = `<div class="rt-round"><span class="k">ROUND</span><span class="n">${cur}</span><span class="ph">${phase}</span></div>
-    <div class="rt-track">${nodes.join('')}</div>
-    <div class="rt-side">${teamRow('1팀')}${teamRow('2팀')}</div>`;
+    <div class="rt-stars" style="--rt-fill:${fill}">${stars.join('')}</div>`;
 }
 
 function openTrackBgModal() { document.getElementById('trackBgModal').style.display = 'flex'; renderTrackBgModal(); }
