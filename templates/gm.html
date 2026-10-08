@@ -110,6 +110,20 @@
   .roster-row button.icon { background:none; border:none; color: var(--muted); padding:4px 6px; font-size:13px; opacity:0; }
   .roster-row:hover button.icon { opacity:1; }
   .roster-row button.icon:hover { color: var(--text); }
+  .reg-tabs { display:inline-flex; background:#0c0c0d; border:1px solid var(--card-border); border-radius:8px; padding:3px; gap:2px; margin-bottom:10px; }
+  .reg-tabs button { background:none; border:none; color: var(--muted); padding:5px 14px; font-size:13px; border-radius:6px; }
+  .reg-tabs button.on { background:#2a2a2f; color: var(--text); }
+  .role-pick { display:flex; gap:6px; }
+  .role-pick button { flex:1; background:#151517; color: var(--muted); padding:7px 0; font-size:14px; }
+  .role-pick button.on { color: var(--rc); border-color: var(--rc); background: color-mix(in srgb, var(--rc) 10%, #151517); }
+  .stat-steppers { display:grid; grid-template-columns: repeat(2, 1fr); gap:6px 14px; margin:12px 0 4px; }
+  .stepper { display:grid; grid-template-columns: 1fr 30px 34px 30px; align-items:center; gap:4px; background:#0c0c0d; border:1px solid var(--card-border); border-radius:8px; padding:4px 6px 4px 12px; }
+  .stepper .k { font-size:14px; color: var(--muted); }
+  .stepper .v { text-align:center; font-weight:700; font-size:16px; font-variant-numeric: tabular-nums; }
+  .stepper button { width:30px; height:28px; padding:0; background:#1c1c20; border-color:transparent; font-size:11px; }
+  .stepper button:disabled { opacity:.35; }
+  .stat-total { font-size:14px; color: var(--muted); }
+  .stat-total b { color: var(--text); font-size:17px; margin-left:4px; font-variant-numeric: tabular-nums; }
   .stat-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin:10px 0; }
   .stat-grid label { display:flex; flex-direction:column; gap:4px; font-size:12px; color: var(--muted); }
   .stat-grid input { width:100%; }
@@ -432,13 +446,37 @@
 
 <section class="panel setup-panel">
   <div class="sec-h"><i class="fa-solid fa-id-card"></i> 캐릭터</div>
-  <div class="sub-h" style="margin-top:0;">붙여넣기 등록</div>
+  <div class="reg-tabs">
+    <button class="on" id="regTabQuick" onclick="setRegTab('quick')">간편 등록</button>
+    <button id="regTabPaste" onclick="setRegTab('paste')">붙여넣기 등록</button>
+  </div>
+  <div id="regQuick">
+    <div class="frow"><span class="lbl">이름</span>
+      <div><input id="qName" maxlength="20" placeholder="캐릭터 이름" autocomplete="off" style="width:100%;" oninput="refreshQuickForm()">
+      <div class="hint" id="qNameWarn" style="font-size:12px; margin-top:4px; display:none;">이미 있는 이름이에요. 등록하면 기존 정보를 덮어써요.</div></div></div>
+    <div class="frow"><span class="lbl">포지션</span>
+      <div class="role-pick" id="qRole">
+        <button data-r="가디언" onclick="setQuickRole('가디언')">가디언</button>
+        <button data-r="스트라이커" onclick="setQuickRole('스트라이커')">스트라이커</button>
+        <button data-r="메딕" onclick="setQuickRole('메딕')">메딕</button>
+      </div></div>
+    <div class="frow"><span class="lbl">스킬</span><select id="qSkill"></select></div>
+    <div class="stat-steppers" id="qStats"></div>
+    <div class="btn-row">
+      <span class="stat-total">합계 <b id="qTotal">0</b></span>
+      <span style="flex:1"></span>
+      <button class="ghost" onclick="resetQuickForm()">초기화</button>
+      <button class="btn-primary" onclick="submitQuickForm()"><i class="fa-solid fa-plus"></i> 등록</button>
+    </div>
+  </div>
+  <div id="regPaste" style="display:none;">
   <textarea id="regText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴" style="min-height:120px;"></textarea>
   <div class="btn-row">
     <button class="btn-primary" onclick="registerCharacters()">일괄 등록</button>
     <span style="flex:1"></span>
     <input id="dummyCount" type="number" value="6" min="1" max="100" style="width:64px;" title="더미 캐릭터 생성 개수">
     <button onclick="generateDummies()">더미 생성</button>
+  </div>
   </div>
   <div id="regResult"></div>
   <div class="sub-h">등록된 캐릭터 <span class="hint" id="rosterCount"></span>
@@ -454,7 +492,8 @@
         <option value="메딕">메딕</option>
       </select></div>
     <div class="frow"><span class="lbl">스킬</span><select id="editSkill"></select></div>
-    <div id="editStatsFields" class="stat-grid"></div>
+    <div id="editStatsFields" class="stat-grid" oninput="refreshEditTotal()"></div>
+    <div class="stat-total" style="margin-bottom:6px;">현재 스탯 합계 <b id="editTotal">0</b></div>
     <div class="btn-row end">
       <button onclick="cancelCharacterEdit()">취소</button>
       <button class="btn-primary" onclick="saveCharacterEdit()">저장</button>
@@ -581,6 +620,7 @@ const TYPE_TO_LABEL = Object.fromEntries(Object.entries(ACTION_LABELS).map(([lab
 const NEEDS_TARGET = new Set(["attack", "defend", "guard", "heal", "command", "swap", "collapse", "shield", "restore"]);
 // 역할별 마스 레이드 스킬 2종 (캐릭터 등록/수정 화면의 스킬 드롭다운용)
 const SKILL_OPTIONS = { "가디언": ["차폐", "편광"], "스트라이커": ["붕괴", "방출"], "메딕": ["환류", "복원"] };
+document.addEventListener('DOMContentLoaded', () => { if (document.getElementById('qStats')) resetQuickForm(); });
 
 function roleColorVar(role) {
   return `var(--role-${role}, #9aa0a6)`;
@@ -747,6 +787,64 @@ function copyGuestLink() {
   window.open(el.value, '_blank');
 }
 
+function refreshEditTotal() {
+  const t = STAT_KEYS.reduce((a, k) => a + (parseInt((document.getElementById('editStat_' + k) || {}).value, 10) || 0), 0);
+  const el = document.getElementById('editTotal');
+  if (el) el.textContent = t;
+}
+
+// ---- 간편 등록 : 이름 · 포지션 · 스킬 · 스탯(+/−)을 고르면 붙여넣기 형식으로 바꿔 등록합니다 ----
+let quickRole = '스트라이커';
+let quickStats = {};
+function setRegTab(t) {
+  document.getElementById('regQuick').style.display = t === 'quick' ? '' : 'none';
+  document.getElementById('regPaste').style.display = t === 'paste' ? '' : 'none';
+  document.getElementById('regTabQuick').classList.toggle('on', t === 'quick');
+  document.getElementById('regTabPaste').classList.toggle('on', t === 'paste');
+}
+function setQuickRole(r) {
+  quickRole = r;
+  const sel = document.getElementById('qSkill');
+  sel.innerHTML = '<option value="">(없음)</option>' + (SKILL_OPTIONS[r] || []).map(k => `<option value="${k}">${k}</option>`).join('');
+  refreshQuickForm();
+}
+function stepQuickStat(k, d) {
+  quickStats[k] = Math.max(0, (quickStats[k] || 0) + d);
+  refreshQuickForm();
+}
+function refreshQuickForm() {
+  document.querySelectorAll('#qRole button').forEach(b => {
+    b.classList.toggle('on', b.dataset.r === quickRole);
+    b.style.setProperty('--rc', roleColorVar(b.dataset.r));
+  });
+  document.getElementById('qStats').innerHTML = STAT_KEYS.map(k => `<div class="stepper">
+      <span class="k">${k}</span>
+      <button onclick="stepQuickStat('${k}', -1)" ${(quickStats[k] || 0) <= 0 ? 'disabled' : ''}><i class="fa-solid fa-minus"></i></button>
+      <span class="v">${quickStats[k] || 0}</span>
+      <button onclick="stepQuickStat('${k}', 1)"><i class="fa-solid fa-plus"></i></button>
+    </div>`).join('');
+  document.getElementById('qTotal').textContent = STAT_KEYS.reduce((a, k) => a + (quickStats[k] || 0), 0);
+  const name = document.getElementById('qName').value.trim();
+  document.getElementById('qNameWarn').style.display = name && (lastRosterDetail || []).some(c => c.name === name) ? '' : 'none';
+}
+function resetQuickForm() {
+  quickStats = {};
+  STAT_KEYS.forEach(k => { quickStats[k] = 0; });
+  document.getElementById('qName').value = '';
+  setQuickRole(quickRole);
+}
+function submitQuickForm() {
+  const name = document.getElementById('qName').value.trim();
+  if (!name) { showError('이름을 입력해 주세요.'); return; }
+  if (/^(체력|공격|방어|이능|정신|민첩|행운|역할|스킬|색상)/.test(name)) { showError('이름이 스탯/역할 이름으로 시작하면 등록할 수 없어요.'); return; }
+  const lines = [name, ...STAT_KEYS.map(k => `${k} ${quickStats[k] || 0}`), `역할 ${quickRole}`];
+  const skill = document.getElementById('qSkill').value;
+  if (skill) lines.push(`스킬 ${skill}`);
+  socket.emit('register_characters', { text: lines.join('\n') });
+  document.getElementById('qName').value = '';
+  refreshQuickForm();
+}
+
 function registerCharacters() {
   socket.emit('register_characters', { text: document.getElementById('regText').value });
 }
@@ -896,6 +994,7 @@ function editCharacter(name) {
     <label><span>${k}</span><input id="editStat_${k}" type="number" value="${c.stats[k]}"></label>
   `).join('');
   document.getElementById('editCharPanel').style.display = '';
+  refreshEditTotal();
 }
 
 function cancelCharacterEdit() {
