@@ -1842,6 +1842,37 @@
     .content-area { flex:1 1 auto; min-height:0; }
     #shopToast { bottom:calc(84px + env(safe-area-inset-bottom)); }
   }
+
+  /* 세로 태블릿·휴대폰 : 하단 탭 = 전투 · 기숙사 · 상점 · 소식(공지+우체통) · 마이페이지(로그인 전에는 로그인) */
+  .m-news-btn, .m-battle-tools, .idc-logout { display:none; }
+  .idc-logout { align-items:center; gap:6px; margin-left:auto; margin-right:6px; height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--line);
+    background: rgba(255,255,255,.05); color:#cfcfd4; font-size:13px; cursor:pointer; }
+  .idc-logout:hover { background: rgba(255,255,255,.1); color:#fff; }
+  .news-sheet { position:absolute; left:12px; right:12px; bottom:calc(76px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; padding:6px;
+    border-radius:16px; background:#17171a; border:1px solid var(--line); box-shadow: 0 18px 50px rgba(0,0,0,.55); }
+  .news-sheet button { position:relative; display:flex; align-items:center; gap:12px; height:52px; padding:0 14px; border:none; border-radius:12px; background:none;
+    color: var(--text); font-size:15px; font-weight:600; cursor:pointer; text-align:left; }
+  .news-sheet button:hover { background: rgba(255,255,255,.05); }
+  .news-sheet button > i:first-child { width:20px; color: var(--muted); }
+  .news-sheet .go { margin-left:auto; color: var(--muted); font-size:12px; }
+  .news-sheet .notice-dot { position:static; margin-left:2px; box-shadow:none; }
+  #newsSheet { align-items:flex-end; }
+  body.logged-out #newsMailRow { display:none; }
+  @media (max-width:900px) {
+    #sidebarNoticeBtn, #sidebarMailBtn, .sidebar .m-chat-btn, .sidebar #sidebarUserListBtn { display:none !important; }
+    .sidebar .m-news-btn { display:flex; }
+    body:not(.logged-out) #sidebarLoginBtn { display:none !important; }
+    .idc-logout { display:inline-flex; }
+    .idc-head { display:flex; align-items:center; }
+    /* 전투 헤더 오른쪽 위 : 유저 리스트 · 채팅 */
+    .topbar.v2 { grid-template-areas:"room sep fmt . tools" "round round round round timer" !important; }
+    .topbar.v2 #liveClock { display:none; }
+    .m-battle-tools { grid-area:tools; display:flex; gap:6px; justify-self:end; }
+    .m-battle-tools button { position:relative; width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.05);
+      color:#d6d6db; font-size:14px; cursor:pointer; }
+    .m-battle-tools .notice-dot { top:5px; right:5px; }
+    @media (max-width:560px) { .topbar.v2 { grid-template-areas:"room sep fmt . tools" "round round round round timer" !important; } }
+  }
 </style>
 </head>
 <body>
@@ -1856,9 +1887,10 @@
   <button class="sidebar-icon" id="sidebarDormBtn" onclick="openDorm()" data-tip="기숙사"><i class="fa-solid fa-house"></i></button>
   <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
+  <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsSheet()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
   <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
-  <button class="sidebar-icon" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
+  <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <div class="sidebar-grow"></div>
   <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
 </div>
@@ -2062,6 +2094,12 @@
   </div>
 </div>
 <div id="shopToast"></div>
+<div id="newsSheet" class="modal-overlay" onclick="if(event.target===this) this.style.display='none'">
+  <div class="news-sheet">
+    <button onclick="document.getElementById('newsSheet').style.display='none'; openNotices()"><i class="fa-solid fa-bullhorn"></i><span>공지사항</span><span class="notice-dot" id="newsNoticeDot"></span><i class="fa-solid fa-chevron-right go"></i></button>
+    <button id="newsMailRow" onclick="document.getElementById('newsSheet').style.display='none'; openMail()"><i class="fa-solid fa-envelope"></i><span>우체통</span><span class="notice-dot" id="newsMailDot"></span><i class="fa-solid fa-chevron-right go"></i></button>
+  </div>
+</div>
 <div id="dormModal" class="dorm-page">
   <div class="modal-box dorm-modal">
     <div class="topbar v2 panel dorm-topbar" id="dormTop"></div>
@@ -2166,6 +2204,7 @@
   <div class="modal-box mypage panel">
     <div class="idc-head">
       <div class="idc-title">ID card</div>
+      <button class="idc-logout" onclick="closeMyPage(); onAvatarDotClick()"><i class="fa-solid fa-right-from-bracket"></i> 로그아웃</button>
       <button class="idc-close" onclick="closeMyPage()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="mypage-cols">
@@ -2293,6 +2332,8 @@
   <span class="label" id="roundTimerLabel"><span id="roundTimer" class="flip-clock"></span></span>
   <div class="spacer"></div>
   <div class="clock" id="liveClock">--:--:--</div>
+  <div class="m-battle-tools"><button onclick="toggleUserInfoPanel()" data-tip="유저 리스트"><i class="fa-solid fa-list-ul"></i></button>
+    <button onclick="toggleMobileChat(true)" data-tip="채팅"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot2"></span></button></div>
 </div>
 
 {% if grid_size %}
@@ -4080,6 +4121,7 @@ function updateUnreadBadges() {
   if (logDot) logDot.classList.toggle('show', unreadChat.log);
   const mDot = document.getElementById('mChatDot');
   if (mDot) mDot.classList.toggle('on', mobileChatUnread);
+  const mDot2 = document.getElementById('mChatDot2'); if (mDot2) mDot2.classList.toggle('on', mobileChatUnread);
 }
 
 // 세로 태블릿(폭 900px 이하)에서는 카드 화면이 기본이고, 채팅은 사이드바 버튼으로 따로 엽니다.
@@ -5719,6 +5761,7 @@ function refreshNoticeDot() {
   const seen = noticeSeenAt();
   const hasNew = lastNotices.some(n => (n.updated_at || n.created_at || 0) > seen);
   document.getElementById('noticeDot').classList.toggle('on', hasNew);
+  syncNewsDot();
 }
 socket.on('notices', (d) => {
   lastNotices = d.notices || [];
@@ -6624,7 +6667,16 @@ function mailTime(at) {
 function updateMailDot() {
   const dot = document.getElementById('mailDot');
   if (dot) dot.classList.toggle('on', !!(mailData && mailData.unread > 0));
+  syncNewsDot();
 }
+// 세로 태블릿·휴대폰 : 공지와 우체통을 '소식' 탭 하나로 묶어요.
+function syncNewsDot() {
+  const n = document.getElementById('noticeDot'), m = document.getElementById('mailDot');
+  const nOn = !!(n && n.classList.contains('on')), mOn = !!(m && m.classList.contains('on')) && !document.body.classList.contains('logged-out');
+  const set = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('on', on); };
+  set('newsDot', nOn || mOn); set('newsNoticeDot', nOn); set('newsMailDot', mOn);
+}
+function openNewsSheet() { syncNewsDot(); document.getElementById('newsSheet').style.display = 'flex'; }
 function openMail(tab) {
   if (tab) mailTab = tab;
   mailOpenId = null;
