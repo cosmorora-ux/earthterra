@@ -550,28 +550,31 @@
   .teams-col:has(> .round-track) .main-grid { margin-bottom:0; }
   .round-track .rt-bg { position:absolute; inset:0; z-index:-1; background-size:cover; background-position:center; }
   .round-track .rt-inner { position:relative; height:100%; display:flex; align-items:center; gap:22px; padding:12px 22px; box-sizing:border-box; }
-  .rt-round { flex:none; display:flex; flex-direction:column; justify-content:center; min-width:86px; }
-  .rt-round .k { font-size:10px; letter-spacing:.16em; color: var(--muted); font-weight:700; }
-  .rt-round .n { font-family: var(--font-title); font-size:34px; font-weight:400; line-height:1; font-variant-numeric: tabular-nums; }
-  .rt-round .ph { font-size:12px; color: var(--muted); margin-top:4px; white-space:nowrap; }
-  .rt-stars { flex:1; min-width:0; position:relative; display:flex; align-items:flex-start; justify-content:space-between; padding:0 6px; }
-  /* 별 사이를 잇는 가는 선 : 지난 라운드까지는 밝게 */
-  .rt-stars::before, .rt-stars::after { content:""; position:absolute; top:13px; left:18px; right:18px; height:1px; background:rgba(255,255,255,.12); }
-  .rt-stars::after { right:auto; width:calc((100% - 36px) * var(--rt-fill)); background:linear-gradient(90deg, rgba(255,255,255,.35), color-mix(in srgb, var(--point) 80%, transparent)); }
-  .rt-star { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:4px; width:24px; }
-  .rt-star .s { font-size:18px; line-height:26px; height:26px; width:26px; text-align:center; color: var(--muted); }
-  .rt-star .r { font-size:11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .rt-star.past .s { color:#d8d8dc; }
-  .rt-star.next .s { opacity:.6; }
-  .rt-star.next .r { opacity:.5; }
-  .rt-star.now .s { color: var(--point); font-size:24px; text-shadow:0 0 10px color-mix(in srgb, var(--point) 70%, transparent); animation: rtStarPulse 2.4s ease-in-out infinite; }
-  .rt-star.now .r { color: var(--text); font-weight:700; }
-  @keyframes rtStarPulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.15) rotate(45deg); opacity:.85; } }
+  /* 라운드 패널 : [Round n] [라운드 점 줄] [지금 단계] 세 덩어리로 단순하게 */
+  .round-track .rt-inner { gap:24px; padding:0 22px; }
+  .rt-round { flex:none; display:flex; align-items:baseline; gap:8px; }
+  .rt-round .k { font-size:12px; letter-spacing:.04em; color: var(--muted); font-weight:600; }
+  .rt-round .n { font-family: var(--font-title); font-size:28px; font-weight:400; line-height:1; font-variant-numeric: tabular-nums; }
+  .rt-line { flex:1; min-width:0; position:relative; display:flex; align-items:center; justify-content:space-between; height:28px; }
+  .rt-line::before, .rt-line::after { content:""; position:absolute; left:4px; right:4px; top:50%; height:2px; margin-top:-1px; border-radius:2px; background:rgba(255,255,255,.08); }
+  .rt-line::after { right:auto; width:calc((100% - 8px) * var(--rt-fill)); background:rgba(255,255,255,.32); }
+  .rt-node { position:relative; z-index:1; width:8px; height:8px; border-radius:50%; background:#2a2a30; box-shadow:0 0 0 3px var(--panel); }
+  .rt-node.past { background:#cfcfd4; }
+  .rt-node.now { width:12px; height:12px; background: var(--point); box-shadow:0 0 0 3px var(--panel), 0 0 0 6px rgba(92,134,255,.22); }
+  .rt-node .r { position:absolute; top:calc(100% + 7px); left:50%; transform:translateX(-50%); font-size:10.5px; color: var(--muted); font-variant-numeric: tabular-nums; opacity:.7; }
+  .rt-node.now .r { color: var(--text); font-weight:700; opacity:1; }
+  .rt-phase { flex:none; display:flex; align-items:center; gap:8px; font-size:13px; color: var(--muted); white-space:nowrap; }
+  .rt-phase .chip { padding:3px 9px; border-radius:999px; background:rgba(92,134,255,.14); color:#c9d6ff; font-weight:600; font-size:12px; }
+  .rt-phase b { color: var(--text); font-weight:600; }
+  .round-track.compact .rt-node .r { display:none; }
+  /* 공간이 모자라면 라운드 패널은 숨깁니다 (라운드·단계는 상단 헤더에도 있으니까요) */
+  @media (max-width:900px), (max-width:1180px) and (max-height:820px), (max-height:720px) {
+    .teams-col > .round-track { display:none !important; }
+  }
   .rt-empty { color: var(--muted); font-size:14px; }
   .round-track .rt-bg-btn { position:absolute; top:8px; right:10px; width:28px; height:28px; border-radius:8px; border:1px solid var(--card-border);
     background:rgba(0,0,0,.35); color: var(--text); font-size:12px; display:none; align-items:center; justify-content:center; z-index:2; }
   .round-track:hover .rt-bg-btn.gm { display:flex; }
-  .round-track.compact .rt-round .n { font-size:24px; }
   /* ---------- 채팅 검색 / 운영진 메시지 삭제 ---------- */
   .member-header-tools { display:flex; align-items:center; gap:6px; }
   .gm-menu-wrap { position:relative; display:inline-flex; }
@@ -5700,7 +5703,7 @@ const RT_WINDOW = 8;  // 한 번에 보여줄 라운드 수
   // 창 크기에 따라 트랙 높이가 바뀌므로, 낮아지면 작은 글씨를 숨기는 compact 모드를 자동으로 켭니다.
   const el = document.getElementById('roundTrack');
   if (!el || !window.ResizeObserver) return;
-  new ResizeObserver(() => el.classList.toggle('compact', el.getBoundingClientRect().height < 104)).observe(el);
+  new ResizeObserver(() => el.classList.toggle('compact', el.getBoundingClientRect().height < 64)).observe(el);
 })();
 
 function renderRoundTrack() {
@@ -5719,16 +5722,19 @@ function renderRoundTrack() {
   const inSecond = !b.finished && b.current_turn_team && b.current_turn_team !== first;
   const turnTeam = b.current_turn_team;
   const start = Math.max(1, cur - RT_WINDOW + 3);
-  // 별 : 지난 라운드 ✦ / 지금 라운드 ✦(포인트 컬러, 은은하게 빛남) / 남은 라운드 ✧
-  const stars = [];
+  // 점 : 지난 라운드(흰 점) / 지금 라운드(포인트 컬러 점 + 옅은 고리) / 남은 라운드(어두운 점)
+  const nodes = [];
   for (let r = start; r < start + RT_WINDOW; r++) {
     const state = r < cur || (r === cur && b.finished) ? 'past' : (r === cur ? 'now' : 'next');
-    stars.push(`<div class="rt-star ${state}"><span class="s">${state === 'next' ? '✧' : '✦'}</span><span class="r">${r}</span></div>`);
+    nodes.push(`<div class="rt-node ${state}"><span class="r">${r}</span></div>`);
   }
   const fill = Math.max(0, Math.min(1, (cur - start) / (RT_WINDOW - 1)));
-  const phase = b.finished ? (b.winner ? `종료 · ${b.winner} 승리` : '종료') : `${inSecond ? '후공' : '선공'} · ${turnTeam} 행동`;
-  inner.innerHTML = `<div class="rt-round"><span class="k">ROUND</span><span class="n">${cur}</span><span class="ph">${phase}</span></div>
-    <div class="rt-stars" style="--rt-fill:${fill}">${stars.join('')}</div>`;
+  const phase = b.finished
+    ? `<span class="chip">종료</span>${b.winner ? `<b>${b.winner}</b> 승리` : ''}`
+    : `<span class="chip">${inSecond ? '후공' : '선공'}</span><b>${turnTeam}</b> 행동`;
+  inner.innerHTML = `<div class="rt-round"><span class="k">Round</span><span class="n">${cur}</span></div>
+    <div class="rt-line" style="--rt-fill:${fill}">${nodes.join('')}</div>
+    <div class="rt-phase">${phase}</div>`;
 }
 
 function openTrackBgModal() { document.getElementById('trackBgModal').style.display = 'flex'; renderTrackBgModal(); }
