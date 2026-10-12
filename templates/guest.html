@@ -20,7 +20,7 @@
     --card-border: #2a2a2e;
     --text: #f2f2f2;
     --muted: #8b8b90;
-    --accent-blue: #0043FF;
+    --accent-blue: #2f5ad8;
     --accent-red: #e2574a;
     --role-스트라이커: #ff6b5b;
     --role-딜러: #ff6b5b;
@@ -34,7 +34,7 @@
     src: url("/static/fonts/Baunk.ttf") format("truetype"); }
   :root { --font-title: "Baunk", "42dot Sans", "Pretendard", sans-serif; }
   /* 브라우저 기본 UI(자동완성 목록, 색상 선택기, 숫자 칸 등)도 다크모드로 */
-  :root { color-scheme: dark; --point: #5c86ff; }
+  :root { color-scheme: dark; --point: #7593ea; }
   input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--text); caret-color: var(--text);
     -webkit-box-shadow: 0 0 0 1000px #0c0c0d inset; transition: background-color 9999s;
@@ -604,8 +604,7 @@
   .chat-del:hover { color: var(--text); }
   /* 전송 버튼 : 종이비행기 아이콘 */
   .send-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; }
-  /* fa-paper-plane은 오른쪽 위를 보고 있어서 45° 돌려 정면(오른쪽)을 보게 합니다 */
-  .send-btn i { font-size:16px; transform: rotate(45deg) translate(-1px, 1px); }
+  .send-btn i { font-size:15px; }
   #cmdSendBtn.send-btn { width:56px; padding:0; }
   .gear i { pointer-events:none; }
   /* ---------- 공통 아이콘 버튼(설정 기어 등) : 검은 바탕으로 통일 ---------- */
@@ -634,18 +633,18 @@
   .breadcrumb b { color: var(--text); }
   /* ---------- 배경음악 플레이어 (상단 오른쪽) ---------- */
   .bgm-player { display:flex; align-items:center; gap:10px; padding:6px 12px 6px 10px; max-width:420px; min-width:0;
-    background: linear-gradient(135deg, rgba(0,67,255,.10), rgba(255,255,255,.02)); border:1px solid var(--card-border);
+    background: linear-gradient(135deg, rgba(47,90,216,.10), rgba(255,255,255,.02)); border:1px solid var(--card-border);
     border-radius:999px; }
   .bgm-eq { display:flex; align-items:flex-end; gap:2px; width:18px; height:16px; flex:none; }
   .bgm-eq span { flex:1; height:30%; background: var(--muted); border-radius:1px; transition: background .2s; }
-  .bgm-player.playing .bgm-eq span { background: #5b8cff; animation: bgmEq 1s ease-in-out infinite; }
+  .bgm-player.playing .bgm-eq span { background: #7593ea; animation: bgmEq 1s ease-in-out infinite; }
   .bgm-player.playing .bgm-eq span:nth-child(2) { animation-delay: -.4s; }
   .bgm-player.playing .bgm-eq span:nth-child(3) { animation-delay: -.7s; }
   .bgm-player.playing .bgm-eq span:nth-child(4) { animation-delay: -.2s; }
   @keyframes bgmEq { 0%,100% { height:25%; } 50% { height:100%; } }
   .bgm-info { display:flex; flex-direction:column; min-width:0; line-height:1.15; }
   .bgm-kicker { font-size:9px; letter-spacing:.12em; color: var(--muted); font-weight:700; }
-  .bgm-player.playing .bgm-kicker { color:#5b8cff; }
+  .bgm-player.playing .bgm-kicker { color:#7593ea; }
   .bgm-title { font-size:13px; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
   .bgm-player:not(.playing) .bgm-title { color: var(--muted); }
   .bgm-mute { flex:none; width:26px; height:26px; border-radius:50%; border:none; background:rgba(255,255,255,.06);
@@ -655,7 +654,7 @@
 
   /* 공용 슬라이더 : 얇은 트랙 + 채워진 부분 + 동그란 손잡이 (--fill 값은 JS가 갱신) */
   input[type="range"].nice-range { -webkit-appearance:none; appearance:none; width:84px; height:4px; border-radius:999px; cursor:pointer;
-    background: linear-gradient(to right, #5b8cff 0%, #5b8cff var(--fill, 70%), rgba(255,255,255,.14) var(--fill, 70%), rgba(255,255,255,.14) 100%);
+    background: linear-gradient(to right, #7593ea 0%, #7593ea var(--fill, 70%), rgba(255,255,255,.14) var(--fill, 70%), rgba(255,255,255,.14) 100%);
     outline:none; margin:0; }
   input[type="range"].nice-range::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
     background:#fff; box-shadow:0 0 0 3px rgba(91,140,255,.35); transition: transform .12s; }
@@ -1650,7 +1649,7 @@
   .dorm-music { display:flex; align-items:center; gap:10px; min-width:0; }
   .dorm-music .t { flex:1; min-width:0; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .dorm-music .muted, .dorm-line-edit .muted { color: var(--muted); }
-  .dorm-music .bgm-eq.playing span { background:#5b8cff; animation: bgmEq 1s ease-in-out infinite; }
+  .dorm-music .bgm-eq.playing span { background:#7593ea; animation: bgmEq 1s ease-in-out infinite; }
   .dorm-music .bgm-eq.playing span:nth-child(2) { animation-delay:-.4s; } .dorm-music .bgm-eq.playing span:nth-child(3) { animation-delay:-.7s; } .dorm-music .bgm-eq.playing span:nth-child(4) { animation-delay:-.2s; }
   .dorm-ibtn { width:30px; height:30px; flex:none; border-radius:8px; border:none; background: rgba(255,255,255,.06); color: var(--text); cursor:pointer; font-size:12px; }
   .dorm-ibtn:hover { background: rgba(255,255,255,.12); }
@@ -2347,7 +2346,7 @@
   <select id="cmdTargetSelect" onchange="onCmdTargetChange()"></select>
   <select id="cmdTarget2" style="display:none;"></select>
   <select id="cmdTarget3" style="display:none;"></select>
-  <button class="btn-primary send-btn icon-only" id="cmdSendBtn" disabled onclick="submitCmd()" aria-label="전송"><i class="fa-solid fa-paper-plane"></i></button>
+  <button class="btn-primary send-btn icon-only" id="cmdSendBtn" disabled onclick="submitCmd()" aria-label="행동 보내기"><i class="fa-solid fa-bolt"></i></button>
 </div>
 
 <div id="gmActPanel" class="gm-bar action-bar-bottom panel" style="display:none;">
@@ -2455,7 +2454,7 @@
   <div class="input-row" id="chatInputRow">
     <div class="avatar-dot" id="inputAvatarDot" ondblclick="onInputAvatarDotDblClick()"></div>
     <input id="chatInput" placeholder="대사를 입력해 주세요." onkeydown="if(event.key==='Enter') sendChat()">
-    <button class="btn-plain send-btn icon-only" id="chatSendBtn" disabled onclick="sendChat()" aria-label="보내기"><i class="fa-solid fa-paper-plane"></i></button>
+    <button class="btn-plain send-btn icon-only" id="chatSendBtn" disabled onclick="sendChat()" aria-label="보내기"><i class="fa-solid fa-arrow-up"></i></button>
   </div>
 
   <div id="actionPopup"></div>
