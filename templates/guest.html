@@ -5882,47 +5882,74 @@ var Weather = (function () {
       k: .8,
     };
   })();
-  // ---- 수면(코스틱) 렌더러 ----
-  // 천천히 움직이는 점들로 만든 세포 무늬의 '경계선'(F2-F1이 0에 가까운 곳)이 물속 빛 그물처럼 보입니다.
-  // 크기가 다른 두 층을 겹치고, 좌표를 살짝 일렁이게 해서 수면 아래 빛이 흔들리는 느낌을 냅니다.
+  // ---- 수면 렌더러 : 물속에서 올려다본 잔잔한 장면 ----
+  // 1) 위는 밝고 아래는 깊은 물빛 그라데이션  2) 수면에서 내려오는 부드러운 빛줄기(천천히 흔들림)
+  // 3) 화면 위쪽에만 아른거리는 수면 빛 무늬(아래로 갈수록 사라짐)  4) 천천히 떠다니는 작은 입자
   const Water = (function () {
-    let off = null, octx = null, img = null, t = 0, odd = false; const SC = 6;
+    let off = null, octx = null, img = null, t = 0, frameN = 0, beams = [], motes = [], lastW = 0;
+    const SC = 6, BAND = .3;
     const hash = (x, y, k) => { const v = Math.sin(x * 127.1 + y * 311.7 + k * 74.7) * 43758.5453; return v - Math.floor(v); };
     function edge(x, y, cs, sp, k) {
-      const gx = Math.floor(x / cs), gy = Math.floor(y / cs);
-      let f1 = 1e9, f2 = 1e9;
+      const gx = Math.floor(x / cs), gy = Math.floor(y / cs); let f1 = 1e9, f2 = 1e9;
       for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
         const cx = gx + i, cy = gy + j, h1 = hash(cx, cy, k), h2 = hash(cy, cx, k + 1);
         const px = (cx + .5 + .4 * Math.sin(t * sp + h1 * 6.28)) * cs, py = (cy + .5 + .4 * Math.cos(t * sp * 1.27 + h2 * 6.28)) * cs;
-        const d = Math.hypot(x - px, y - py);
-        if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) f2 = d;
+        const d = Math.hypot(x - px, y - py); if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) f2 = d;
       }
       return f2 - f1;
     }
+    function init() {
+      lastW = W;
+      beams = Array.from({ length: 7 }, () => ({ x: rnd(-.1, 1.05), w: rnd(.04, .11), sk: rnd(.05, .18), ph: rnd(0, 6.28), sp: rnd(.12, .25), a: rnd(.05, .11) }));
+      motes = Array.from({ length: 34 }, () => ({ x: rnd(0, W), y: rnd(0, H), r: rnd(.6, 1.6), vx: rnd(-4, 4), vy: -rnd(3, 10), ph: rnd(0, 6.28), a: rnd(.15, .4) }));
+    }
     return {
       draw(dt) {
-        const w = Math.ceil(W / SC), h = Math.ceil(H / SC);
+        if (!beams.length || lastW !== W) init();
+        t += dt * .32; frameN++;
+        const k = [0, .6, 1, 1.4][amount] * (cv.classList.contains('front') ? .55 : 1);
+        ctx.save();
+        // 1) 물빛
+        ctx.globalCompositeOperation = 'source-over';
+        const g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, `rgba(40,150,200,${.16 * k})`); g.addColorStop(.45, `rgba(14,80,120,${.10 * k})`); g.addColorStop(1, `rgba(2,22,40,${.14 * k})`);
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'lighter';
+        // 2) 빛줄기
+        for (const b of beams) {
+          b.ph += dt * b.sp;
+          const sway = Math.sin(b.ph) * .03, x0 = (b.x + sway) * W, w = b.w * W, x1 = x0 + b.sk * W, a = b.a * k * (.65 + .35 * Math.sin(b.ph * 1.7));
+          const lg = ctx.createLinearGradient(0, 0, 0, H * .85);
+          lg.addColorStop(0, `rgba(170,225,255,${a})`); lg.addColorStop(1, 'rgba(170,225,255,0)');
+          ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0 + w, 0); ctx.lineTo(x1 + w * 1.9, H * .85); ctx.lineTo(x1 - w * .4, H * .85); ctx.closePath(); ctx.fill();
+        }
+        // 3) 위쪽 수면 빛 무늬 (2프레임에 한 번 계산)
+        const w = Math.ceil(W / SC), h = Math.ceil(H * BAND / SC);
         if (!off || off.width !== w || off.height !== h) { off = document.createElement('canvas'); off.width = w; off.height = h; octx = off.getContext('2d'); img = octx.createImageData(w, h); }
-        t += dt;
-        odd = !odd;
-        if (odd) {
+        if (frameN % 2 === 0) {
           const d = img.data;
-          for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-            const wx = x + Math.sin(y * .16 + t * .9) * 2.6 + Math.sin(y * .05 - t * .5 + x * .03) * 3.2;
-            const wy = y + Math.cos(x * .14 + t * .7) * 2.6 + Math.cos(x * .045 + t * .4 - y * .03) * 3.2;
-            const e1 = edge(wx, wy, 20, .5, 1), e2 = edge(wx * .9 + 5, wy * .9 + 3, 13, .75, 9);
-            let v = Math.exp(-(e1 * e1) / 3.2) * .8 + Math.exp(-(e2 * e2) / 2) * .35;
-            v = Math.min(1, v);
-            const k = (y * w + x) * 4;
-            d[k] = 150 + 105 * v; d[k + 1] = 215 + 40 * v; d[k + 2] = 255; d[k + 3] = 255 * v;
+          for (let y = 0; y < h; y++) {
+            const fade = Math.pow(1 - y / h, 1.6);
+            const sq = .55 + .45 * (y / h);  // 위로 갈수록 무늬를 납작하게(원근감)
+            for (let x = 0; x < w; x++) {
+              const wx = x + Math.sin(y * .2 + t) * 1.5, wy = y / sq + Math.cos(x * .12 + t * .8) * 1.2;
+              const e = edge(wx, wy, 16, .6, 3);
+              const v = Math.exp(-(e * e) / 5) * fade;
+              const i4 = (y * w + x) * 4;
+              d[i4] = 190; d[i4 + 1] = 235; d[i4 + 2] = 255; d[i4 + 3] = 255 * v;
+            }
           }
           octx.putImageData(img, 0, 0);
         }
-        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.imageSmoothingEnabled = true; ctx.globalAlpha = [0, .2, .3, .42][amount] * (cv.classList.contains('front') ? .45 : 1);
-        ctx.filter = 'blur(3px)'; ctx.drawImage(off, 0, 0, W, H); ctx.filter = 'blur(1px)'; ctx.globalAlpha *= .6; ctx.drawImage(off, 0, 0, W, H); ctx.filter = 'none';
-        // 위에서 비치는 빛 : 화면 위쪽이 조금 더 밝게
-        const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, 'rgba(120,200,255,.10)'); g.addColorStop(1, 'rgba(120,200,255,0)');
-        ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+        ctx.globalAlpha = .42 * k; ctx.filter = 'blur(11px)'; ctx.drawImage(off, 0, 0, W, H * BAND); ctx.filter = 'none';
+        // 4) 떠다니는 입자
+        ctx.globalAlpha = 1;
+        for (const m of motes) {
+          m.ph += dt * .8; m.x += (m.vx + Math.sin(m.ph) * 3) * dt; m.y += m.vy * dt;
+          if (m.y < -10) { m.y = H + 10; m.x = rnd(0, W); }
+          ctx.fillStyle = `rgba(200,235,255,${m.a * k * (.6 + .4 * Math.sin(m.ph * 1.3))})`; ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, 6.283); ctx.fill();
+        }
+        ctx.restore();
       },
     };
   })();
@@ -6027,7 +6054,7 @@ var Weather = (function () {
       out: () => false },
     // 수면 : 물속에서 올려다본 듯 일렁이는 빛 무늬(코스틱). 낮은 해상도로 계산해서 부드럽게 확대합니다.
     water: { n: 1, add: true,
-      spawn() {}, step(p, dt) { Water.draw(dt); }, out: () => false, overlay: 'rgba(8,48,84,.14)' },
+      spawn() {}, step(p, dt) { Water.draw(dt); }, out: () => false },
     arrows: { n: 34,
       spawn(p, i) { p.x = rnd(-W * .3, W + 100); p.y = i ? rnd(-H, H) : rnd(-120, -20); const sp = rnd(750, 1000); p.vx = sp * .42; p.vy = sp; p.len = rnd(30, 44); p.a = rnd(.55, .85); },
       step(p, dt) { p.x += p.vx * dt; p.y += p.vy * dt; const an = Math.atan2(p.vy, p.vx);
