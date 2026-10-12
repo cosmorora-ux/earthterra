@@ -866,16 +866,36 @@
 
   /* ---------- GM(비밀번호 입장) 전용 행동 실행 패널 - PVP/공성전 ---------- */
   .gm-act-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 14px; margin-bottom:10px; }
-  .action-bar-bottom.gm-bar { display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; padding:10px 14px; }
-  .gm-bar-fields { display:flex; align-items:flex-end; gap:8px; flex:1 1 auto; min-width:0; flex-wrap:wrap; }
-  .gm-bar-fields label { display:flex; flex-direction:column; gap:4px; font-size:11px; color: var(--muted); flex:1 1 140px; min-width:120px; }
-  .action-bar-bottom.gm-bar .gm-bar-fields select { flex:none; width:100%; max-width:none; height:40px; font-size:14px; padding:0 30px 0 12px; }
-  .gm-bar-fields .gm-run { height:40px; padding:0 18px; }
-  .gm-bar-ctrl { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-left:auto; padding-left:14px; border-left:1px solid var(--card-border); }
-  .gm-bar-fields[style*="none"] + .gm-bar-ctrl { border-left:none; padding-left:0; margin-left:0; }
-  .gm-bar-ctrl button { height:40px; padding:0 12px; background:#1c1c20; border:1px solid var(--card-border); color: var(--text); border-radius:8px; font-size:13px; cursor:pointer; white-space:nowrap; }
-  .gm-bar-ctrl button:hover { background:#26262b; }
-  .gm-bar-ctrl button i { margin-right:4px; color: var(--muted); }
+  /* GM 바 : [캐릭터][행동][대상][실행] | [다음 턴][되돌리기][시간 초과]… 를 한 줄, 같은 높이(40px)로 */
+  .action-bar-bottom.gm-bar { display:flex; align-items:center; gap:10px; flex-wrap:nowrap; padding:10px 12px; container-type:inline-size; container-name:gmbar; }
+  .gm-bar-fields { display:flex; align-items:center; gap:8px; flex:1 1 auto; min-width:0; flex-wrap:nowrap; }
+  .action-bar-bottom.gm-bar .gm-bar-fields select { flex:1 1 0; min-width:0; width:auto; max-width:none; height:40px; font-size:14px; padding:0 30px 0 12px; }
+  #gmActTargetMultiWrap { display:contents; }
+  #gmActTargetMultiWrap[style*="none"] { display:none !important; }
+  .gm-bar-fields .gm-run { flex:none; height:40px; padding:0 16px; display:inline-flex; align-items:center; gap:6px; }
+  .gm-bar-ctrl { display:flex; align-items:center; gap:6px; flex:none; flex-wrap:nowrap; padding-left:10px; border-left:1px solid var(--line); }
+  .gm-bar-fields[style*="none"] + .gm-bar-ctrl { border-left:none; padding-left:0; }
+  .gm-bar-ctrl button { height:40px; padding:0 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; color: var(--text); font-size:13px; font-weight:500; cursor:pointer; white-space:nowrap; }
+  .gm-bar-ctrl button i { color: var(--muted); font-size:13px; }
+  .gm-bar-ctrl button:hover i { color: var(--text); }
+  .gm-bar-ctrl button.on { background: rgba(92,134,255,.16); border-color: rgba(92,134,255,.45); }
+  .gm-bar-ctrl button.on i { color: var(--point); }
+  .gm-bar-ctrl .cnt:not(:empty) { font-size:11px; font-weight:700; padding:1px 6px; border-radius:999px; background: rgba(92,134,255,.18); color:#c9d6ff; font-variant-numeric: tabular-nums; }
+  .gm-bar-status { font-size:12px; color: var(--muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gm-bar-status:empty { display:none; }
+  /* 폭이 모자라면 버튼 글자는 숨기고 아이콘만 (마우스를 올리면 이름이 보여요) */
+  @container gmbar (max-width: 860px) {
+    .gm-bar-ctrl button .t { display:none; }
+    .gm-bar-ctrl button { width:40px; padding:0; }
+    .gm-bar-ctrl button:has(.cnt:not(:empty)) { width:auto; padding:0 10px; }
+    .gm-bar-status { max-width:120px; }
+  }
+  @media (max-width:560px) {
+    .action-bar-bottom.gm-bar { flex-wrap:wrap; }
+    .gm-bar-fields { flex:1 1 100%; }
+    .gm-bar-ctrl { flex:1 1 100%; border-left:none; padding-left:0; justify-content:flex-end; }
+    .gm-bar-fields .gm-run { padding:0 12px; }
+  }
   .gm-act-row select { background:#0c0c0d; border:1px solid var(--card-border); color:var(--text); border-radius:6px; padding:6px 8px; font-size:14px; max-width:180px; }
   .gm-act-row .btn-primary { padding:6px 14px; font-size:14px; }
 
@@ -1217,9 +1237,6 @@
     .topbar.v2 .clock { font-size:13px; }
     .main-grid:not(.with-grid-map) .team-block h2, .member-top { height:34px; margin-bottom:8px; }
     /* GM 바 : 진행 버튼 줄은 구분선 없이 아래 줄로, 높이는 살짝 낮게 */
-    .gm-bar-ctrl { margin-left:0; padding-left:0; border-left:none; }
-    .gm-bar-ctrl button { height:34px; }
-    .action-bar-bottom.gm-bar { gap:8px 14px; padding:10px 14px; }
     .teams-col:has(> #gmActPanel:not([style*="none"])) > .round-track { height:64px; }
     .member-col { width:330px; }
     .member-toptabs button { font-size:14px; }
@@ -1280,7 +1297,6 @@
     .char-card.v2 { padding:12px; }
     .char-card.v2 .portrait { width:72px; height:72px; }
     .card-grid.compact-list { grid-template-columns: repeat(2, 1fr); }
-    .gm-bar-ctrl { margin-left:0; padding-left:0; border-left:none; }
     /* 채팅은 카드 화면 위에 따로 여는 전체 화면 패널로 (코코포리아 모바일처럼) */
     .member-col .member-panel { display:none; }
     body.m-chat-open .member-col .member-panel { display:flex; position:fixed; inset:0; z-index:95; height:auto; border:none; border-radius:0;
@@ -1935,9 +1951,9 @@
 
 <div id="gmActPanel" class="gm-bar action-bar-bottom panel" style="display:none;">
   <div class="gm-bar-fields" id="gmActFields">
-    <label><span>캐릭터</span><select id="gmActActor" onchange="refreshGmActTypeOptions()"></select></label>
-    <label><span>행동</span><select id="gmActType" onchange="refreshGmActTargetOptions()"></select></label>
-    <label><span>대상</span><select id="gmActTarget"></select></label>
+    <select id="gmActActor" aria-label="캐릭터" onchange="refreshGmActTypeOptions()"></select>
+    <select id="gmActType" aria-label="행동" onchange="refreshGmActTargetOptions()"></select>
+    <select id="gmActTarget" aria-label="대상"></select>
     <span id="gmActTargetMultiWrap" style="display:none;">
       <select id="gmActTarget2"></select>
       <select id="gmActTarget3"></select>
@@ -1945,18 +1961,17 @@
     <button class="btn-primary gm-run" onclick="submitGmAct()"><i class="fa-solid fa-play"></i> 실행</button>
   </div>
   <div class="gm-bar-ctrl" id="gmControlPanel">
-    <button onclick="doAction('advance_turn', {})"><i class="fa-solid fa-forward-step"></i> 다음 턴</button>
-    <button onclick="doAction('undo', {})"><i class="fa-solid fa-rotate-left"></i> 되돌리기</button>
-    <button onclick="doAction('timeout_unacted_runners', {})"><i class="fa-solid fa-hourglass-end"></i> 시간 초과</button>
+    <button onclick="doAction('advance_turn', {})" data-tip="다음 턴"><i class="fa-solid fa-forward-step"></i><span class="t">다음 턴</span></button>
+    <button onclick="doAction('undo', {})" data-tip="되돌리기"><i class="fa-solid fa-rotate-left"></i><span class="t">되돌리기</span></button>
+    <button onclick="doAction('timeout_unacted_runners', {})" data-tip="시간 초과"><i class="fa-solid fa-hourglass-end"></i><span class="t">시간 초과</span></button>
     {% if battle_type == 'siege' %}
-    <button onclick="rollSiteDice()"><i class="fa-solid fa-dice"></i> 다이스</button>
-    <span id="siteDiceStatusGm" class="hint"></span>
+    <button onclick="rollSiteDice()" id="siteDiceBtn" data-tip="다이스"><i class="fa-solid fa-dice"></i><span class="t">다이스</span><span class="cnt" id="siteDiceStatusGm"></span></button>
     {% endif %}
     {% if battle_type == 'mass_raid' %}
-    <button onclick="toggleTelegraphMode()" id="telegraphModeBtn">전조 출력</button>
-    <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;"><i class="fa-solid fa-bullhorn"></i> 전조 공개</button>
-    <button onclick="clearTelegraph()" id="telegraphClearBtn" style="display:none;"><i class="fa-solid fa-xmark"></i> 전조 해제</button>
-    <span id="telegraphStatus" class="hint"></span>
+    <button onclick="toggleTelegraphMode()" id="telegraphModeBtn" data-tip="전조 출력"><i class="fa-solid fa-eye"></i><span class="t">전조 출력</span></button>
+    <button onclick="revealTelegraph()" id="telegraphRevealBtn" style="display:none;" data-tip="전조 공개"><i class="fa-solid fa-bullhorn"></i><span class="t">전조 공개</span></button>
+    <button onclick="clearTelegraph()" id="telegraphClearBtn" style="display:none;" data-tip="전조 해제"><i class="fa-solid fa-xmark"></i><span class="t">전조 해제</span></button>
+    <span id="telegraphStatus" class="gm-bar-status"></span>
     {% endif %}
   </div>
 </div>
@@ -3958,12 +3973,15 @@ function rollSiteDice() {
 function renderSiteDiceStatusGm(siteDice) {
   const el = document.getElementById('siteDiceStatusGm');
   if (!el) return;
+  const btn = document.getElementById('siteDiceBtn');
   if (!siteDice || siteDice.value == null || siteDice.stale) {
-    el.textContent = '아직 굴리지 않았습니다';
+    el.textContent = '';
+    if (btn) btn.dataset.tip = '다이스 · 아직 굴리지 않았어요';
     return;
   }
   const remaining = siteDice.value - siteDice.used;
-  el.textContent = `이번 라운드 ${siteDice.value}회 중 ${siteDice.used}회 사용 (남음 ${remaining}회)`;
+  el.textContent = `${remaining}/${siteDice.value}`;
+  if (btn) btn.dataset.tip = `다이스 · 이번 라운드 ${siteDice.value}회 중 ${siteDice.used}회 사용 (남음 ${remaining}회)`;
 }
 
 let telegraphMode = false;               // GM이 칸을 고르는 중인지
@@ -4042,12 +4060,14 @@ function renderTelegraphControls() {
   const revealBtn = document.getElementById('telegraphRevealBtn');
   const clearBtn = document.getElementById('telegraphClearBtn');
   const status = document.getElementById('telegraphStatus');
-  modeBtn.textContent = telegraphMode ? '전조 출력 중 (칸을 클릭해 선택)' : '전조 출력';
+  modeBtn.querySelector('.t').textContent = telegraphMode ? '전조 선택 중' : '전조 출력';
+  modeBtn.classList.toggle('on', telegraphMode);
   revealBtn.style.display = telegraphMode ? '' : 'none';
   clearBtn.style.display = telegraphRevealedCells.size > 0 ? '' : 'none';
   status.textContent = telegraphMode
     ? `선택된 칸 ${telegraphSelectedCells.size}개 · Shift+좌클릭 가로 일괄, Shift+우클릭 세로 일괄`
     : (telegraphRevealedCells.size > 0 ? `공개된 전조 ${telegraphRevealedCells.size}칸` : '');
+  status.title = status.textContent;
 }
 
 // ------------------------------------------------------------------
