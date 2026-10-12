@@ -1202,6 +1202,18 @@
     .topbar.v2 .seg { font-size:16px; }
     .topbar.v2 #roundTimerLabel:has(.flip-clock) { font-size:20px; }
     .topbar.v2 .clock { font-size:13px; }
+    /* 헤더를 두 줄로 : 윗줄 = 방 이름 · 전투 형식 · 현재 시각(작고 흐리게), 아랫줄 = 라운드 정보(크게) + 타이머 */
+    .topbar.v2 { display:grid; grid-template-columns:auto auto auto minmax(0,1fr) auto; grid-template-areas:"room sep fmt . clock" "round round round round timer";
+      align-items:center; gap:6px 10px; padding:14px 18px; }
+    .topbar.v2 #roomNameLabel { grid-area:room; }
+    .topbar.v2 #formatLabel { grid-area:fmt; }
+    .topbar.v2 .sep:has(+ #formatLabel) { grid-area:sep; }
+    .topbar.v2 .sep:has(+ #roundInfo), .topbar.v2 .spacer { display:none; }
+    .topbar.v2 #roomNameLabel, .topbar.v2 #formatLabel { font-size:14px; font-weight:600; color: var(--muted); }
+    .topbar.v2 .sep { font-size:10px; }
+    .topbar.v2 #liveClock { grid-area:clock; font-size:12px; }
+    .topbar.v2 #roundInfo { grid-area:round; font-size:21px; font-weight:800; letter-spacing:-0.01em; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .topbar.v2 #roundTimerLabel { grid-area:timer; justify-self:end; }
     .layout-grid { flex-direction:column; position:relative; }
     .teams-col { flex:1 1 auto; min-height:0; gap:12px; }
     .member-col { width:auto; flex:none; }
@@ -1306,7 +1318,7 @@
 <div id="noticeModal" class="modal-overlay" onclick="if(event.target===this) closeNotices()">
   <div class="modal-box notice-modal panel">
     <div class="notice-head">
-      <div class="modal-title" id="noticeModalTitle">공지사항</div>
+      <div class="modal-title page-title" id="noticeModalTitle">Notice</div>
       <button class="shop-btn" id="noticeNewBtn" onclick="startNoticeEdit(null)" style="display:none;"><i class="fa-solid fa-pen"></i> 새 공지</button>
       <button class="shop-close" onclick="closeNotices()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </div>
@@ -5044,7 +5056,9 @@ function renderNotices() {
   const list = document.getElementById('noticeList');
   const editor = document.getElementById('noticeEditor');
   document.getElementById('noticeNewBtn').style.display = (gm && !noticeEditing) ? '' : 'none';
-  document.getElementById('noticeModalTitle').textContent = noticeEditing ? (noticeEditingId ? '공지 수정' : '새 공지') : '공지사항';
+  const ntTitle = document.getElementById('noticeModalTitle');
+  ntTitle.textContent = noticeEditing ? (noticeEditingId ? '공지 수정' : '새 공지') : 'Notice';
+  ntTitle.classList.toggle('page-title', !noticeEditing);
   list.style.display = noticeEditing ? 'none' : '';
   editor.style.display = noticeEditing ? 'flex' : 'none';
   if (noticeEditing) return;
