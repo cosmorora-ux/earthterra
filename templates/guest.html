@@ -1570,14 +1570,27 @@
       <input type="range" class="nice-range" id="sceneDim" min="0" max="90" oninput="paintRange(this); onSceneDimSlider()" onchange="socket.emit('set_scene', {dim: parseInt(this.value,10)})">
       <span class="val" id="sceneDimVal"></span>
     </div>
-    <div class="scene-sec">날씨</div>
-    <div class="scene-seg" id="sceneWeatherSeg">
+    <div class="scene-sec">날씨 · 자연</div>
+    <div class="scene-seg" id="sceneWeatherSeg2">
       <button data-v="none" onclick="socket.emit('set_scene',{weather:'none'})"><i class="fa-solid fa-ban"></i> 없음</button>
       <button data-v="snow" onclick="socket.emit('set_scene',{weather:'snow'})"><i class="fa-regular fa-snowflake"></i> 눈</button>
+      <button data-v="blizzard" onclick="socket.emit('set_scene',{weather:'blizzard'})"><i class="fa-solid fa-icicles"></i> 눈보라</button>
       <button data-v="rain" onclick="socket.emit('set_scene',{weather:'rain'})"><i class="fa-solid fa-cloud-rain"></i> 비</button>
-      <button data-v="sakura" onclick="socket.emit('set_scene',{weather:'sakura'})"><i class="fa-solid fa-spa"></i> 벚꽃</button>
-      <button data-v="dandelion" onclick="socket.emit('set_scene',{weather:'dandelion'})"><i class="fa-solid fa-wind"></i> 민들레 홀씨</button>
+      <button data-v="storm" onclick="socket.emit('set_scene',{weather:'storm'})"><i class="fa-solid fa-cloud-bolt"></i> 뇌우</button>
       <button data-v="lightning" onclick="socket.emit('set_scene',{weather:'lightning'})"><i class="fa-solid fa-bolt"></i> 번개</button>
+      <button data-v="fog" onclick="socket.emit('set_scene',{weather:'fog'})"><i class="fa-solid fa-smog"></i> 안개</button>
+      <button data-v="sakura" onclick="socket.emit('set_scene',{weather:'sakura'})"><i class="fa-solid fa-spa"></i> 벚꽃</button>
+      <button data-v="leaves" onclick="socket.emit('set_scene',{weather:'leaves'})"><i class="fa-solid fa-leaf"></i> 낙엽</button>
+      <button data-v="dandelion" onclick="socket.emit('set_scene',{weather:'dandelion'})"><i class="fa-solid fa-wind"></i> 민들레 홀씨</button>
+      <button data-v="fireflies" onclick="socket.emit('set_scene',{weather:'fireflies'})"><i class="fa-solid fa-wand-magic-sparkles"></i> 반딧불</button>
+    </div>
+    <div class="scene-sec">날씨 · 전장</div>
+    <div class="scene-seg" id="sceneWeatherSeg3">
+      <button data-v="embers" onclick="socket.emit('set_scene',{weather:'embers'})"><i class="fa-solid fa-fire"></i> 불씨</button>
+      <button data-v="ash" onclick="socket.emit('set_scene',{weather:'ash'})"><i class="fa-solid fa-feather"></i> 재</button>
+      <button data-v="sand" onclick="socket.emit('set_scene',{weather:'sand'})"><i class="fa-solid fa-hurricane"></i> 모래바람</button>
+      <button data-v="bloodrain" onclick="socket.emit('set_scene',{weather:'bloodrain'})"><i class="fa-solid fa-droplet"></i> 핏빛 비</button>
+      <button data-v="meteors" onclick="socket.emit('set_scene',{weather:'meteors'})"><i class="fa-solid fa-meteor"></i> 유성우</button>
     </div>
     <div class="scene-sec">양</div>
     <div class="scene-seg" id="sceneAmountSeg">
@@ -2320,7 +2333,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-12.2";
+const EXPECTED_SERVER_BUILD = "2026-10-12.3";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5761,7 +5774,7 @@ function renderSceneModal() {
   const dim = document.getElementById('sceneDim');
   if (document.activeElement !== dim) dim.value = cfg.dim;
   paintRange(dim); onSceneDimSlider();
-  [['sceneWeatherSeg', cfg.weather], ['sceneAmountSeg', String(cfg.amount)], ['sceneLayerSeg', cfg.layer]].forEach(([id, v]) =>
+  [['sceneWeatherSeg', cfg.weather], ['sceneWeatherSeg2', cfg.weather], ['sceneWeatherSeg3', cfg.weather], ['sceneAmountSeg', String(cfg.amount)], ['sceneLayerSeg', cfg.layer]].forEach(([id, v]) =>
     document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('on', b.dataset.v === v)));
   document.getElementById('sceneMyOff').checked = weatherMyOff();
 }
@@ -5781,13 +5794,15 @@ function onSceneFileChosen(ev) {
   f.arrayBuffer().then(buf => socket.emit('set_scene', { filename: f.name, data: buf }));
 }
 
-// 날씨 : 캔버스 하나에 입자를 그립니다. 탭이 숨겨지면 멈춥니다.
+// 날씨 : 캔버스 하나에 입자를 그립니다. 종류마다 [개수 / 생성 / 움직임·그리기 / 화면 밖 판정]을 따로 정의합니다.
+// 탭이 숨겨지면 멈춥니다.
 var Weather = (function () {
   const cv = document.getElementById('weatherCanvas');
   const ctx = cv ? cv.getContext('2d') : null;
-  let kind = 'none', amount = 2, parts = [], raf = 0, W = 0, H = 0, dpr = 1, last = 0;
+  let kind = 'none', amount = 2, parts = [], raf = 0, W = 0, H = 0, dpr = 1, last = 0, T = 0;
   let flash = 0, bolt = null, nextBolt = 0;
   const rnd = (a, b) => a + Math.random() * (b - a);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
   function resize() {
     if (!cv) return;
     dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -5795,27 +5810,111 @@ var Weather = (function () {
     cv.width = W * dpr; cv.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
-  function count() {
-    const base = { snow: 70, rain: 110, sakura: 34, dandelion: 22, lightning: 0 }[kind] || 0;
+  // ---- 공통 그리기 ----
+  function petal(p, colors) {
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, .55 + .45 * Math.abs(Math.sin(p.ph)));
+    ctx.globalAlpha = p.a; ctx.fillStyle = p.c; ctx.beginPath();
+    ctx.moveTo(0, -p.s); ctx.bezierCurveTo(p.s * .9, -p.s * .7, p.s * .7, p.s * .6, 0, p.s);
+    ctx.bezierCurveTo(-p.s * .7, p.s * .6, -p.s * .9, -p.s * .7, 0, -p.s); ctx.fill(); ctx.restore();
+  }
+  function leaf(p) {
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, .45 + .55 * Math.abs(Math.sin(p.ph)));
+    ctx.globalAlpha = p.a; ctx.fillStyle = p.c; ctx.beginPath();
+    ctx.moveTo(-p.s, 0); ctx.quadraticCurveTo(0, -p.s * .75, p.s, 0); ctx.quadraticCurveTo(0, p.s * .75, -p.s, 0); ctx.fill();
+    ctx.strokeStyle = 'rgba(60,30,10,.35)'; ctx.lineWidth = .6; ctx.beginPath(); ctx.moveTo(-p.s, 0); ctx.lineTo(p.s, 0); ctx.stroke(); ctx.restore();
+  }
+  function glow(x, y, r, color, a) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color.replace('A', a)); g.addColorStop(1, color.replace('A', 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+  }
+  function rainDraw(p, rgb) {
+    ctx.strokeStyle = `rgba(${rgb},${p.a})`; ctx.lineWidth = p.w || 1; ctx.beginPath(); ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + p.vx * .02 * (p.len / 16), p.y + p.len); ctx.stroke();
+  }
+  const fall = p => p.y > H + 40 || p.x < -80 || p.x > W + 80;
+  const rise = p => p.y < -40 || p.x < -80 || p.x > W + 80;
+  // ---- 종류별 정의 ----
+  const K = {
+    snow: { n: 70,
+      spawn(p, i) { p.x = rnd(-40, W + 40); p.y = i ? rnd(-H, H) : rnd(-60, -10); p.r = rnd(1, 3.2); p.vy = rnd(18, 48) * (p.r / 2.2); p.vx = rnd(-8, 8); p.ph = rnd(0, 6.28); p.a = rnd(.35, .85); },
+      step(p, dt) { p.ph += dt; p.x += (p.vx + Math.sin(p.ph) * 14) * dt; p.y += p.vy * dt;
+        ctx.fillStyle = `rgba(255,255,255,${p.a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill(); }, out: fall },
+    blizzard: { n: 160,
+      spawn(p, i) { p.x = i ? rnd(-W * .2, W * 1.2) : rnd(W * .2, W + 300); p.y = i ? rnd(-H, H) : rnd(-80, -10); p.r = rnd(.8, 2.4); p.vy = rnd(140, 260); p.vx = -rnd(260, 420); p.a = rnd(.35, .9); p.ph = rnd(0, 6.28); },
+      step(p, dt) { p.ph += dt * 3; p.x += (p.vx + Math.sin(p.ph) * 40) * dt; p.y += p.vy * dt;
+        ctx.strokeStyle = `rgba(255,255,255,${p.a})`; ctx.lineWidth = p.r; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * .012, p.y - p.vy * .012); ctx.stroke(); },
+      out: p => p.y > H + 40 || p.x < -80, overlay: 'rgba(220,230,245,.05)' },
+    rain: { n: 110,
+      spawn(p, i) { p.x = rnd(-40, W + 120); p.y = i ? rnd(-H, H) : rnd(-60, -10); p.len = rnd(10, 22); p.vy = rnd(620, 900); p.vx = -110; p.a = rnd(.12, .32); },
+      step(p, dt) { p.x += p.vx * dt; p.y += p.vy * dt; rainDraw(p, '190,205,230'); }, out: fall },
+    storm: { n: 150, lightning: true,
+      spawn(p, i) { p.x = rnd(-40, W + 200); p.y = i ? rnd(-H, H) : rnd(-60, -10); p.len = rnd(14, 26); p.vy = rnd(800, 1100); p.vx = -220; p.a = rnd(.14, .34); },
+      step(p, dt) { p.x += p.vx * dt; p.y += p.vy * dt; rainDraw(p, '180,195,225'); }, out: fall, overlay: 'rgba(10,14,30,.12)' },
+    bloodrain: { n: 100,
+      spawn(p, i) { p.x = rnd(-40, W + 120); p.y = i ? rnd(-H, H) : rnd(-60, -10); p.len = rnd(12, 24); p.vy = rnd(560, 820); p.vx = -90; p.a = rnd(.25, .55); p.w = rnd(1, 1.6); },
+      step(p, dt) { p.x += p.vx * dt; p.y += p.vy * dt; rainDraw(p, '150,18,28'); }, out: fall, overlay: 'rgba(90,0,10,.08)' },
+    sakura: { n: 34,
+      spawn(p, i) { p.x = rnd(-40, W + 40); p.y = i ? rnd(-H, H) : rnd(-60, -10); p.s = rnd(5, 9); p.vy = rnd(28, 60); p.vx = rnd(10, 40); p.rot = rnd(0, 6.28); p.vr = rnd(-1.6, 1.6); p.ph = rnd(0, 6.28); p.a = rnd(.55, .9);
+        p.c = pick(['#f9c9d6', '#f5b5c8', '#fbd7e1', '#f2a7bd']); },
+      step(p, dt) { p.ph += dt * 1.4; p.rot += p.vr * dt; p.x += (p.vx + Math.sin(p.ph) * 22) * dt; p.y += p.vy * dt; petal(p); }, out: fall },
+    leaves: { n: 26,
+      spawn(p, i) { p.x = rnd(-40, W + 40); p.y = i ? rnd(-H, H) : rnd(-60, -10); p.s = rnd(7, 12); p.vy = rnd(30, 70); p.vx = rnd(20, 60); p.rot = rnd(0, 6.28); p.vr = rnd(-2, 2); p.ph = rnd(0, 6.28); p.a = rnd(.6, .9);
+        p.c = pick(['#c8642a', '#d98a2b', '#a8431f', '#e0a93a', '#8a3a1a']); },
+      step(p, dt) { p.ph += dt * 1.6; p.rot += p.vr * dt; p.x += (p.vx + Math.sin(p.ph) * 30) * dt; p.y += p.vy * dt; leaf(p); }, out: fall },
+    dandelion: { n: 22,
+      spawn(p, i) { p.x = rnd(-60, W); p.y = i ? rnd(0, H) : H + rnd(10, 60); p.s = rnd(5, 9); p.vy = -rnd(10, 26); p.vx = rnd(14, 34); p.ph = rnd(0, 6.28); p.rot = rnd(-.4, .4); p.a = rnd(.45, .8); },
+      step(p, dt) { p.ph += dt * .9; p.x += (p.vx + Math.sin(p.ph) * 10) * dt; p.y += (p.vy + Math.cos(p.ph * .7) * 6) * dt;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot + Math.sin(p.ph) * .25); ctx.globalAlpha = p.a;
+        ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = .6; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, p.s * 1.3);
+        for (let k = 0; k < 9; k++) { const an = -Math.PI / 2 + (k - 4) * .32; ctx.moveTo(0, 0); ctx.lineTo(Math.cos(an) * p.s, Math.sin(an) * p.s); }
+        ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(0, p.s * 1.3, .9, 0, 6.283); ctx.fill(); ctx.restore(); },
+      out: p => p.y < -40 || p.x > W + 60 },
+    embers: { n: 60, add: true,
+      spawn(p, i) { p.x = rnd(0, W); p.y = i ? rnd(0, H) : H + rnd(5, 40); p.r = rnd(.8, 2.2); p.vy = -rnd(30, 90); p.vx = rnd(-15, 25); p.ph = rnd(0, 6.28); p.life = rnd(.6, 1); p.hue = rnd(14, 38); },
+      step(p, dt) { p.ph += dt * rnd(4, 9); p.x += (p.vx + Math.sin(p.ph * .5) * 18) * dt; p.y += p.vy * dt;
+        const a = (.55 + .45 * Math.sin(p.ph)) * p.life * Math.min(1, (p.y / H) + .25);
+        glow(p.x, p.y, p.r * 5, `hsla(${p.hue},100%,55%,A)`, a * .35);
+        ctx.fillStyle = `hsla(${p.hue + 10},100%,72%,${a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill(); },
+      out: rise, overlay: 'rgba(120,40,0,.05)' },
+    ash: { n: 70,
+      spawn(p, i) { p.x = rnd(-40, W + 40); p.y = i ? rnd(-H, H) : rnd(-60, -10); p.s = rnd(1.2, 3.2); p.vy = rnd(14, 34); p.vx = rnd(-6, 14); p.rot = rnd(0, 6.28); p.vr = rnd(-2, 2); p.ph = rnd(0, 6.28); p.a = rnd(.25, .6); p.g = Math.round(rnd(110, 170)); },
+      step(p, dt) { p.ph += dt; p.rot += p.vr * dt; p.x += (p.vx + Math.sin(p.ph) * 10) * dt; p.y += p.vy * dt;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = `rgba(${p.g},${p.g},${p.g},${p.a})`; ctx.fillRect(-p.s, -p.s * .5, p.s * 2, p.s); ctx.restore(); },
+      out: fall, overlay: 'rgba(40,36,32,.08)' },
+    fog: { n: 12,
+      spawn(p, i) { p.r = rnd(Math.max(W, H) * .25, Math.max(W, H) * .45); p.x = i ? rnd(-p.r, W + p.r) : -p.r; p.y = rnd(H * .1, H * 1.05); p.vx = rnd(8, 22); p.a = rnd(.08, .16); p.ph = rnd(0, 6.28); },
+      step(p, dt) { p.ph += dt * .2; p.x += p.vx * dt; glow(p.x, p.y + Math.sin(p.ph) * 12, p.r, 'rgba(200,205,215,A)', p.a); },
+      out: p => p.x - p.r > W },
+    sand: { n: 140,
+      spawn(p, i) { p.x = i ? rnd(-W * .3, W) : -rnd(20, 200); p.y = rnd(-20, H + 20); p.len = rnd(14, 60); p.vx = rnd(520, 900); p.vy = rnd(-20, 40); p.a = rnd(.12, .4); p.w = rnd(.6, 1.6); },
+      step(p, dt) { p.x += p.vx * dt; p.y += p.vy * dt;
+        ctx.strokeStyle = `rgba(214,180,128,${p.a})`; ctx.lineWidth = p.w; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.len, p.y - p.len * p.vy / p.vx); ctx.stroke(); },
+      out: p => p.x - p.len > W + 20 || p.y > H + 40, overlay: 'rgba(150,110,55,.10)' },
+    fireflies: { n: 30, add: true,
+      spawn(p) { p.x = rnd(0, W); p.y = rnd(H * .15, H); p.vx = rnd(-14, 14); p.vy = rnd(-10, 10); p.ph = rnd(0, 6.28); p.sp = rnd(.8, 1.8); p.r = rnd(1.2, 2.2);
+        p.c = pick(['200,255,160', '170,215,255', '235,250,180']); },
+      step(p, dt) { p.ph += dt * p.sp; p.vx += rnd(-20, 20) * dt; p.vy += rnd(-20, 20) * dt; p.vx *= .99; p.vy *= .99;
+        p.x += p.vx * dt; p.y += p.vy * dt; if (p.x < -20) p.x = W + 20; if (p.x > W + 20) p.x = -20; if (p.y < -20) p.y = H + 20; if (p.y > H + 20) p.y = -20;
+        const a = Math.max(0, Math.sin(p.ph)) ** 2;
+        glow(p.x, p.y, p.r * 7, `rgba(${p.c},A)`, a * .4); ctx.fillStyle = `rgba(${p.c},${a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill(); },
+      out: () => false },
+    meteors: { n: 5, add: true,
+      spawn(p, i) { p.wait = i ? rnd(0, 3) : rnd(.6, 4); p.x = rnd(W * .3, W * 1.2); p.y = rnd(-H * .3, H * .25); const sp = rnd(700, 1100); p.vx = -sp * .8; p.vy = sp * .5; p.len = rnd(90, 180); p.a = rnd(.6, 1); p.t = 0; },
+      step(p, dt) { if (p.wait > 0) { p.wait -= dt; return; } p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        const k = p.len / Math.hypot(p.vx, p.vy), tx = p.x - p.vx * k, ty = p.y - p.vy * k;
+        const g = ctx.createLinearGradient(p.x, p.y, tx, ty); g.addColorStop(0, `rgba(255,255,255,${p.a})`); g.addColorStop(.3, `rgba(170,195,255,${p.a * .5})`); g.addColorStop(1, 'rgba(120,150,255,0)');
+        ctx.strokeStyle = g; ctx.lineWidth = 1.6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(tx, ty); ctx.stroke();
+        glow(p.x, p.y, 6, 'rgba(220,230,255,A)', p.a * .8); },
+      out: p => p.wait <= 0 && (p.x < -200 || p.y > H + 200) },
+    lightning: { n: 0, lightning: true },
+  };
+  function cfgN() {
+    const d = K[kind]; if (!d) return 0;
     const area = Math.min(1.6, (W * H) / (1400 * 900));
-    return Math.round(base * [0, .5, 1, 1.8][amount] * Math.max(.45, area));
+    return Math.round(d.n * [0, .5, 1, 1.8][amount] * Math.max(.45, area));
   }
-  function spawn(p, init) {
-    p.x = rnd(-40, W + 40);
-    p.y = init ? rnd(-H, H) : rnd(-60, -10);
-    if (kind === 'snow') { p.r = rnd(1, 3.2); p.vy = rnd(18, 48) * (p.r / 2.2); p.vx = rnd(-8, 8); p.ph = rnd(0, 6.28); p.a = rnd(.35, .85); }
-    if (kind === 'rain') { p.len = rnd(10, 22); p.vy = rnd(620, 900); p.vx = -110; p.a = rnd(.12, .32); }
-    if (kind === 'sakura') { p.s = rnd(5, 9); p.vy = rnd(28, 60); p.vx = rnd(10, 40); p.rot = rnd(0, 6.28); p.vr = rnd(-1.6, 1.6); p.ph = rnd(0, 6.28); p.a = rnd(.55, .9);
-      p.c = ['#f9c9d6', '#f5b5c8', '#fbd7e1', '#f2a7bd'][Math.floor(rnd(0, 4))]; }
-    if (kind === 'dandelion') { p.x = rnd(-60, W); p.y = init ? rnd(0, H) : H + rnd(10, 60); p.s = rnd(5, 9); p.vy = -rnd(10, 26); p.vx = rnd(14, 34);
-      p.ph = rnd(0, 6.28); p.rot = rnd(-.4, .4); p.a = rnd(.45, .8); }
-    return p;
-  }
-  function reset() { parts = []; for (let i = 0; i < count(); i++) parts.push(spawn({}, true)); nextBolt = performance.now() + rnd(1500, 4000); }
-  function drawBolt(b) {
-    ctx.save(); ctx.strokeStyle = `rgba(220,230,255,${b.a})`; ctx.lineWidth = 1.6; ctx.shadowColor = 'rgba(160,190,255,.8)'; ctx.shadowBlur = 12;
-    ctx.beginPath(); b.pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.stroke(); ctx.restore();
-  }
+  function reset() { parts = []; const d = K[kind]; for (let i = 0; i < cfgN(); i++) { const p = {}; d.spawn(p, true); parts.push(p); } nextBolt = performance.now() + rnd(1500, 4000); }
   function makeBolt() {
     let x = rnd(W * .15, W * .85), y = 0; const pts = [[x, y]];
     while (y < H * rnd(.45, .75)) { x += rnd(-40, 40); y += rnd(18, 46); pts.push([x, y]); }
@@ -5823,38 +5922,21 @@ var Weather = (function () {
   }
   function frame(t) {
     raf = requestAnimationFrame(frame);
-    const dt = Math.min(.05, (t - (last || t)) / 1000); last = t;
+    const dt = Math.min(.05, (t - (last || t)) / 1000); last = t; T += dt;
+    const d = K[kind]; if (!d) return;
     ctx.clearRect(0, 0, W, H);
-    if (kind === 'lightning') {
+    if (d.overlay) { ctx.fillStyle = d.overlay; ctx.fillRect(0, 0, W, H); }
+    ctx.globalCompositeOperation = d.add ? 'lighter' : 'source-over';
+    for (const p of parts) { d.step(p, dt); if (d.out(p)) d.spawn(p, false); }
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    if (d.lightning) {
       if (t > nextBolt) { flash = 1; bolt = makeBolt(); nextBolt = t + rnd(3500, 9000) / Math.max(1, amount * .8); }
       if (flash > 0) { ctx.fillStyle = `rgba(200,215,255,${flash * .16})`; ctx.fillRect(0, 0, W, H); flash = Math.max(0, flash - dt * 2.6); }
-      if (bolt) { drawBolt(bolt); bolt.a -= dt * 3.2; if (bolt.a <= 0) bolt = null; }
-      return;
-    }
-    for (const p of parts) {
-      if (kind === 'snow') {
-        p.ph += dt; p.x += (p.vx + Math.sin(p.ph) * 14) * dt; p.y += p.vy * dt;
-        ctx.fillStyle = `rgba(255,255,255,${p.a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
-      } else if (kind === 'rain') {
-        p.x += p.vx * dt; p.y += p.vy * dt;
-        ctx.strokeStyle = `rgba(190,205,230,${p.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x + p.vx * .018 * (p.len / 16), p.y + p.len); ctx.stroke();
-      } else if (kind === 'sakura') {
-        p.ph += dt * 1.4; p.rot += p.vr * dt; p.x += (p.vx + Math.sin(p.ph) * 22) * dt; p.y += p.vy * dt;
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, .55 + .45 * Math.abs(Math.sin(p.ph)));
-        ctx.globalAlpha = p.a; ctx.fillStyle = p.c; ctx.beginPath();
-        ctx.moveTo(0, -p.s); ctx.bezierCurveTo(p.s * .9, -p.s * .7, p.s * .7, p.s * .6, 0, p.s);
-        ctx.bezierCurveTo(-p.s * .7, p.s * .6, -p.s * .9, -p.s * .7, 0, -p.s); ctx.fill(); ctx.restore();
-      } else if (kind === 'dandelion') {
-        p.ph += dt * .9; p.x += (p.vx + Math.sin(p.ph) * 10) * dt; p.y += (p.vy + Math.cos(p.ph * .7) * 6) * dt;
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot + Math.sin(p.ph) * .25); ctx.globalAlpha = p.a;
-        ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = .6; ctx.beginPath();
-        ctx.moveTo(0, 0); ctx.lineTo(0, p.s * 1.3);
-        for (let k = 0; k < 9; k++) { const an = -Math.PI / 2 + (k - 4) * .32; ctx.moveTo(0, 0); ctx.lineTo(Math.cos(an) * p.s, Math.sin(an) * p.s); }
-        ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(0, p.s * 1.3, .9, 0, 6.283); ctx.fill(); ctx.restore();
+      if (bolt) {
+        ctx.save(); ctx.strokeStyle = `rgba(220,230,255,${bolt.a})`; ctx.lineWidth = 1.6; ctx.shadowColor = 'rgba(160,190,255,.8)'; ctx.shadowBlur = 12;
+        ctx.beginPath(); bolt.pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.stroke(); ctx.restore();
+        bolt.a -= dt * 3.2; if (bolt.a <= 0) bolt = null;
       }
-      const out = kind === 'dandelion' ? (p.y < -40 || p.x > W + 60) : (p.y > H + 30 || p.x < -60 || p.x > W + 60);
-      if (out) spawn(p, false);
     }
   }
   function start() { if (!raf && kind !== 'none' && !document.hidden) { last = 0; raf = requestAnimationFrame(frame); } }
@@ -5862,11 +5944,13 @@ var Weather = (function () {
   window.addEventListener('resize', () => { if (kind === 'none') return; resize(); reset(); });
   document.addEventListener('visibilitychange', () => { document.hidden ? stop() : start(); });
   return {
+    kinds: Object.keys(K),
     set(k, amt, layer) {
       if (!cv) return;
       cv.classList.toggle('front', layer === 'front');
+      k = K[k] ? k : 'none';
       if (k === kind && amt === amount) return;
-      kind = k || 'none'; amount = amt || 2;
+      kind = k; amount = amt || 2;
       stop();
       cv.classList.toggle('on', kind !== 'none');
       if (kind === 'none') { ctx.clearRect(0, 0, W, H); return; }
