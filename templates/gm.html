@@ -463,6 +463,7 @@
         <button data-r="메딕" onclick="setQuickRole('메딕')">메딕</button>
       </div></div>
     <div class="frow"><span class="lbl">스킬</span><select id="qSkill"></select></div>
+    <div class="frow"><span class="lbl">국가</span><input id="qNation" maxlength="20" placeholder="(선택)" autocomplete="off" style="width:100%;"></div>
     <div class="stat-steppers" id="qStats"></div>
     <div class="btn-row">
       <span class="stat-total">합계 <b id="qTotal">0</b></span>
@@ -472,7 +473,7 @@
     </div>
   </div>
   <div id="regPaste" style="display:none;">
-  <textarea id="regText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴" style="min-height:120px;"></textarea>
+  <textarea id="regText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴&#10;국가 (선택)" style="min-height:120px;"></textarea>
   <div class="btn-row">
     <button class="btn-primary" onclick="registerCharacters()">일괄 등록</button>
     <span style="flex:1"></span>
@@ -494,6 +495,7 @@
         <option value="메딕">메딕</option>
       </select></div>
     <div class="frow"><span class="lbl">스킬</span><select id="editSkill"></select></div>
+    <div class="frow"><span class="lbl">국가</span><input id="editNation" maxlength="20" placeholder="(없음)" autocomplete="off" style="width:100%;"></div>
     <div id="editStatsFields" class="stat-grid" oninput="refreshEditTotal()"></div>
     <div class="stat-total" style="margin-bottom:6px;">현재 스탯 합계 <b id="editTotal">0</b></div>
     <div class="btn-row end">
@@ -842,6 +844,8 @@ function submitQuickForm() {
   const lines = [name, ...STAT_KEYS.map(k => `${k} ${quickStats[k] || 0}`), `역할 ${quickRole}`];
   const skill = document.getElementById('qSkill').value;
   if (skill) lines.push(`스킬 ${skill}`);
+  const nation = document.getElementById('qNation').value.trim();
+  if (nation) lines.push(`국가 ${nation}`);
   socket.emit('register_characters', { text: lines.join('\n') });
   document.getElementById('qName').value = '';
   refreshQuickForm();
@@ -992,6 +996,7 @@ function editCharacter(name) {
   document.getElementById('editCharTitle').textContent = `${name} 수정`;
   document.getElementById('editRole').value = c.role;
   refreshEditSkillOptions(c.skill);
+  document.getElementById('editNation').value = c.nation || '';
   document.getElementById('editStatsFields').innerHTML = STAT_KEYS.map(k => `
     <label><span>${k}</span><input id="editStat_${k}" type="number" value="${c.stats[k]}"></label>
   `).join('');
@@ -1010,7 +1015,7 @@ function saveCharacterEdit() {
   const skill = document.getElementById('editSkill').value || null;
   const stats = {};
   STAT_KEYS.forEach(k => { stats[k] = document.getElementById('editStat_' + k).value; });
-  socket.emit('update_character', { name: editingCharName, role, stats, skill });
+  socket.emit('update_character', { name: editingCharName, role, stats, skill, nation: document.getElementById('editNation').value });
   cancelCharacterEdit();
 }
 

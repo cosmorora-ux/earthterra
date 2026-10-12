@@ -32,7 +32,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-08.1"
+SERVER_BUILD = "2026-10-12.1"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -424,6 +424,7 @@ def build_preview_character(room, name):
         "sound_effect_volume": data.get("sound_effect_volume"),
         "points": int(data.get("points") or 0),
         "items": dict(data.get("items") or {}),
+        "nation": data.get("nation") or "",
     }
 
 
@@ -1424,6 +1425,14 @@ def on_update_character(data):
 avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
 sound_effect_volume=existing.get("sound_effect_volume"),
     )
+    if "nation" in data:
+        entry = room.game.db.get(name)
+        nation = (data.get("nation") or "").strip()[:20]
+        if nation:
+            entry["nation"] = nation
+        else:
+            entry.pop("nation", None)
+        room.game.db.save()
 
     # 전투가 진행 중이고 이 캐릭터가 현재 전투에 참여 중이라면, 실시간 스탯도 즉시 갱신합니다.
     battle = room.game.battle
