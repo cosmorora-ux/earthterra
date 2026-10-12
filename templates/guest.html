@@ -1643,11 +1643,15 @@
     .dorm-crow { grid-template-columns: 1fr 1fr; }
   }
 
-  /* 로그인 전 : 채팅창·우체통 숨김. 음악 조절은 팀 제목 줄 오른쪽에 그대로 둡니다. */
-  body.logged-out .member-col .member-panel, body.logged-out #sidebarMailBtn, body.logged-out .sidebar .m-chat-btn { display:none !important; }
-  body.logged-out .member-col { width:auto; min-width:0; flex:none; }
-  body.logged-out .layout-grid { position:relative; }
-  body.logged-out .member-top { position:absolute; top:0; right:0; z-index:5; }
+  /* 로그인 전 : 우체통은 숨기고, 채팅창은 그대로 두되 내용은 흐리게 가립니다. */
+  body.logged-out #sidebarMailBtn { display:none !important; }
+  .chat-lock { display:none; }
+  body.logged-out .member-body { position:relative; }
+  body.logged-out .member-body .member-tabview { filter: blur(7px); pointer-events:none; user-select:none; }
+  body.logged-out .member-panel .input-row { opacity:.4; pointer-events:none; }
+  body.logged-out .chat-lock { display:flex; position:absolute; inset:0; z-index:4; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    background: rgba(10,10,12,.35); color:#d6d6db; font-size:14px; text-align:center; }
+  body.logged-out .chat-lock i { font-size:22px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -2239,6 +2243,8 @@
   </div>
 
   <div class="member-body">
+    <div class="chat-lock"><i class="fa-solid fa-lock"></i><span>로그인하면 채팅을 볼 수 있어요.</span>
+      <button class="btn" onclick="onAvatarDotClick()">로그인</button></div>
     <div class="member-tabview active" id="memberTabChat">
       <div id="chatLogMountChat"><div id="chatLog"></div></div>
     </div>
