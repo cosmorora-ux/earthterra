@@ -1650,11 +1650,11 @@
   body.logged-out #sidebarMailBtn { display:none !important; }
   .chat-lock { display:none; }
   body.logged-out .member-body { position:relative; }
-  body.logged-out .member-body .member-tabview { filter: blur(7px); pointer-events:none; user-select:none; }
+  body.logged-out .member-body .member-tabview { visibility:hidden; }
   body.logged-out .member-panel .input-row { opacity:.4; pointer-events:none; }
   body.logged-out .chat-lock { display:flex; position:absolute; inset:0; z-index:4; flex-direction:column; align-items:center; justify-content:center; gap:12px;
-    background: rgba(10,10,12,.35); color:#d6d6db; font-size:14px; text-align:center; }
-  body.logged-out .chat-lock i { font-size:22px; color: var(--muted); }
+    color: var(--muted); font-size:14px; text-align:center; }
+  body.logged-out .chat-lock i { font-size:28px; opacity:.5; }
 </style>
 </head>
 <body>
@@ -2245,8 +2245,7 @@
   </div>
 
   <div class="member-body">
-    <div class="chat-lock"><i class="fa-solid fa-lock"></i><span>로그인하면 채팅을 볼 수 있어요.</span>
-      <button class="btn" onclick="onAvatarDotClick()">로그인</button></div>
+    <div class="chat-lock"><i class="fa-regular fa-comments"></i><span>로그인하면 채팅을 볼 수 있어요.</span></div>
     <div class="member-tabview active" id="memberTabChat">
       <div id="chatLogMountChat"><div id="chatLog"></div></div>
     </div>
