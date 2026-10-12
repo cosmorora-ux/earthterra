@@ -977,7 +977,7 @@
     width:4px; height:22px; border-radius:3px; background: var(--accent-blue);
   }
   .sidebar .sidebar-icon.muted { opacity:.45; }
-  .sidebar .sidebar-gap { height:16px; }
+  .sidebar .sidebar-gap { height:16px; flex-shrink:0; }
   .sidebar .sidebar-grow { flex:1; }
 
   /* 사이드바가 항상 화면 높이에 딱 맞도록(스크롤 없이 로그인 버튼까지 다 보이도록),
@@ -1880,10 +1880,10 @@
 <canvas id="weatherCanvas"></canvas>
 <div class="app-shell">
 <div class="sidebar">
-  <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
-  <div class="sidebar-gap"></div>
-  <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
   <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i></button>
+  <div class="sidebar-gap" id="sidebarAlign"></div>
+  <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
+  <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
   <button class="sidebar-icon" id="sidebarDormBtn" onclick="openDorm()" data-tip="기숙사"><i class="fa-solid fa-house"></i></button>
   <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
@@ -7586,6 +7586,28 @@ document.addEventListener('pointerdown', (e) => {
   document.body.appendChild(r);
   setTimeout(() => r.remove(), 600);
 }, true);
+
+// PC 사이드바 : 전체 화면 버튼은 맨 위, 나머지 메뉴는 "Team 1" 제목 높이부터 나열
+function alignSidebar() {
+  const gap = document.getElementById('sidebarAlign');
+  if (!gap) return;
+  if (window.innerWidth <= 900) { gap.style.height = ''; return; }
+  const label = document.getElementById('teamALabel');
+  if (!label || !label.offsetParent) return;   // 기숙사 화면 등에서는 마지막 위치 유지
+  const lr = label.getBoundingClientRect();
+  const sb = gap.parentElement, rowGap = parseFloat(getComputedStyle(sb).rowGap) || 0;
+  const first = gap.nextElementSibling;
+  const iconH = (first && first.offsetHeight) || 40;
+  const top = gap.getBoundingClientRect().top;
+  const h = Math.round(lr.top + lr.height / 2 - iconH / 2 - rowGap - top);
+  gap.style.height = Math.max(0, h) + 'px';
+}
+window.addEventListener('resize', alignSidebar);
+window.addEventListener('load', alignSidebar);
+if (window.ResizeObserver) {
+  const _ro = new ResizeObserver(alignSidebar);
+  document.addEventListener('DOMContentLoaded', () => { const t = document.querySelector('.topbar.v2'); if (t) _ro.observe(t); alignSidebar(); });
+}
 </script>
 </body>
 </html>
