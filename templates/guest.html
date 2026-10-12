@@ -1579,6 +1579,16 @@
   .modal-box.dorm-modal .dorm-pfilter select, .modal-box.dorm-modal .dorm-pfilter input { height:32px; font-size:12.5px; padding:0 8px; min-width:0; }
   .modal-box.dorm-modal .dorm-pfilter select { flex:1.3; }
   .modal-box.dorm-modal .dorm-pfilter input { flex:1; width:auto; }
+  /* 마이룸 작은 미리보기 */
+  .dorm-mini { position:relative; flex:none; pointer-events:none; }
+  .dorm-mini .dorm-stage.mini { position:absolute; left:0; top:0; filter:none; }
+  .dorm-door.has-room { padding:10px 6px 10px; gap:6px; }
+  .dorm-door.has-room .no { align-self:flex-start; margin-left:4px; }
+  .idc-room { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 0 4px; border-top:1px solid var(--panel-border); }
+  .idc-room-head { display:flex; flex-direction:column; gap:4px; }
+  .idc-room-sub { font-size:12.5px; color: var(--muted); }
+  .idc-room-prev { display:flex; justify-content:center; cursor:pointer; border-radius:12px; padding:6px 10px; background: rgba(255,255,255,.03); transition: background-color .15s; }
+  .idc-room-prev:hover { background: rgba(255,255,255,.07); }
   .dorm-asset { aspect-ratio:1; border-radius:8px; background:#0e0e11 center/contain no-repeat; background-origin:content-box; padding:6px; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); cursor:pointer; }
   .dorm-asset:hover { border-color: rgba(255,255,255,.2); }
   .dorm-asset.on { border-color: var(--point); box-shadow: 0 0 0 1px var(--point); }
@@ -2007,6 +2017,10 @@
     <div class="idc-sec idc-row last">
       <span class="idc-label">소지품</span>
       <span class="idc-value idc-link" id="myPageItemsView" onclick="openShopFromMyPage()">-</span>
+    </div>
+    <div class="idc-sec idc-room" id="myPageRoomBox" style="display:none;">
+      <div class="idc-room-head"><span class="idc-label">마이룸</span><span class="idc-room-sub" id="myPageRoomSub"></span></div>
+      <div class="idc-room-prev" id="myPageRoomPrev" title="눌러서 방으로 가기"></div>
     </div>
     </div>
 
@@ -4571,6 +4585,7 @@ function openMyPageFor(name) {
   document.getElementById('myPageModal').style.display = 'flex';
   renderMyPage();
   renderMyPagePoints();
+  renderMyPageRoom();
 }
 
 function myPageTargetChar() {
@@ -4598,6 +4613,7 @@ function openMyPage() {
   document.getElementById('myPageModal').style.display = 'flex';
   renderMyPage();
   renderMyPagePoints();
+  renderMyPageRoom();
 }
 
 function closeMyPage() {
@@ -6547,8 +6563,23 @@ function setDormView(v) { dormView = v; if (v === 'manage') { dormHallsDraft = n
 function openDormRoom(owner) { dormView = 'room'; dormRoom = { owner, loading: true }; dormEdit = null; dormSel = -1; socket.emit('dorm_room_get', { name: owner }); renderDorm(); }
 socket.on('dorm_data', (d) => {
   dormData = d; if (d.roster) dormRoster = d.roster;
-  if (document.getElementById('dormModal').style.display === 'flex') renderDorm();
+  if (document.getElementById('dormModal').style.display === 'flex' && !dormEdit) renderDorm();
+  renderMyPageRoom();
 });
+socket.on('joined', () => socket.emit('dorm_get'));
+// 마이페이지(ID card)에 내 방 미리보기
+function renderMyPageRoom() {
+  const box = document.getElementById('myPageRoomBox');
+  if (!box || document.getElementById('myPageModal').style.display !== 'flex') return;
+  const c = myPageTargetChar(), name = c && c.name;
+  const hall = name && dormData ? dormHallOf(name) : null;
+  if (!hall) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  document.getElementById('myPageRoomSub').textContent = `${hall.name} · ${hall.slots.indexOf(name) + 1}호`;
+  const prev = document.getElementById('myPageRoomPrev');
+  prev.innerHTML = dormMiniHtml(name, 120);
+  prev.onclick = () => { document.getElementById('myPageModal').style.display = 'none'; openDorm(); openDormRoom(name); };
+}
 socket.on('dorm_room', (r) => {
   if (!dormRoom || dormRoom.owner !== r.owner) return;
   if (dormEdit && !dormSaving) { dormRoom = r; return; }
@@ -6576,7 +6607,7 @@ function dormHallsHtml() {
   if (!halls.length) return top + `<div class="dorm-empty"><i class="fa-solid fa-building"></i>아직 기숙사가 없어요.<br>운영진이 관을 만들고 방을 배정하면 여기에 보여요.</div>`;
   return top + '<div class="dorm-halls">' + halls.map(h => `<div class="dorm-hall"><h3><i class="fa-solid fa-building"></i>${mailEsc(h.name)}</h3>
     <div class="dorm-doors">${(h.slots || []).map((n, i) => n
-      ? `<div class="dorm-door ${n === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(n))})"><span class="no">${i + 1}호</span><span class="ic"></span><span class="nm">${mailEsc(n)}</span></div>`
+      ? `<div class="dorm-door has-room ${n === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(n))})"><span class="no">${i + 1}호</span>${dormMiniHtml(n, 120)}<span class="nm">${mailEsc(n)}</span></div>`
       : `<div class="dorm-door empty"><span class="no">${i + 1}호</span><span class="ic"></span><span class="nm">빈 방</span></div>`).join('')}</div></div>`).join('') + '</div>';
 }
 
@@ -6607,14 +6638,22 @@ function dormLeaveRoom() {
   if (!dormEdit) { setDormView('halls'); return; }
   uiConfirm('저장하지 않은 꾸미기가 있어요. 나갈까요?', { title: '방 나가기', okText: '나가기' }).then(ok => { if (ok) { dormEdit = null; setDormView('halls'); } });
 }
-function dormStageHtml(r, base, s, editing) {
+function dormStageHtml(r, base, s, editing, mini) {
   const W = base.w * s, H = base.h * s;
   const items = (r.items || []).map((it, i) => ({ it, i, a: dormAsset(it.a) })).filter(o => o.a)
     .sort((p, q) => ((q.a.category === 'surface') - (p.a.category === 'surface')) || (p.a.category === 'surface' ? p.i - q.i : (p.it.y + p.a.h) - (q.it.y + q.a.h)));
-  return `<div class="dorm-stage ${editing ? 'editing' : ''}" id="dormStage" style="width:${W}px; height:${H}px; background:url('${base.url}') 0 0 / 100% 100% no-repeat;">
+  return `<div class="dorm-stage ${editing ? 'editing' : ''} ${mini ? 'mini' : ''}" ${mini ? '' : 'id="dormStage"'} style="width:${W}px; height:${H}px; background:url('${base.url}') 0 0 / 100% 100% no-repeat;">
     ${items.map(({ it, i, a }) => `<div class="dorm-item ${it.f ? 'dflip' : ''} ${editing && i === dormSel ? 'sel' : ''}" data-i="${i}" title="${mailEsc(a.name)}"
       style="left:${it.x * s}px; top:${it.y * s}px; width:${a.w * s}px; height:${a.h * s}px; background-image:url('${a.url}');"></div>`).join('')}
-    <div class="dorm-ghost" id="dormGhost"></div></div>`;
+    ${mini ? '' : '<div class="dorm-ghost" id="dormGhost"></div>'}</div>`;
+}
+// 작은 미리보기 (관 목록 문 카드·마이페이지) : 폭 w(px)에 맞춰 줄여 그립니다.
+function dormMiniHtml(owner, w) {
+  if (!dormData) return '';
+  const r = (dormData.rooms && dormData.rooms[owner]) || { base: dormData.default_base, items: [] };
+  const base = dormBase(r); if (!base) return '';
+  const s = w / base.w;
+  return `<div class="dorm-mini" style="width:${w}px; height:${Math.round(base.h * s)}px">${dormStageHtml(r, base, s, false, true)}</div>`;
 }
 function startDormEdit() {
   const r = dormRoom;

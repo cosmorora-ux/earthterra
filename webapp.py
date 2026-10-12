@@ -2736,6 +2736,7 @@ def on_dorm_room_save(data):
     saved = dorms.save_room(owner, data)
     emit("dorm_result", {"ok": True, "message": "방을 저장했어요."})
     socketio.emit("dorm_room", saved)
+    _dorm_broadcast()
 
 
 @socketio.on("dorm_halls_save")

@@ -100,8 +100,10 @@ class Dorms:
         return None
 
     def payload(self):
+        # 관 목록·마이페이지에서 작은 미리보기로 그릴 수 있게, 배정된 방들의 꾸밈 정보도 같이 보냅니다.
+        names = [n for h in self.halls for n in h.get("slots", []) if n]
         return {"halls": self.halls, "assets": self.all_assets(), "credits": self.all_credits(),
-                "hall_size": HALL_SIZE, "default_base": DEFAULT_BASE}
+                "hall_size": HALL_SIZE, "default_base": DEFAULT_BASE, "rooms": {n: self.room(n) for n in names}}
 
     def room(self, name):
         r = self.rooms.get(name) or {}
