@@ -1553,8 +1553,7 @@
   /* 방 */
   .dorm-room-wrap { display:flex; gap:16px; align-items:flex-start; }
   .dorm-stage-box { flex:1; min-width:0; display:flex; justify-content:center; }
-  .dorm-stage { position:relative; border-radius:10px; overflow:hidden; box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 40px rgba(0,0,0,.45);
-    image-rendering: pixelated; user-select:none; touch-action:none; }
+  .dorm-stage { position:relative; image-rendering: pixelated; user-select:none; touch-action:none; filter: drop-shadow(0 18px 30px rgba(0,0,0,.45)); }
   .dorm-wall, .dorm-floor { position:absolute; left:0; right:0; background-repeat:repeat; image-rendering: pixelated; }
   .dorm-wall { top:0; background-color:#2b2d38; background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 2px, transparent 2px var(--stripe, 24px)); }
   .dorm-wall::after { content:""; position:absolute; left:0; right:0; bottom:0; height:var(--trim, 8px); background:#1d1e26; box-shadow: 0 -2px 0 rgba(255,255,255,.05) inset; }
@@ -1564,11 +1563,11 @@
   .dorm-item { position:absolute; background-size:100% 100%; background-repeat:no-repeat; image-rendering: pixelated; }
   .dorm-item.dflip { transform: scaleX(-1); }
   .dorm-stage.editing .dorm-item { cursor:grab; }
-  .dorm-stage.editing .dorm-item.sel { outline:2px solid var(--point); outline-offset:1px; }
+  .dorm-stage.editing .dorm-item.sel { outline:1px dashed var(--point); outline-offset:2px; filter: drop-shadow(0 0 3px rgba(92,134,255,.9)); }
   .dorm-grid { position:absolute; inset:0; pointer-events:none; display:none;
     background-image: linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px); }
   .dorm-stage.editing .dorm-grid { display:block; }
-  .dorm-ghost { position:absolute; pointer-events:none; opacity:.55; background-size:100% 100%; image-rendering: pixelated; display:none; outline:1px dashed rgba(255,255,255,.5); }
+  .dorm-ghost { position:absolute; pointer-events:none; opacity:.6; background-size:100% 100%; image-rendering: pixelated; display:none; z-index:500; }
   .dorm-ghost.bad { outline-color: var(--accent-red); }
   /* 꾸미기 도구 */
   .dorm-palette { width:280px; flex:none; border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:12px; background: rgba(255,255,255,.02); }
@@ -1576,7 +1575,11 @@
   .dorm-ptabs button { background: rgba(255,255,255,.05); border:none; color: var(--muted); border-radius:8px; padding:5px 9px; font-size:12px; cursor:pointer; }
   .dorm-ptabs button.on { background: rgba(92,134,255,.18); color:#fff; }
   .dorm-assets { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; max-height:46vh; overflow-y:auto; }
-  .dorm-asset { aspect-ratio:1; border-radius:8px; background:#0e0e11 center/contain no-repeat; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); cursor:pointer; }
+  .dorm-pfilter { display:flex; gap:6px; margin-bottom:8px; }
+  .modal-box.dorm-modal .dorm-pfilter select, .modal-box.dorm-modal .dorm-pfilter input { height:32px; font-size:12.5px; padding:0 8px; min-width:0; }
+  .modal-box.dorm-modal .dorm-pfilter select { flex:1.3; }
+  .modal-box.dorm-modal .dorm-pfilter input { flex:1; width:auto; }
+  .dorm-asset { aspect-ratio:1; border-radius:8px; background:#0e0e11 center/contain no-repeat; background-origin:content-box; padding:6px; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); cursor:pointer; }
   .dorm-asset:hover { border-color: rgba(255,255,255,.2); }
   .dorm-asset.on { border-color: var(--point); box-shadow: 0 0 0 1px var(--point); }
   .dorm-tools { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
@@ -1596,7 +1599,7 @@
     display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:11px; cursor:pointer; text-align:center; }
   .modal-box.dorm-modal .dorm-up input, .modal-box.dorm-modal .dorm-up select { width:100%; height:36px; font-size:13px; padding:0 10px; }
   .dorm-alist { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
-  .dorm-arow { display:grid; grid-template-columns: 40px 1fr 110px 70px 1fr 28px; gap:8px; align-items:center; }
+  .dorm-arow { display:grid; grid-template-columns: 40px 1fr 110px 80px 1fr 28px; gap:8px; align-items:center; font-size:13px; }
   .dorm-arow .th { width:40px; height:40px; border-radius:8px; background:#0e0e11 center/contain no-repeat; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); }
   .modal-box.dorm-modal .dorm-arow input, .modal-box.dorm-modal .dorm-arow select { width:100%; height:32px; font-size:12.5px; padding:0 8px; }
   .dorm-arow .sz { font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -6515,17 +6518,20 @@ function sendLetter() {
 }
 
 // ==================================================================
-// 기숙사(마이룸) : 관(6명) 목록 → 방 구경 / 자기 방 꾸미기(도트 가구 배치). 운영진은 관 배치·도트 자료·출처 관리.
+// 기숙사(마이룸) : 관(6명) 목록 → 방 구경 / 자기 방 꾸미기(아이소메트릭 방 위에 도트 소품을 자유 배치).
+// 운영진은 관 배치·도트 자료·출처를 관리합니다. 위치는 방 그림의 픽셀 좌표로 저장합니다.
 // ==================================================================
 let dormData = null, dormRoster = [], dormView = 'halls', dormRoom = null, dormEdit = null, dormSel = -1, dormPick = null, dormCat = 'furniture';
 let dormHallsDraft = null, dormCreditsDraft = null, dormSaving = false;
-const dormUp = { buf: null, filename: '', url: '', name: '', category: 'furniture', credit: '', px: 16, nw: 0, nh: 0 };
-const DORM_CATS = [['furniture', '가구'], ['deco', '소품'], ['wall', '벽 장식'], ['floor', '바닥'], ['wallpaper', '벽지']];
+const dormUp = { buf: null, filename: '', url: '', name: '', category: 'deco', credit: '', nw: 0, nh: 0 };
+const DORM_CATS = [['furniture', '가구'], ['deco', '소품'], ['wall', '벽 장식'], ['surface', '벽지·바닥'], ['room', '방']];
+let dormSet = '', dormQ = '';
 function dormIsGm() { return myControlInfo(lastBattleForPanel).scope === 'all'; }
 function dormMe() { return myLoggedInName(); }
 function dormAsset(id) { return (dormData && dormData.assets || []).find(a => a.id === id) || null; }
 function dormHallOf(name) { return (dormData && dormData.halls || []).find(h => (h.slots || []).includes(name)) || null; }
 function dormCanEdit(owner) { return dormIsGm() || (dormMe() && dormMe() === owner); }
+function dormBase(r) { return dormAsset(r && r.base) || dormAsset(dormData.default_base); }
 
 function openDorm() {
   document.getElementById('dormModal').style.display = 'flex';
@@ -6545,8 +6551,8 @@ socket.on('dorm_data', (d) => {
 });
 socket.on('dorm_room', (r) => {
   if (!dormRoom || dormRoom.owner !== r.owner) return;
-  if (dormEdit && !dormSaving) { dormRoom = Object.assign(r, {}); return; }
-  dormRoom = r; dormSaving = false; dormEdit = null; dormSel = -1;
+  if (dormEdit && !dormSaving) { dormRoom = r; return; }
+  dormRoom = r; dormSaving = false; dormEdit = null; dormSel = -1; dormPick = null;
   if (document.getElementById('dormModal').style.display === 'flex') renderDorm();
 });
 socket.on('dorm_result', (d) => { showShopToast(d.message); if (!d.ok) dormSaving = false; });
@@ -6575,43 +6581,44 @@ function dormHallsHtml() {
 }
 
 // ---------- 방 ----------
-function dormScale(body, editing) {
-  const W = dormData.room_w * dormData.tile, H = dormData.room_h * dormData.tile;
-  const aw = Math.max(200, body.clientWidth - (editing && window.innerWidth > 900 ? 300 : 0) - 8);
-  const ah = Math.max(200, body.clientHeight - 70 - (editing && window.innerWidth <= 900 ? 260 : 0));
-  const s = Math.min(aw / W, ah / H);
-  return s >= 2 ? Math.floor(s) : Math.max(1, s);
+function dormScale(body, base, editing) {
+  const narrow = window.innerWidth <= 900;
+  const aw = Math.max(200, body.clientWidth - (editing && !narrow ? 300 : 0) - 8);
+  const ah = Math.max(200, body.clientHeight - 70 - (editing && narrow ? 280 : 0));
+  const s = Math.min(aw / base.w, ah / base.h);
+  return s >= 1 ? Math.max(1, Math.floor(s * 4) / 4) : s;
 }
 function renderDormRoom(body) {
   const r = dormRoom, owner = r.owner, hall = dormHallOf(owner);
   const slot = hall ? hall.slots.indexOf(owner) + 1 : 0;
   const can = dormCanEdit(owner) && hall;
-  const head = `<div class="dorm-top"><button class="mail-back" style="margin:0" onclick="if(dormEdit){uiConfirm('저장하지 않은 꾸미기가 있어요. 나갈까요?',{title:'방 나가기',okText:'나가기'}).then(ok=>{if(ok){dormEdit=null;setDormView('halls');}})}else setDormView('halls')"><i class="fa-solid fa-chevron-left"></i></button>
+  const head = `<div class="dorm-top"><button class="mail-back" style="margin:0" onclick="dormLeaveRoom()"><i class="fa-solid fa-chevron-left"></i></button>
     <div><div class="dorm-room-title">${mailEsc(owner)}의 방</div><div class="dorm-room-sub">${hall ? `${mailEsc(hall.name)} · ${slot}호` : '배정되지 않은 방'}</div></div><span class="sp"></span>
     ${can && !dormEdit && !r.loading ? `<button class="btn" onclick="startDormEdit()"><i class="fa-solid fa-paintbrush"></i> 꾸미기</button>` : ''}
-    ${dormEdit ? `<button class="btn-plain" onclick="dormEdit=null; dormSel=-1; renderDorm()">취소</button><button class="btn" onclick="saveDormRoom()"><i class="fa-solid fa-floppy-disk"></i> 저장</button>` : ''}</div>`;
+    ${dormEdit ? `<button class="btn-plain" onclick="dormEdit=null; dormSel=-1; dormPick=null; renderDorm()">취소</button><button class="btn" onclick="saveDormRoom()"><i class="fa-solid fa-floppy-disk"></i> 저장</button>` : ''}</div>`;
   if (r.loading) { body.innerHTML = head + '<div class="dorm-empty">불러오는 중…</div>'; return; }
   body.innerHTML = head + `<div class="dorm-room-wrap"><div class="dorm-stage-box" id="dormStageBox"></div>${dormEdit ? `<div class="dorm-palette" id="dormPalette"></div>` : ''}</div>`;
-  const s = dormScale(body, !!dormEdit);
-  document.getElementById('dormStageBox').innerHTML = dormStageHtml(dormEdit || r, s, !!dormEdit);
+  const src = dormEdit || r, base = dormBase(src);
+  const s = dormScale(body, base, !!dormEdit);
+  document.getElementById('dormStageBox').innerHTML = dormStageHtml(src, base, s, !!dormEdit);
   if (dormEdit) { renderDormPalette(); bindDormStage(s); }
 }
-function dormStageHtml(r, s, editing) {
-  const T = dormData.tile * s, W = dormData.room_w * T, H = dormData.room_h * T, wallH = dormData.wall_rows * T;
-  const wp = dormAsset(r.wallpaper), fl = dormAsset(r.floor);
-  const wallStyle = `height:${wallH}px; --stripe:${T * 1.5}px; --trim:${Math.max(4, Math.round(s * 3))}px;` + (wp ? `background-image:url('${wp.url}'); background-size:${wp.w * T}px ${wp.h * T}px;` : '');
-  const floorStyle = `top:${wallH}px; --plank:${T}px; --plankw:${T * 4}px;` + (fl ? `background-image:url('${fl.url}'); background-size:${fl.w * T}px ${fl.h * T}px;` : '');
+function dormLeaveRoom() {
+  if (!dormEdit) { setDormView('halls'); return; }
+  uiConfirm('저장하지 않은 꾸미기가 있어요. 나갈까요?', { title: '방 나가기', okText: '나가기' }).then(ok => { if (ok) { dormEdit = null; setDormView('halls'); } });
+}
+function dormStageHtml(r, base, s, editing) {
+  const W = base.w * s, H = base.h * s;
   const items = (r.items || []).map((it, i) => ({ it, i, a: dormAsset(it.a) })).filter(o => o.a)
-    .sort((p, q) => (p.a.category === 'wall' ? -1 : 0) - (q.a.category === 'wall' ? -1 : 0) || (p.it.y + p.a.h) - (q.it.y + q.a.h));
-  return `<div class="dorm-stage ${editing ? 'editing' : ''}" id="dormStage" style="width:${W}px; height:${H}px;">
-    <div class="dorm-wall" style="${wallStyle}"></div><div class="dorm-floor" style="${floorStyle}"></div>
+    .sort((p, q) => ((q.a.category === 'surface') - (p.a.category === 'surface')) || (p.a.category === 'surface' ? p.i - q.i : (p.it.y + p.a.h) - (q.it.y + q.a.h)));
+  return `<div class="dorm-stage ${editing ? 'editing' : ''}" id="dormStage" style="width:${W}px; height:${H}px; background:url('${base.url}') 0 0 / 100% 100% no-repeat;">
     ${items.map(({ it, i, a }) => `<div class="dorm-item ${it.f ? 'dflip' : ''} ${editing && i === dormSel ? 'sel' : ''}" data-i="${i}" title="${mailEsc(a.name)}"
-      style="left:${it.x * T}px; top:${it.y * T}px; width:${a.w * T}px; height:${a.h * T}px; background-image:url('${a.url}');"></div>`).join('')}
-    <div class="dorm-grid" style="background-size:${T}px ${T}px;"></div><div class="dorm-ghost" id="dormGhost"></div></div>`;
+      style="left:${it.x * s}px; top:${it.y * s}px; width:${a.w * s}px; height:${a.h * s}px; background-image:url('${a.url}');"></div>`).join('')}
+    <div class="dorm-ghost" id="dormGhost"></div></div>`;
 }
 function startDormEdit() {
   const r = dormRoom;
-  dormEdit = { floor: r.floor || null, wallpaper: r.wallpaper || null, items: (r.items || []).map(i => Object.assign({}, i)) };
+  dormEdit = { base: r.base || dormData.default_base, items: (r.items || []).map(i => Object.assign({}, i)) };
   dormSel = -1; dormPick = null; renderDorm();
 }
 function saveDormRoom() {
@@ -6621,68 +6628,68 @@ function saveDormRoom() {
 }
 function renderDormPalette() {
   const el = document.getElementById('dormPalette'); if (!el) return;
-  const list = (dormData.assets || []).filter(a => a.category === dormCat);
-  const cur = dormCat === 'floor' ? dormEdit.floor : dormCat === 'wallpaper' ? dormEdit.wallpaper : dormPick;
+  const all = (dormData.assets || []).filter(a => a.category === dormCat);
+  const sets = [...new Set(all.map(a => a.set || '내가 올린 자료'))];
+  if (dormSet && !sets.includes(dormSet)) dormSet = '';
+  const q = dormQ.trim().toLowerCase();
+  const list = all.filter(a => (!dormSet || (a.set || '내가 올린 자료') === dormSet) && (!q || a.name.toLowerCase().includes(q)));
+  const cur = dormCat === 'room' ? dormEdit.base : dormPick;
   const sel = dormSel >= 0 ? dormEdit.items[dormSel] : null;
   el.innerHTML = `<div class="dorm-ptabs">${DORM_CATS.map(([k, t]) => `<button class="${dormCat === k ? 'on' : ''}" onclick="dormCat='${k}'; dormPick=null; renderDormPalette(); dormUpdateGhost()">${t}</button>`).join('')}</div>
-    ${list.length ? `<div class="dorm-assets">${list.map(a => `<div class="dorm-asset ${cur === a.id ? 'on' : ''}" title="${mailEsc(a.name)} (${a.w}×${a.h})" style="background-image:url('${a.url}')" onclick="pickDormAsset('${a.id}')"></div>`).join('')}</div>`
-      : `<div class="dorm-hint">이 종류의 도트 자료가 아직 없어요.${dormIsGm() ? ' 관리 → 도트 자료에서 올릴 수 있어요.' : ''}</div>`}
+    <div class="dorm-pfilter"><select onchange="dormSet=this.value; renderDormPalette()"><option value="">전체 세트 (${all.length})</option>${sets.map(t => `<option ${t === dormSet ? 'selected' : ''}>${mailEsc(t)}</option>`).join('')}</select>
+      <input type="text" placeholder="검색" value="${mailEsc(dormQ)}" oninput="dormQ=this.value; clearTimeout(window._dq); window._dq=setTimeout(()=>{renderDormPalette(); const i=document.querySelector('.dorm-pfilter input'); if(i){i.focus(); i.setSelectionRange(i.value.length,i.value.length);}},180)"></div>
+    ${list.length ? `<div class="dorm-assets">${list.map(a => `<div class="dorm-asset ${cur === a.id ? 'on' : ''}" title="${mailEsc(a.name)}${a.set ? ' · ' + mailEsc(a.set) : ''}" style="background-image:url('${a.url}')" onclick="pickDormAsset('${a.id}')"></div>`).join('')}</div>`
+      : `<div class="dorm-hint">${all.length ? '찾는 자료가 없어요.' : '이 종류의 도트 자료가 아직 없어요.' + (dormIsGm() ? ' 관리 → 도트 자료에서 올릴 수 있어요.' : '')}</div>`}
     ${sel ? `<div class="dorm-tools"><button class="btn-plain" onclick="dormFlipSel()"><i class="fa-solid fa-left-right"></i> 좌우 반전</button><button class="btn-plain" onclick="dormDeleteSel()"><i class="fa-solid fa-trash-can"></i> 치우기</button></div>` : ''}
-    <div class="dorm-hint">${dormCat === 'floor' || dormCat === 'wallpaper' ? '고르면 바로 깔려요. 한 번 더 누르면 기본으로 돌아가요.' : '자료를 고르고 방을 눌러 놓아요. 놓은 가구는 끌어서 옮기고, 눌러서 반전·치우기를 할 수 있어요.'}</div>`;
+    <div class="dorm-hint">${dormCat === 'room' ? '고르면 방 바탕이 바뀌어요.' : dormCat === 'surface' ? '벽지·바닥은 항상 다른 자료보다 뒤에 깔려요. 놓은 뒤 끌어서 벽·바닥에 맞춰 주세요.' : '자료를 고르고 방을 눌러 놓아요. 놓은 소품은 끌어서 옮기고, 눌러서 반전·치우기를 할 수 있어요. (Esc : 고르기 취소, Delete : 치우기)'}</div>`;
 }
 function pickDormAsset(id) {
-  if (dormCat === 'floor') dormEdit.floor = dormEdit.floor === id ? null : id;
-  else if (dormCat === 'wallpaper') dormEdit.wallpaper = dormEdit.wallpaper === id ? null : id;
-  else { dormPick = dormPick === id ? null : id; dormSel = -1; renderDormPalette(); dormUpdateGhost(); return; }
-  renderDorm();
+  if (dormCat === 'room') { dormEdit.base = id; renderDorm(); return; }
+  dormPick = dormPick === id ? null : id; dormSel = -1; renderDormPalette(); dormUpdateGhost();
 }
 function dormFlipSel() { if (dormSel >= 0) { dormEdit.items[dormSel].f = !dormEdit.items[dormSel].f; renderDorm(); } }
 function dormDeleteSel() { if (dormSel >= 0) { dormEdit.items.splice(dormSel, 1); dormSel = -1; renderDorm(); } }
-function dormPlaceOk(a, x, y) {
-  const R = dormData.wall_rows;
-  if (x < 0 || y < 0 || x + a.w > dormData.room_w || y + a.h > dormData.room_h) return false;
-  if (a.category === 'wall') return y + a.h <= R + 1;      // 벽 장식은 벽(과 바로 아래 한 줄)까지
-  return y + a.h - 1 >= R;                                 // 가구·소품은 바닥에 닿아야
-}
 let dormGhostPos = null;
+function dormClampPos(a, x, y) {
+  const b = dormBase(dormEdit);
+  return { x: Math.round(Math.max(-a.w / 2, Math.min(b.w - a.w / 2, x))), y: Math.round(Math.max(-a.h / 2, Math.min(b.h - a.h / 2, y))) };
+}
 function dormUpdateGhost() {
   const g = document.getElementById('dormGhost'); if (!g) return;
   const a = dormPick && dormAsset(dormPick);
   if (!a || !dormGhostPos) { g.style.display = 'none'; return; }
-  const T = dormGhostPos.T, x = Math.max(0, Math.min(dormData.room_w - a.w, dormGhostPos.tx)), y = Math.max(0, Math.min(dormData.room_h - a.h, dormGhostPos.ty - a.h + 1));
-  Object.assign(g.style, { display: 'block', left: x * T + 'px', top: y * T + 'px', width: a.w * T + 'px', height: a.h * T + 'px', backgroundImage: `url('${a.url}')` });
-  g.classList.toggle('bad', !dormPlaceOk(a, x, y));
-  dormGhostPos.x = x; dormGhostPos.y = y;
+  const s = dormGhostPos.s, p = dormClampPos(a, dormGhostPos.px - a.w / 2, dormGhostPos.py - a.h + 2);
+  Object.assign(g.style, { display: 'block', left: p.x * s + 'px', top: p.y * s + 'px', width: a.w * s + 'px', height: a.h * s + 'px', backgroundImage: `url('${a.url}')` });
+  dormGhostPos.x = p.x; dormGhostPos.y = p.y;
 }
 function bindDormStage(s) {
   const st = document.getElementById('dormStage'); if (!st) return;
-  const T = dormData.tile * s;
   let drag = null;
-  const tileAt = (e) => { const b = st.getBoundingClientRect(); return { tx: Math.floor((e.clientX - b.left) / T), ty: Math.floor((e.clientY - b.top) / T) }; };
+  const ptAt = (e) => { const b = st.getBoundingClientRect(); return { px: (e.clientX - b.left) / s, py: (e.clientY - b.top) / s }; };
   st.addEventListener('pointermove', (e) => {
-    const p = tileAt(e);
+    const p = ptAt(e);
     if (drag) {
-      const it = dormEdit.items[drag.i], a = dormAsset(it.a);
-      const x = Math.max(0, Math.min(dormData.room_w - a.w, p.tx - drag.ox)), y = Math.max(0, Math.min(dormData.room_h - a.h, p.ty - drag.oy));
-      if (dormPlaceOk(a, x, y)) { it.x = x; it.y = y; drag.el.style.left = x * T + 'px'; drag.el.style.top = y * T + 'px'; drag.moved = true; }
+      const it = dormEdit.items[drag.i], a = dormAsset(it.a), q = dormClampPos(a, p.px - drag.ox, p.py - drag.oy);
+      it.x = q.x; it.y = q.y; drag.el.style.left = q.x * s + 'px'; drag.el.style.top = q.y * s + 'px'; drag.moved = true;
       return;
     }
-    dormGhostPos = Object.assign(p, { T }); dormUpdateGhost();
+    dormGhostPos = Object.assign(p, { s }); dormUpdateGhost();
   });
-  st.addEventListener('pointerleave', () => { dormGhostPos = null; dormUpdateGhost(); });
+  st.addEventListener('pointerleave', () => { if (!drag) { dormGhostPos = null; dormUpdateGhost(); } });
   st.addEventListener('pointerdown', (e) => {
     const itemEl = e.target.closest('.dorm-item');
     if (itemEl && !dormPick) {
-      const i = +itemEl.dataset.i, it = dormEdit.items[i], p = tileAt(e);
+      const i = +itemEl.dataset.i, it = dormEdit.items[i], p = ptAt(e);
       dormSel = i; st.querySelectorAll('.dorm-item.sel').forEach(x => x.classList.remove('sel')); itemEl.classList.add('sel');
-      drag = { i, el: itemEl, ox: p.tx - it.x, oy: p.ty - it.y, moved: false };
+      drag = { i, el: itemEl, ox: p.px - it.x, oy: p.py - it.y, moved: false };
       st.setPointerCapture(e.pointerId); renderDormPalette(); return;
     }
     const a = dormPick && dormAsset(dormPick);
-    if (a && dormGhostPos && dormPlaceOk(a, dormGhostPos.x, dormGhostPos.y)) {
-      if (dormEdit.items.length >= 120) { showShopToast('가구는 120개까지 놓을 수 있어요.'); return; }
+    if (a) {
+      if (!dormGhostPos) { dormGhostPos = Object.assign(ptAt(e), { s }); dormUpdateGhost(); }
+      if (dormEdit.items.length >= 150) { showShopToast('소품은 150개까지 놓을 수 있어요.'); return; }
       dormEdit.items.push({ a: a.id, x: dormGhostPos.x, y: dormGhostPos.y, f: false }); renderDorm();
-    } else if (!a) { dormSel = -1; st.querySelectorAll('.dorm-item.sel').forEach(x => x.classList.remove('sel')); renderDormPalette(); }
+    } else { dormSel = -1; st.querySelectorAll('.dorm-item.sel').forEach(x => x.classList.remove('sel')); renderDormPalette(); }
   });
   st.addEventListener('pointerup', () => { if (drag && drag.moved) renderDorm(); drag = null; });
 }
@@ -6717,25 +6724,26 @@ function dormManageHtml() {
       <button class="dorm-x" title="관 지우기" onclick="dormHallsDraft.splice(${hi},1); renderDorm()"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
   const crOpt = (cur) => `<option value="">출처 없음</option>` + (dormData.credits || []).map(c => `<option value="${c.id}" ${c.id === cur ? 'selected' : ''}>${mailEsc(c.title)}</option>`).join('');
   const catOpt = (cur) => DORM_CATS.map(([k, t]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t}</option>`).join('');
-  const assets = (dormData.assets || []).map(a => `<div class="dorm-arow"><div class="th" style="background-image:url('${a.url}')"></div>
+  const builtinN = (dormData.assets || []).filter(a => a.builtin).length;
+  const builtinSets = new Set((dormData.assets || []).filter(a => a.builtin).map(a => a.set)).size;
+  const assets = (dormData.assets || []).filter(a => !a.builtin).map(a => `<div class="dorm-arow"><div class="th" style="background-image:url('${a.url}')"></div>
       <input type="text" value="${mailEsc(a.name)}" onchange="socket.emit('dorm_asset_update',{id:'${a.id}',name:this.value})">
       <select onchange="socket.emit('dorm_asset_update',{id:'${a.id}',category:this.value})">${catOpt(a.category)}</select>
-      <span class="sz">${a.w}×${a.h}칸</span>
+      <span class="sz">${a.w}×${a.h}</span>
       <select class="cr" onchange="socket.emit('dorm_asset_update',{id:'${a.id}',credit:this.value})">${crOpt(a.credit)}</select>
-      <button class="dorm-x" title="자료 지우기" onclick="uiConfirm('이 자료를 지울까요? 이미 놓인 가구도 사라져요.',{title:'자료 지우기',okText:'지우기',danger:true}).then(ok=>ok&&socket.emit('dorm_asset_delete',{id:'${a.id}'}))"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
+      <button class="dorm-x" title="자료 지우기" onclick="uiConfirm('이 자료를 지울까요? 이미 놓인 것도 사라져요.',{title:'자료 지우기',okText:'지우기',danger:true}).then(ok=>ok&&socket.emit('dorm_asset_delete',{id:'${a.id}'}))"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
   const credits = dormCreditsDraft.map((c, ci) => `<div class="dorm-crow">
-      <input type="text" value="${mailEsc(c.title)}" placeholder="자료 이름 (예: Roguelike Indoors)" oninput="dormCreditsDraft[${ci}].title=this.value">
+      <input type="text" value="${mailEsc(c.title)}" placeholder="자료 이름" oninput="dormCreditsDraft[${ci}].title=this.value">
       <input type="text" value="${mailEsc(c.author)}" placeholder="제작자" oninput="dormCreditsDraft[${ci}].author=this.value">
       <input type="text" value="${mailEsc(c.license)}" placeholder="라이선스 (예: CC0)" oninput="dormCreditsDraft[${ci}].license=this.value">
       <input type="text" value="${mailEsc(c.url)}" placeholder="주소 https://…" oninput="dormCreditsDraft[${ci}].url=this.value">
       <button class="dorm-x" onclick="dormCreditsDraft.splice(${ci},1); renderDorm()"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
-  const sz = dormUp.nw ? `${Math.max(1, Math.ceil(dormUp.nw / dormUp.px))}×${Math.max(1, Math.ceil(dormUp.nh / dormUp.px))}칸` : '';
   return `
     <div class="dorm-sec"><h3><i class="fa-solid fa-building"></i> 관 배치 <span class="dorm-room-sub">한 관에 ${dormData.hall_size}명</span><span class="sp"></span>
       <button class="btn-plain" onclick="dormHallsDraft.push({name:'${(dormHallsDraft.length + 1)}관', slots:[null,null,null,null,null,null]}); renderDorm()"><i class="fa-solid fa-plus"></i> 관 추가</button>
       <button class="btn" onclick="socket.emit('dorm_halls_save',{halls:dormHallsDraft}); dormHallsDraft=null">저장</button></h3>
       ${halls || '<div class="dorm-hint">관 추가를 눌러 첫 관을 만들어 주세요.</div>'}</div>
-    <div class="dorm-sec"><h3><i class="fa-solid fa-chess-rook"></i> 도트 자료 <span class="dorm-room-sub">${(dormData.assets || []).length}개</span></h3>
+    <div class="dorm-sec"><h3><i class="fa-solid fa-chess-rook"></i> 도트 자료 <span class="dorm-room-sub">기본 ${builtinN}개(${builtinSets}세트) · 올린 자료 ${(dormData.assets || []).length - builtinN}개</span></h3>
       <div class="dorm-up">
         <div class="dorm-up-prev" onclick="document.getElementById('dormUpFile').click()" style="${dormUp.url ? `background-image:url('${dormUp.url}')` : ''}">${dormUp.url ? '' : '이미지<br>고르기'}</div>
         <input type="text" placeholder="이름 (예: 침대)" value="${mailEsc(dormUp.name)}" oninput="dormUp.name=this.value">
@@ -6743,9 +6751,8 @@ function dormManageHtml() {
         <select onchange="dormUp.credit=this.value">${crOpt(dormUp.credit)}</select>
         <button class="btn" onclick="uploadDormAsset()"><i class="fa-solid fa-upload"></i> 올리기</button>
       </div>
-      <div class="dorm-hint">png·gif·webp (최대 2MB). 한 칸 크기
-        <select style="height:28px; padding:0 6px; font-size:12px; width:auto; display:inline-block" onchange="dormUp.px=+this.value; renderDorm()">${[16, 32, 48, 64].map(v => `<option ${dormUp.px === v ? 'selected' : ''}>${v}</option>`).join('')}</select>px 기준으로
-        크기를 계산해요${sz ? ` → <b style="color:var(--text)">${sz}</b>` : ''}. 출처를 먼저 아래에 등록하면 자료마다 고를 수 있어요.</div>
+      <div class="dorm-hint">png·gif·webp (최대 2MB). 방 그림 크기에 맞춘 원본 크기 그대로 올려 주세요${dormUp.nw ? ` → <b style="color:var(--text)">${dormUp.nw}×${dormUp.nh}</b>` : ''}.
+        "방" 종류로 올리면 방 바탕으로 쓸 수 있어요. 출처를 먼저 아래에 등록하면 자료마다 고를 수 있어요.</div>
       <input type="file" id="dormUpFile" accept="image/png,image/gif,image/webp" style="display:none" onchange="onDormUpFile(event)">
       <div class="dorm-alist">${assets}</div></div>
     <div class="dorm-sec"><h3><i class="fa-solid fa-circle-info"></i> 출처<span class="sp"></span>
@@ -6764,9 +6771,8 @@ function onDormUpFile(ev) {
   f.arrayBuffer().then(b => { dormUp.buf = b; });
 }
 function uploadDormAsset() {
-  if (!dormUp.buf) { showShopToast('먼저 이미지를 골라 주세요.'); return; }
-  const w = Math.max(1, Math.ceil(dormUp.nw / dormUp.px)), h = Math.max(1, Math.ceil(dormUp.nh / dormUp.px));
-  socket.emit('dorm_asset_upload', { filename: dormUp.filename, data: dormUp.buf, name: dormUp.name, category: dormUp.category, credit: dormUp.credit, w, h });
+  if (!dormUp.buf || !dormUp.nw) { showShopToast('먼저 이미지를 골라 주세요.'); return; }
+  socket.emit('dorm_asset_upload', { filename: dormUp.filename, data: dormUp.buf, name: dormUp.name, category: dormUp.category, credit: dormUp.credit, w: dormUp.nw, h: dormUp.nh });
   if (dormUp.url) URL.revokeObjectURL(dormUp.url);
   Object.assign(dormUp, { buf: null, filename: '', url: '', name: '', nw: 0, nh: 0 });
 }
