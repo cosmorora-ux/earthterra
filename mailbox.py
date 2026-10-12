@@ -50,7 +50,7 @@ class Mailbox:
             json.dump({"letters": self.letters}, f, ensure_ascii=False, indent=1)
         os.replace(tmp, self.path)
 
-    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=()):
+    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True):
         text = (text or "").strip()
         if not text:
             raise MailError("편지 내용을 써 주세요.")
@@ -58,7 +58,7 @@ class Mailbox:
             raise MailError(f"편지는 {MAX_TEXT_LEN}자까지 쓸 수 있어요.")
         with self.lock:
             now = time.time()
-            if now - self._last_send.get(sender, 0) < SEND_COOLDOWN:
+            if check_cooldown and now - self._last_send.get(sender, 0) < SEND_COOLDOWN:
                 raise MailError("조금 있다가 다시 보내 주세요.")
             if random_pick:
                 pool = [c for c in candidates if c != sender]

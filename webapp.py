@@ -2660,23 +2660,42 @@ def on_mail_send(data):
     if me is None:
         emit("mail_result", {"ok": False, "message": "캐릭터로 로그인해야 편지를 보낼 수 있어요."})
         return
+    # 직접 고르기 : 여러 명에게 한 통씩(익명 불가) / 랜덤 : 한 명에게(익명이 기본, 끌 수 있음)
+    is_random = bool(data.get("random"))
+    if is_random:
+        targets, anonymous = [""], bool(data.get("anonymous", True))
+    else:
+        raw = data.get("to")
+        raw = raw if isinstance(raw, list) else [raw]
+        targets = list(dict.fromkeys((t or "").strip() for t in raw if (t or "").strip()))[:30]
+        anonymous = False
+        if not targets:
+            emit("mail_result", {"ok": False, "message": "받는 사람을 골라 주세요."})
+            return
+    box = mailbox_mod.shared_mailbox()
+    sent = []
     try:
-        letter = mailbox_mod.shared_mailbox().send(
-            me, (data.get("to") or "").strip(), data.get("text"),
-            anonymous=bool(data.get("anonymous")), random_pick=bool(data.get("random")),
-            candidates=_mail_candidates(room),
-        )
+        for i, t in enumerate(targets):
+            sent.append(box.send(me, t, data.get("text"), anonymous=anonymous, random_pick=is_random,
+                                 candidates=_mail_candidates(room), check_cooldown=(i == 0)))
     except mailbox_mod.MailError as e:
-        emit("mail_result", {"ok": False, "message": str(e)})
-        return
-    msg = "랜덤으로 누군가에게 편지를 보냈어요." if letter["random"] else f"{letter['to']}에게 편지를 보냈어요."
+        if not sent:
+            emit("mail_result", {"ok": False, "message": str(e)})
+            return
+    if is_random:
+        msg = "랜덤으로 누군가에게 편지를 보냈어요."
+    elif len(sent) == 1:
+        msg = f"{sent[0]['to']}에게 편지를 보냈어요."
+    else:
+        msg = f"{sent[0]['to']} 외 {len(sent) - 1}명에게 편지를 보냈어요."
     emit("mail_result", {"ok": True, "message": msg})
     _emit_mail_data(request.sid)
     # 받는 사람이 지금 접속해 있으면(어느 방이든) 바로 알려줍니다.
-    for sid, info in list(CONNECTIONS.items()):
-        if sid != request.sid and (info.get("nickname") or "").strip() == letter["to"]:
-            socketio.emit("mail_new", {"from": None if letter["anonymous"] else letter["from"]}, to=sid)
-            _emit_mail_data(sid)
+    for letter in sent:
+        for sid, info in list(CONNECTIONS.items()):
+            if sid != request.sid and (info.get("nickname") or "").strip() == letter["to"]:
+                socketio.emit("mail_new", {"from": None if letter["anonymous"] else letter["from"]}, to=sid)
+                _emit_mail_data(sid)
 
 
 @socketio.on("mail_read")

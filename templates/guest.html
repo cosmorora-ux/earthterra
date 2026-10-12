@@ -1506,6 +1506,12 @@
   .mail-seg button.on { color:#fff; background: rgba(92,134,255,.16); border-color: rgba(92,134,255,.45); }
   .mail-names { display:flex; flex-wrap:wrap; gap:6px; max-height:132px; overflow-y:auto; margin-top:8px; }
   .mail-name { background: rgba(255,255,255,.05); border:1px solid transparent; color:#cfcfd4; border-radius:999px; padding:5px 12px; font-size:13px; cursor:pointer; }
+  .mail-picked { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; min-height:26px; }
+  .mail-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 6px 3px 10px; border-radius:999px; background: rgba(92,134,255,.18); color:#dbe4ff; font-size:12.5px; font-weight:600; }
+  .mail-chip button { width:18px; height:18px; border:none; border-radius:50%; background:none; color:#aebcff; cursor:pointer; font-size:10px; }
+  .mail-chip button:hover { background: rgba(255,255,255,.12); color:#fff; }
+  .mail-name i { font-size:10px; }
+  .mail-anon.off { color: var(--muted); cursor:default; }
   .mail-name:hover { background: rgba(255,255,255,.09); }
   .mail-name.on { background: var(--point); color:#fff; }
   .mail-rand { font-size:13px; color: var(--muted); line-height:1.7; padding:12px 14px; border-radius:12px; background: rgba(255,255,255,.03); }
@@ -6594,7 +6600,7 @@ var Weather = (function () {
 // 우체통 : 캐릭터끼리 편지. 받는 사람 지정 / 랜덤, 익명 보내기. 운영진은 전체 편지를 볼 수 있습니다.
 // ==================================================================
 let mailData = null, mailTab = 'inbox', mailOpenId = null;
-const mailDraft = { mode: 'pick', to: '', q: '', anon: false, text: '' };
+const mailDraft = { mode: 'pick', to: [], q: '', anon: true, text: '' };
 function mailEsc(t) { return shopEsc(t); }
 function mailTime(at) {
   const d = new Date(at * 1000), h = d.getHours();
@@ -6622,7 +6628,7 @@ socket.on('mail_data', (d) => {
 socket.on('mail_new', (d) => showShopToast(d && d.from ? `${d.from}에게서 편지가 왔어요.` : '새 편지가 도착했어요.'));
 socket.on('mail_result', (d) => {
   showShopToast(d.message);
-  if (d.ok) { mailDraft.text = ''; mailDraft.to = ''; mailDraft.anon = false; mailTab = 'outbox'; mailOpenId = null; renderMail(); }
+  if (d.ok) { mailDraft.text = ''; mailDraft.to = []; mailDraft.anon = true; mailTab = 'outbox'; mailOpenId = null; renderMail(); }
   else { const b = document.getElementById('mailSendBtn'); if (b) b.disabled = false; }
 });
 
@@ -6685,7 +6691,7 @@ function deleteLetter(id) {
     socket.emit('mail_delete', { id }); mailOpenId = null; renderMail();
   });
 }
-function replyLetter(name) { mailDraft.mode = 'pick'; mailDraft.to = name; mailTab = 'write'; mailOpenId = null; renderMail(); }
+function replyLetter(name) { mailDraft.mode = 'pick'; mailDraft.to = [name]; mailTab = 'write'; mailOpenId = null; renderMail(); }
 function mailComposeHtml(d) {
   const roster = (d.roster || []).filter(n => n !== d.me);
   const q = mailDraft.q.trim().toLowerCase();
@@ -6696,33 +6702,47 @@ function mailComposeHtml(d) {
       <div class="mail-seg"><button class="${pick ? 'on' : ''}" onclick="mailDraft.mode='pick'; renderMail()"><i class="fa-solid fa-user"></i> 직접 고르기</button>
         <button class="${pick ? '' : 'on'}" onclick="mailDraft.mode='random'; renderMail()"><i class="fa-solid fa-shuffle"></i> 랜덤</button></div>
       ${pick ? `<input type="text" style="margin-top:10px" placeholder="이름 검색" value="${mailEsc(mailDraft.q)}" oninput="mailDraft.q=this.value; mailRefreshNames()" autocomplete="off">
+        <div class="mail-picked" id="mailPicked">${mailPickedHtml()}</div>
         <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
         : `<div class="mail-rand" style="margin-top:10px">등록된 캐릭터 중 한 명에게 무작위로 보내요. 누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</div>`}
     </div>
     <div><div class="mail-label">내용</div>
       <textarea class="mail-text" id="mailText" maxlength="2000" placeholder="편지를 써 주세요." oninput="mailDraft.text=this.value; document.getElementById('mailCount').textContent=this.value.length+' / 2000'">${mailEsc(mailDraft.text)}</textarea></div>
     <div class="mail-foot">
-      <label class="mail-anon"><input type="checkbox" ${mailDraft.anon ? 'checked' : ''} onchange="mailDraft.anon=this.checked"> 익명으로 보내기</label>
+      ${pick ? `<span class="mail-anon off">이름을 밝혀서 보내요</span>`
+        : `<label class="mail-anon"><input type="checkbox" ${mailDraft.anon ? 'checked' : ''} onchange="mailDraft.anon=this.checked"> 익명으로 보내기</label>`}
       <span class="mail-count" id="mailCount">${mailDraft.text.length} / 2000</span>
       <button class="btn mail-send" id="mailSendBtn" onclick="sendLetter()"><i class="fa-solid fa-paper-plane"></i> 보내기</button>
     </div></div>`;
 }
 function mailNamesHtml(names) {
   if (!names.length) return '<span class="mail-me">찾는 이름이 없어요.</span>';
-  return names.map(n => `<button class="mail-name ${mailDraft.to === n ? 'on' : ''}" onclick="mailDraft.to=${mailEsc(JSON.stringify(n))}; mailRefreshNames()">${mailEsc(n)}</button>`).join('');
+  return names.map(n => `<button class="mail-name ${mailDraft.to.includes(n) ? 'on' : ''}" onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})">${mailDraft.to.includes(n) ? '<i class="fa-solid fa-check"></i> ' : ''}${mailEsc(n)}</button>`).join('');
+}
+// 직접 고르기는 여러 명을 고를 수 있어요 (한 사람에게 한 통씩 가요)
+function mailToggleTo(n) {
+  const i = mailDraft.to.indexOf(n);
+  if (i >= 0) mailDraft.to.splice(i, 1); else if (mailDraft.to.length < 30) mailDraft.to.push(n); else showShopToast('한 번에 30명까지 보낼 수 있어요.');
+  mailRefreshNames();
+}
+function mailPickedHtml() {
+  if (!mailDraft.to.length) return '<span class="mail-me">이름을 눌러 받는 사람을 골라요. 여러 명 고를 수 있어요.</span>';
+  return `<span class="mail-me">${mailDraft.to.length}명</span>` + mailDraft.to.map(n => `<span class="mail-chip">${mailEsc(n)}<button onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})" aria-label="빼기"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
 }
 function mailRefreshNames() {
   const el = document.getElementById('mailNames');
   if (!el || !mailData) return;
   const q = mailDraft.q.trim().toLowerCase();
   el.innerHTML = mailNamesHtml((mailData.roster || []).filter(n => n !== mailData.me && (!q || n.toLowerCase().includes(q))));
+  const pk = document.getElementById('mailPicked'); if (pk) pk.innerHTML = mailPickedHtml();
 }
 function sendLetter() {
   const text = (mailDraft.text || '').trim();
   if (!text) { showShopToast('편지 내용을 써 주세요.'); return; }
-  if (mailDraft.mode === 'pick' && !mailDraft.to) { showShopToast('받는 사람을 골라 주세요.'); return; }
+  const pick = mailDraft.mode === 'pick';
+  if (pick && !mailDraft.to.length) { showShopToast('받는 사람을 골라 주세요.'); return; }
   document.getElementById('mailSendBtn').disabled = true;
-  socket.emit('mail_send', { to: mailDraft.mode === 'pick' ? mailDraft.to : '', random: mailDraft.mode === 'random', anonymous: mailDraft.anon, text });
+  socket.emit('mail_send', { to: pick ? mailDraft.to : [], random: !pick, anonymous: pick ? false : mailDraft.anon, text });
 }
 
 // ==================================================================
