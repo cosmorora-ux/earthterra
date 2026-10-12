@@ -1523,7 +1523,11 @@
   /* ================================================================
      기숙사(마이룸)
      ================================================================ */
-  .modal-box.dorm-modal { width:1040px; max-width:calc(100vw - 32px); height:88vh; display:flex; flex-direction:column; padding:18px 20px; }
+  /* 기숙사 페이지 : 전투 화면 자리를 그대로 씁니다 */
+  .dorm-page { display:none; flex:1; min-height:0; flex-direction:column; }
+  body.view-dorm .shell > *:not(.modal-overlay):not(.dorm-page):not(#shopToast):not(#floatTip) { display:none !important; }
+  .modal-box.dorm-modal { width:100%; max-width:none; flex:1; min-height:0; height:auto; display:flex; flex-direction:column; padding:22px 26px;
+    border-radius:16px; box-shadow:none; animation:none; }
   .dorm-hbtn { display:inline-flex; align-items:center; gap:6px; background: rgba(255,255,255,.05); border:1px solid transparent; color:#cfcfd4;
     border-radius:10px; padding:7px 12px; font-size:13px; cursor:pointer; }
   .dorm-hbtn:hover { background: rgba(255,255,255,.09); color:#fff; }
@@ -1629,8 +1633,7 @@
   .dorm-credit .m { font-size:13px; color: var(--muted); margin-top:3px; }
   .dorm-credit a { color: var(--point); word-break:break-all; }
   @media (max-width:1180px) {
-    .modal-box.dorm-modal { width:100vw; max-width:none; height:100dvh; max-height:none; border-radius:0; border:none;
-      padding:calc(20px + env(safe-area-inset-top)) 20px calc(16px + env(safe-area-inset-bottom)); }
+    .modal-box.dorm-modal { padding:16px 16px; }
   }
   @media (max-width:900px) {
     .dorm-room-wrap { flex-direction:column; align-items:stretch; }
@@ -1664,7 +1667,7 @@
   <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
   <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i></button>
   <button class="sidebar-icon" id="sidebarDormBtn" onclick="openDorm()" data-tip="기숙사"><i class="fa-solid fa-house"></i></button>
-  <button class="sidebar-icon active"><i class="fa-solid fa-globe"></i></button>
+  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
   <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
@@ -1872,13 +1875,12 @@
   </div>
 </div>
 <div id="shopToast"></div>
-<div id="dormModal" class="modal-overlay" onclick="if(event.target===this) closeDorm()">
+<div id="dormModal" class="dorm-page">
   <div class="modal-box dorm-modal panel">
     <div class="shop-head">
       <div class="modal-title page-title">Dorm</div>
       <button class="dorm-hbtn" onclick="openDormCredits()"><i class="fa-solid fa-circle-info"></i> 출처</button>
       <button class="dorm-hbtn gm-only" id="dormManageBtn" onclick="setDormView(dormView === 'manage' ? 'halls' : 'manage')"><i class="fa-solid fa-sliders"></i> 관리</button>
-      <button class="shop-close" onclick="closeDorm()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="shop-body" id="dormBody"></div>
   </div>
@@ -6579,8 +6581,16 @@ function dormZ(it, a) { return (it && it.z) || (a && a.s) || 1; }
 function dormBW(b) { return b.w * (b.s || 1); }
 function dormBH(b) { return b.h * (b.s || 1); }
 
+// 기숙사는 팝업이 아니라 전투 화면과 나란한 '페이지'예요. 사이드바 집 / 지구본 아이콘으로 오갑니다.
+function setMainView(dorm) {
+  document.body.classList.toggle('view-dorm', dorm);
+  document.getElementById('sidebarDormBtn').classList.toggle('active', dorm);
+  document.getElementById('sidebarBattleBtn').classList.toggle('active', !dorm);
+  if (!dorm && typeof drawAttackLines === 'function') setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 30);
+}
 function openDorm() {
   document.getElementById('dormModal').style.display = 'flex';
+  setMainView(true);
   socket.emit('dorm_get');
   if (dormView === 'manage' && !dormIsGm()) dormView = 'halls';
   renderDorm();
@@ -6588,6 +6598,7 @@ function openDorm() {
 function closeDorm() {
   if (dormEdit) { uiConfirm('저장하지 않은 꾸미기가 있어요. 닫을까요?', { title: '기숙사 닫기', okText: '닫기' }).then(ok => { if (ok) { dormEdit = null; closeDorm(); } }); return; }
   document.getElementById('dormModal').style.display = 'none';
+  setMainView(false);
 }
 function setDormView(v) { dormView = v; if (v === 'manage') { dormHallsDraft = null; dormCreditsDraft = null; } renderDorm(); }
 function openDormRoom(owner) { dormView = 'room'; dormRoom = { owner, loading: true }; dormEdit = null; dormSel = -1; socket.emit('dorm_room_get', { name: owner }); renderDorm(); }
