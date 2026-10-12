@@ -1642,6 +1642,12 @@
     .dorm-arow .sz, .dorm-arow .cr { display:none; }
     .dorm-crow { grid-template-columns: 1fr 1fr; }
   }
+
+  /* 로그인 전 : 채팅창·우체통 숨김. 음악 조절은 팀 제목 줄 오른쪽에 그대로 둡니다. */
+  body.logged-out .member-col .member-panel, body.logged-out #sidebarMailBtn, body.logged-out .sidebar .m-chat-btn { display:none !important; }
+  body.logged-out .member-col { width:auto; min-width:0; flex:none; }
+  body.logged-out .layout-grid { position:relative; }
+  body.logged-out .member-top { position:absolute; top:0; right:0; z-index:5; }
 </style>
 </head>
 <body>
@@ -2564,7 +2570,14 @@ function updateAvatarDots(battle) {
   if (loginIcon) loginIcon.className = explicitlyJoined ? 'fa-solid fa-right-from-bracket' : 'fa-solid fa-right-to-bracket';
   // 로그인(캐릭터 또는 GM)하지 않았으면 마이페이지 아이콘을 아예 숨깁니다.
   const myBtn = document.getElementById('sidebarMyPageBtn');
-  if (myBtn) myBtn.style.display = explicitlyJoined && (myLoggedInName() || myControlInfo(lastBattleForPanel).scope === 'all') ? '' : 'none';
+  const loggedIn = explicitlyJoined && (myLoggedInName() || myControlInfo(lastBattleForPanel).scope === 'all');
+  if (myBtn) myBtn.style.display = loggedIn ? '' : 'none';
+  // 로그인하지 않았으면 채팅창과 우체통도 숨깁니다(전투 화면은 그대로 구경할 수 있어요).
+  document.body.classList.toggle('logged-out', !loggedIn);
+  if (!loggedIn) {
+    document.body.classList.remove('m-chat-open');
+    const mm = document.getElementById('mailModal'); if (mm) mm.style.display = 'none';
+  }
 }
 
 socket.on('connect', () => {
