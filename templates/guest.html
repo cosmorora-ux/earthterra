@@ -1394,10 +1394,14 @@
   /* 입력 · 선택 */
   .action-bar-bottom select, .gm-bar-fields select, .input-row input, .modal-box input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
   .modal-box select, .modal-box textarea, .chat-search-bar input {
-    background: var(--surface-in); border:1px solid var(--line); border-radius: var(--ui-r); transition: border-color .15s, box-shadow .15s; }
-  .action-bar-bottom select:hover, .gm-bar-fields select:hover, .input-row input:hover { border-color: var(--line-strong); }
+    background: rgba(255,255,255,.05); border:1px solid transparent; border-radius: var(--ui-r); transition: border-color .15s, background-color .15s; }
+  .action-bar-bottom select:hover, .gm-bar-fields select:hover, .input-row input:hover, .chat-search-bar input:hover { background: rgba(255,255,255,.07); }
   .action-bar-bottom select:focus, .gm-bar-fields select:focus, .input-row input:focus, .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus,
-  .chat-search-bar input:focus { outline:none; border-color: rgba(92,134,255,.6); box-shadow: 0 0 0 3px rgba(92,134,255,.18); }
+  .chat-search-bar input:focus { outline:none; border-color: transparent; background: rgba(255,255,255,.1); box-shadow:none; }
+  .action-bar-bottom select option, .gm-bar-fields select option, .modal-box select option { background:#17171a; }
+  /* 채팅 검색 칸 : 넉넉한 안쪽 여백 */
+  .chat-search-bar input { height:34px; padding:0 14px; font-size:14px; }
+  .chat-search-bar { gap:10px; }
   /* 버튼 */
   .btn, .btn-primary { border-radius: var(--ui-r); }
   .btn-primary:hover, .btn:hover { filter: brightness(1.12); }

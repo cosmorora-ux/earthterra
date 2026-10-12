@@ -300,8 +300,8 @@
   }
 
   .panel { background: var(--panel); border-color: var(--line); }
-  input, select, textarea { background: var(--surface-in); border-color: var(--line); border-radius: var(--ui-r); transition: border-color .15s, box-shadow .15s; }
-  input:focus, select:focus, textarea:focus { outline:none; border-color: rgba(92,134,255,.6); box-shadow: 0 0 0 3px rgba(92,134,255,.18); }
+  input, select, textarea { background: rgba(255,255,255,.05); border-color: transparent; border-radius: var(--ui-r); transition: border-color .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color: transparent; background: rgba(255,255,255,.1); box-shadow:none; }
   button { background: rgba(255,255,255,.05); border-color: var(--line); border-radius: var(--ui-r); }
   button:not(.btn-primary):hover { background: rgba(255,255,255,.09); border-color: var(--line-strong); }
   .btn-primary:hover { filter: brightness(1.12); }
