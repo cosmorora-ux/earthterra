@@ -34,7 +34,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-12.9"
+SERVER_BUILD = "2026-10-12.10"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2737,6 +2737,56 @@ def on_dorm_room_save(data):
     emit("dorm_result", {"ok": True, "message": "방을 저장했어요."})
     socketio.emit("dorm_room", saved)
     _dorm_broadcast()
+
+
+@socketio.on("dorm_hall_rename")
+def on_dorm_hall_rename(data):
+    data = data or {}
+    me, is_gm, room = _mail_identity(request.sid)
+    if me is None:
+        emit("dorm_result", {"ok": False, "message": "캐릭터로 로그인해야 해요."})
+        return
+    try:
+        dorm_mod.shared_dorms().rename_hall(data.get("id"), data.get("name"), me, is_gm)
+    except dorm_mod.DormError as e:
+        emit("dorm_result", {"ok": False, "message": str(e)})
+        return
+    emit("dorm_result", {"ok": True, "message": "관 이름을 바꿨어요."})
+    _dorm_broadcast()
+
+
+@socketio.on("dorm_guestbook_write")
+def on_dorm_guestbook_write(data):
+    data = data or {}
+    owner = (data.get("owner") or "").strip()
+    me, is_gm, room = _mail_identity(request.sid)
+    if me is None:
+        emit("dorm_result", {"ok": False, "message": "캐릭터로 로그인해야 방명록을 쓸 수 있어요."})
+        return
+    dorms = dorm_mod.shared_dorms()
+    try:
+        dorms.write_guestbook(owner, me, data.get("text"))
+    except dorm_mod.DormError as e:
+        emit("dorm_result", {"ok": False, "message": str(e)})
+        return
+    emit("dorm_result", {"ok": True, "message": "방명록을 남겼어요."})
+    socketio.emit("dorm_room", dorms.room(owner))
+
+
+@socketio.on("dorm_guestbook_delete")
+def on_dorm_guestbook_delete(data):
+    data = data or {}
+    owner = (data.get("owner") or "").strip()
+    me, is_gm, room = _mail_identity(request.sid)
+    if me is None:
+        return
+    dorms = dorm_mod.shared_dorms()
+    try:
+        dorms.delete_guestbook(owner, data.get("author"), me, is_gm)
+    except dorm_mod.DormError as e:
+        emit("dorm_result", {"ok": False, "message": str(e)})
+        return
+    socketio.emit("dorm_room", dorms.room(owner))
 
 
 @socketio.on("dorm_halls_save")

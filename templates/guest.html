@@ -1614,6 +1614,25 @@
   .dorm-sizebar .val { min-width:46px; text-align:center; font-weight:700; font-size:13px; font-variant-numeric: tabular-nums; }
   .dorm-sizebar .rst { width:auto; padding:0 10px; font-size:12px; color:#cfcfd4; }
   .dorm-surface { position:absolute; background-size:100% 100%; background-repeat:no-repeat; image-rendering: pixelated; pointer-events:none; }
+  .dorm-rename { background:none; border:none; color: var(--muted); cursor:pointer; font-size:12px; padding:4px 6px; border-radius:6px; }
+  .dorm-rename:hover { color: var(--text); background: rgba(255,255,255,.06); }
+  .dorm-gb { width:300px; flex:none; display:flex; flex-direction:column; min-height:0; max-height:calc(100dvh - 230px); }
+  .dorm-gb-head { display:flex; align-items:baseline; gap:8px; margin:2px 2px 10px; }
+  .dorm-gb-head b { font-size:15px; }
+  .dorm-gb-head .cnt { font-size:12.5px; color: var(--muted); }
+  .dorm-gb-form { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .modal-box.dorm-modal .dorm-gb-form textarea { width:100%; min-height:72px; resize:vertical; font-size:13.5px; line-height:1.6; padding:10px 12px; }
+  .dorm-gb-form .btn { align-self:flex-end; padding:7px 16px; font-size:13px; }
+  .dorm-gb-list { display:flex; flex-direction:column; gap:8px; overflow-y:auto; min-height:0; padding-right:2px; }
+  .dorm-gb-item { padding:10px 12px; border-radius:12px; background: rgba(255,255,255,.035); }
+  .dorm-gb-item.mine { background: rgba(92,134,255,.10); }
+  .dorm-gb-item .top { display:flex; align-items:center; gap:8px; }
+  .dorm-gb-item .top b { font-size:13px; }
+  .dorm-gb-item .t { font-size:11.5px; color: var(--muted); }
+  .dorm-gb-item .dorm-x { margin-left:auto; font-size:12px; }
+  .dorm-gb-item .txt { margin-top:4px; font-size:13.5px; line-height:1.6; white-space:pre-wrap; word-break:break-word; color:#dcdce0; }
+  .dorm-gb-empty { font-size:13px; color: var(--muted); padding:18px 0; text-align:center; }
+  @media (max-width:900px) { .dorm-gb { width:auto; max-height:none; } }
   .dorm-asset { aspect-ratio:1; border-radius:8px; background:#0e0e11 center/contain no-repeat; background-origin:content-box; padding:6px; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); cursor:pointer; }
   .dorm-asset:hover { border-color: rgba(255,255,255,.2); }
   .dorm-asset.on { border-color: var(--point); box-shadow: 0 0 0 1px var(--point); }
@@ -2620,7 +2639,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-12.9";
+const EXPECTED_SERVER_BUILD = "2026-10-12.10";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -6662,7 +6681,9 @@ function dormHallsHtml() {
       <span class="go">방으로 가기 <i class="fa-solid fa-arrow-right"></i></span></div>` : '';
   return myCard + '<div class="dorm-halls">' + halls.map(h => {
     const n = (h.slots || []).filter(Boolean).length;
-    return `<section class="dorm-hall"><div class="dorm-hall-head"><b>${mailEsc(h.name)}</b><span class="cnt">${n} / ${dormData.hall_size}</span></div>
+    const canRename = dormIsGm() || (me && (h.slots || []).includes(me));
+    return `<section class="dorm-hall"><div class="dorm-hall-head"><b>${mailEsc(h.name)}</b><span class="cnt">${n} / ${dormData.hall_size}</span>
+      ${canRename ? `<button class="dorm-rename" onclick="renameDormHall('${h.id}')" data-tip="관 이름 바꾸기"><i class="fa-solid fa-pen"></i></button>` : ''}</div>
     <div class="dorm-doors">${(h.slots || []).map((nm, i) => nm
       ? `<div class="dorm-door ${nm === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(nm))})">
           <div class="thumb">${dormMiniHtml(nm, 128, 118)}</div>
@@ -6675,8 +6696,8 @@ function dormHallsHtml() {
 // ---------- 방 ----------
 function dormScale(body, base, editing) {
   const narrow = window.innerWidth <= 900;
-  const aw = Math.max(200, body.clientWidth - (editing && !narrow ? 300 : 0) - 8);
-  const ah = Math.max(200, body.clientHeight - 70 - (editing && narrow ? 280 : 0));
+  const aw = Math.max(200, body.clientWidth - (!narrow ? 316 : 0) - 8);
+  const ah = Math.max(200, body.clientHeight - 70 - (narrow ? (editing ? 280 : 0) : 0));
   const s = Math.min(aw / dormBW(base), ah / dormBH(base));
   return s >= 1 ? Math.max(1, Math.floor(s * 4) / 4) : s;
 }
@@ -6689,11 +6710,47 @@ function renderDormRoom(body) {
     ${can && !dormEdit && !r.loading ? `<button class="btn" onclick="startDormEdit()"><i class="fa-solid fa-paintbrush"></i> 꾸미기</button>` : ''}
     ${dormEdit ? `<button class="btn-plain" onclick="dormEdit=null; dormSel=-1; dormPick=null; renderDorm()">취소</button><button class="btn" onclick="saveDormRoom()"><i class="fa-solid fa-floppy-disk"></i> 저장</button>` : ''}</div>`;
   if (r.loading) { body.innerHTML = head + '<div class="dorm-empty">불러오는 중…</div>'; return; }
-  body.innerHTML = head + `<div class="dorm-room-wrap"><div class="dorm-stage-box" id="dormStageBox"></div>${dormEdit ? `<div class="dorm-palette" id="dormPalette"></div>` : ''}</div>`;
+  body.innerHTML = head + `<div class="dorm-room-wrap"><div class="dorm-stage-box" id="dormStageBox"></div>${dormEdit ? `<div class="dorm-palette" id="dormPalette"></div>` : dormGuestbookHtml(r)}</div>`;
   const src = dormEdit || r, base = dormBase(src);
   const s = dormScale(body, base, !!dormEdit);
   document.getElementById('dormStageBox').innerHTML = dormStageHtml(src, base, s, !!dormEdit);
   if (dormEdit) { renderDormPalette(); bindDormStage(s); }
+}
+function renameDormHall(id) {
+  const h = (dormData.halls || []).find(x => x.id === id); if (!h) return;
+  uiPrompt('새 관 이름을 적어 주세요. (30자까지)', h.name, { title: '관 이름 바꾸기', okText: '바꾸기' }).then(v => {
+    if (v == null) return; v = String(v).trim();
+    if (v && v !== h.name) socket.emit('dorm_hall_rename', { id, name: v });
+  });
+}
+// ---------- 방명록 (한 방에 한 사람당 한 개, 다시 쓰면 고쳐져요) ----------
+let dormGbDraft = {};
+function dormGuestbookHtml(r) {
+  const me = dormLoggedName(), list = r.guestbook || [], mine = me && list.find(e => e.author === me);
+  const draft = dormGbDraft[r.owner] != null ? dormGbDraft[r.owner] : (mine ? mine.text : '');
+  const canDel = (e) => dormIsGm() || me === e.author || me === r.owner;
+  const fmt = (at) => { const d = new Date(at * 1000); return `${d.getMonth() + 1}.${d.getDate()}`; };
+  return `<div class="dorm-gb"><div class="dorm-gb-head"><b>방명록</b><span class="cnt">${list.length}</span></div>
+    ${me ? `<div class="dorm-gb-form"><textarea id="dormGbText" maxlength="300" placeholder="${mine ? '내 방명록 고치기' : '방명록을 남겨 주세요. (한 사람당 하나)'}"
+        oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
+      <button class="btn" onclick="writeDormGuestbook()">${mine ? '고치기' : '남기기'}</button></div>`
+      : '<div class="dorm-hint" style="margin:0 0 10px">캐릭터로 로그인하면 방명록을 남길 수 있어요.</div>'}
+    <div class="dorm-gb-list">${list.length ? list.map(e => `<div class="dorm-gb-item ${e.author === me ? 'mine' : ''}">
+        <div class="top"><b>${mailEsc(e.author)}</b><span class="t">${fmt(e.at)}${e.edited ? ' · 수정됨' : ''}</span>
+        ${canDel(e) ? `<button class="dorm-x" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}</div>
+        <div class="txt">${mailEsc(e.text)}</div></div>`).join('') : '<div class="dorm-gb-empty">아직 방명록이 없어요.</div>'}</div></div>`;
+}
+function dormLoggedName() { return dormIsGm() ? '운영진' : dormMe(); }
+function writeDormGuestbook() {
+  const el = document.getElementById('dormGbText'); const text = (el ? el.value : '').trim();
+  if (!text) { showShopToast('방명록 내용을 써 주세요.'); return; }
+  delete dormGbDraft[dormRoom.owner];
+  socket.emit('dorm_guestbook_write', { owner: dormRoom.owner, text });
+}
+function deleteDormGuestbook(author) {
+  uiConfirm('이 방명록을 지울까요?', { title: '방명록 지우기', okText: '지우기', danger: true }).then(ok => {
+    if (ok) { if (author === dormLoggedName()) delete dormGbDraft[dormRoom.owner]; socket.emit('dorm_guestbook_delete', { owner: dormRoom.owner, author }); }
+  });
 }
 function dormLeaveRoom() {
   if (!dormEdit) { setDormView('halls'); return; }

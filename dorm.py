@@ -74,12 +74,14 @@ class Dorms:
                 seeded.add(c["id"])
         self.seeded = sorted(seeded)
         self.rooms = {k: v for k, v in (d.get("rooms") or {}).items() if v.get("v") == 2}
+        # 방명록 : {방 주인: [{"author", "text", "at"}, ...]} - 한 방에 한 사람당 한 개
+        self.guestbooks = d.get("guestbooks", {})
 
     def save(self):
         tmp = self.path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump({"halls": self.halls, "assets": self.assets, "credits": self.credits, "rooms": self.rooms,
-                       "seeded": self.seeded},
+                       "seeded": self.seeded, "guestbooks": self.guestbooks},
                       f, ensure_ascii=False, indent=1)
         os.replace(tmp, self.path)
 
@@ -108,7 +110,49 @@ class Dorms:
     def room(self, name):
         r = self.rooms.get(name) or {}
         return {"owner": name, "base": r.get("base") or DEFAULT_BASE, "wall": r.get("wall"), "floor": r.get("floor"),
-                "items": r.get("items", []), "updated": r.get("updated")}
+                "items": r.get("items", []), "updated": r.get("updated"),
+                "guestbook": sorted(self.guestbooks.get(name, []), key=lambda e: -e.get("at", 0))}
+
+    # ---- 관 이름 (그 관에 사는 사람 또는 운영진) ----
+    def rename_hall(self, hall_id, name, by, is_gm=False):
+        name = (name or "").strip()[:30]
+        if not name:
+            raise DormError("관 이름을 적어 주세요.")
+        with self.lock:
+            for h in self.halls:
+                if h["id"] == hall_id:
+                    if not is_gm and by not in h.get("slots", []):
+                        raise DormError("자기 관 이름만 바꿀 수 있어요.")
+                    h["name"] = name
+                    self.save()
+                    return h
+        raise DormError("관을 찾을 수 없어요.")
+
+    # ---- 방명록 ----
+    def write_guestbook(self, owner, author, text):
+        text = (text or "").strip()
+        if not text:
+            raise DormError("방명록 내용을 써 주세요.")
+        if len(text) > 300:
+            raise DormError("방명록은 300자까지 쓸 수 있어요.")
+        if self.hall_of(owner) is None:
+            raise DormError("배정되지 않은 방이에요.")
+        with self.lock:
+            book = self.guestbooks.setdefault(owner, [])
+            mine = next((e for e in book if e["author"] == author), None)
+            if mine:   # 한 사람당 한 개 : 이미 있으면 고쳐 씁니다.
+                mine.update({"text": text, "at": time.time(), "edited": True})
+            else:
+                book.append({"author": author, "text": text, "at": time.time()})
+            self.save()
+
+    def delete_guestbook(self, owner, author, by, is_gm=False):
+        if by != author and by != owner and not is_gm:
+            raise DormError("자기 글이나 자기 방 글만 지울 수 있어요.")
+        with self.lock:
+            book = self.guestbooks.get(owner, [])
+            self.guestbooks[owner] = [e for e in book if e["author"] != author]
+            self.save()
 
     # ---- 운영진 : 관 배치 ----
     def set_halls(self, halls, valid_names):
