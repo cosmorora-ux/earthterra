@@ -1826,6 +1826,22 @@
   .dorm-edit-bar button.del:hover { color: var(--accent-red); }
   .dorm-edit-bar .val { min-width:44px; text-align:center; font-weight:700; color: var(--text); font-variant-numeric: tabular-nums; }
   @media (max-width:900px) { .dorm-edit-bar { bottom:8px; } .dorm-edit-bar .nm { max-width:80px; } .dorm-edit-bar button.txt { display:none; } }
+
+  /* ================================================================
+     세로 태블릿·휴대폰 : 왼쪽 메뉴를 화면 아래 탭 바로
+     ================================================================ */
+  @media (max-width:900px) {
+    .app-shell { flex-direction:column; }
+    .sidebar { order:2; width:100% !important; height:auto; flex-direction:row; align-items:center; justify-content:space-around; gap:0;
+      padding:6px 4px calc(6px + env(safe-area-inset-bottom)) !important; border-right:none; border-top:1px solid var(--line); flex-shrink:0; }
+    .sidebar .sidebar-gap, .sidebar .sidebar-grow, #sidebarFullscreenBtn { display:none !important; }
+    .sidebar .sidebar-icon { width:auto; flex:1 1 0; max-width:64px; height:44px; font-size:19px; border-radius:12px; }
+    .sidebar .sidebar-icon.active { background:none; }
+    .sidebar .sidebar-icon.active::before { left:50%; top:-6px; transform:translateX(-50%); width:22px; height:3px; border-radius:0 0 3px 3px; }
+    .sidebar .notice-dot { top:8px; right:calc(50% - 16px); }
+    .content-area { flex:1 1 auto; min-height:0; }
+    #shopToast { bottom:calc(84px + env(safe-area-inset-bottom)); }
+  }
 </style>
 </head>
 <body>
