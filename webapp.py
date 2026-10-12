@@ -32,7 +32,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-12.5"
+SERVER_BUILD = "2026-10-12.6"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -765,11 +765,24 @@ def _archive_battle_logs(room):
 
 @socketio.on("export_log")
 def on_export_log(data):
-    """운영진 : 채팅 · 아군 회의 · 전투 로그 · 운영진 로그를 HTML 파일 하나로 만들어 보내줍니다."""
-    room = _require_gm_or_guest_gm(request.sid)
-    if room is None:
-        emit("action_error", {"message": "운영진만 로그를 내려받을 수 있습니다."})
+    """채팅 · 아군 회의 · 전투 로그(· 운영진 로그)를 HTML 파일 하나로 만들어 보내줍니다.
+    운영진은 전부, 러너(참가자)는 운영진 로그를 빼고 아군 회의는 자기 팀 것만 받습니다."""
+    info = CONNECTIONS.get(request.sid)
+    if info is None:
         return
+    room = get_room(info["room_id"])
+    if room is None:
+        return
+    is_gm = _require_gm_or_guest_gm(request.sid) is not None
+    my_team = None
+    if not is_gm:
+        nickname = (info.get("nickname") or "").strip()
+        battle_now = room.game.battle
+        if battle_now is not None and nickname:
+            for c in battle_now.team_a + battle_now.team_b:
+                if c.name == nickname:
+                    my_team = c.team
+                    break
     battles = list(getattr(room, "past_battles", None) or [])
     battle = room.game.battle
     if battle is not None and battle.public_log:
@@ -783,9 +796,12 @@ def on_export_log(data):
     colors = {n: d.get("color") for n, d in room.game.db.characters.items() if d.get("color")}
     if battle is not None:
         colors.update({c.name: c.color for c in battle.team_a + battle.team_b if c.color})
+    team_chat = list(getattr(room, "team_chat_log", None) or [])
+    if not is_gm:
+        team_chat = [e for e in team_chat if my_team and e.get("team") == my_team]
     doc = log_export.build_export_html(
         room.name, BATTLE_TYPE_LABELS.get(room.battle_type, room.battle_type),
-        room.chat_log, getattr(room, "team_chat_log", None) or [], battles, colors,
+        room.chat_log, team_chat, battles, colors, include_operator=is_gm,
     )
     # 파일 이름은 브라우저마다 한글 처리가 달라 영문으로 만듭니다(방 이름은 파일 안 제목에 들어갑니다).
     emit("export_log_result", {"filename": f"battle_log_{room.id}_{time.strftime('%Y%m%d_%H%M')}.html", "html": doc})

@@ -1998,6 +1998,7 @@
     <span class="member-header-tools">
       <button class="chat-search-btn" id="chatSearchBtn" onclick="toggleChatSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
       <span class="gm-menu-wrap">
+        <button class="chat-search-btn" id="chatLogDlBtn" onclick="downloadLogs()" data-tip="로그 내려받기"><i class="fa-solid fa-download"></i></button>
         <button class="gear icon-btn" id="chatTabSettingsBtn" style="display:none;" onclick="toggleGmMenu(event)"><i class="fa-solid fa-gear"></i></button>
         <div class="gm-menu" id="gmMenu">
           <button onclick="closeGmMenu(); toggleChatTabSettings()"><i class="fa-solid fa-comments"></i> 채팅 탭 설정</button>
@@ -2365,7 +2366,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-12.5";
+const EXPECTED_SERVER_BUILD = "2026-10-12.6";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -3802,7 +3803,11 @@ function onChatTabConfigChange() {
 // GM(비밀번호 입장)일 때만 채팅 탭 설정 톱니를 보여줍니다.
 function refreshChatTabSettingsVisibility() {
   const gear = document.getElementById('chatTabSettingsBtn');
-  if (gear) gear.style.display = myControlInfo(lastBattleForPanel).scope === 'all' ? '' : 'none';
+  const isGm = myControlInfo(lastBattleForPanel).scope === 'all';
+  if (gear) gear.style.display = isGm ? '' : 'none';
+  // 러너는 톱니 메뉴가 없으니 로그 내려받기 버튼을 따로 보여줍니다 (운영진 로그는 빠진 파일을 받아요)
+  const dl = document.getElementById('chatLogDlBtn');
+  if (dl) dl.style.display = isGm ? 'none' : '';
 }
 
 // 아군 회의(팀 전용 채팅)는 새는 걸 막으려고 서버가 공용 스냅샷(room.chat_log)에는 안

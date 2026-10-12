@@ -40,15 +40,30 @@ _CSS = """
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--text); font-family:"42dot Sans","Pretendard","Malgun Gothic",-apple-system,sans-serif;
   letter-spacing:-0.01em; line-height:1.5; -webkit-font-smoothing:antialiased; }
-.wrap { max-width:760px; margin:0 auto; padding:44px 20px 80px; }
-h1 { font-family:"Baunk","42dot Sans",sans-serif; font-weight:400; font-size:30px; letter-spacing:.02em; margin:0 0 6px; }
-.meta { color:var(--muted); font-size:14px; margin-bottom:22px; }
-.tabs { position:sticky; top:0; z-index:5; display:flex; gap:2px; padding:10px 0 0; background:var(--bg); border-bottom:1px solid var(--line); margin-bottom:22px; }
-.tabs a { color:var(--muted); text-decoration:none; padding:10px 14px; font-size:15px; font-weight:600; border-bottom:2px solid transparent; margin-bottom:-1px; }
-.tabs a:hover { color:var(--text); }
-section { margin-bottom:44px; scroll-margin-top:60px; }
-section > h2 { font-size:17px; margin:0 0 12px; }
-.panel { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 20px; }
+.wrap { max-width:780px; margin:0 auto; padding:40px 20px 80px; }
+/* 머리 : 영문 제목(Baunk) + 방 이름 + 정보 칩 */
+.hero { position:relative; overflow:hidden; border-radius:20px; border:1px solid rgba(255,255,255,.07); padding:26px 26px 22px; margin-bottom:18px;
+  background: radial-gradient(120% 140% at 100% 0%, rgba(92,134,255,.16) 0%, rgba(92,134,255,0) 55%), #121215; }
+.hero .kicker { font-family:"Baunk","42dot Sans",sans-serif; font-size:24px; line-height:1; letter-spacing:.02em; color:#fff; }
+.hero h1 { font-size:26px; font-weight:800; letter-spacing:-0.02em; margin:14px 0 14px; line-height:1.25; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; }
+.chip { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; background:rgba(255,255,255,.06); color:#c9c9ce; font-size:12.5px; font-weight:500; }
+.chip.pt { background:rgba(92,134,255,.16); color:#c9d6ff; font-weight:700; }
+.chip svg { width:12px; height:12px; opacity:.75; }
+/* 탭 : 누른 탭의 기록만 보입니다 */
+.tabs { position:sticky; top:0; z-index:5; display:flex; gap:4px; padding:6px; margin:0 0 18px; border-radius:14px;
+  background:rgba(18,18,21,.92); border:1px solid rgba(255,255,255,.07); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+.tabs a { flex:1; text-align:center; color:var(--muted); text-decoration:none; padding:9px 10px; font-size:14px; font-weight:600; border-radius:10px; white-space:nowrap; }
+.tabs a .n { font-size:11.5px; font-weight:600; opacity:.6; margin-left:4px; font-variant-numeric:tabular-nums; }
+.tabs a:hover { color:var(--text); background:rgba(255,255,255,.04); }
+.tabs a.on { color:#fff; background:rgba(255,255,255,.09); }
+section { margin-bottom:44px; scroll-margin-top:80px; }
+.js section { display:none; }
+.js section.on { display:block; }
+section > h2 { font-size:15px; color:var(--muted); font-weight:600; margin:0 0 10px 4px; }
+.js section > h2 { display:none; }
+.panel { background:var(--panel); border:1px solid rgba(255,255,255,.07); border-radius:16px; padding:18px 20px; }
+.foot { text-align:center; color:#55555c; font-size:12px; margin-top:28px; }
 .empty { color:var(--muted); font-size:14px; }
 
 /* 채팅 (앱 채팅창과 같은 모양) */
@@ -246,13 +261,42 @@ def _log_html(lines, team_of):
     return "".join(out)
 
 
-def build_export_html(room_name, battle_type_label, chat_log, team_chat_log, battles, colors=None):
-    """battles : [{"label", "public_log", "operator_log", "teams": {이름: "A"|"B"}}, ...] (오래된 것 → 최근 것)"""
+_ICON_CLOCK = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.2"/>'
+               '<path d="M8 4.6V8l2.3 1.5" stroke-linecap="round"/></svg>')
+_ICON_SWORD = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">'
+               '<path d="M3 13l7.5-7.5M10.5 5.5L13 3M5 9l2 2M3.5 11l1.5 1.5"/></svg>')
+_ICON_CHAT = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">'
+              '<path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>')
+
+_TAB_JS = """
+document.documentElement.classList.add('js');
+(function () {
+  var tabs = document.querySelectorAll('.tabs a'), secs = document.querySelectorAll('section');
+  function show(id) {
+    var found = false;
+    secs.forEach(function (s) { var on = s.id === id; s.classList.toggle('on', on); if (on) found = true; });
+    if (!found && secs[0]) { id = secs[0].id; secs[0].classList.add('on'); }
+    tabs.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + id); });
+  }
+  tabs.forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); var id = a.getAttribute('href').slice(1);
+    show(id); history.replaceState(null, '', '#' + id); window.scrollTo({ top: 0 }); }); });
+  show((location.hash || '').slice(1));
+})();
+"""
+
+
+def build_export_html(room_name, battle_type_label, chat_log, team_chat_log, battles, colors=None, include_operator=True):
+    """battles : [{"label", "public_log", "operator_log", "teams": {이름: "A"|"B"}}, ...] (오래된 것 → 최근 것)
+    include_operator : False면(러너가 내려받을 때) 운영진 로그 탭을 넣지 않습니다."""
     colors = colors or {}
     now = time.strftime("%Y-%m-%d %H:%M")
-    sections = [("chat", "채팅", _chat_html(chat_log, colors))]
+
+    def chat_count(entries):
+        return sum(1 for e in entries if (e.get("category") or "") not in ("presence", "round", "system"))
+
+    sections = [("chat", "채팅", _chat_html(chat_log, colors), chat_count(chat_log))]
     if team_chat_log:
-        sections.append(("team", "아군 회의", _chat_html(team_chat_log, colors)))
+        sections.append(("team", "아군 회의", _chat_html(team_chat_log, colors), chat_count(team_chat_log)))
 
     def battles_html(key):
         if not battles:
@@ -260,12 +304,18 @@ def build_export_html(room_name, battle_type_label, chat_log, team_chat_log, bat
         return "".join(f'<div class="battle-h">{_e(b["label"])}</div>{_log_html(b.get(key), b.get("teams") or {})}'
                        for b in reversed(battles))
 
-    sections.append(("battle", "전투 로그", battles_html("public_log")))
-    sections.append(("operator", "운영진 로그", battles_html("operator_log")))
-    tabs = "".join(f'<a href="#{k}">{t}</a>' for k, t, _ in sections)
-    body = "".join(f'<section id="{k}"><h2>{t}</h2><div class="panel">{h}</div></section>' for k, t, h in sections)
+    sections.append(("battle", "전투 로그", battles_html("public_log"), len(battles)))
+    if include_operator:
+        sections.append(("operator", "운영진 로그", battles_html("operator_log"), None))
+    tabs = "".join(f'<a href="#{k}">{t}{f"<span class=n>{n}</span>" if n else ""}</a>' for k, t, _, n in sections)
+    body = "".join(f'<section id="{k}"><h2>{t}</h2><div class="panel">{h}</div></section>' for k, t, h, _ in sections)
+    chips = (f'<span class="chip pt">{_e(battle_type_label)}</span>'
+             f'<span class="chip">{_ICON_CLOCK}{now} 저장</span>'
+             f'<span class="chip">{_ICON_SWORD}전투 {len(battles)}회</span>'
+             f'<span class="chip">{_ICON_CHAT}채팅 {chat_count(chat_log)}개</span>')
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width, initial-scale=1">'
             f'<title>{_e(room_name)} 로그</title><style>{_font_face()}{_CSS}</style></head><body><div class="wrap">'
-            f'<h1>{_e(room_name)}</h1><div class="meta">{_e(battle_type_label)} · {now} 저장</div>'
-            f'<nav class="tabs">{tabs}</nav>{body}</div></body></html>')
+            f'<header class="hero"><div class="kicker">Battle Log</div><h1>{_e(room_name)}</h1><div class="chips">{chips}</div></header>'
+            f'<nav class="tabs">{tabs}</nav>{body}<div class="foot">earthterra · {now}</div></div>'
+            f'<script>{_TAB_JS}</script></body></html>')
