@@ -25,7 +25,7 @@ ROOMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rooms.jso
 # RoomState의 필드 중 이 목록만 rooms.json에 저장/복원합니다.
 _PERSISTED_FIELDS = [
     "name", "battle_type", "gm_key", "guest_key", "created_at",
-    "chat_tabs_enabled", "chat_tab_labels", "userinfo_hidden", "map_bg", "boss_images", "track_bg",
+    "chat_tabs_enabled", "chat_tab_labels", "userinfo_hidden", "map_bg", "boss_images", "track_bg", "scene",
 ]
 
 BATTLE_TYPE_LABELS = {
@@ -113,6 +113,10 @@ class RoomState:
         self.boss_images = {}
         # PVP 라운드 트랙 블럭 배경 이미지. {"url": str|None, "dim": 0~90(%)} 또는 None
         self.track_bg = None
+        # 화면 전체 배경(블럭 바깥 영역)과 날씨 효과.
+        # {"url": str|None, "dim": 0~90, "weather": none|snow|rain|sakura|dandelion|lightning,
+        #  "amount": 1~3, "layer": "back"|"front"} 또는 None
+        self.scene = None
 
 
 def create_room(battle_type: str = "pvp", name: str = None) -> RoomState:

@@ -32,13 +32,13 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-12.1"
+SERVER_BUILD = "2026-10-12.2"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
 # html(templates)을 고치면 서버를 다시 켜지 않아도 브라우저 새로고침(F5)만으로 바로 반영됩니다.
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-socketio = SocketIO(app, async_mode="threading", max_http_buffer_size=8 * 1024 * 1024)
+socketio = SocketIO(app, async_mode="threading", max_http_buffer_size=16 * 1024 * 1024)
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 MUSIC_DIR = os.path.join(_THIS_DIR, "static", "music")
@@ -557,6 +557,7 @@ def build_public_state(room):
         "sfx_defaults": SFX_CONFIG,
         "boss_images": room.boss_images or {},
         "track_bg": room.track_bg,
+        "scene": getattr(room, "scene", None),
         "shop": shop_mod.shared_shop().public_payload(),
         "telegraph_cells": room.telegraph_cells,
         "preview_teams": preview_teams,
@@ -2422,6 +2423,7 @@ MAP_BG_DIR = os.path.join(_THIS_DIR, "static", "map_bg")
 os.makedirs(MAP_BG_DIR, exist_ok=True)
 MAP_BG_ALLOWED_EXTS = (".png", ".webp", ".gif", ".jpg", ".jpeg")
 MAP_BG_MAX_BYTES = 6 * 1024 * 1024
+SCENE_MAX_BYTES = 12 * 1024 * 1024
 MAP_BG_DEFAULT = {"url": None, "mode": "frame", "dim": 40, "line": 22}
 
 
@@ -2598,6 +2600,47 @@ def on_set_track_bg(data):
     if "dim" in data:
         cfg["dim"] = _clamp_int(data["dim"], 0, 90, cfg["dim"])
     room.track_bg = cfg
+    save_rooms()
+    broadcast_state(room)
+
+
+SCENE_WEATHERS = ("none", "snow", "rain", "sakura", "dandelion", "lightning")
+
+
+@socketio.on("set_scene")
+def on_set_scene(data):
+    """운영진 : 화면 전체 배경 이미지(png/apng/gif/webp/jpg)와 날씨 효과."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "운영진만 배경·날씨를 바꿀 수 있습니다."})
+        return
+    data = data or {}
+    base = {"url": None, "dim": 40, "weather": "none", "amount": 2, "layer": "back"}
+    cfg = dict(base, **(getattr(room, "scene", None) or {}))
+    if data.get("reset_image"):
+        cfg["url"] = None
+    blob = data.get("data")
+    if blob is not None:
+        ext = os.path.splitext((data.get("filename") or "").lower())[1]
+        if ext not in MAP_BG_ALLOWED_EXTS or not isinstance(blob, (bytes, bytearray)):
+            emit("action_error", {"message": "png/apng/jpg/webp/gif 이미지만 올릴 수 있습니다."})
+            return
+        if len(blob) > SCENE_MAX_BYTES:
+            emit("action_error", {"message": "이미지가 너무 큽니다 (최대 12MB)."})
+            return
+        filename = f"scene_{uuid.uuid4().hex}{ext}"
+        with open(os.path.join(MAP_BG_DIR, filename), "wb") as f:
+            f.write(blob)
+        cfg["url"] = f"/static/map_bg/{filename}"
+    if "dim" in data:
+        cfg["dim"] = _clamp_int(data["dim"], 0, 90, cfg["dim"])
+    if data.get("weather") in SCENE_WEATHERS:
+        cfg["weather"] = data["weather"]
+    if "amount" in data:
+        cfg["amount"] = _clamp_int(data["amount"], 1, 3, cfg["amount"])
+    if data.get("layer") in ("back", "front"):
+        cfg["layer"] = data["layer"]
+    room.scene = cfg
     save_rooms()
     broadcast_state(room)
 

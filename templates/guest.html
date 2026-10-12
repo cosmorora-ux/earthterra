@@ -539,7 +539,7 @@
      (내 화면에만 저장), 운영진이 배경 이미지를 깔 수 있습니다.
      ================================================================ */
   .round-track { position:relative; border-radius:14px; border:1px solid var(--card-border);
-    background: linear-gradient(90deg, #161a24, #1c1824); overflow:hidden;
+    background: var(--panel); overflow:hidden;
     flex: 1 1 0; min-height:72px; max-height:420px; isolation:isolate; }
   /* PVP 왼쪽 열 : [카드(내용만큼, 넘치면 스크롤)] [라운드 트랙(남는 높이를 채움)] [행동 블럭] - 사이 여백은 모두 같게 */
   .teams-col { gap:14px; }
@@ -891,7 +891,7 @@
   .grid-notice .bell { font-size:18px; opacity:.9; }
   .map-frame {
     padding:22px; border-radius:6px; border:1px solid var(--panel-border);
-    background: radial-gradient(ellipse at 50% 40%, #2c3140 0%, #1b1e27 55%, #121318 100%);
+    background: radial-gradient(ellipse at 50% 40%, #1e1e23 0%, #161619 55%, #101013 100%);
   }
   #gridSection.map-v2 #gridMap { display:flex; justify-content:center; }
   #gridSection.map-v2 #gridLegend { min-height:0; font-size:13px; color: var(--muted); margin:10px 2px 0; }
@@ -1419,10 +1419,29 @@
   .shop-item, .notice-card, .shop-edit { border-color: var(--line); border-radius:14px; }
   .notice-card:hover, .shop-item:hover { border-color: var(--line-strong); }
   .shop-btn { border-radius: var(--ui-r); }
+  .map-frame { border-radius:16px; border-color: var(--line); }
   .gm-menu { border-radius:12px; border:1px solid var(--line); background:#17171a; box-shadow: 0 16px 40px rgba(0,0,0,.5); }
+
+  /* ================================================================
+     화면 전체 배경(블럭 바깥) + 날씨 효과 (운영진 설정, 모두에게 적용)
+     ================================================================ */
+  #sceneBg { position:fixed; inset:0; z-index:-1; pointer-events:none; background-size:cover; background-position:center; opacity:0; transition: opacity .6s; }
+  #sceneBg.on { opacity:1; }
+  #weatherCanvas { position:fixed; inset:0; width:100vw; height:100dvh; pointer-events:none; z-index:-1; display:none; }
+  #weatherCanvas.on { display:block; }
+  #weatherCanvas.front { z-index:60; }
+  .scene-sec { font-size:13px; color: var(--muted); margin:16px 0 8px; font-weight:600; }
+  .scene-seg { display:flex; flex-wrap:wrap; gap:6px; }
+  .scene-seg button { display:inline-flex; align-items:center; gap:6px; background: rgba(255,255,255,.05); border:1px solid transparent; color: var(--muted);
+    border-radius:10px; padding:7px 12px; font-size:13px; cursor:pointer; }
+  .scene-seg button:hover { color: var(--text); background: rgba(255,255,255,.08); }
+  .scene-seg button.on { color:#fff; background: rgba(92,134,255,.18); border-color: rgba(92,134,255,.45); }
+  .scene-mine { display:flex; align-items:center; gap:8px; font-size:12.5px; color: var(--muted); margin-top:14px; }
 </style>
 </head>
 <body>
+<div id="sceneBg"></div>
+<canvas id="weatherCanvas"></canvas>
 <div class="app-shell">
 <div class="sidebar">
   <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
@@ -1537,6 +1556,45 @@
     <div class="snd-hint">공격·방어·지휘·회복 같은 행동을 하면 그 캐릭터의 효과음이 모두에게 들려요. 캐릭터가 마이페이지에 자기 소리를 등록했으면 그 소리로, 아니면 아래 기본 소리로 나와요.</div>
     <div id="sfxDefaultsSection"></div>
     <input type="file" id="sfxDefaultFileInput" accept=".mp3,.wav,.ogg,.m4a,.aac,audio/*" style="display:none;" onchange="onSfxDefaultFileChosen(event)">
+  </div>
+</div>
+<div id="sceneModal" class="modal-overlay" onclick="if(event.target===this) closeSceneModal()">
+  <div class="modal-box mapbg-modal panel">
+    <div class="modal-title">배경 · 날씨</div>
+    <div class="mapbg-preview" id="scenePreview" onclick="document.getElementById('sceneFileInput').click()">
+      <div class="dim" id="scenePreviewDim"></div><span id="scenePreviewText">클릭해서 화면 배경 올리기 (png·apng·gif·webp·jpg, 최대 12MB)</span>
+    </div>
+    <input type="file" id="sceneFileInput" accept="image/png,image/apng,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onSceneFileChosen(event)">
+    <div class="mapbg-row">
+      <label class="lbl">어둡게</label>
+      <input type="range" class="nice-range" id="sceneDim" min="0" max="90" oninput="paintRange(this); onSceneDimSlider()" onchange="socket.emit('set_scene', {dim: parseInt(this.value,10)})">
+      <span class="val" id="sceneDimVal"></span>
+    </div>
+    <div class="scene-sec">날씨</div>
+    <div class="scene-seg" id="sceneWeatherSeg">
+      <button data-v="none" onclick="socket.emit('set_scene',{weather:'none'})"><i class="fa-solid fa-ban"></i> 없음</button>
+      <button data-v="snow" onclick="socket.emit('set_scene',{weather:'snow'})"><i class="fa-regular fa-snowflake"></i> 눈</button>
+      <button data-v="rain" onclick="socket.emit('set_scene',{weather:'rain'})"><i class="fa-solid fa-cloud-rain"></i> 비</button>
+      <button data-v="sakura" onclick="socket.emit('set_scene',{weather:'sakura'})"><i class="fa-solid fa-spa"></i> 벚꽃</button>
+      <button data-v="dandelion" onclick="socket.emit('set_scene',{weather:'dandelion'})"><i class="fa-solid fa-wind"></i> 민들레 홀씨</button>
+      <button data-v="lightning" onclick="socket.emit('set_scene',{weather:'lightning'})"><i class="fa-solid fa-bolt"></i> 번개</button>
+    </div>
+    <div class="scene-sec">양</div>
+    <div class="scene-seg" id="sceneAmountSeg">
+      <button data-v="1" onclick="socket.emit('set_scene',{amount:1})">적게</button>
+      <button data-v="2" onclick="socket.emit('set_scene',{amount:2})">보통</button>
+      <button data-v="3" onclick="socket.emit('set_scene',{amount:3})">많이</button>
+    </div>
+    <div class="scene-sec">보이는 위치</div>
+    <div class="scene-seg" id="sceneLayerSeg">
+      <button data-v="back" onclick="socket.emit('set_scene',{layer:'back'})">블럭 뒤 (배경에만)</button>
+      <button data-v="front" onclick="socket.emit('set_scene',{layer:'front'})">블럭 위 (화면 전체)</button>
+    </div>
+    <label class="scene-mine"><input type="checkbox" id="sceneMyOff" onchange="setWeatherMyOff(this.checked)"> 내 화면에서는 날씨 효과 끄기</label>
+    <div class="row" style="justify-content:space-between; margin-top:16px;">
+      <button class="btn-plain" onclick="uiConfirm('화면 배경 이미지를 지울까요?', {title:'배경 지우기', okText:'지우기', danger:true}).then(ok => ok && socket.emit('set_scene', {reset_image:true}))">배경 지우기</button>
+      <button class="btn" onclick="closeSceneModal()">닫기</button>
+    </div>
   </div>
 </div>
 <div id="trackBgModal" class="modal-overlay" onclick="if(event.target===this) closeTrackBgModal()">
@@ -1899,6 +1957,7 @@
         <div class="gm-menu" id="gmMenu">
           <button onclick="closeGmMenu(); toggleChatTabSettings()"><i class="fa-solid fa-comments"></i> 채팅 탭 설정</button>
           <button onclick="closeGmMenu(); toggleFormulaPanel()"><i class="fa-solid fa-sliders"></i> 전투 수식 설정</button>
+          <button onclick="closeGmMenu(); openSceneModal()"><i class="fa-solid fa-cloud-sun"></i> 배경 · 날씨</button>
           <button onclick="closeGmMenu(); downloadLogs()"><i class="fa-solid fa-download"></i> 로그 내려받기</button>
         </div>
       </span>
@@ -2261,7 +2320,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-12.1";
+const EXPECTED_SERVER_BUILD = "2026-10-12.2";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -2275,6 +2334,8 @@ socket.on('public_state', (state) => {
   lastMapBg = state.map_bg || null;
   if (state.sfx_defaults) lastSfxDefaults = state.sfx_defaults;
   lastTrackBg = state.track_bg || null;
+  lastScene = state.scene || null;
+  applyScene();
   lastBossImages = state.boss_images || {};
   lastOnlineCharacters = state.online_characters || [];
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
@@ -5671,6 +5732,148 @@ function onTrackBgFileChosen(ev) {
   document.getElementById('trackBgPreviewText').textContent = '올리는 중...';
   f.arrayBuffer().then(buf => socket.emit('set_track_bg', { filename: f.name, data: buf }));
 }
+
+// ==================================================================
+// 화면 전체 배경 + 날씨 효과 (운영진이 설정, 모두에게 적용 / 각자 내 화면에서만 끌 수 있음)
+// ==================================================================
+var lastScene = null;
+function sceneCfg() { return Object.assign({ url: null, dim: 40, weather: 'none', amount: 2, layer: 'back' }, lastScene || {}); }
+function weatherMyOff() { try { return localStorage.getItem('weatherOff') === '1'; } catch (e) { return false; } }
+function setWeatherMyOff(v) { try { localStorage.setItem('weatherOff', v ? '1' : '0'); } catch (e) {} applyScene(); }
+function applyScene() {
+  const cfg = sceneCfg();
+  const bg = document.getElementById('sceneBg');
+  if (bg) {
+    bg.style.backgroundImage = cfg.url ? `linear-gradient(rgba(0,0,0,${cfg.dim / 100}), rgba(0,0,0,${cfg.dim / 100})), url('${cfg.url}')` : '';
+    bg.classList.toggle('on', !!cfg.url);
+  }
+  Weather.set(weatherMyOff() ? 'none' : cfg.weather, cfg.amount, cfg.layer);
+  renderSceneModal();
+}
+function openSceneModal() { document.getElementById('sceneModal').style.display = 'flex'; renderSceneModal(); }
+function closeSceneModal() { document.getElementById('sceneModal').style.display = 'none'; }
+function renderSceneModal() {
+  const m = document.getElementById('sceneModal');
+  if (!m || m.style.display !== 'flex') return;
+  const cfg = sceneCfg();
+  document.getElementById('scenePreview').style.backgroundImage = cfg.url ? `url('${cfg.url}')` : '';
+  document.getElementById('scenePreviewText').textContent = cfg.url ? '클릭해서 다른 이미지로 바꾸기' : '클릭해서 화면 배경 올리기 (png·apng·gif·webp·jpg, 최대 12MB)';
+  const dim = document.getElementById('sceneDim');
+  if (document.activeElement !== dim) dim.value = cfg.dim;
+  paintRange(dim); onSceneDimSlider();
+  [['sceneWeatherSeg', cfg.weather], ['sceneAmountSeg', String(cfg.amount)], ['sceneLayerSeg', cfg.layer]].forEach(([id, v]) =>
+    document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('on', b.dataset.v === v)));
+  document.getElementById('sceneMyOff').checked = weatherMyOff();
+}
+function onSceneDimSlider() {
+  const d = parseInt(document.getElementById('sceneDim').value, 10);
+  document.getElementById('sceneDimVal').textContent = `${d}%`;
+  document.getElementById('scenePreviewDim').style.background = `rgba(0,0,0,${d / 100})`;
+  const cfg = sceneCfg(), bg = document.getElementById('sceneBg');
+  if (bg && cfg.url) bg.style.backgroundImage = `linear-gradient(rgba(0,0,0,${d / 100}), rgba(0,0,0,${d / 100})), url('${cfg.url}')`;
+}
+function onSceneFileChosen(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!f) return;
+  if (f.size > 12 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 12MB).'); return; }
+  document.getElementById('scenePreviewText').textContent = '올리는 중...';
+  f.arrayBuffer().then(buf => socket.emit('set_scene', { filename: f.name, data: buf }));
+}
+
+// 날씨 : 캔버스 하나에 입자를 그립니다. 탭이 숨겨지면 멈춥니다.
+var Weather = (function () {
+  const cv = document.getElementById('weatherCanvas');
+  const ctx = cv ? cv.getContext('2d') : null;
+  let kind = 'none', amount = 2, parts = [], raf = 0, W = 0, H = 0, dpr = 1, last = 0;
+  let flash = 0, bolt = null, nextBolt = 0;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function resize() {
+    if (!cv) return;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function count() {
+    const base = { snow: 70, rain: 110, sakura: 34, dandelion: 22, lightning: 0 }[kind] || 0;
+    const area = Math.min(1.6, (W * H) / (1400 * 900));
+    return Math.round(base * [0, .5, 1, 1.8][amount] * Math.max(.45, area));
+  }
+  function spawn(p, init) {
+    p.x = rnd(-40, W + 40);
+    p.y = init ? rnd(-H, H) : rnd(-60, -10);
+    if (kind === 'snow') { p.r = rnd(1, 3.2); p.vy = rnd(18, 48) * (p.r / 2.2); p.vx = rnd(-8, 8); p.ph = rnd(0, 6.28); p.a = rnd(.35, .85); }
+    if (kind === 'rain') { p.len = rnd(10, 22); p.vy = rnd(620, 900); p.vx = -110; p.a = rnd(.12, .32); }
+    if (kind === 'sakura') { p.s = rnd(5, 9); p.vy = rnd(28, 60); p.vx = rnd(10, 40); p.rot = rnd(0, 6.28); p.vr = rnd(-1.6, 1.6); p.ph = rnd(0, 6.28); p.a = rnd(.55, .9);
+      p.c = ['#f9c9d6', '#f5b5c8', '#fbd7e1', '#f2a7bd'][Math.floor(rnd(0, 4))]; }
+    if (kind === 'dandelion') { p.x = rnd(-60, W); p.y = init ? rnd(0, H) : H + rnd(10, 60); p.s = rnd(5, 9); p.vy = -rnd(10, 26); p.vx = rnd(14, 34);
+      p.ph = rnd(0, 6.28); p.rot = rnd(-.4, .4); p.a = rnd(.45, .8); }
+    return p;
+  }
+  function reset() { parts = []; for (let i = 0; i < count(); i++) parts.push(spawn({}, true)); nextBolt = performance.now() + rnd(1500, 4000); }
+  function drawBolt(b) {
+    ctx.save(); ctx.strokeStyle = `rgba(220,230,255,${b.a})`; ctx.lineWidth = 1.6; ctx.shadowColor = 'rgba(160,190,255,.8)'; ctx.shadowBlur = 12;
+    ctx.beginPath(); b.pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.stroke(); ctx.restore();
+  }
+  function makeBolt() {
+    let x = rnd(W * .15, W * .85), y = 0; const pts = [[x, y]];
+    while (y < H * rnd(.45, .75)) { x += rnd(-40, 40); y += rnd(18, 46); pts.push([x, y]); }
+    return { pts, a: 1 };
+  }
+  function frame(t) {
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(.05, (t - (last || t)) / 1000); last = t;
+    ctx.clearRect(0, 0, W, H);
+    if (kind === 'lightning') {
+      if (t > nextBolt) { flash = 1; bolt = makeBolt(); nextBolt = t + rnd(3500, 9000) / Math.max(1, amount * .8); }
+      if (flash > 0) { ctx.fillStyle = `rgba(200,215,255,${flash * .16})`; ctx.fillRect(0, 0, W, H); flash = Math.max(0, flash - dt * 2.6); }
+      if (bolt) { drawBolt(bolt); bolt.a -= dt * 3.2; if (bolt.a <= 0) bolt = null; }
+      return;
+    }
+    for (const p of parts) {
+      if (kind === 'snow') {
+        p.ph += dt; p.x += (p.vx + Math.sin(p.ph) * 14) * dt; p.y += p.vy * dt;
+        ctx.fillStyle = `rgba(255,255,255,${p.a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+      } else if (kind === 'rain') {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        ctx.strokeStyle = `rgba(190,205,230,${p.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x + p.vx * .018 * (p.len / 16), p.y + p.len); ctx.stroke();
+      } else if (kind === 'sakura') {
+        p.ph += dt * 1.4; p.rot += p.vr * dt; p.x += (p.vx + Math.sin(p.ph) * 22) * dt; p.y += p.vy * dt;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, .55 + .45 * Math.abs(Math.sin(p.ph)));
+        ctx.globalAlpha = p.a; ctx.fillStyle = p.c; ctx.beginPath();
+        ctx.moveTo(0, -p.s); ctx.bezierCurveTo(p.s * .9, -p.s * .7, p.s * .7, p.s * .6, 0, p.s);
+        ctx.bezierCurveTo(-p.s * .7, p.s * .6, -p.s * .9, -p.s * .7, 0, -p.s); ctx.fill(); ctx.restore();
+      } else if (kind === 'dandelion') {
+        p.ph += dt * .9; p.x += (p.vx + Math.sin(p.ph) * 10) * dt; p.y += (p.vy + Math.cos(p.ph * .7) * 6) * dt;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot + Math.sin(p.ph) * .25); ctx.globalAlpha = p.a;
+        ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = .6; ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(0, p.s * 1.3);
+        for (let k = 0; k < 9; k++) { const an = -Math.PI / 2 + (k - 4) * .32; ctx.moveTo(0, 0); ctx.lineTo(Math.cos(an) * p.s, Math.sin(an) * p.s); }
+        ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(0, p.s * 1.3, .9, 0, 6.283); ctx.fill(); ctx.restore();
+      }
+      const out = kind === 'dandelion' ? (p.y < -40 || p.x > W + 60) : (p.y > H + 30 || p.x < -60 || p.x > W + 60);
+      if (out) spawn(p, false);
+    }
+  }
+  function start() { if (!raf && kind !== 'none' && !document.hidden) { last = 0; raf = requestAnimationFrame(frame); } }
+  function stop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
+  window.addEventListener('resize', () => { if (kind === 'none') return; resize(); reset(); });
+  document.addEventListener('visibilitychange', () => { document.hidden ? stop() : start(); });
+  return {
+    set(k, amt, layer) {
+      if (!cv) return;
+      cv.classList.toggle('front', layer === 'front');
+      if (k === kind && amt === amount) return;
+      kind = k || 'none'; amount = amt || 2;
+      stop();
+      cv.classList.toggle('on', kind !== 'none');
+      if (kind === 'none') { ctx.clearRect(0, 0, W, H); return; }
+      resize(); reset(); start();
+    },
+  };
+})();
 // ==================================================================
 // 채팅 검색 / 운영진 메시지 삭제
 // ==================================================================
