@@ -2346,7 +2346,7 @@
   <select id="cmdTargetSelect" onchange="onCmdTargetChange()"></select>
   <select id="cmdTarget2" style="display:none;"></select>
   <select id="cmdTarget3" style="display:none;"></select>
-  <button class="btn-primary send-btn icon-only" id="cmdSendBtn" disabled onclick="submitCmd()" aria-label="행동 보내기"><i class="fa-solid fa-bolt"></i></button>
+  <button class="btn-primary send-btn icon-only" id="cmdSendBtn" disabled onclick="submitCmd()" aria-label="행동 보내기"><i class="fa-solid fa-crosshairs"></i></button>
 </div>
 
 <div id="gmActPanel" class="gm-bar action-bar-bottom panel" style="display:none;">
@@ -2454,7 +2454,7 @@
   <div class="input-row" id="chatInputRow">
     <div class="avatar-dot" id="inputAvatarDot" ondblclick="onInputAvatarDotDblClick()"></div>
     <input id="chatInput" placeholder="대사를 입력해 주세요." onkeydown="if(event.key==='Enter') sendChat()">
-    <button class="btn-plain send-btn icon-only" id="chatSendBtn" disabled onclick="sendChat()" aria-label="보내기"><i class="fa-solid fa-arrow-up"></i></button>
+    <button class="btn-plain send-btn icon-only" id="chatSendBtn" disabled onclick="sendChat()" aria-label="보내기"><i class="fa-solid fa-paper-plane"></i></button>
   </div>
 
   <div id="actionPopup"></div>
