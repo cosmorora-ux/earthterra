@@ -1326,6 +1326,13 @@
     /* 카드 영역이 남는 높이를 쓰므로 라운드 패널은 고정 높이로 */
     .teams-col:has(> .teams-col-scroll > .main-grid:not(.with-grid-map)) > .round-track { flex:none; min-height:64px; height:clamp(64px, 10vh, 110px); }
   }
+  /* 카드 폭이 좁을 때 : 초상화(왼쪽) + 뱃지(오른쪽) / 체력 바는 아래 줄 - 카드 높이 안에서 줄어들어 체력 바가 잘리지 않게 */
+  @container ccard (max-width:240px) {
+    .main-grid:not(.with-grid-map) .char-card.v2 .portrait-row { display:grid; grid-template-columns:minmax(0,1fr) 40px; grid-template-rows:minmax(0,1fr) auto; gap:6px 8px; }
+    .main-grid:not(.with-grid-map) .char-card.v2 .portrait-row > .portrait { grid-row:1; grid-column:1; flex:none; height:100% !important; width:auto !important; justify-self:start; }
+    .main-grid:not(.with-grid-map) .char-card.v2 .cbadges-row { grid-row:1; grid-column:2; width:auto; }
+    .main-grid:not(.with-grid-map) .char-card.v2 .hpbar-wrap { grid-row:2; grid-column:1 / -1; }
+  }
   /* 카드가 낮아지면 여백을 줄여 초상화·체력 바 자리를 확보 */
   @container ccard (max-height:124px) {
     .main-grid:not(.with-grid-map) .char-card.v2 .portrait-row { margin-top:5px; gap:10px; }
@@ -1352,14 +1359,13 @@
     .char-card.v2 .crole { font-size:13px; margin-left:4px; }
     .char-card.v2 .row1 > div:first-child { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     /* 한 화면에 다 보이도록 : 카드들이 남는 높이를 똑같이 나눠 갖고, 초상화는 그 높이에 맞춰 줄어듭니다 */
-    .teams-col:has(> .round-track) > .teams-col-scroll { overflow:hidden; }
+    .teams-col:has(> .round-track) > .teams-col-scroll { overflow-y:auto; }
     .teams-col:has(> .round-track) .main-grid,
     .teams-col:has(> .round-track) .main-grid > div,
-    .teams-col:has(> .round-track) .teams-columns { flex:1 1 0; min-height:0; }
-    .teams-col:has(> .round-track) .team-block { min-height:0; }
-    .teams-col:has(> .round-track) .team-block .card-grid { flex:1 1 0; min-height:0; grid-auto-rows:minmax(0,1fr); gap:8px; }
+    .teams-col:has(> .round-track) .teams-columns { flex:1 0 auto; }
+    .teams-col:has(> .round-track) .team-block .card-grid { flex:1 0 auto; grid-auto-rows:minmax(80px,1fr); gap:8px; }
     .main-grid:not(.with-grid-map) .team-block h2, .member-top { height:28px; margin-bottom:6px; }
-    .teams-col:has(> .round-track) .char-card.v2 { min-height:0; overflow:hidden; padding:9px 10px; }
+    .teams-col:has(> .round-track) .char-card.v2 { min-height:0; overflow:hidden; padding:9px 10px; contain:size; }
     .teams-col:has(> .round-track) .char-card.v2 .portrait-row { flex:1 1 0; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 34px;
       grid-template-rows:minmax(0,1fr) auto; gap:6px 6px; margin-top:6px; }
     .teams-col:has(> .round-track) .char-card.v2 .portrait-side { display:contents; }
@@ -2317,6 +2323,8 @@
       <input type="file" id="mySkillImageInput" accept="image/png,image/apng,image/gif,image/webp,.apng" style="display:none;" onchange="onSkillImageChosen(event)">
     </div>
 
+    <!-- 마이페이지 효과음 : 쓰지 않아 숨김 (스크립트가 참조하므로 요소는 남겨 둠) -->
+    <div id="myPageSoundSection" style="display:none;">
     <div class="idc-sec idc-row" style="margin-top:18px;">
       <span class="idc-label">효과음</span>
       <span style="flex:1"></span>
@@ -2332,6 +2340,7 @@
     <div class="idc-level" id="myPageSoundLevel"></div>
     <input type="range" id="myPageSoundVolume" min="0" max="100" value="100" style="display:none;">
     <input type="file" id="mySoundFileInput" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,.mp3,.wav,.ogg,.m4a,.aac" style="display:none;" onchange="onMySoundEffectFileChosen(event)">
+    </div>
     </div>
     </div>
   </div>
