@@ -1213,7 +1213,11 @@
     .modal-box.userinfo-modal, .modal-box.shop-modal, .modal-box.mypage {
       width:100vw; max-width:none; height:100dvh; max-height:none; border-radius:0; border:none;
       padding:calc(20px + env(safe-area-inset-top)) 24px calc(16px + env(safe-area-inset-bottom)); }
-    .modal-box.mypage { overflow-y:auto; }
+    .modal-box.mypage { overflow-y:auto; padding-bottom:calc(40px + env(safe-area-inset-bottom)); }
+    .modal-box.mypage .mypage-cols { gap:0; }
+    .modal-box.mypage .mypage-col + .mypage-col { padding-top:20px; }
+    /* 전체 화면이어도 내용은 가운데 좁은 열로 모아 시선이 좌우로 멀리 가지 않게 */
+    .modal-box.mypage .idc-head, .modal-box.mypage .mypage-cols { width:100%; max-width:520px; margin-left:auto; margin-right:auto; }
     .layout-grid:has(.with-grid-map) .member-col { flex-basis:32dvh; min-height:250px; }
     .map-frame { padding:12px; }
   }
