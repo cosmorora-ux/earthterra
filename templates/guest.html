@@ -1583,6 +1583,11 @@
       <button data-v="leaves" onclick="socket.emit('set_scene',{weather:'leaves'})"><i class="fa-solid fa-leaf"></i> 낙엽</button>
       <button data-v="dandelion" onclick="socket.emit('set_scene',{weather:'dandelion'})"><i class="fa-solid fa-wind"></i> 민들레 홀씨</button>
       <button data-v="fireflies" onclick="socket.emit('set_scene',{weather:'fireflies'})"><i class="fa-solid fa-wand-magic-sparkles"></i> 반딧불</button>
+      <button data-v="hail" onclick="socket.emit('set_scene',{weather:'hail'})"><i class="fa-solid fa-cloud-meatball"></i> 우박</button>
+      <button data-v="aurora" onclick="socket.emit('set_scene',{weather:'aurora'})"><i class="fa-solid fa-rainbow"></i> 오로라</button>
+      <button data-v="godrays" onclick="socket.emit('set_scene',{weather:'godrays'})"><i class="fa-solid fa-sun"></i> 빛줄기</button>
+      <button data-v="stars" onclick="socket.emit('set_scene',{weather:'stars'})"><i class="fa-solid fa-star"></i> 별빛</button>
+      <button data-v="bubbles" onclick="socket.emit('set_scene',{weather:'bubbles'})"><i class="fa-solid fa-water"></i> 물속 거품</button>
     </div>
     <div class="scene-sec">날씨 · 전장</div>
     <div class="scene-seg" id="sceneWeatherSeg3">
@@ -1591,6 +1596,15 @@
       <button data-v="sand" onclick="socket.emit('set_scene',{weather:'sand'})"><i class="fa-solid fa-hurricane"></i> 모래바람</button>
       <button data-v="bloodrain" onclick="socket.emit('set_scene',{weather:'bloodrain'})"><i class="fa-solid fa-droplet"></i> 핏빛 비</button>
       <button data-v="meteors" onclick="socket.emit('set_scene',{weather:'meteors'})"><i class="fa-solid fa-meteor"></i> 유성우</button>
+      <button data-v="arrows" onclick="socket.emit('set_scene',{weather:'arrows'})"><i class="fa-solid fa-arrows-down-to-line"></i> 화살비</button>
+      <button data-v="smoke" onclick="socket.emit('set_scene',{weather:'smoke'})"><i class="fa-solid fa-cloud"></i> 연기</button>
+      <button data-v="poison" onclick="socket.emit('set_scene',{weather:'poison'})"><i class="fa-solid fa-skull-crossbones"></i> 독안개</button>
+      <button data-v="feathers" onclick="socket.emit('set_scene',{weather:'feathers'})"><i class="fa-solid fa-feather-pointed"></i> 검은 깃털</button>
+    </div>
+    <div class="scene-sec">연출</div>
+    <div class="scene-seg" id="sceneWeatherSeg4">
+      <button data-v="arcane" onclick="socket.emit('set_scene',{weather:'arcane'})"><i class="fa-solid fa-hat-wizard"></i> 마력 입자</button>
+      <button data-v="glitch" onclick="socket.emit('set_scene',{weather:'glitch'})"><i class="fa-solid fa-tv"></i> 글리치</button>
     </div>
     <div class="scene-sec">양</div>
     <div class="scene-seg" id="sceneAmountSeg">
@@ -2333,7 +2347,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-12.3";
+const EXPECTED_SERVER_BUILD = "2026-10-12.4";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5774,7 +5788,7 @@ function renderSceneModal() {
   const dim = document.getElementById('sceneDim');
   if (document.activeElement !== dim) dim.value = cfg.dim;
   paintRange(dim); onSceneDimSlider();
-  [['sceneWeatherSeg', cfg.weather], ['sceneWeatherSeg2', cfg.weather], ['sceneWeatherSeg3', cfg.weather], ['sceneAmountSeg', String(cfg.amount)], ['sceneLayerSeg', cfg.layer]].forEach(([id, v]) =>
+  [['sceneWeatherSeg', cfg.weather], ['sceneWeatherSeg2', cfg.weather], ['sceneWeatherSeg3', cfg.weather], ['sceneWeatherSeg4', cfg.weather], ['sceneAmountSeg', String(cfg.amount)], ['sceneLayerSeg', cfg.layer]].forEach(([id, v]) =>
     document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('on', b.dataset.v === v)));
   document.getElementById('sceneMyOff').checked = weatherMyOff();
 }
@@ -5907,6 +5921,84 @@ var Weather = (function () {
         ctx.strokeStyle = g; ctx.lineWidth = 1.6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(tx, ty); ctx.stroke();
         glow(p.x, p.y, 6, 'rgba(220,230,255,A)', p.a * .8); },
       out: p => p.wait <= 0 && (p.x < -200 || p.y > H + 200) },
+    hail: { n: 70,
+      spawn(p, i) { p.x = rnd(-40, W + 80); p.y = i ? rnd(-H, H) : rnd(-60, -10); p.r = rnd(1.4, 3); p.vy = rnd(520, 760); p.vx = -rnd(30, 70); p.a = rnd(.55, .9); },
+      step(p, dt) { p.x += p.vx * dt; p.y += p.vy * dt;
+        ctx.fillStyle = `rgba(230,238,250,${p.a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+        ctx.strokeStyle = `rgba(230,238,250,${p.a * .25})`; ctx.lineWidth = p.r; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * .02, p.y - p.vy * .02); ctx.stroke(); },
+      out: fall },
+    aurora: { n: 4, add: true, fixed: true,
+      spawn(p) { p.base = rnd(H * .06, H * .32); p.amp = rnd(18, 46); p.f = rnd(.0025, .006); p.sp = rnd(.15, .4); p.h = rnd(70, 150); p.ph = rnd(0, 6.28);
+        p.c = pick(['80,255,170', '90,200,255', '170,120,255', '120,255,210']); p.a = rnd(.12, .22); },
+      step(p, dt) { p.ph += dt * p.sp; const seg = 48, top = [], bot = [];
+        for (let k = 0; k <= seg; k++) { const x = W * k / seg, y = p.base + Math.sin(x * p.f + p.ph) * p.amp + Math.sin(x * p.f * 2.3 - p.ph * 1.3) * p.amp * .4;
+          top.push([x, y]); bot.push([x, y + p.h * (.6 + .4 * Math.sin(x * p.f * 1.7 + p.ph * .8))]); }
+        const g = ctx.createLinearGradient(0, p.base - p.amp, 0, p.base + p.amp + p.h);
+        const pulse = .75 + .25 * Math.sin(p.ph * 1.7);
+        g.addColorStop(0, `rgba(${p.c},0)`); g.addColorStop(.35, `rgba(${p.c},${p.a * pulse})`); g.addColorStop(1, `rgba(${p.c},0)`);
+        ctx.fillStyle = g; ctx.beginPath(); top.forEach((q, k) => k ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]));
+        for (let k = bot.length - 1; k >= 0; k--) ctx.lineTo(bot[k][0], bot[k][1]); ctx.closePath(); ctx.fill(); },
+      out: () => false },
+    godrays: { n: 6, add: true,
+      spawn(p) { p.x = rnd(-W * .1, W * .9); p.w = rnd(40, 140); p.sk = rnd(H * .25, H * .5); p.sp = rnd(.2, .5); p.ph = rnd(0, 6.28); p.a = rnd(.10, .2); p.vx = rnd(-4, 4); },
+      step(p, dt) { p.ph += dt * p.sp; p.x += p.vx * dt; const a = p.a * (.5 + .5 * Math.sin(p.ph));
+        const g = ctx.createLinearGradient(p.x, 0, p.x + p.sk, H); g.addColorStop(0, `rgba(255,244,220,${a})`); g.addColorStop(1, 'rgba(255,244,220,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(p.x, -10); ctx.lineTo(p.x + p.w, -10); ctx.lineTo(p.x + p.w * 1.8 + p.sk, H); ctx.lineTo(p.x + p.sk, H); ctx.closePath(); ctx.fill(); },
+      out: p => p.x > W + 200 || p.x < -W * .4 },
+    stars: { n: 90, add: true,
+      spawn(p) { p.x = rnd(0, W); p.y = rnd(0, H); p.s = rnd(1.5, 4.5); p.ph = rnd(0, 6.28); p.sp = rnd(.6, 2); },
+      step(p, dt) { p.ph += dt * p.sp; const a = Math.max(0, Math.sin(p.ph)) ** 3, r = p.s * (.6 + .4 * a); if (a < .02) return;
+        ctx.fillStyle = `rgba(235,240,255,${a * .9})`; ctx.beginPath(); const k = r * .18;
+        ctx.moveTo(p.x, p.y - r); ctx.quadraticCurveTo(p.x + k, p.y - k, p.x + r, p.y); ctx.quadraticCurveTo(p.x + k, p.y + k, p.x, p.y + r);
+        ctx.quadraticCurveTo(p.x - k, p.y + k, p.x - r, p.y); ctx.quadraticCurveTo(p.x - k, p.y - k, p.x, p.y - r); ctx.fill();
+        glow(p.x, p.y, r * 3, 'rgba(170,190,255,A)', a * .25); },
+      out: () => false },
+    bubbles: { n: 40,
+      spawn(p, i) { p.x = rnd(0, W); p.y = i ? rnd(0, H) : H + rnd(10, 60); p.r = rnd(2, 7); p.vy = -rnd(24, 70) * (p.r / 4); p.ph = rnd(0, 6.28); p.a = rnd(.25, .55); },
+      step(p, dt) { p.ph += dt * 2; p.x += Math.sin(p.ph) * 12 * dt; p.y += p.vy * dt;
+        ctx.strokeStyle = `rgba(190,225,255,${p.a})`; ctx.lineWidth = .9; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.stroke();
+        ctx.fillStyle = `rgba(230,245,255,${p.a})`; ctx.beginPath(); ctx.arc(p.x - p.r * .35, p.y - p.r * .35, p.r * .22, 0, 6.283); ctx.fill(); },
+      out: rise, overlay: 'rgba(10,45,80,.10)' },
+    arrows: { n: 34,
+      spawn(p, i) { p.x = rnd(-W * .3, W + 100); p.y = i ? rnd(-H, H) : rnd(-120, -20); const sp = rnd(750, 1000); p.vx = sp * .42; p.vy = sp; p.len = rnd(30, 44); p.a = rnd(.55, .85); },
+      step(p, dt) { p.x += p.vx * dt; p.y += p.vy * dt; const an = Math.atan2(p.vy, p.vx);
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(an); ctx.globalAlpha = p.a;
+        ctx.strokeStyle = '#cfc6b6'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(-p.len, 0); ctx.lineTo(0, 0); ctx.stroke();
+        ctx.fillStyle = '#d9d9de'; ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(-3, -2.6); ctx.lineTo(-3, 2.6); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#a8584a'; ctx.lineWidth = 1; ctx.beginPath();
+        ctx.moveTo(-p.len, 0); ctx.lineTo(-p.len - 4, -3); ctx.moveTo(-p.len + 4, 0); ctx.lineTo(-p.len, -3);
+        ctx.moveTo(-p.len, 0); ctx.lineTo(-p.len - 4, 3); ctx.moveTo(-p.len + 4, 0); ctx.lineTo(-p.len, 3); ctx.stroke(); ctx.restore(); },
+      out: fall },
+    smoke: { n: 22,
+      spawn(p, i) { p.x = rnd(-50, W + 50); p.y = i ? rnd(H * .2, H + 80) : H + rnd(40, 120); p.r = rnd(60, 140); p.vy = -rnd(14, 34); p.vx = rnd(4, 18); p.a = rnd(.14, .26); p.gr = rnd(6, 14); },
+      step(p, dt) { p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.gr * dt; const fade = Math.min(1, Math.max(0, p.y / H + .1));
+        glow(p.x, p.y, p.r, 'rgba(22,22,26,A)', p.a * fade); },
+      out: p => p.y + p.r < 0 || p.x - p.r > W, overlay: 'rgba(20,18,16,.06)' },
+    poison: { n: 12,
+      spawn(p, i) { p.r = rnd(Math.max(W, H) * .2, Math.max(W, H) * .4); p.x = i ? rnd(-p.r, W + p.r) : -p.r; p.y = rnd(H * .3, H * 1.1); p.vx = rnd(6, 18); p.a = rnd(.08, .16); p.ph = rnd(0, 6.28); },
+      step(p, dt) { p.ph += dt * .25; p.x += p.vx * dt; glow(p.x, p.y + Math.sin(p.ph) * 14, p.r, 'rgba(110,200,70,A)', p.a); },
+      out: p => p.x - p.r > W, overlay: 'rgba(25,55,10,.08)' },
+    feathers: { n: 18,
+      spawn(p, i) { p.x = rnd(-40, W + 40); p.y = i ? rnd(-H, H) : rnd(-60, -10); p.s = rnd(10, 18); p.vy = rnd(24, 50); p.vx = rnd(-10, 20); p.rot = rnd(0, 6.28); p.vr = rnd(-1, 1); p.ph = rnd(0, 6.28); p.a = rnd(.7, .95); },
+      step(p, dt) { p.ph += dt * 1.1; p.rot += (p.vr + Math.sin(p.ph) * .8) * dt; p.x += (p.vx + Math.sin(p.ph) * 34) * dt; p.y += p.vy * dt;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.globalAlpha = p.a;
+        ctx.fillStyle = '#16161a'; ctx.beginPath(); ctx.moveTo(0, -p.s); ctx.quadraticCurveTo(p.s * .42, -p.s * .2, p.s * .1, p.s * .8);
+        ctx.lineTo(-p.s * .1, p.s * .8); ctx.quadraticCurveTo(-p.s * .42, -p.s * .2, 0, -p.s); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = .7; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, -p.s * .9); ctx.lineTo(0, p.s * 1.1); ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.stroke(); ctx.restore(); },
+      out: fall },
+    arcane: { n: 50, add: true,
+      spawn(p, i) { p.cx = rnd(0, W); p.y = i ? rnd(0, H) : H + rnd(10, 40); p.rad = rnd(6, 26); p.ph = rnd(0, 6.28); p.sp = rnd(1.5, 3.5); p.vy = -rnd(30, 70); p.r = rnd(1, 2.2);
+        p.hue = pick([255, 270, 290, 220, 190]); },
+      step(p, dt) { p.ph += dt * p.sp; p.y += p.vy * dt; p.cx += Math.sin(p.ph * .3) * 6 * dt; const x = p.cx + Math.cos(p.ph) * p.rad;
+        const a = .5 + .5 * Math.sin(p.ph * 2);
+        glow(x, p.y, p.r * 6, `hsla(${p.hue},100%,65%,A)`, a * .35); ctx.fillStyle = `hsla(${p.hue},100%,82%,${.4 + a * .6})`; ctx.beginPath(); ctx.arc(x, p.y, p.r, 0, 6.283); ctx.fill(); },
+      out: p => p.y < -40, overlay: 'rgba(40,10,70,.06)' },
+    glitch: { n: 7, add: true,
+      spawn(p) { p.life = rnd(.05, .35); p.wait = rnd(0, 1.6); p.y = rnd(0, H); p.h = rnd(2, 18); p.x = rnd(-W * .2, W * .6); p.w = rnd(W * .2, W * .8); p.c = pick(['92,134,255', '255,60,90', '120,255,220']); p.a = rnd(.05, .14); },
+      step(p, dt) { if (p.wait > 0) { p.wait -= dt; return; } p.life -= dt; if (Math.random() < .3) p.x += rnd(-30, 30);
+        ctx.fillStyle = `rgba(${p.c},${p.a})`; ctx.fillRect(p.x, p.y, p.w, p.h); ctx.fillStyle = `rgba(255,255,255,${p.a * .4})`; ctx.fillRect(p.x + rnd(-6, 6), p.y + p.h / 2, p.w * .6, 1); },
+      out: p => p.wait <= 0 && p.life <= 0, scan: true },
     lightning: { n: 0, lightning: true },
   };
   function cfgN() {
@@ -5926,6 +6018,7 @@ var Weather = (function () {
     const d = K[kind]; if (!d) return;
     ctx.clearRect(0, 0, W, H);
     if (d.overlay) { ctx.fillStyle = d.overlay; ctx.fillRect(0, 0, W, H); }
+    if (d.scan) { ctx.fillStyle = 'rgba(255,255,255,.022)'; for (let y = (T * 40) % 4; y < H; y += 4) ctx.fillRect(0, y, W, 1); }
     ctx.globalCompositeOperation = d.add ? 'lighter' : 'source-over';
     for (const p of parts) { d.step(p, dt); if (d.out(p)) d.spawn(p, false); }
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;

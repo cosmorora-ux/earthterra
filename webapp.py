@@ -32,7 +32,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-12.3"
+SERVER_BUILD = "2026-10-12.4"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2605,7 +2605,8 @@ def on_set_track_bg(data):
 
 
 SCENE_WEATHERS = ("none", "snow", "blizzard", "rain", "storm", "lightning", "fog", "sakura", "leaves", "dandelion",
-                  "fireflies", "embers", "ash", "sand", "bloodrain", "meteors")
+                  "fireflies", "embers", "ash", "sand", "bloodrain", "meteors", "hail", "aurora", "godrays", "stars",
+                  "bubbles", "arrows", "smoke", "poison", "feathers", "arcane", "glitch")
 
 
 @socketio.on("set_scene")
