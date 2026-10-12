@@ -239,11 +239,13 @@
   .ui-sec { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:14px 8px 4px; padding-bottom:6px; border-bottom:1px solid var(--panel-border); font-size:13px; font-weight:700; color: var(--text); }
   .ui-sec:first-child { margin-top:2px; }
   .ui-sec em { font-style:normal; font-weight:400; font-size:12px; color: var(--muted); }
-  /* 접속 상태 원 : 접속 중이면 초록 + 퍼지는 빛(펄스), 아니면 빈 회색 원 */
-  .ui-dot { position:relative; width:9px; height:9px; border-radius:50%; flex-shrink:0; border:1.5px solid #4a4a50; }
-  .userinfo-row.is-online .ui-dot { background:#3ecf6a; border-color:#3ecf6a; box-shadow:0 0 8px rgba(62,207,106,.85); }
-  .userinfo-row.is-online .ui-dot::after { content:""; position:absolute; inset:-1.5px; border-radius:50%; background:#3ecf6a; animation: uiPulse 1.8s ease-out infinite; }
-  @keyframes uiPulse { 0% { transform:scale(1); opacity:.7; } 100% { transform:scale(3); opacity:0; } }
+  /* 접속 상태 원 : 접속 중이면 포인트 컬러 점이 은은하게 숨 쉬듯 빛나고, 아니면 빈 회색 원 */
+  .ui-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; border:1.5px solid #46464c; box-sizing:border-box; }
+  .userinfo-row.is-online .ui-dot { background: var(--point); border:none; animation: uiGlow 2.6s ease-in-out infinite; }
+  @keyframes uiGlow {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--point) 0%, transparent), 0 0 4px 1px color-mix(in srgb, var(--point) 55%, transparent); }
+    50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--point) 18%, transparent), 0 0 10px 3px color-mix(in srgb, var(--point) 70%, transparent); }
+  }
   .userinfo-row:hover { background:#1c1c20; }
   .userinfo-name { flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.25; }
   .userinfo-name b { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
