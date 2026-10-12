@@ -964,7 +964,7 @@
   .app-shell { display:flex; height:100vh; overflow:hidden; }
   .sidebar {
     width:64px; flex-shrink:0; background: var(--panel); border-right:1px solid var(--panel-border);
-    display:flex; flex-direction:column; align-items:center; padding:18px 0; gap:6px;
+    display:flex; flex-direction:column; align-items:center; padding:18px 0; gap:14px;
   }
   .sidebar .sidebar-icon {
     width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;
@@ -1844,7 +1844,7 @@
   }
 
   /* 세로 태블릿·휴대폰 : 하단 탭 = 전투 · 기숙사 · 상점 · 소식(공지+우체통) · 마이페이지(로그인 전에는 로그인) */
-  .m-news-btn, .m-battle-tools, .idc-logout { display:none; }
+  .m-news-btn, .sidebar .m-news-btn, .m-battle-tools, .topbar .m-battle-tools, .idc-logout { display:none; }
   .idc-logout { align-items:center; gap:6px; margin-left:auto; margin-right:6px; height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--line);
     background: rgba(255,255,255,.05); color:#cfcfd4; font-size:13px; cursor:pointer; }
   .idc-logout:hover { background: rgba(255,255,255,.1); color:#fff; }
@@ -1867,7 +1867,7 @@
     /* 전투 헤더 오른쪽 위 : 유저 리스트 · 채팅 */
     .topbar.v2 { grid-template-areas:"room sep fmt . tools" "round round round round timer" !important; }
     .topbar.v2 #liveClock { display:none; }
-    .m-battle-tools { grid-area:tools; display:flex; gap:6px; justify-self:end; }
+    .topbar .m-battle-tools { grid-area:tools; display:flex; gap:6px; justify-self:end; }
     .m-battle-tools button { position:relative; width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.05);
       color:#d6d6db; font-size:14px; cursor:pointer; }
     .m-battle-tools .notice-dot { top:5px; right:5px; }
