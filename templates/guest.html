@@ -1791,6 +1791,36 @@
     .dorm-topbar .dorm-brand { font-size:20px; }
   }
   @media (max-width:560px) { .dorm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dorm-portrait { height:96px; } }
+  /* 꾸미기 : 오른쪽 Items 패널 (탭 / 세트·검색 / 자료 / 안내) + 방 아래 떠 있는 편집 막대 */
+  .dorm-items .member-toptabs.dorm-cattabs { border-bottom:1px solid var(--line); }
+  .dorm-cattabs button { padding:11px 0; font-size:13.5px; }
+  .dorm-items .dorm-pfilter { display:flex; gap:8px; padding:12px 16px 4px; margin:0; }
+  .modal-box.dorm-modal .dorm-items .dorm-pfilter select { flex:1; min-width:0; height:36px; font-size:13px; padding:0 30px 0 12px; }
+  .dorm-search { flex:1; min-width:0; position:relative; }
+  .dorm-search i { position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:12px; color: var(--muted); pointer-events:none; }
+  .modal-box.dorm-modal .dorm-search input { width:100%; height:36px; font-size:13px; padding:0 10px 0 30px; }
+  .dorm-items .dorm-side-body { padding:10px 16px 14px; }
+  .dorm-items .dorm-assets { grid-template-columns: repeat(4, 1fr); gap:8px; max-height:none; overflow:visible; }
+  button.dorm-asset { border:1px solid rgba(255,255,255,.06); background-color:#141418; border-radius:10px; padding:7px; cursor:pointer; transition: border-color .12s, background-color .12s; }
+  button.dorm-asset:hover { background-color:#1c1c22; border-color: rgba(255,255,255,.18); }
+  button.dorm-asset.on { border-color: var(--point); background-color: rgba(92,134,255,.12); box-shadow:none; }
+  .dorm-palette-foot { padding:10px 16px 12px; border-top:1px solid var(--line); font-size:12px; color: var(--muted); line-height:1.5; }
+  .map-frame.dorm-frame.editing { box-shadow: inset 0 0 0 1px rgba(92,134,255,.25); }
+  .dorm-edit-bar { position:absolute; left:50%; bottom:16px; transform:translateX(-50%); z-index:6; display:flex; align-items:center; gap:6px;
+    max-width:calc(100% - 32px); padding:7px 8px 7px 12px; border-radius:14px; background: rgba(14,14,17,.88); border:1px solid rgba(255,255,255,.1);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 10px 30px rgba(0,0,0,.45); white-space:nowrap; font-size:13px; color: var(--muted); }
+  .dorm-edit-bar > i { font-size:12px; margin-right:2px; }
+  .dorm-edit-bar.on { color: var(--text); }
+  .dorm-edit-bar.placing { border-color: rgba(92,134,255,.45); }
+  .dorm-edit-bar .th { width:30px; height:30px; flex:none; border-radius:7px; background:#0e0e11 center/contain no-repeat; image-rendering: pixelated; }
+  .dorm-edit-bar .nm { font-weight:700; max-width:160px; overflow:hidden; text-overflow:ellipsis; margin-right:4px; }
+  .dorm-edit-bar .hint { color: var(--muted); margin-right:4px; }
+  .dorm-edit-bar .sep { width:1px; height:20px; background: rgba(255,255,255,.1); margin:0 4px; }
+  .dorm-edit-bar button { height:32px; min-width:32px; padding:0 8px; border-radius:9px; border:none; background: rgba(255,255,255,.06); color: var(--text); cursor:pointer; font-size:12.5px; }
+  .dorm-edit-bar button:hover { background: rgba(255,255,255,.13); }
+  .dorm-edit-bar button.del:hover { color: var(--accent-red); }
+  .dorm-edit-bar .val { min-width:44px; text-align:center; font-weight:700; color: var(--text); font-variant-numeric: tabular-nums; }
+  @media (max-width:900px) { .dorm-edit-bar { bottom:8px; } .dorm-edit-bar .nm { max-width:80px; } .dorm-edit-bar button.txt { display:none; } }
 </style>
 </head>
 <body>
@@ -6874,11 +6904,13 @@ function renderDormRoom(body) {
   const r = dormRoom;
   if (r.loading) { body.innerHTML = '<div class="dorm-empty">불러오는 중…</div>'; return; }
   const side = dormEdit
-    ? `<div class="member-panel panel dorm-side"><div class="member-header"><b>Items</b></div><div class="dorm-side-body" id="dormPalette"></div></div>`
+    ? `<div class="member-panel panel dorm-side dorm-items"><div class="member-header"><b>Items</b><span class="dorm-gb-cnt" id="dormItemCnt"></span></div>
+        <div class="member-toptabs dorm-cattabs" id="dormCatTabs"></div><div class="dorm-pfilter" id="dormFilter"></div>
+        <div class="dorm-side-body" id="dormPalette"></div><div class="dorm-palette-foot" id="dormHint"></div></div>`
     : dormGuestbookHtml(r);
   const isOwner = dormMe() && dormMe() === r.owner;
   const bubble = r.line ? `<div class="dorm-line-bubble"><b>${mailEsc(r.owner)}</b><span>${mailEsc(r.line)}</span></div>` : '';
-  body.innerHTML = `<div class="dorm-room-layout"><div class="dorm-frame-wrap">${bubble}<div class="map-frame dorm-frame" id="dormStageBox"></div></div>${side}</div>`;
+  body.innerHTML = `<div class="dorm-room-layout"><div class="dorm-frame-wrap">${dormEdit ? '' : bubble}<div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>${dormEdit ? '<div class="dorm-edit-bar" id="dormEditBar"></div>' : ''}</div>${side}</div>`;
   const frame = document.getElementById('dormStageBox');
   const src = dormEdit || r, base = dormBase(src);
   const s = dormScale(frame, base);
@@ -6977,33 +7009,66 @@ function saveDormRoom() {
   dormSaving = true;
   socket.emit('dorm_room_save', Object.assign({ owner: dormRoom.owner }, dormEdit));
 }
-function renderDormPalette() {
-  const el = document.getElementById('dormPalette'); if (!el) return;
+function dormAssetList() {
   const all = (dormData.assets || []).filter(a => a.category === dormCat);
+  const q = dormQ.trim().toLowerCase();
+  return { all, list: all.filter(a => (!dormSet || (a.set || '내가 올린 자료') === dormSet) && (!q || a.name.toLowerCase().includes(q))) };
+}
+function renderDormPalette() {
+  if (!document.getElementById('dormPalette')) return;
+  const { all } = dormAssetList();
   const sets = [...new Set(all.map(a => a.set || '내가 올린 자료'))];
   if (dormSet && !sets.includes(dormSet)) dormSet = '';
-  const q = dormQ.trim().toLowerCase();
-  const list = all.filter(a => (!dormSet || (a.set || '내가 올린 자료') === dormSet) && (!q || a.name.toLowerCase().includes(q)));
-  const cur = dormCat === 'room' ? dormEdit.base : dormPick;
-  const isOn = (a) => dormCat === 'room' ? a.id === dormEdit.base : a.slot ? (dormEdit[a.slot] === a.id) : a.id === cur;
+  document.getElementById('dormCatTabs').innerHTML = DORM_CATS.map(([k, t]) =>
+    `<button class="${dormCat === k ? 'active' : ''}" onclick="dormCat='${k}'; dormPick=null; dormSet=''; renderDormPalette(); dormUpdateGhost()"><span>${t}</span></button>`).join('');
+  document.getElementById('dormFilter').innerHTML = `<select onchange="dormSet=this.value; renderDormGrid()"><option value="">전체 세트 · ${all.length}</option>${sets.map(t => `<option ${t === dormSet ? 'selected' : ''}>${mailEsc(t)}</option>`).join('')}</select>
+    <div class="dorm-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="이름 검색" value="${mailEsc(dormQ)}" oninput="dormQ=this.value; renderDormGrid()"></div>`;
+  document.getElementById('dormHint').textContent = dormCat === 'room' ? '고르면 방 바탕이 바뀌어요.'
+    : dormCat === 'surface' ? '벽지·바닥은 고르면 방에 딱 맞춰 깔려요. 다시 누르면 걷어내요.'
+    : '고른 뒤 방을 눌러 놓아요. Esc 고르기 취소';
+  renderDormGrid();
+}
+function renderDormGrid() {
+  const el = document.getElementById('dormPalette'); if (!el) return;
+  const { all, list } = dormAssetList();
+  const isOn = (a) => dormCat === 'room' ? a.id === dormEdit.base : a.slot ? (dormEdit[a.slot] === a.id) : a.id === dormPick;
+  el.innerHTML = list.length ? `<div class="dorm-assets">${list.map(a => `<button class="dorm-asset ${isOn(a) ? 'on' : ''}" data-tip="${mailEsc(a.name)}${a.set ? ' · ' + mailEsc(a.set) : ''}"
+      style="background-image:url('${a.url}')" onclick="pickDormAsset('${a.id}')"></button>`).join('')}</div>`
+    : `<div class="dorm-gb-empty"><i class="fa-solid fa-box-open"></i>${all.length ? '찾는 자료가 없어요.' : '이 종류의 도트 자료가 아직 없어요.'}</div>`;
+  const cnt = document.getElementById('dormItemCnt'); if (cnt) cnt.textContent = `${dormEdit.items.length} / 150`;
+  renderDormEditBar();
+}
+// 방 아래쪽 떠 있는 막대 : 놓는 중인 자료 / 고른 소품의 크기·반전·치우기
+function renderDormEditBar() {
+  const bar = document.getElementById('dormEditBar'); if (!bar) return;
   const sel = dormSel >= 0 ? dormEdit.items[dormSel] : null;
-  el.innerHTML = `<div class="dorm-ptabs">${DORM_CATS.map(([k, t]) => `<button class="${dormCat === k ? 'on' : ''}" onclick="dormCat='${k}'; dormPick=null; renderDormPalette(); dormUpdateGhost()">${t}</button>`).join('')}</div>
-    <div class="dorm-pfilter"><select onchange="dormSet=this.value; renderDormPalette()"><option value="">전체 세트 (${all.length})</option>${sets.map(t => `<option ${t === dormSet ? 'selected' : ''}>${mailEsc(t)}</option>`).join('')}</select>
-      <input type="text" placeholder="검색" value="${mailEsc(dormQ)}" oninput="dormQ=this.value; clearTimeout(window._dq); window._dq=setTimeout(()=>{renderDormPalette(); const i=document.querySelector('.dorm-pfilter input'); if(i){i.focus(); i.setSelectionRange(i.value.length,i.value.length);}},180)"></div>
-    ${list.length ? `<div class="dorm-assets">${list.map(a => `<div class="dorm-asset ${isOn(a) ? 'on' : ''}" title="${mailEsc(a.name)}${a.set ? ' · ' + mailEsc(a.set) : ''}" style="background-image:url('${a.url}')" onclick="pickDormAsset('${a.id}')"></div>`).join('')}</div>`
-      : `<div class="dorm-hint">${all.length ? '찾는 자료가 없어요.' : '이 종류의 도트 자료가 아직 없어요.' + (dormIsGm() ? ' 관리 → 도트 자료에서 올릴 수 있어요.' : '')}</div>`}
-    ${sel ? `<div class="dorm-sizebar"><span class="lbl">크기</span><button onclick="dormResizeSel(-1)" aria-label="작게"><i class="fa-solid fa-minus"></i></button>
-        <span class="val">×${dormZ(sel, dormAsset(sel.a))}</span><button onclick="dormResizeSel(1)" aria-label="크게"><i class="fa-solid fa-plus"></i></button>
-        <button class="rst" onclick="dormResizeSel(0)">원래 크기</button></div>
-      <div class="dorm-tools"><button class="btn-plain" onclick="dormFlipSel()"><i class="fa-solid fa-left-right"></i> 좌우 반전</button><button class="btn-plain" onclick="dormDeleteSel()"><i class="fa-solid fa-trash-can"></i> 치우기</button></div>` : ''}
-    <div class="dorm-hint">${dormCat === 'room' ? '고르면 방 바탕이 바뀌어요.' : dormCat === 'surface' ? '벽지·바닥은 고르면 방에 딱 맞춰 깔려요. 한 번 더 누르면 걷어내요. 카펫은 원하는 곳에 놓을 수 있어요.' : '자료를 고르고 방을 눌러 놓아요. 놓은 소품은 끌어서 옮기고, 눌러서 크기·반전·치우기를 할 수 있어요. (Esc : 고르기 취소, - / + : 크기, Delete : 치우기)'}</div>`;
+  if (sel) {
+    const a = dormAsset(sel.a) || {};
+    bar.className = 'dorm-edit-bar on';
+    bar.innerHTML = `<span class="th" style="background-image:url('${a.url}')"></span><span class="nm">${mailEsc(a.name || '')}</span><span class="sep"></span>
+      <button onclick="dormResizeSel(-1)" data-tip="작게 ( - )"><i class="fa-solid fa-minus"></i></button><span class="val">×${dormZ(sel, a)}</span>
+      <button onclick="dormResizeSel(1)" data-tip="크게 ( + )"><i class="fa-solid fa-plus"></i></button>
+      <button class="txt" onclick="dormResizeSel(0)">원래 크기</button><span class="sep"></span>
+      <button onclick="dormFlipSel()" data-tip="좌우 반전"><i class="fa-solid fa-left-right"></i></button>
+      <button class="del" onclick="dormDeleteSel()" data-tip="치우기 ( Delete )"><i class="fa-solid fa-trash-can"></i></button>
+      <button onclick="dormSel=-1; renderDorm()" data-tip="선택 해제"><i class="fa-solid fa-xmark"></i></button>`;
+  } else if (dormPick) {
+    const a = dormAsset(dormPick) || {};
+    bar.className = 'dorm-edit-bar on placing';
+    bar.innerHTML = `<span class="th" style="background-image:url('${a.url}')"></span><span class="nm">${mailEsc(a.name || '')}</span>
+      <span class="hint">방을 눌러 놓아요</span><button onclick="dormPick=null; renderDormGrid(); dormUpdateGhost()" data-tip="그만 놓기 ( Esc )"><i class="fa-solid fa-xmark"></i></button>`;
+  } else {
+    bar.className = 'dorm-edit-bar';
+    bar.innerHTML = `<i class="fa-solid fa-hand-pointer"></i><span class="hint">놓은 소품을 누르면 옮기거나 크기를 바꿀 수 있어요</span>`;
+  }
 }
 function pickDormAsset(id) {
   if (dormCat === 'room') { dormEdit.base = id; renderDorm(); return; }
   const a = dormAsset(id);
   // 벽지·바닥은 고르면 방에 딱 맞춰 깔리고, 한 번 더 누르면 걷어냅니다.
   if (a && a.slot) { dormEdit[a.slot] = dormEdit[a.slot] === id ? null : id; dormPick = null; renderDorm(); return; }
-  dormPick = dormPick === id ? null : id; dormSel = -1; renderDormPalette(); dormUpdateGhost();
+  dormPick = dormPick === id ? null : id; dormSel = -1; renderDormGrid(); dormUpdateGhost();
+  document.querySelectorAll('#dormStage .dorm-item.sel').forEach(x => x.classList.remove('sel'));
 }
 function dormResizeSel(dir) {
   if (dormSel < 0) return;
@@ -7050,14 +7115,14 @@ function bindDormStage(s) {
       const i = +itemEl.dataset.i, it = dormEdit.items[i], p = ptAt(e);
       dormSel = i; st.querySelectorAll('.dorm-item.sel').forEach(x => x.classList.remove('sel')); itemEl.classList.add('sel');
       drag = { i, el: itemEl, ox: p.px - it.x, oy: p.py - it.y, moved: false };
-      st.setPointerCapture(e.pointerId); renderDormPalette(); return;
+      st.setPointerCapture(e.pointerId); renderDormEditBar(); return;
     }
     const a = dormPick && dormAsset(dormPick);
     if (a) {
       if (!dormGhostPos) { dormGhostPos = Object.assign(ptAt(e), { s }); dormUpdateGhost(); }
       if (dormEdit.items.length >= 150) { showShopToast('소품은 150개까지 놓을 수 있어요.'); return; }
       dormEdit.items.push({ a: a.id, x: dormGhostPos.x, y: dormGhostPos.y, f: false, z: a.s || 1 }); renderDorm();
-    } else { dormSel = -1; st.querySelectorAll('.dorm-item.sel').forEach(x => x.classList.remove('sel')); renderDormPalette(); }
+    } else { dormSel = -1; st.querySelectorAll('.dorm-item.sel').forEach(x => x.classList.remove('sel')); renderDormEditBar(); }
   });
   st.addEventListener('pointerup', () => { if (drag && drag.moved) renderDorm(); drag = null; });
 }
@@ -7067,7 +7132,8 @@ document.addEventListener('keydown', (e) => {
   if ((e.key === 'Delete' || e.key === 'Backspace') && dormSel >= 0) { e.preventDefault(); dormDeleteSel(); }
   if ((e.key === '-' || e.key === '_') && dormSel >= 0) { e.preventDefault(); dormResizeSel(-1); }
   if ((e.key === '=' || e.key === '+') && dormSel >= 0) { e.preventDefault(); dormResizeSel(1); }
-  if (e.key === 'Escape' && dormPick) { e.stopPropagation(); dormPick = null; renderDormPalette(); dormUpdateGhost(); }
+  if (e.key === 'Escape' && dormPick) { e.stopPropagation(); dormPick = null; renderDormGrid(); dormUpdateGhost(); }
+  else if (e.key === 'Escape' && dormSel >= 0) { dormSel = -1; renderDorm(); }
 });
 window.addEventListener('resize', () => { if (dormView === 'room' && document.getElementById('dormModal').style.display === 'flex') renderDorm(); });
 
