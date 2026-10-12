@@ -1028,7 +1028,8 @@
   .char-card.v2 .hpbar-wrap { display:flex; flex-direction:column; align-items:stretch; gap:4px; margin-top:6px; }
   .char-card.v2 .hpnum { align-self:flex-end; font-size:14px; color: var(--muted); }
   /* 세로(column) 배치 안에서는 공통 .hpbar-track의 flex:1 때문에 높이가 0이 되므로 고정 높이로 둡니다. */
-  .char-card.v2 .hpbar-track { flex:none; height:6px; }
+  .char-card.v2 .hpbar-track { flex:none; height:7px; background:#2c2c32; }
+  .char-card.v2 .hpnum { color: var(--text); font-weight:600; font-variant-numeric: tabular-nums; }
 
   .round-track-ph {
     display:flex; align-items:center; justify-content:space-between; padding:14px 20px; margin-top:16px;
@@ -1092,6 +1093,27 @@
   /* 상태 태그 (피해 보류/직접 방어/대리 방어/수호/지휘/회복/흡수) */
   .stag { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
   .stag i { font-size:.92em; width:1.1em; text-align:center; }
+  .stag .st-only { display:none; }
+  .stag .st-n { font-variant-numeric: tabular-nums; }
+  /* 카드 폭이 좁을 때(모바일) : 상태 태그는 아이콘+개수만, 체력 숫자·바는 초상화 아래 한 줄로 */
+  .char-card.v2 { container-type:inline-size; container-name:ccard; }
+  @container ccard (max-width:300px) {
+    .stag .st-l { display:none; }
+    .stag .st-only { display:inline; }
+    .stag { gap:3px; }
+    .char-card.v2 .cbadges { gap:6px; }
+    .char-card.v2 .cbadges > div { overflow:visible; }
+  }
+  @container ccard (max-width:240px) {
+    .char-card.v2 .portrait-row { flex-wrap:wrap; gap:8px 10px; }
+    .char-card.v2 .portrait-side { display:contents; }
+    .char-card.v2 .portrait-row .portrait { flex:1 1 0; width:auto !important; height:auto !important; min-width:0 !important; max-height:none !important; aspect-ratio:1/1; align-self:flex-start; }
+    .char-card.v2 .cbadges-row { flex:none; width:40px; flex-direction:column; align-items:center; gap:6px; }
+    .char-card.v2 .cbadges { align-items:center; font-size:13px; }
+    .char-card.v2 .hpbar-wrap { flex:0 0 100%; flex-direction:row; align-items:center; gap:8px; margin-top:0; }
+    .char-card.v2 .hpbar-wrap .hpnum { order:2; align-self:center; font-size:13px; font-weight:600; color: var(--text); }
+    .char-card.v2 .hpbar-wrap .hpbar-track { flex:1; height:7px; }
+  }
 
   /* ================================================================
      Science 커서 (by ScienceDiscoverer, rw-designer.com/cursor-set/science-cursors-animated · Public Domain) - .cur/.ani를 PNG로 변환해 씁니다.
@@ -1272,6 +1294,23 @@
     /* 전체 화면이어도 내용은 가운데 좁은 열로 모아 시선이 좌우로 멀리 가지 않게 */
     .modal-box.mypage .idc-head, .modal-box.mypage .mypage-cols { width:100%; max-width:520px; margin-left:auto; margin-right:auto; }
     .map-frame { padding:12px; }
+  }
+  /* 휴대폰 폭 : 헤더는 윗줄 = 방·형식 + 타이머, 아랫줄 = 라운드 정보 / 음악은 음소거 버튼만 */
+  @media (max-width:560px) {
+    .shell { padding:10px 10px 12px; }
+    .sidebar { width:48px; }
+    .sidebar .sidebar-icon { width:36px; height:36px; font-size:17px; }
+    .topbar.v2 { grid-template-areas:"room sep fmt . timer" "round round round round round"; padding:12px 14px; }
+    .topbar.v2 #liveClock { display:none; }
+    .topbar.v2 #roundInfo { font-size:18px; white-space:normal; }
+    .topbar.v2 #roundTimerLabel:has(.flip-clock) { font-size:15px; }
+    .topbar.v2 #roomNameLabel, .topbar.v2 #formatLabel { font-size:13px; }
+    .member-top .bgm-player input[type="range"] { display:none; }
+    .team-block h2 { font-size:17px; }
+    .teams-columns { gap:8px; }
+    .char-card.v2 { padding:10px; }
+    .char-card.v2 .cname { font-size:15px; }
+    .char-card.v2 .crole { font-size:13px; margin-left:4px; }
     .teams-col > .round-track { height:92px; }
     .teams-col:has(> .round-track) .char-card.v2 .portrait { min-width:72px; min-height:72px; }
   }
@@ -2255,7 +2294,7 @@ function renderSiteStatusCard(battle) {
   const hpRatio = site.max_hp > 0 ? site.current_hp / site.max_hp : 0;
   const badges = [];
   if (site.defense_count) badges.push(makeStatusTag('guard', `수호${site.defense_count > 1 ? ' ' + site.defense_count : ''}`));
-  if (site.shield_hp) badges.push(`🔷 보호막${site.shield_hp}`);
+  if (site.shield_hp) badges.push(makeStatusTag('shield', `보호막 ${site.shield_hp}`));
   if (site.has_leech_buff) badges.push(makeStatusTag('leech', '흡수'));
   const navHtml = (mobs.length > 1)
     ? `<div class="site-nav">
@@ -2400,15 +2439,15 @@ function renderCompactCardHtml(c) {
   const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = [];
-  if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
+  if (c.shield_hp) badges.push(makeStatusTag('shield', `보호막 ${c.shield_hp}`));
   if (c.self_defense_count) badges.push(makeStatusTag('selfdef', '직접 방어'));
   if (c.defense_count - (c.self_defense_count || 0) > 0) badges.push(makeStatusTag('guard', `수호${c.defense_count - (c.self_defense_count || 0) > 1 ? ' ' + (c.defense_count - (c.self_defense_count || 0)) : ''}`));
-  if (c.polarize_active) badges.push(`🛡 편광중`);
+  if (c.polarize_active) badges.push(makeStatusTag('polarize', '편광중'));
   if (c.has_leech_buff) badges.push(makeStatusTag('leech', '흡수'));
   if (c.pending_attacks) badges.push(makeStatusTag('pending', `피해 보류 ${c.pending_attacks}`));
   if (c.pending_heals) badges.push(makeStatusTag('heal', `회복 +${c.pending_heals}`));
-  if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`));
-  if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`));
+  if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`, c.interceptors.length));
+  if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`, 1));
   return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
@@ -2473,13 +2512,13 @@ function renderCardHtml(c) {
   if (lastForcedTargetNames.has(c.name)) badges.push(makeStatusTag('command', '지휘'));
   if (c.self_defense_count) badges.push(makeStatusTag('selfdef', '직접 방어'));
   if (c.defense_count - (c.self_defense_count || 0) > 0) badges.push(makeStatusTag('guard', `수호${c.defense_count - (c.self_defense_count || 0) > 1 ? ' ' + (c.defense_count - (c.self_defense_count || 0)) : ''}`));
-  if (c.shield_hp) badges.push(`🔷 보호막${c.shield_hp}`);
-  if (c.polarize_active) badges.push(`🛡 편광중`);
+  if (c.shield_hp) badges.push(makeStatusTag('shield', `보호막 ${c.shield_hp}`));
+  if (c.polarize_active) badges.push(makeStatusTag('polarize', '편광중'));
   if (c.has_leech_buff) badges.push(makeStatusTag('leech', '흡수'));
   if (c.pending_attacks) badges.push(makeStatusTag('pending', `피해 보류 ${c.pending_attacks}`));
   if (c.pending_heals) badges.push(makeStatusTag('heal', `회복 +${c.pending_heals}`));
-  if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`));
-  if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`));
+  if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`, c.interceptors.length));
+  if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`, 1));
 
   return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">
@@ -5173,6 +5212,8 @@ const STATUS_TAG_ICONS = {
   command:   { cls: 'fa-sharp fa-solid fa-bullseye-pointer', fallback: 'fa-solid fa-bullseye' },
   heal:      { cls: 'fa-solid fa-hand-holding-medical',    fallback: 'fa-solid fa-hand-holding-medical' },
   leech:     { cls: 'fa-sharp fa-solid fa-droplet-plus',   fallback: 'fa-solid fa-droplet' },
+  shield:    { cls: 'fa-solid fa-shield',                  fallback: 'fa-solid fa-shield' },
+  polarize:  { cls: 'fa-solid fa-circle-half-stroke',      fallback: 'fa-solid fa-circle-half-stroke' },
 };
 const statusIconOk = {};
 function detectStatusIcons() {
@@ -5188,10 +5229,17 @@ function detectStatusIcons() {
   });
   probe.remove();
 }
-function makeStatusTag(kind, text) {
+// 카드가 좁을 때(모바일)는 글자는 숨기고 아이콘+개수만 보이도록, 이름(st-l)과 개수(st-n)를 나눠 둡니다.
+function makeStatusTag(kind, text, count) {
   const ic = STATUS_TAG_ICONS[kind];
   const cls = ic ? (statusIconOk[kind] === false ? ic.fallback : ic.cls) : '';
-  return `<span class="stag stag-${kind}">${cls ? `<i class="${cls}"></i>` : ''}${text}</span>`;
+  let label = String(text), num = count != null ? String(count) : '';
+  if (count == null) {
+    const m = label.match(/^(.*?)\s*([+]?\d+)$/);
+    if (m) { label = m[1]; num = m[2]; }
+  }
+  const full = count != null ? label : String(text);
+  return `<span class="stag stag-${kind}" title="${shopEsc(full)}">${cls ? `<i class="${cls}"></i>` : ''}<span class="st-l">${label}</span>${num && count == null ? `<span class="st-n">${num}</span>` : ''}${count != null && count > 1 ? `<span class="st-n st-only">${count}</span>` : ''}</span>`;
 }
 // 아이콘 폰트가 늦게 로드될 수 있어서, 로드 후 한 번 더 확인하고 화면을 다시 그립니다.
 if (document.fonts && document.fonts.ready) {
