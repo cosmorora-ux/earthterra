@@ -2204,7 +2204,7 @@
   <div class="modal-box mypage panel">
     <div class="idc-head">
       <div class="idc-title">ID card</div>
-      <button class="idc-logout" onclick="closeMyPage(); onAvatarDotClick()"><i class="fa-solid fa-right-from-bracket"></i> 로그아웃</button>
+      <button class="idc-logout" onclick="closeMyPage(); onAvatarDotClick()"><i class="fa-solid fa-power-off"></i> 로그아웃</button>
       <button class="idc-close" onclick="closeMyPage()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="mypage-cols">
@@ -2681,7 +2681,7 @@ function onAvatarDotClick() {
   // 전투 시작 전(등록된 이름으로만 입장)이거나 전투에 없는 이름으로 입장한 경우에도
   // 로그아웃할 수 있도록, 실제로 입장한 상태인지(explicitlyJoined)만 봅니다.
   if (explicitlyJoined) {
-    uiConfirm('지금 캐릭터에서 로그아웃할까요?', {title:'로그아웃', okText:'로그아웃', icon:'fa-right-from-bracket'}).then(ok => ok && logout());
+    uiConfirm('지금 캐릭터에서 로그아웃할까요?', {title:'로그아웃', okText:'로그아웃', icon:'fa-power-off'}).then(ok => ok && logout());
   } else {
     openJoinModal();
   }
@@ -2798,7 +2798,7 @@ function updateAvatarDots(battle) {
   if (el) el.style.backgroundImage = url ? `url('${url}')` : 'none';
   // 좌측 패널 입장/로그아웃 버튼 : 로그인 전에는 들어가기(→]), 로그인 후에는 나가기([→) 아이콘
   const loginIcon = document.querySelector('#sidebarLoginBtn i');
-  if (loginIcon) loginIcon.className = explicitlyJoined ? 'fa-solid fa-right-from-bracket' : 'fa-solid fa-right-to-bracket';
+  if (loginIcon) loginIcon.className = explicitlyJoined ? 'fa-solid fa-power-off' : 'fa-solid fa-right-to-bracket';
   // 로그인(캐릭터 또는 GM)하지 않았으면 마이페이지 아이콘을 아예 숨깁니다.
   const myBtn = document.getElementById('sidebarMyPageBtn');
   const loggedIn = explicitlyJoined && (myLoggedInName() || myControlInfo(lastBattleForPanel).scope === 'all');
