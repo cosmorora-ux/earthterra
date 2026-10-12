@@ -263,8 +263,6 @@ def _log_html(lines, team_of):
 
 _ICON_CLOCK = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.2"/>'
                '<path d="M8 4.6V8l2.3 1.5" stroke-linecap="round"/></svg>')
-_ICON_SWORD = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">'
-               '<path d="M3 13l7.5-7.5M10.5 5.5L13 3M5 9l2 2M3.5 11l1.5 1.5"/></svg>')
 _ICON_CHAT = ('<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">'
               '<path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>')
 
@@ -294,9 +292,8 @@ def build_export_html(room_name, battle_type_label, chat_log, team_chat_log, bat
     def chat_count(entries):
         return sum(1 for e in entries if (e.get("category") or "") not in ("presence", "round", "system"))
 
+    # 아군 회의는 팀끼리만 보는 대화라 파일에는 넣지 않습니다.
     sections = [("chat", "채팅", _chat_html(chat_log, colors), chat_count(chat_log))]
-    if team_chat_log:
-        sections.append(("team", "아군 회의", _chat_html(team_chat_log, colors), chat_count(team_chat_log)))
 
     def battles_html(key):
         if not battles:
@@ -304,14 +301,13 @@ def build_export_html(room_name, battle_type_label, chat_log, team_chat_log, bat
         return "".join(f'<div class="battle-h">{_e(b["label"])}</div>{_log_html(b.get(key), b.get("teams") or {})}'
                        for b in reversed(battles))
 
-    sections.append(("battle", "전투 로그", battles_html("public_log"), len(battles)))
+    sections.append(("battle", "전투 로그", battles_html("public_log"), None))
     if include_operator:
         sections.append(("operator", "운영진 로그", battles_html("operator_log"), None))
     tabs = "".join(f'<a href="#{k}">{t}{f"<span class=n>{n}</span>" if n else ""}</a>' for k, t, _, n in sections)
     body = "".join(f'<section id="{k}"><h2>{t}</h2><div class="panel">{h}</div></section>' for k, t, h, _ in sections)
     chips = (f'<span class="chip pt">{_e(battle_type_label)}</span>'
              f'<span class="chip">{_ICON_CLOCK}{now} 저장</span>'
-             f'<span class="chip">{_ICON_SWORD}전투 {len(battles)}회</span>'
              f'<span class="chip">{_ICON_CHAT}채팅 {chat_count(chat_log)}개</span>')
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width, initial-scale=1">'
