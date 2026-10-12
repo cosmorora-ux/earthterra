@@ -1228,7 +1228,23 @@
     /* 채팅은 카드 화면 위에 따로 여는 전체 화면 패널로 (코코포리아 모바일처럼) */
     .member-col .member-panel { display:none; }
     body.m-chat-open .member-col .member-panel { display:flex; position:fixed; inset:0; z-index:95; height:auto; border:none; border-radius:0;
-      padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); animation: mChatIn .22s ease-out; }
+      padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); animation: mChatIn .22s ease-out;
+      background:rgba(16,16,19,.72); -webkit-backdrop-filter:blur(14px) saturate(1.1); backdrop-filter:blur(14px) saturate(1.1); }
+    body.m-chat-open .member-col .member-panel::before, body.m-chat-open .member-col .member-panel::after { display:none; }
+    body.m-chat-open .member-panel .member-body { background:rgba(0,0,0,.28); }
+    body.m-chat-open .member-panel .member-header, body.m-chat-open .member-panel .member-toptabs,
+    body.m-chat-open .member-panel .input-row { background:transparent; }
+    /* 카드 영역이 남는 높이를 모두 채우고, 카드와 초상화가 그만큼 커집니다 (빈 공간 없이 화면 꽉) */
+    .teams-col:has(> .round-track) > .teams-col-scroll { flex:1 1 0; display:flex; flex-direction:column; }
+    .teams-col:has(> .round-track) .main-grid { flex:1 0 auto; display:flex; flex-direction:column; }
+    .teams-col:has(> .round-track) .main-grid > div { flex:1 0 auto; display:flex; flex-direction:column; }
+    .teams-col:has(> .round-track) .teams-columns { flex:1 0 auto; align-items:stretch; }
+    .teams-col:has(> .round-track) .team-block { display:flex; flex-direction:column; }
+    .teams-col:has(> .round-track) .team-block .card-grid { flex:1 0 auto; grid-auto-rows:minmax(min-content, 1fr); }
+    .teams-col:has(> .round-track) .char-card.v2 { display:flex; flex-direction:column; }
+    .teams-col:has(> .round-track) .char-card.v2 .portrait-row { flex:1 0 auto; }
+    .teams-col:has(> .round-track) .char-card.v2 .portrait { width:auto; height:auto; min-width:72px; min-height:72px; max-height:200px; aspect-ratio:1/1; }
+    .teams-col > .round-track { flex:none; height:92px; }
     .sidebar .m-chat-btn { display:flex; }
     .member-header .m-chat-close { display:inline-flex; }
     .modal-box.mypage .mypage-col + .mypage-col { padding-top:20px; }
