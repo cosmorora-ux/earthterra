@@ -52,7 +52,8 @@
 "url": "/static/dorm_default/packs/base/0001.png",
 "w": 401,
 "h": 403,
-"credit": "pk-psd"
+"credit": "pk-psd",
+"s": 1.147
 },
 {
 "id": "p0002",
@@ -62,7 +63,8 @@
 "url": "/static/dorm_default/packs/base/0002.png",
 "w": 26,
 "h": 31,
-"credit": "pk-psd"
+"credit": "pk-psd",
+"s": 2
 },
 {
 "id": "p0003",
@@ -72,7 +74,8 @@
 "url": "/static/dorm_default/packs/base/0003.png",
 "w": 28,
 "h": 31,
-"credit": "pk-psd"
+"credit": "pk-psd",
+"s": 2
 },
 {
 "id": "p0004",
@@ -82,7 +85,8 @@
 "url": "/static/dorm_default/packs/base/0004.png",
 "w": 26,
 "h": 31,
-"credit": "pk-psd"
+"credit": "pk-psd",
+"s": 2
 },
 {
 "id": "p0005",
@@ -92,7 +96,8 @@
 "url": "/static/dorm_default/packs/base/0005.png",
 "w": 26,
 "h": 31,
-"credit": "pk-psd"
+"credit": "pk-psd",
+"s": 2
 },
 {
 "id": "p0006",
@@ -102,7 +107,8 @@
 "url": "/static/dorm_default/packs/base/0006.png",
 "w": 26,
 "h": 31,
-"credit": "pk-psd"
+"credit": "pk-psd",
+"s": 2
 },
 {
 "id": "p0007",
@@ -112,7 +118,8 @@
 "url": "/static/dorm_default/packs/base/0007.png",
 "w": 26,
 "h": 31,
-"credit": "pk-psd"
+"credit": "pk-psd",
+"s": 2
 },
 {
 "id": "p0008",
@@ -122,7 +129,8 @@
 "url": "/static/dorm_default/packs/base/0008.png",
 "w": 26,
 "h": 31,
-"credit": "pk-psd"
+"credit": "pk-psd",
+"s": 2
 },
 {
 "id": "p0009",
@@ -712,7 +720,8 @@
 "url": "/static/dorm_default/packs/plants/0067.png",
 "w": 53,
 "h": 94,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0068",
@@ -722,7 +731,8 @@
 "url": "/static/dorm_default/packs/plants/0068.png",
 "w": 14,
 "h": 21,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0069",
@@ -732,7 +742,8 @@
 "url": "/static/dorm_default/packs/plants/0069.png",
 "w": 32,
 "h": 49,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0070",
@@ -742,7 +753,8 @@
 "url": "/static/dorm_default/packs/plants/0070.png",
 "w": 30,
 "h": 50,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0071",
@@ -752,7 +764,8 @@
 "url": "/static/dorm_default/packs/plants/0071.png",
 "w": 14,
 "h": 26,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0072",
@@ -762,7 +775,8 @@
 "url": "/static/dorm_default/packs/plants/0072.png",
 "w": 14,
 "h": 26,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0073",
@@ -772,7 +786,8 @@
 "url": "/static/dorm_default/packs/plants/0073.png",
 "w": 38,
 "h": 48,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0074",
@@ -782,7 +797,8 @@
 "url": "/static/dorm_default/packs/plants/0074.png",
 "w": 35,
 "h": 54,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0075",
@@ -792,7 +808,8 @@
 "url": "/static/dorm_default/packs/plants/0075.png",
 "w": 20,
 "h": 30,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0076",
@@ -802,7 +819,8 @@
 "url": "/static/dorm_default/packs/plants/0076.png",
 "w": 20,
 "h": 30,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0077",
@@ -812,7 +830,8 @@
 "url": "/static/dorm_default/packs/plants/0077.png",
 "w": 20,
 "h": 30,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0078",
@@ -822,7 +841,8 @@
 "url": "/static/dorm_default/packs/plants/0078.png",
 "w": 20,
 "h": 30,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0079",
@@ -832,7 +852,8 @@
 "url": "/static/dorm_default/packs/plants/0079.png",
 "w": 20,
 "h": 30,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0080",
@@ -842,7 +863,8 @@
 "url": "/static/dorm_default/packs/plants/0080.png",
 "w": 34,
 "h": 49,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0081",
@@ -852,7 +874,8 @@
 "url": "/static/dorm_default/packs/plants/0081.png",
 "w": 21,
 "h": 24,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0082",
@@ -862,7 +885,8 @@
 "url": "/static/dorm_default/packs/plants/0082.png",
 "w": 24,
 "h": 86,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0083",
@@ -872,7 +896,8 @@
 "url": "/static/dorm_default/packs/plants/0083.png",
 "w": 16,
 "h": 36,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0084",
@@ -882,7 +907,8 @@
 "url": "/static/dorm_default/packs/plants/0084.png",
 "w": 16,
 "h": 36,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0085",
@@ -892,7 +918,8 @@
 "url": "/static/dorm_default/packs/plants/0085.png",
 "w": 16,
 "h": 36,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0086",
@@ -902,7 +929,8 @@
 "url": "/static/dorm_default/packs/plants/0086.png",
 "w": 16,
 "h": 36,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0087",
@@ -912,7 +940,8 @@
 "url": "/static/dorm_default/packs/plants/0087.png",
 "w": 16,
 "h": 36,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0088",
@@ -922,7 +951,8 @@
 "url": "/static/dorm_default/packs/plants/0088.png",
 "w": 46,
 "h": 94,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0089",
@@ -932,7 +962,8 @@
 "url": "/static/dorm_default/packs/plants/0089.png",
 "w": 22,
 "h": 41,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0090",
@@ -942,7 +973,8 @@
 "url": "/static/dorm_default/packs/plants/0090.png",
 "w": 22,
 "h": 41,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0091",
@@ -952,7 +984,8 @@
 "url": "/static/dorm_default/packs/plants/0091.png",
 "w": 22,
 "h": 41,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0092",
@@ -962,7 +995,8 @@
 "url": "/static/dorm_default/packs/plants/0092.png",
 "w": 19,
 "h": 18,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0093",
@@ -972,7 +1006,8 @@
 "url": "/static/dorm_default/packs/plants/0093.png",
 "w": 13,
 "h": 23,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0094",
@@ -982,7 +1017,8 @@
 "url": "/static/dorm_default/packs/plants/0094.png",
 "w": 21,
 "h": 42,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0095",
@@ -992,7 +1028,8 @@
 "url": "/static/dorm_default/packs/plants/0095.png",
 "w": 21,
 "h": 42,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0096",
@@ -1002,7 +1039,8 @@
 "url": "/static/dorm_default/packs/plants/0096.png",
 "w": 21,
 "h": 42,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0097",
@@ -1012,7 +1050,8 @@
 "url": "/static/dorm_default/packs/plants/0097.png",
 "w": 21,
 "h": 42,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0098",
@@ -1022,7 +1061,8 @@
 "url": "/static/dorm_default/packs/plants/0098.png",
 "w": 21,
 "h": 42,
-"credit": "pk-plants"
+"credit": "pk-plants",
+"s": 2
 },
 {
 "id": "p0099",
@@ -1032,7 +1072,8 @@
 "url": "/static/dorm_default/packs/antique/0099.png",
 "w": 38,
 "h": 39,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0100",
@@ -1042,7 +1083,8 @@
 "url": "/static/dorm_default/packs/antique/0100.png",
 "w": 50,
 "h": 34,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0101",
@@ -1052,7 +1094,8 @@
 "url": "/static/dorm_default/packs/antique/0101.png",
 "w": 38,
 "h": 59,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0102",
@@ -1062,7 +1105,8 @@
 "url": "/static/dorm_default/packs/antique/0102.png",
 "w": 38,
 "h": 39,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0103",
@@ -1072,7 +1116,8 @@
 "url": "/static/dorm_default/packs/antique/0103.png",
 "w": 9,
 "h": 40,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0104",
@@ -1082,7 +1127,8 @@
 "url": "/static/dorm_default/packs/antique/0104.png",
 "w": 38,
 "h": 39,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0105",
@@ -1092,7 +1138,8 @@
 "url": "/static/dorm_default/packs/antique/0105.png",
 "w": 38,
 "h": 39,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0106",
@@ -1102,7 +1149,8 @@
 "url": "/static/dorm_default/packs/antique/0106.png",
 "w": 9,
 "h": 40,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0107",
@@ -1112,7 +1160,8 @@
 "url": "/static/dorm_default/packs/antique/0107.png",
 "w": 50,
 "h": 34,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0108",
@@ -1122,7 +1171,8 @@
 "url": "/static/dorm_default/packs/antique/0108.png",
 "w": 30,
 "h": 28,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0109",
@@ -1132,7 +1182,8 @@
 "url": "/static/dorm_default/packs/antique/0109.png",
 "w": 38,
 "h": 59,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0110",
@@ -1142,7 +1193,8 @@
 "url": "/static/dorm_default/packs/antique/0110.png",
 "w": 9,
 "h": 40,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0111",
@@ -1152,7 +1204,8 @@
 "url": "/static/dorm_default/packs/antique/0111.png",
 "w": 32,
 "h": 30,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0112",
@@ -1162,7 +1215,8 @@
 "url": "/static/dorm_default/packs/antique/0112.png",
 "w": 32,
 "h": 30,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0113",
@@ -1172,7 +1226,8 @@
 "url": "/static/dorm_default/packs/antique/0113.png",
 "w": 32,
 "h": 30,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0114",
@@ -1182,7 +1237,8 @@
 "url": "/static/dorm_default/packs/antique/0114.png",
 "w": 9,
 "h": 40,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0115",
@@ -1192,7 +1248,8 @@
 "url": "/static/dorm_default/packs/antique/0115.png",
 "w": 50,
 "h": 34,
-"credit": "pk-antique"
+"credit": "pk-antique",
+"s": 1.5
 },
 {
 "id": "p0116",

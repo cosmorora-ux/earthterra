@@ -189,15 +189,21 @@ class Dorms:
         base = self.asset(data.get("base"))
         if not base or base["category"] != "room":
             base = self.asset(DEFAULT_BASE)
-        bw, bh = base["w"], base["h"]
+        # 방 그림도 기본 배율(s)이 있어 실제 크기 = 그림 크기 × s 입니다. 위치는 이 크기 기준 좌표입니다.
+        bw, bh = base["w"] * base.get("s", 1), base["h"] * base.get("s", 1)
         items = []
         for it in (data.get("items") or [])[:MAX_ITEMS]:
             a = self.asset(it.get("a"))
             if not a or a["category"] == "room":
                 continue
-            x = _clamp(it.get("x"), -a["w"] // 2, bw - a["w"] // 2, 0)
-            y = _clamp(it.get("y"), -a["h"] // 2, bh - a["h"] // 2, 0)
-            items.append({"a": a["id"], "x": x, "y": y, "f": bool(it.get("f"))})
+            try:
+                z = max(0.25, min(4.0, round(float(it.get("z") or a.get("s", 1)) * 4) / 4))
+            except (TypeError, ValueError):
+                z = a.get("s", 1)
+            w, h = a["w"] * z, a["h"] * z
+            x = _clamp(it.get("x"), -w // 2, bw - w // 2, 0)
+            y = _clamp(it.get("y"), -h // 2, bh - h // 2, 0)
+            items.append({"a": a["id"], "x": x, "y": y, "f": bool(it.get("f")), "z": z})
         with self.lock:
             self.rooms[owner] = {"v": 2, "base": base["id"], "items": items, "updated": time.time()}
             self.save()
