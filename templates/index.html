@@ -118,6 +118,21 @@
     pointer-events:none; z-index:20000; border:1.5px solid rgba(255,255,255,.55); background:rgba(255,255,255,.08);
     animation: clickRipple .55s cubic-bezier(.2,.7,.3,1) forwards; }
   @keyframes clickRipple { from { transform:scale(.4); opacity:1; } to { transform:scale(4.2); opacity:0; } }
+
+  /* ================================================================
+     디자인 톤 통일 (최신식 UI)
+     표면 2단계(패널 #141417 / 입력·안쪽 #0e0e11) · 옅은 1px 선 · 모서리 패널 16 / 입력·버튼 10
+     포커스는 포인트 블루 링, 보조 버튼은 반투명 흰 면. 장식·과한 빛 없이.
+     ================================================================ */
+  :root {
+    --panel:#141417; --card:#17171a; --bg:#060607;
+    --panel-border: rgba(255,255,255,.07); --card-border: rgba(255,255,255,.09);
+    --line: rgba(255,255,255,.07); --line-strong: rgba(255,255,255,.14);
+    --surface-in:#0e0e11; --ui-r:10px;
+  }
+
+  input, select, textarea { border-radius: var(--ui-r); }
+  input:focus, select:focus, textarea:focus { outline:none; border-color: rgba(92,134,255,.6); box-shadow: 0 0 0 3px rgba(92,134,255,.18); }
 </style>
 </head>
 <body>

@@ -1369,6 +1369,53 @@
   .char-card.v2 .cbadges .stag { padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.06); color:#c9c9ce; font-size:12px; line-height:18px; }
   .char-card.v2 .cbadges > div { overflow:visible; }
   @container ccard (max-width:300px) { .char-card.v2 .cbadges .stag { padding:2px 6px; } }
+
+  /* ================================================================
+     디자인 톤 통일 (최신식 UI)
+     표면 2단계(패널 #141417 / 입력·안쪽 #0e0e11) · 옅은 1px 선 · 모서리 패널 16 / 입력·버튼 10
+     포커스는 포인트 블루 링, 보조 버튼은 반투명 흰 면. 장식·과한 빛 없이.
+     ================================================================ */
+  :root {
+    --panel:#141417; --card:#17171a; --bg:#060607;
+    --panel-border: rgba(255,255,255,.07); --card-border: rgba(255,255,255,.09);
+    --line: rgba(255,255,255,.07); --line-strong: rgba(255,255,255,.14);
+    --surface-in:#0e0e11; --ui-r:10px;
+  }
+
+  .panel { background: var(--panel); border-color: var(--line); }
+  .topbar.v2, .member-panel, .action-bar-bottom, .round-track { border-radius:16px; border-color: var(--line); }
+  .round-track { border:1px solid var(--line); }
+  /* 사이드바 : 활성 아이콘은 옅은 포인트 면 */
+  .sidebar { background:#0b0b0d; border-right:1px solid var(--line); }
+  .sidebar .sidebar-icon { border-radius: var(--ui-r); }
+  .sidebar .sidebar-icon:hover { background: rgba(255,255,255,.05); }
+  .sidebar .sidebar-icon.active { color: var(--point); background: rgba(92,134,255,.12); }
+  .sidebar .sidebar-icon.active::before { background: var(--point); }
+  /* 입력 · 선택 */
+  .action-bar-bottom select, .gm-bar-fields select, .input-row input, .modal-box input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  .modal-box select, .modal-box textarea, .chat-search-bar input {
+    background: var(--surface-in); border:1px solid var(--line); border-radius: var(--ui-r); transition: border-color .15s, box-shadow .15s; }
+  .action-bar-bottom select:hover, .gm-bar-fields select:hover, .input-row input:hover { border-color: var(--line-strong); }
+  .action-bar-bottom select:focus, .gm-bar-fields select:focus, .input-row input:focus, .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus,
+  .chat-search-bar input:focus { outline:none; border-color: rgba(92,134,255,.6); box-shadow: 0 0 0 3px rgba(92,134,255,.18); }
+  /* 버튼 */
+  .btn, .btn-primary { border-radius: var(--ui-r); }
+  .btn-primary:hover, .btn:hover { filter: brightness(1.12); }
+  .btn-plain, .gm-bar-ctrl button { background: rgba(255,255,255,.05); border:1px solid var(--line); border-radius: var(--ui-r); }
+  .btn-plain:hover, .gm-bar-ctrl button:hover { background: rgba(255,255,255,.09); border-color: var(--line-strong); }
+  .input-row .send-btn, #chatSendBtn { border-radius: var(--ui-r); }
+  .gear.icon-btn, .panel-head .gear.icon-btn { border-radius: var(--ui-r); background: rgba(255,255,255,.05); border:1px solid var(--line); }
+  /* 채팅 패널 : 머리줄·탭·입력줄 구분선을 같은 선으로, 활성 탭은 포인트 블루 */
+  .member-panel .member-header, .member-toptabs { border-color: var(--line); }
+  .member-toptabs button.active { border-bottom-color: var(--point); }
+  .member-body { background: rgba(0,0,0,.28); }
+  /* 팝업 : 뒤 화면은 살짝 흐리게, 상자는 큰 둥근 모서리 */
+  .modal-overlay { background: rgba(4,4,6,.62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .modal-box.panel { border-radius:20px; border:1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.45); }
+  .shop-item, .notice-card, .shop-edit { border-color: var(--line); border-radius:14px; }
+  .notice-card:hover, .shop-item:hover { border-color: var(--line-strong); }
+  .shop-btn { border-radius: var(--ui-r); }
+  .gm-menu { border-radius:12px; border:1px solid var(--line); background:#17171a; box-shadow: 0 16px 40px rgba(0,0,0,.5); }
 </style>
 </head>
 <body>
