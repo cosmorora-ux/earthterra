@@ -1687,6 +1687,72 @@
   body.logged-out .chat-lock { display:flex; position:absolute; inset:0; z-index:4; flex-direction:column; align-items:center; justify-content:center; gap:12px;
     color: var(--muted); font-size:14px; text-align:center; }
   body.logged-out .chat-lock i { font-size:28px; opacity:.5; }
+
+  /* ================================================================
+     기숙사 페이지 : 전투 화면과 같은 구성(상단 바 + 카드 / 지도 + 오른쪽 패널)
+     ================================================================ */
+  .modal-box.dorm-modal { background:none !important; border:none !important; padding:0 !important; border-radius:0; box-shadow:none !important;
+    display:flex; flex-direction:column; flex:1; min-height:0; width:100%; }
+  .topbar.v2.dorm-topbar { flex:none; display:flex !important; flex-wrap:nowrap; }
+  .dorm-topbar .dorm-tools-r { margin-left:auto; }
+  .dorm-topbar .seg { white-space:nowrap; }
+  .dorm-topbar .dorm-brand { font-family: var(--font-title); font-weight:400; font-size:24px; letter-spacing:.02em; }
+  .dorm-topbar .dorm-link { cursor:pointer; }
+  .dorm-topbar .dorm-link:hover { color: var(--point); }
+  .dorm-seg-sub { color: var(--muted); font-weight:600; font-size:.8em; margin-left:2px; }
+  .dorm-tools-r { display:flex; align-items:center; gap:8px; }
+  .dorm-tbtn { height:38px; display:inline-flex; align-items:center; gap:7px; padding:0 14px; border-radius: var(--ui-r); border:1px solid var(--line);
+    background: rgba(255,255,255,.05); color: var(--text); font-size:14px; font-weight:600; cursor:pointer; }
+  .dorm-tbtn:hover { background: rgba(255,255,255,.09); }
+  .dorm-tbtn.primary { background: var(--accent-blue); border-color: transparent; color:#fff; }
+  .dorm-tbtn.primary:hover { filter: brightness(1.12); }
+  .dorm-tbtn.icon { width:38px; padding:0; justify-content:center; color: var(--muted); }
+  .dorm-tbtn.icon:hover, .dorm-tbtn.icon.on { color: var(--text); }
+  .dorm-tbtn.icon.on { background: rgba(92,134,255,.16); border-color: rgba(92,134,255,.45); }
+  .dorm-main { flex:1; min-height:0; overflow-y:auto; }
+  .dorm-modal[data-view="room"] .dorm-main { overflow:hidden; }
+  /* 관 목록 */
+  .dorm-halls { display:flex; flex-direction:column; gap:22px; padding:2px 0 12px; }
+  .dorm-hall-title { display:flex; align-items:center; gap:12px; margin:0 0 10px 2px; height:34px; }
+  .dorm-hall-title .en { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; }
+  .dorm-hall-title .ko { font-size:15px; font-weight:700; color:#cfcfd4; }
+  .dorm-hall-title .cnt { margin-left:auto; font-size:13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .dorm-cards { display:grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap:14px; }
+  .char-card.dorm-card { display:flex; flex-direction:column; gap:10px; padding:14px; min-width:0; }
+  .dorm-card .row1 { display:flex; align-items:baseline; justify-content:space-between; gap:6px; min-width:0; }
+  .dorm-card .cname { font-size:16px; font-weight:800; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dorm-card .cname .me { color: var(--accent-blue); font-size:13px; font-weight:700; }
+  .dorm-card .crole { font-size:13px; color: var(--muted); flex:none; font-variant-numeric: tabular-nums; }
+  .dorm-portrait { height:124px; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden;
+    background: radial-gradient(ellipse at 50% 55%, #1c1c22 0%, #0e0e11 80%); border:1px solid rgba(255,255,255,.06); }
+  .char-card.dorm-card.mine { border-color: rgba(255,255,255,.42); }
+  .char-card.dorm-card.empty { cursor:default; background:transparent; border-style:dashed; opacity:.55; }
+  .char-card.dorm-card.empty .cname { color: var(--muted); font-weight:600; }
+  .dorm-card.empty .dorm-portrait { background:none; border-color:transparent; color:#3a3a42; font-size:24px; }
+  /* 방 : 왼쪽 지도 틀 + 오른쪽 패널(방명록 / 꾸미기 자료) */
+  .dorm-room-layout { display:flex; gap:16px; height:100%; min-height:0; }
+  .map-frame.dorm-frame { flex:1; min-width:0; min-height:0; display:flex; align-items:center; justify-content:center; padding:22px; }
+  .member-panel.dorm-side { width:380px; flex:none; height:auto; min-height:0; display:flex; flex-direction:column; }
+  .dorm-side .member-header { justify-content:flex-start; gap:10px; }
+  .dorm-side .member-header b { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; }
+  .dorm-gb-cnt { font-size:13px; color: var(--muted); }
+  .dorm-side-body { flex:1; min-height:0; overflow-y:auto; padding:14px 16px; }
+  .dorm-gb-list .chat-line { position:relative; }
+  .dorm-gb-empty { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color: var(--muted); font-size:13.5px; }
+  .dorm-gb-empty i { font-size:24px; opacity:.5; }
+  .dorm-gb-login { padding:14px 16px; border-top:1px solid var(--line); font-size:13px; color: var(--muted); text-align:center; }
+  .dorm-side .dorm-palette, .dorm-side-body#dormPalette { border:none; background:none; }
+  .modal-box.dorm-modal .dorm-side .input-row input { width:auto; flex:1; height:40px; font-size:14px; padding:0 14px; }
+  @media (max-width:1180px) { .dorm-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } .member-panel.dorm-side { width:320px; } }
+  @media (max-width:900px) {
+    .dorm-modal[data-view="room"] .dorm-main { overflow-y:auto; }
+    .dorm-room-layout { flex-direction:column; height:auto; }
+    .map-frame.dorm-frame { flex:none; height:58vw; min-height:240px; padding:12px; }
+    .member-panel.dorm-side { width:auto; max-height:none; }
+    .dorm-side-body { max-height:50vh; }
+    .dorm-topbar .dorm-brand { font-size:20px; }
+  }
+  @media (max-width:560px) { .dorm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dorm-portrait { height:96px; } }
 </style>
 </head>
 <body>
@@ -1908,13 +1974,9 @@
 </div>
 <div id="shopToast"></div>
 <div id="dormModal" class="dorm-page">
-  <div class="modal-box dorm-modal panel">
-    <div class="shop-head">
-      <div class="modal-title page-title">Dorm</div>
-      <button class="dorm-hbtn" onclick="openDormCredits()"><i class="fa-solid fa-circle-info"></i> 출처</button>
-      <button class="dorm-hbtn gm-only" id="dormManageBtn" onclick="setDormView(dormView === 'manage' ? 'halls' : 'manage')"><i class="fa-solid fa-sliders"></i> 관리</button>
-    </div>
-    <div class="shop-body" id="dormBody"></div>
+  <div class="modal-box dorm-modal">
+    <div class="topbar v2 panel dorm-topbar" id="dormTop"></div>
+    <div class="dorm-main" id="dormBody"></div>
   </div>
 </div>
 <div id="dormCreditModal" class="modal-overlay" onclick="if(event.target===this) this.style.display='none'">
@@ -6663,59 +6725,80 @@ socket.on('dorm_result', (d) => { showShopToast(d.message); if (!d.ok) dormSavin
 function renderDorm() {
   const box = document.querySelector('#dormModal .dorm-modal');
   box.classList.toggle('is-gm', dormIsGm());
-  document.getElementById('dormManageBtn').classList.toggle('on', dormView === 'manage');
+  box.dataset.view = dormView;
+  renderDormTop();
   const body = document.getElementById('dormBody');
   if (!dormData) { body.innerHTML = '<div class="dorm-empty"><i class="fa-solid fa-house"></i>불러오는 중…</div>'; return; }
   if (dormView === 'manage' && dormIsGm()) { body.innerHTML = dormManageHtml(); return; }
   if (dormView === 'room' && dormRoom) { renderDormRoom(body); return; }
   body.innerHTML = dormHallsHtml();
 }
+// 상단 바 : 전투 화면 헤더와 같은 모양 (Dorm ▶ 관 ▶ 방) + 오른쪽 버튼
+function renderDormTop() {
+  const el = document.getElementById('dormTop'); if (!el) return;
+  const me = dormMe(), mine = me && dormData && dormHallOf(me);
+  const segs = ['<div class="seg dorm-brand">Dorm</div>'];
+  let right = '';
+  if (dormView === 'room' && dormRoom) {
+    const hall = dormData && dormHallOf(dormRoom.owner);
+    segs.push(`<span class="sep">▶</span><div class="seg dorm-link" onclick="dormLeaveRoom()">${hall ? mailEsc(hall.name) : '기숙사'}</div>`);
+    segs.push(`<span class="sep">▶</span><div class="seg">${mailEsc(dormRoom.owner)}<span class="dorm-seg-sub">${hall ? ` ${hall.slots.indexOf(dormRoom.owner) + 1}호` : ''}</span></div>`);
+    const can = dormCanEdit(dormRoom.owner) && hall && !dormRoom.loading;
+    if (dormEdit) right = `<button class="dorm-tbtn" onclick="dormEdit=null; dormSel=-1; dormPick=null; renderDorm()">취소</button>
+      <button class="dorm-tbtn primary" onclick="saveDormRoom()"><i class="fa-solid fa-floppy-disk"></i> 저장</button>`;
+    else if (can) right = `<button class="dorm-tbtn primary" onclick="startDormEdit()"><i class="fa-solid fa-paintbrush"></i> 꾸미기</button>`;
+  } else if (dormView === 'manage') {
+    segs.push('<span class="sep">▶</span><div class="seg">관리</div>');
+  } else if (dormData) {
+    segs.push(`<span class="sep">▶</span><div class="seg">관 ${(dormData.halls || []).length}개</div>`);
+    if (mine) right = `<button class="dorm-tbtn primary" onclick="openDormRoom(${mailEsc(JSON.stringify(me))})"><i class="fa-solid fa-door-open"></i> 내 방</button>`;
+  }
+  const tools = `<button class="dorm-tbtn icon" onclick="openDormCredits()" data-tip="도트 자료 출처"><i class="fa-solid fa-circle-info"></i></button>`
+    + (dormIsGm() ? `<button class="dorm-tbtn icon ${dormView === 'manage' ? 'on' : ''}" onclick="setDormView(dormView === 'manage' ? 'halls' : 'manage')" data-tip="기숙사 관리"><i class="fa-solid fa-sliders"></i></button>` : '');
+  el.innerHTML = segs.join('') + `<div class="spacer"></div><div class="dorm-tools-r">${right}${tools}</div>`;
+}
 
 function dormHallsHtml() {
-  const me = dormMe(), mine = me && dormHallOf(me);
+  const me = dormMe();
   const halls = dormData.halls || [];
   if (!halls.length) return `<div class="dorm-empty"><i class="fa-solid fa-building"></i>아직 기숙사가 없어요.<br>운영진이 관을 만들고 방을 배정하면 여기에 보여요.</div>`;
-  const myCard = mine ? `<div class="dorm-mine" onclick="openDormRoom(${mailEsc(JSON.stringify(me))})">
-      <div class="thumb">${dormMiniHtml(me, 150, 108)}</div>
-      <div class="info"><span class="k">내 방</span><b>${mailEsc(me)}</b><span class="sub">${mailEsc(mine.name)} · ${mine.slots.indexOf(me) + 1}호</span></div>
-      <span class="go">방으로 가기 <i class="fa-solid fa-arrow-right"></i></span></div>` : '';
-  return myCard + '<div class="dorm-halls">' + halls.map(h => {
+  return '<div class="dorm-halls">' + halls.map((h, hi) => {
     const n = (h.slots || []).filter(Boolean).length;
     const canRename = dormIsGm() || (me && (h.slots || []).includes(me));
-    return `<section class="dorm-hall"><div class="dorm-hall-head"><b>${mailEsc(h.name)}</b><span class="cnt">${n} / ${dormData.hall_size}</span>
-      ${canRename ? `<button class="dorm-rename" onclick="renameDormHall('${h.id}')" data-tip="관 이름 바꾸기"><i class="fa-solid fa-pen"></i></button>` : ''}</div>
-    <div class="dorm-doors">${(h.slots || []).map((nm, i) => nm
-      ? `<div class="dorm-door ${nm === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(nm))})">
-          <div class="thumb">${dormMiniHtml(nm, 128, 118)}</div>
-          <div class="cap"><span class="no">${i + 1}호</span><span class="nm">${mailEsc(nm)}</span>${nm === me ? '<span class="me">나</span>' : ''}</div></div>`
-      : `<div class="dorm-door empty"><div class="thumb"><i class="fa-solid fa-door-closed"></i></div>
-          <div class="cap"><span class="no">${i + 1}호</span><span class="nm">빈 방</span></div></div>`).join('')}</div></section>`;
+    return `<section class="dorm-hall"><h2 class="dorm-hall-title"><span class="en">Hall ${hi + 1}</span><span class="ko">${mailEsc(h.name)}</span>
+      ${canRename ? `<button class="dorm-rename" onclick="renameDormHall('${h.id}')" data-tip="관 이름 바꾸기"><i class="fa-solid fa-pen"></i></button>` : ''}
+      <span class="cnt">${n} / ${dormData.hall_size}</span></h2>
+    <div class="dorm-cards holo-zone">${(h.slots || []).map((nm, i) => nm
+      ? `<div class="char-card dorm-card ${nm === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(nm))})">
+          <div class="row1"><span class="cname">${mailEsc(nm)}${nm === me ? ' <span class="me">(나)</span>' : ''}</span><span class="crole">${i + 1}호</span></div>
+          <div class="dorm-portrait">${dormMiniHtml(nm, 150, 112)}</div></div>`
+      : `<div class="char-card dorm-card empty"><div class="row1"><span class="cname">빈 방</span><span class="crole">${i + 1}호</span></div>
+          <div class="dorm-portrait"><i class="fa-solid fa-door-closed"></i></div></div>`).join('')}</div></section>`;
   }).join('') + '</div>';
 }
 
 // ---------- 방 ----------
-function dormScale(body, base, editing) {
-  const narrow = window.innerWidth <= 900;
-  const aw = Math.max(200, body.clientWidth - (!narrow ? 316 : 0) - 8);
-  const ah = Math.max(200, body.clientHeight - 70 - (narrow ? (editing ? 280 : 0) : 0));
+function dormScale(frame, base) {
+  const cs = getComputedStyle(frame);
+  const aw = Math.max(160, frame.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
+  const ah = Math.max(160, frame.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
   const s = Math.min(aw / dormBW(base), ah / dormBH(base));
   return s >= 1 ? Math.max(1, Math.floor(s * 4) / 4) : s;
 }
 function renderDormRoom(body) {
-  const r = dormRoom, owner = r.owner, hall = dormHallOf(owner);
-  const slot = hall ? hall.slots.indexOf(owner) + 1 : 0;
-  const can = dormCanEdit(owner) && hall;
-  const head = `<div class="dorm-top"><button class="mail-back" style="margin:0" onclick="dormLeaveRoom()"><i class="fa-solid fa-chevron-left"></i></button>
-    <div><div class="dorm-room-title">${mailEsc(owner)}의 방</div><div class="dorm-room-sub">${hall ? `${mailEsc(hall.name)} · ${slot}호` : '배정되지 않은 방'}</div></div><span class="sp"></span>
-    ${can && !dormEdit && !r.loading ? `<button class="btn" onclick="startDormEdit()"><i class="fa-solid fa-paintbrush"></i> 꾸미기</button>` : ''}
-    ${dormEdit ? `<button class="btn-plain" onclick="dormEdit=null; dormSel=-1; dormPick=null; renderDorm()">취소</button><button class="btn" onclick="saveDormRoom()"><i class="fa-solid fa-floppy-disk"></i> 저장</button>` : ''}</div>`;
-  if (r.loading) { body.innerHTML = head + '<div class="dorm-empty">불러오는 중…</div>'; return; }
-  body.innerHTML = head + `<div class="dorm-room-wrap"><div class="dorm-stage-box" id="dormStageBox"></div>${dormEdit ? `<div class="dorm-palette" id="dormPalette"></div>` : dormGuestbookHtml(r)}</div>`;
+  const r = dormRoom;
+  if (r.loading) { body.innerHTML = '<div class="dorm-empty">불러오는 중…</div>'; return; }
+  const side = dormEdit
+    ? `<div class="member-panel panel dorm-side"><div class="member-header"><b>Items</b></div><div class="dorm-side-body" id="dormPalette"></div></div>`
+    : dormGuestbookHtml(r);
+  body.innerHTML = `<div class="dorm-room-layout"><div class="map-frame dorm-frame" id="dormStageBox"></div>${side}</div>`;
+  const frame = document.getElementById('dormStageBox');
   const src = dormEdit || r, base = dormBase(src);
-  const s = dormScale(body, base, !!dormEdit);
-  document.getElementById('dormStageBox').innerHTML = dormStageHtml(src, base, s, !!dormEdit);
+  const s = dormScale(frame, base);
+  frame.innerHTML = dormStageHtml(src, base, s, !!dormEdit);
   if (dormEdit) { renderDormPalette(); bindDormStage(s); }
 }
+
 function renameDormHall(id) {
   const h = (dormData.halls || []).find(x => x.id === id); if (!h) return;
   uiPrompt('새 관 이름을 적어 주세요. (30자까지)', h.name, { title: '관 이름 바꾸기', okText: '바꾸기' }).then(v => {
@@ -6729,17 +6812,28 @@ function dormGuestbookHtml(r) {
   const me = dormLoggedName(), list = r.guestbook || [], mine = me && list.find(e => e.author === me);
   const draft = dormGbDraft[r.owner] != null ? dormGbDraft[r.owner] : (mine ? mine.text : '');
   const canDel = (e) => dormIsGm() || me === e.author || me === r.owner;
-  const fmt = (at) => { const d = new Date(at * 1000); return `${d.getMonth() + 1}.${d.getDate()}`; };
-  return `<div class="dorm-gb"><div class="dorm-gb-head"><b>방명록</b><span class="cnt">${list.length}</span></div>
-    ${me ? `<div class="dorm-gb-form"><textarea id="dormGbText" maxlength="300" placeholder="${mine ? '내 방명록 고치기' : '방명록을 남겨 주세요. (한 사람당 하나)'}"
-        oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
-      <button class="btn" onclick="writeDormGuestbook()">${mine ? '고치기' : '남기기'}</button></div>`
-      : '<div class="dorm-hint" style="margin:0 0 10px">캐릭터로 로그인하면 방명록을 남길 수 있어요.</div>'}
-    <div class="dorm-gb-list">${list.length ? list.map(e => `<div class="dorm-gb-item ${e.author === me ? 'mine' : ''}">
-        <div class="top"><b>${mailEsc(e.author)}</b><span class="t">${fmt(e.at)}${e.edited ? ' · 수정됨' : ''}</span>
-        ${canDel(e) ? `<button class="dorm-x" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}</div>
-        <div class="txt">${mailEsc(e.text)}</div></div>`).join('') : '<div class="dorm-gb-empty">아직 방명록이 없어요.</div>'}</div></div>`;
+  const fmt = (at) => { const d = new Date(at * 1000), h = d.getHours(); return `${d.getMonth() + 1}월 ${d.getDate()}일 ${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  const av = (name) => {
+    if (name === '운영진') return '<div class="chat-dot chat-star">✶</div>';
+    const p = (typeof lastRosterMypage !== 'undefined' && lastRosterMypage[name]) || {};
+    return p.avatar_url ? `<div class="chat-avatar" style="background-image:url('${p.avatar_url}');"></div>`
+      : `<div class="chat-avatar initial" style="--ac:${p.color || '#5a5a62'}">${mailEsc((name || '?')[0])}</div>`;
+  };
+  const color = (name) => { const p = (typeof lastRosterMypage !== 'undefined' && lastRosterMypage[name]) || {}; return p.color ? ` style="color:${p.color}"` : ''; };
+  return `<div class="member-panel panel dorm-side">
+    <div class="member-header"><b>Guestbook</b><span class="dorm-gb-cnt">${list.length}</span></div>
+    <div class="dorm-side-body dorm-gb-list">${list.length ? list.map(e => `<div class="chat-line">${av(e.author)}
+        <div class="chat-body"><div class="chat-meta"><b${color(e.author)}>${mailEsc(e.author)}</b><span class="time">${fmt(e.at)}${e.edited ? ' · 수정됨' : ''}</span></div>
+        <div class="chat-text">${mailEsc(e.text)}</div></div>
+        ${canDel(e) ? `<button class="chat-del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})"><i class="fa-solid fa-trash-can"></i></button>` : ''}</div>`).join('')
+      : '<div class="dorm-gb-empty"><i class="fa-regular fa-comment"></i>아직 방명록이 없어요.</div>'}</div>
+    ${me ? `<div class="input-row"><input id="dormGbText" maxlength="300" value="${mailEsc(draft)}" placeholder="${mine ? '다시 쓰면 내 방명록이 고쳐져요.' : '방명록을 남겨 주세요. (한 사람당 하나)'}"
+        oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value" onkeydown="if(event.key==='Enter' && !event.isComposing) writeDormGuestbook()">
+      <button class="btn-plain send-btn icon-only" onclick="writeDormGuestbook()" aria-label="남기기"><i class="fa-solid fa-paper-plane"></i></button></div>`
+      : '<div class="dorm-gb-login">캐릭터로 로그인하면 방명록을 남길 수 있어요.</div>'}
+  </div>`;
 }
+
 function dormLoggedName() { return dormIsGm() ? '운영진' : dormMe(); }
 function writeDormGuestbook() {
   const el = document.getElementById('dormGbText'); const text = (el ? el.value : '').trim();
