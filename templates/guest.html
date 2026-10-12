@@ -1587,7 +1587,7 @@
       <button data-v="aurora" onclick="socket.emit('set_scene',{weather:'aurora'})"><i class="fa-solid fa-rainbow"></i> 오로라</button>
       <button data-v="godrays" onclick="socket.emit('set_scene',{weather:'godrays'})"><i class="fa-solid fa-sun"></i> 빛줄기</button>
       <button data-v="stars" onclick="socket.emit('set_scene',{weather:'stars'})"><i class="fa-solid fa-star"></i> 별빛</button>
-      <button data-v="bubbles" onclick="socket.emit('set_scene',{weather:'bubbles'})"><i class="fa-solid fa-water"></i> 물속 거품</button>
+      <button data-v="water" onclick="socket.emit('set_scene',{weather:'water'})"><i class="fa-solid fa-water"></i> 수면</button>
     </div>
     <div class="scene-sec">날씨 · 전장</div>
     <div class="scene-seg" id="sceneWeatherSeg3">
@@ -2347,7 +2347,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-12.4";
+const EXPECTED_SERVER_BUILD = "2026-10-12.5";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5848,6 +5848,84 @@ var Weather = (function () {
   }
   const fall = p => p.y > H + 40 || p.x < -80 || p.x > W + 80;
   const rise = p => p.y < -40 || p.x < -80 || p.x > W + 80;
+  // ---- 오로라 렌더러 ----
+  const Aur = (function () {
+    let off = null, octx = null, strips = null; const SC = 4;
+    function strip(stops) { const c = document.createElement('canvas'); c.width = 1; c.height = 256; const x = c.getContext('2d');
+      const g = x.createLinearGradient(0, 0, 0, 256); stops.forEach(([o, col]) => g.addColorStop(o, col)); x.fillStyle = g; x.fillRect(0, 0, 1, 256); return c; }
+    function ensure() {
+      if (!strips) strips = [
+        strip([[0, 'rgba(150,90,255,0)'], [.3, 'rgba(130,100,255,.16)'], [.62, 'rgba(60,210,200,.42)'], [.86, 'rgba(100,255,170,.9)'], [.93, 'rgba(190,255,215,.75)'], [1, 'rgba(120,255,180,0)']]),
+        strip([[0, 'rgba(255,90,200,0)'], [.35, 'rgba(180,90,255,.2)'], [.72, 'rgba(100,160,255,.5)'], [.9, 'rgba(160,220,255,.8)'], [1, 'rgba(140,200,255,0)']]),
+      ];
+      const w = Math.ceil(W / SC), h = Math.ceil(H / SC);
+      if (!off || off.width !== w || off.height !== h) { off = document.createElement('canvas'); off.width = w; off.height = h; octx = off.getContext('2d'); }
+    }
+    return {
+      begin() { ensure(); octx.globalCompositeOperation = 'source-over'; octx.clearRect(0, 0, off.width, off.height); octx.globalCompositeOperation = 'lighter'; },
+      draw(p) {
+        const cols = off.width, st = p.alt ? strips[1] : strips[0];
+        for (let c = 0; c < cols; c++) {
+          const x = c * SC;
+          const y = p.base + (x / W - .5) * p.tilt + Math.sin(x * p.f1 + p.ph) * p.amp + Math.sin(x * p.f2 - p.ph * 1.7) * p.amp * .3;
+          const h = p.h * (.55 + .45 * Math.sin(x * p.f2 * .7 + p.ph * 1.3)) * (.85 + .15 * Math.sin(x * .05 + p.ph * 4));
+          const edge = Math.min(1, x / (W * .12), (W - x) / (W * .12));
+          let a = .35 + .65 * (.5 + .5 * Math.sin(x * p.f1 * 1.6 - p.ph * .9)); a = a * (.8 + .2 * Math.sin(x * .07 + p.ph * 5)) * p.str * Aur.k * edge;
+          if (a < .01) continue;
+          octx.globalAlpha = Math.min(1, a);
+          octx.drawImage(st, c, (y - h) / SC, 1.4, h / SC);
+        }
+        octx.globalAlpha = 1;
+      },
+      end() { ctx.save(); ctx.globalCompositeOperation = 'lighter'; if (cv.classList.contains('front')) ctx.globalAlpha = .75; ctx.imageSmoothingEnabled = true; ctx.filter = 'blur(10px)';
+        ctx.drawImage(off, 0, 0, W, H); ctx.filter = 'blur(2px)'; ctx.globalAlpha *= .7; ctx.drawImage(off, 0, 0, W, H); ctx.filter = 'none'; ctx.restore(); },
+      k: .8,
+    };
+  })();
+  // ---- 수면(코스틱) 렌더러 ----
+  // 천천히 움직이는 점들로 만든 세포 무늬의 '경계선'(F2-F1이 0에 가까운 곳)이 물속 빛 그물처럼 보입니다.
+  // 크기가 다른 두 층을 겹치고, 좌표를 살짝 일렁이게 해서 수면 아래 빛이 흔들리는 느낌을 냅니다.
+  const Water = (function () {
+    let off = null, octx = null, img = null, t = 0, odd = false; const SC = 6;
+    const hash = (x, y, k) => { const v = Math.sin(x * 127.1 + y * 311.7 + k * 74.7) * 43758.5453; return v - Math.floor(v); };
+    function edge(x, y, cs, sp, k) {
+      const gx = Math.floor(x / cs), gy = Math.floor(y / cs);
+      let f1 = 1e9, f2 = 1e9;
+      for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) {
+        const cx = gx + i, cy = gy + j, h1 = hash(cx, cy, k), h2 = hash(cy, cx, k + 1);
+        const px = (cx + .5 + .4 * Math.sin(t * sp + h1 * 6.28)) * cs, py = (cy + .5 + .4 * Math.cos(t * sp * 1.27 + h2 * 6.28)) * cs;
+        const d = Math.hypot(x - px, y - py);
+        if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) f2 = d;
+      }
+      return f2 - f1;
+    }
+    return {
+      draw(dt) {
+        const w = Math.ceil(W / SC), h = Math.ceil(H / SC);
+        if (!off || off.width !== w || off.height !== h) { off = document.createElement('canvas'); off.width = w; off.height = h; octx = off.getContext('2d'); img = octx.createImageData(w, h); }
+        t += dt;
+        odd = !odd;
+        if (odd) {
+          const d = img.data;
+          for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+            const wx = x + Math.sin(y * .16 + t * .9) * 2.6 + Math.sin(y * .05 - t * .5 + x * .03) * 3.2;
+            const wy = y + Math.cos(x * .14 + t * .7) * 2.6 + Math.cos(x * .045 + t * .4 - y * .03) * 3.2;
+            const e1 = edge(wx, wy, 20, .5, 1), e2 = edge(wx * .9 + 5, wy * .9 + 3, 13, .75, 9);
+            let v = Math.exp(-(e1 * e1) / 3.2) * .8 + Math.exp(-(e2 * e2) / 2) * .35;
+            v = Math.min(1, v);
+            const k = (y * w + x) * 4;
+            d[k] = 150 + 105 * v; d[k + 1] = 215 + 40 * v; d[k + 2] = 255; d[k + 3] = 255 * v;
+          }
+          octx.putImageData(img, 0, 0);
+        }
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.imageSmoothingEnabled = true; ctx.globalAlpha = [0, .2, .3, .42][amount] * (cv.classList.contains('front') ? .45 : 1);
+        ctx.filter = 'blur(3px)'; ctx.drawImage(off, 0, 0, W, H); ctx.filter = 'blur(1px)'; ctx.globalAlpha *= .6; ctx.drawImage(off, 0, 0, W, H); ctx.filter = 'none';
+        // 위에서 비치는 빛 : 화면 위쪽이 조금 더 밝게
+        const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, 'rgba(120,200,255,.10)'); g.addColorStop(1, 'rgba(120,200,255,0)');
+        ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+      },
+    };
+  })();
   // ---- 종류별 정의 ----
   const K = {
     snow: { n: 70,
@@ -5927,18 +6005,12 @@ var Weather = (function () {
         ctx.fillStyle = `rgba(230,238,250,${p.a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
         ctx.strokeStyle = `rgba(230,238,250,${p.a * .25})`; ctx.lineWidth = p.r; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * .02, p.y - p.vy * .02); ctx.stroke(); },
       out: fall },
-    aurora: { n: 4, add: true, fixed: true,
-      spawn(p) { p.base = rnd(H * .06, H * .32); p.amp = rnd(18, 46); p.f = rnd(.0025, .006); p.sp = rnd(.15, .4); p.h = rnd(70, 150); p.ph = rnd(0, 6.28);
-        p.c = pick(['80,255,170', '90,200,255', '170,120,255', '120,255,210']); p.a = rnd(.12, .22); },
-      step(p, dt) { p.ph += dt * p.sp; const seg = 48, top = [], bot = [];
-        for (let k = 0; k <= seg; k++) { const x = W * k / seg, y = p.base + Math.sin(x * p.f + p.ph) * p.amp + Math.sin(x * p.f * 2.3 - p.ph * 1.3) * p.amp * .4;
-          top.push([x, y]); bot.push([x, y + p.h * (.6 + .4 * Math.sin(x * p.f * 1.7 + p.ph * .8))]); }
-        const g = ctx.createLinearGradient(0, p.base - p.amp, 0, p.base + p.amp + p.h);
-        const pulse = .75 + .25 * Math.sin(p.ph * 1.7);
-        g.addColorStop(0, `rgba(${p.c},0)`); g.addColorStop(.35, `rgba(${p.c},${p.a * pulse})`); g.addColorStop(1, `rgba(${p.c},0)`);
-        ctx.fillStyle = g; ctx.beginPath(); top.forEach((q, k) => k ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]));
-        for (let k = bot.length - 1; k >= 0; k--) ctx.lineTo(bot[k][0], bot[k][1]); ctx.closePath(); ctx.fill(); },
-      out: () => false },
+    // 오로라 : 물결치는 띠를 따라 가는 세로 빛줄기(커튼)를 촘촘히 세웁니다. 아래 가장자리는 밝은 초록,
+    // 위로 갈수록 청록 → 보라로 옅어집니다. 저해상도 캔버스에 그린 뒤 부드럽게 확대해서 번지는 느낌을 냅니다.
+    aurora: { n: 3, add: true,
+      spawn(p) { const k = parts.length; p.base = H * (.24 + k * .08) + rnd(-12, 12); p.tilt = rnd(-.18, .18) * H; p.amp = rnd(40, 70); p.f1 = rnd(.0045, .0075); p.f2 = rnd(.011, .018);
+        p.sp = rnd(.18, .3) * (k % 2 ? -1 : 1); p.h = rnd(200, 320) * (k === 0 ? 1 : .7); p.ph = rnd(0, 6.28); p.str = k === 0 ? 1 : rnd(.5, .75); p.alt = k === 2; },
+      step(p, dt) { p.ph += dt * p.sp; Aur.draw(p); }, out: () => false, pre() { Aur.begin(); }, post() { Aur.end(); } },
     godrays: { n: 6, add: true,
       spawn(p) { p.x = rnd(-W * .1, W * .9); p.w = rnd(40, 140); p.sk = rnd(H * .25, H * .5); p.sp = rnd(.2, .5); p.ph = rnd(0, 6.28); p.a = rnd(.10, .2); p.vx = rnd(-4, 4); },
       step(p, dt) { p.ph += dt * p.sp; p.x += p.vx * dt; const a = p.a * (.5 + .5 * Math.sin(p.ph));
@@ -5953,12 +6025,9 @@ var Weather = (function () {
         ctx.quadraticCurveTo(p.x - k, p.y + k, p.x - r, p.y); ctx.quadraticCurveTo(p.x - k, p.y - k, p.x, p.y - r); ctx.fill();
         glow(p.x, p.y, r * 3, 'rgba(170,190,255,A)', a * .25); },
       out: () => false },
-    bubbles: { n: 40,
-      spawn(p, i) { p.x = rnd(0, W); p.y = i ? rnd(0, H) : H + rnd(10, 60); p.r = rnd(2, 7); p.vy = -rnd(24, 70) * (p.r / 4); p.ph = rnd(0, 6.28); p.a = rnd(.25, .55); },
-      step(p, dt) { p.ph += dt * 2; p.x += Math.sin(p.ph) * 12 * dt; p.y += p.vy * dt;
-        ctx.strokeStyle = `rgba(190,225,255,${p.a})`; ctx.lineWidth = .9; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.stroke();
-        ctx.fillStyle = `rgba(230,245,255,${p.a})`; ctx.beginPath(); ctx.arc(p.x - p.r * .35, p.y - p.r * .35, p.r * .22, 0, 6.283); ctx.fill(); },
-      out: rise, overlay: 'rgba(10,45,80,.10)' },
+    // 수면 : 물속에서 올려다본 듯 일렁이는 빛 무늬(코스틱). 낮은 해상도로 계산해서 부드럽게 확대합니다.
+    water: { n: 1, add: true,
+      spawn() {}, step(p, dt) { Water.draw(dt); }, out: () => false, overlay: 'rgba(8,48,84,.14)' },
     arrows: { n: 34,
       spawn(p, i) { p.x = rnd(-W * .3, W + 100); p.y = i ? rnd(-H, H) : rnd(-120, -20); const sp = rnd(750, 1000); p.vx = sp * .42; p.vy = sp; p.len = rnd(30, 44); p.a = rnd(.55, .85); },
       step(p, dt) { p.x += p.vx * dt; p.y += p.vy * dt; const an = Math.atan2(p.vy, p.vx);
@@ -6006,7 +6075,8 @@ var Weather = (function () {
     const area = Math.min(1.6, (W * H) / (1400 * 900));
     return Math.round(d.n * [0, .5, 1, 1.8][amount] * Math.max(.45, area));
   }
-  function reset() { parts = []; const d = K[kind]; for (let i = 0; i < cfgN(); i++) { const p = {}; d.spawn(p, true); parts.push(p); } nextBolt = performance.now() + rnd(1500, 4000); }
+  function reset() { parts = []; const d = K[kind]; if (kind === 'aurora') Aur.k = [0, .55, .8, 1.05][amount]; const N = kind === 'aurora' || kind === 'water' ? K[kind].n : cfgN();
+    for (let i = 0; i < N; i++) { const p = {}; d.spawn(p, true); parts.push(p); } nextBolt = performance.now() + rnd(1500, 4000); }
   function makeBolt() {
     let x = rnd(W * .15, W * .85), y = 0; const pts = [[x, y]];
     while (y < H * rnd(.45, .75)) { x += rnd(-40, 40); y += rnd(18, 46); pts.push([x, y]); }
@@ -6020,7 +6090,9 @@ var Weather = (function () {
     if (d.overlay) { ctx.fillStyle = d.overlay; ctx.fillRect(0, 0, W, H); }
     if (d.scan) { ctx.fillStyle = 'rgba(255,255,255,.022)'; for (let y = (T * 40) % 4; y < H; y += 4) ctx.fillRect(0, y, W, 1); }
     ctx.globalCompositeOperation = d.add ? 'lighter' : 'source-over';
+    if (d.pre) d.pre();
     for (const p of parts) { d.step(p, dt); if (d.out(p)) d.spawn(p, false); }
+    if (d.post) d.post();
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     if (d.lightning) {
       if (t > nextBolt) { flash = 1; bolt = makeBolt(); nextBolt = t + rnd(3500, 9000) / Math.max(1, amount * .8); }
