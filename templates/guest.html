@@ -1340,6 +1340,30 @@
     .teams-col > .round-track { height:92px; }
     .teams-col:has(> .round-track) .char-card.v2 .portrait { min-width:72px; min-height:72px; }
   }
+
+  /* ================================================================
+     캐릭터 초상화 · 체력 바 : 기하학 배너 + 별 궤도 장식
+     초상화는 아래가 둥근 배너 모양(이중 선), 위에 궤도 무늬(카드마다 3가지 중 하나)를 얇게 겹칩니다.
+     체력 바는 가는 선 위에 시작점·끝점 고리, 현재 체력 자리에 고리 표식이 있는 '별자리 선' 모양입니다.
+     ================================================================ */
+  .char-card.v2 .portrait { position:relative; overflow:hidden; border:1px solid rgba(255,255,255,.5) !important;
+    border-radius:4px 4px 50% 50% / 4px 4px 30% 30% !important;
+    box-shadow: inset 0 0 0 3px #0c0c0d, inset 0 0 0 4px rgba(255,255,255,.16); }
+  .char-card.v2 .portrait::after { content:""; position:absolute; inset:0; pointer-events:none; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='white' stroke-width='1' vector-effect='non-scaling-stroke'%3E%3Ccircle cx='50' cy='86' r='16' stroke-opacity='.35' vector-effect='non-scaling-stroke'/%3E%3Ccircle cx='50' cy='86' r='8' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3Ccircle cx='50' cy='86' r='2.2' fill='white' stroke='none'/%3E%3Cpath d='M0 70 A60 60 0 0 0 100 70' stroke-opacity='.45' vector-effect='non-scaling-stroke'/%3E%3Cline x1='50' y1='94' x2='50' y2='100' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center/100% 100% no-repeat; opacity:.55; }
+  .card-grid > .char-card.v2:nth-child(3n+2) .portrait::after { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='white' stroke-width='1' vector-effect='non-scaling-stroke'%3E%3Ccircle cx='16' cy='84' r='5' stroke-width='1.4' vector-effect='non-scaling-stroke'/%3E%3Ccircle cx='16' cy='84' r='1.8' fill='white' stroke='none'/%3E%3Ccircle cx='16' cy='84' r='11' stroke-opacity='.5' vector-effect='non-scaling-stroke'/%3E%3Ccircle cx='16' cy='84' r='19' stroke-opacity='.3' vector-effect='non-scaling-stroke'/%3E%3Ccircle cx='78' cy='118' r='52' stroke-opacity='.35' vector-effect='non-scaling-stroke'/%3E%3Ccircle cx='52' cy='70' r='1.6' fill='white' stroke='none'/%3E%3C/svg%3E"); }
+  .card-grid > .char-card.v2:nth-child(3n) .portrait::after { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='white' stroke-width='1' vector-effect='non-scaling-stroke'%3E%3Cline x1='0' y1='80' x2='70' y2='80' stroke-opacity='.45' vector-effect='non-scaling-stroke'/%3E%3Ccircle cx='28' cy='80' r='1.6' fill='white' stroke='none'/%3E%3Ccircle cx='78' cy='80' r='8' stroke-width='1.4' vector-effect='non-scaling-stroke'/%3E%3Ccircle cx='78' cy='80' r='2' fill='white' stroke='none'/%3E%3Ccircle cx='78' cy='80' r='14' stroke-opacity='.3' vector-effect='non-scaling-stroke'/%3E%3Cline x1='78' y1='56' x2='78' y2='66' stroke-opacity='.6' vector-effect='non-scaling-stroke'/%3E%3Ccircle cx='78' cy='53' r='2.6' stroke-opacity='.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E"); }
+  .char-card.v2 .portrait[style*="background-image"]::after { opacity:.3; }
+  .char-card.v2 .hpbar-track { height:12px !important; background:none !important; overflow:visible; border-radius:0; margin:0 5px; }
+  .char-card.v2 .hpbar-track::before { content:""; position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(255,255,255,.22); }
+  .char-card.v2 .hpbar-track::after { content:""; position:absolute; right:-5px; top:50%; width:7px; height:7px; box-sizing:border-box; border:1px solid rgba(255,255,255,.45);
+    border-radius:50%; transform:translateY(-50%); background:#121215; }
+  .char-card.v2 .hpbar-fill { position:absolute; left:0; top:50%; height:2px; transform:translateY(-50%); background:#ececf0; border-radius:2px; }
+  .char-card.v2 .hpbar-fill::before { content:""; position:absolute; left:-3px; top:50%; width:5px; height:5px; border-radius:50%; background:#ececf0; transform:translateY(-50%); }
+  .char-card.v2 .hpbar-fill::after { content:""; position:absolute; right:-5px; top:50%; width:10px; height:10px; box-sizing:border-box; border:1.5px solid #ececf0;
+    border-radius:50%; background:#121215; transform:translateY(-50%); z-index:2; }
+  .char-card.v2 .hpbar-fill.low, .char-card.v2 .hpbar-fill.low::before { background: var(--accent-red); }
+  .char-card.v2 .hpbar-fill.low::after { border-color: var(--accent-red); }
+  .char-card.v2 .fx-hp-ghost { top:50%; height:2px; transform:translateY(-50%); }
 </style>
 </head>
 <body>
