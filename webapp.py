@@ -25,6 +25,7 @@ import shop as shop_mod
 import notices as notices_mod
 import log_export
 import mailbox as mailbox_mod
+import dorm as dorm_mod
 from battle import Battle, BattleError
 from rooms import (
     create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
@@ -33,7 +34,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-12.7"
+SERVER_BUILD = "2026-10-12.8"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2690,6 +2691,124 @@ def on_mail_delete(data):
     me, is_gm, room = _mail_identity(request.sid)
     if me and mailbox_mod.shared_mailbox().delete((data or {}).get("id"), me, is_gm=is_gm):
         _emit_mail_data(request.sid)
+
+
+# ----------------------------------------------------------------------
+# 기숙사(마이룸) : 운영진이 관(6명)을 배치하고, 각자 자기 방을 도트 가구로 꾸밉니다 (모든 방 공용)
+# ----------------------------------------------------------------------
+DORM_ASSET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "dorm_assets")
+os.makedirs(DORM_ASSET_DIR, exist_ok=True)
+DORM_ASSET_MAX_BYTES = 2 * 1024 * 1024
+
+
+def _dorm_broadcast():
+    socketio.emit("dorm_data", dorm_mod.shared_dorms().payload())
+
+
+@socketio.on("dorm_get")
+def on_dorm_get(data=None):
+    me, is_gm, room = _mail_identity(request.sid)
+    payload = dorm_mod.shared_dorms().payload()
+    if room is not None:
+        payload["roster"] = _mail_candidates(room)
+    emit("dorm_data", payload)
+
+
+@socketio.on("dorm_room_get")
+def on_dorm_room_get(data):
+    name = ((data or {}).get("name") or "").strip()
+    if name:
+        emit("dorm_room", dorm_mod.shared_dorms().room(name))
+
+
+@socketio.on("dorm_room_save")
+def on_dorm_room_save(data):
+    data = data or {}
+    owner = (data.get("owner") or "").strip()
+    me, is_gm, room = _mail_identity(request.sid)
+    if not owner or (me != owner and not is_gm):
+        emit("dorm_result", {"ok": False, "message": "자기 방만 꾸밀 수 있어요."})
+        return
+    dorms = dorm_mod.shared_dorms()
+    if dorms.hall_of(owner) is None:
+        emit("dorm_result", {"ok": False, "message": "아직 기숙사 방이 배정되지 않았어요."})
+        return
+    saved = dorms.save_room(owner, data)
+    emit("dorm_result", {"ok": True, "message": "방을 저장했어요."})
+    socketio.emit("dorm_room", saved)
+
+
+@socketio.on("dorm_halls_save")
+def on_dorm_halls_save(data):
+    me, is_gm, room = _mail_identity(request.sid)
+    if not is_gm:
+        emit("dorm_result", {"ok": False, "message": "운영진만 기숙사를 배치할 수 있어요."})
+        return
+    dorm_mod.shared_dorms().set_halls((data or {}).get("halls"), set(_mail_candidates(room)))
+    emit("dorm_result", {"ok": True, "message": "기숙사 배치를 저장했어요."})
+    _dorm_broadcast()
+
+
+@socketio.on("dorm_asset_upload")
+def on_dorm_asset_upload(data):
+    data = data or {}
+    me, is_gm, room = _mail_identity(request.sid)
+    if not is_gm:
+        emit("dorm_result", {"ok": False, "message": "운영진만 도트 자료를 올릴 수 있어요."})
+        return
+    blob = data.get("data")
+    ext = os.path.splitext((data.get("filename") or "").lower())[1]
+    if ext not in (".png", ".gif", ".webp") or not isinstance(blob, (bytes, bytearray)):
+        emit("dorm_result", {"ok": False, "message": "png/gif/webp 이미지만 올릴 수 있어요."})
+        return
+    if len(blob) > DORM_ASSET_MAX_BYTES:
+        emit("dorm_result", {"ok": False, "message": "이미지가 너무 커요 (최대 2MB)."})
+        return
+    filename = f"{uuid.uuid4().hex}{ext}"
+    with open(os.path.join(DORM_ASSET_DIR, filename), "wb") as f:
+        f.write(blob)
+    try:
+        dorm_mod.shared_dorms().add_asset(data.get("name"), data.get("category"), f"/static/dorm_assets/{filename}",
+                                          data.get("w"), data.get("h"), data.get("credit"))
+    except dorm_mod.DormError as e:
+        emit("dorm_result", {"ok": False, "message": str(e)})
+        return
+    emit("dorm_result", {"ok": True, "message": "도트 자료를 올렸어요."})
+    _dorm_broadcast()
+
+
+@socketio.on("dorm_asset_update")
+def on_dorm_asset_update(data):
+    data = data or {}
+    me, is_gm, room = _mail_identity(request.sid)
+    if not is_gm:
+        return
+    fields = {k: data[k] for k in ("name", "category", "w", "h", "credit") if k in data}
+    try:
+        dorm_mod.shared_dorms().update_asset(data.get("id"), **fields)
+    except dorm_mod.DormError as e:
+        emit("dorm_result", {"ok": False, "message": str(e)})
+        return
+    _dorm_broadcast()
+
+
+@socketio.on("dorm_asset_delete")
+def on_dorm_asset_delete(data):
+    me, is_gm, room = _mail_identity(request.sid)
+    if not is_gm:
+        return
+    dorm_mod.shared_dorms().delete_asset((data or {}).get("id"))
+    _dorm_broadcast()
+
+
+@socketio.on("dorm_credits_save")
+def on_dorm_credits_save(data):
+    me, is_gm, room = _mail_identity(request.sid)
+    if not is_gm:
+        return
+    dorm_mod.shared_dorms().set_credits((data or {}).get("credits"))
+    emit("dorm_result", {"ok": True, "message": "출처를 저장했어요."})
+    _dorm_broadcast()
 
 
 SCENE_WEATHERS = ("none", "snow", "blizzard", "rain", "storm", "lightning", "fog", "sakura", "leaves", "dandelion",

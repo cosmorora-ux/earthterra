@@ -25,3 +25,7 @@ sfx.json
 # 우체통 편지(서버 컴퓨터별 실데이터)
 letters.json
 letters.json.tmp
+# 기숙사 배치·방 꾸미기·도트 자료(서버 컴퓨터별 실데이터)
+dorms.json
+dorms.json.tmp
+static/dorm_assets/
