@@ -1313,6 +1313,27 @@
     .modal-box.mypage .idc-head, .modal-box.mypage .mypage-cols { width:100%; max-width:520px; margin-left:auto; margin-right:auto; }
     .map-frame { padding:12px; }
   }
+  /* 캐릭터 카드 영역 : 웬만하면 스크롤 없이 남는 높이에 맞춰 카드가 늘고 줄어듭니다.
+     카드 내용 크기는 줄 높이 계산에서 빼고(contain:size), 카드 한 장이 --card-min보다 작아질 때만 스크롤합니다. */
+  @media (min-width:561px) {
+    .teams-col > .teams-col-scroll:has(> .main-grid:not(.with-grid-map)) { flex:1 1 0; min-height:0; display:flex; flex-direction:column; overflow-y:auto; }
+    .teams-col-scroll > .main-grid:not(.with-grid-map),
+    .teams-col-scroll > .main-grid:not(.with-grid-map) > div { flex:1 0 auto; display:flex; flex-direction:column; margin-bottom:0; }
+    .main-grid:not(.with-grid-map) .teams-columns { flex:1 0 auto; align-items:stretch; }
+    .main-grid:not(.with-grid-map) .team-block { display:flex; flex-direction:column; }
+    .main-grid:not(.with-grid-map) .team-block .card-grid { flex:1 0 auto; grid-auto-rows:minmax(var(--card-min, 92px), 1fr); gap:10px; }
+    .main-grid:not(.with-grid-map) .char-card.v2 { contain:size; container-type:size; display:flex; flex-direction:column; overflow:hidden; padding:11px 14px; }
+    /* 카드 영역이 남는 높이를 쓰므로 라운드 패널은 고정 높이로 */
+    .teams-col:has(> .teams-col-scroll > .main-grid:not(.with-grid-map)) > .round-track { flex:none; min-height:64px; height:clamp(64px, 10vh, 110px); }
+  }
+  /* 카드가 낮아지면 여백을 줄여 초상화·체력 바 자리를 확보 */
+  @container ccard (max-height:124px) {
+    .main-grid:not(.with-grid-map) .char-card.v2 .portrait-row { margin-top:5px; gap:10px; }
+    .main-grid:not(.with-grid-map) .char-card.v2 .cname { font-size:15px; }
+    .main-grid:not(.with-grid-map) .char-card.v2 .hpbar-wrap { gap:2px; margin-top:0; }
+    .main-grid:not(.with-grid-map) .char-card.v2 .portrait-row { flex:1 1 0; min-height:0; }
+    .main-grid:not(.with-grid-map) .char-card.v2 .portrait-row > .portrait { width:auto; height:100%; min-width:0; min-height:0; max-height:200px; aspect-ratio:1/1; }
+  }
   /* 휴대폰 폭 : 헤더는 윗줄 = 방·형식 + 타이머, 아랫줄 = 라운드 정보 / 음악은 음소거 버튼만 */
   @media (max-width:560px) {
     .shell { padding:10px 10px 12px; }
@@ -1767,7 +1788,7 @@
   .dorm-card .cname .me { color: var(--accent-blue); font-size:13px; font-weight:700; }
   .dorm-card .crole { font-size:13px; color: var(--muted); flex:none; font-variant-numeric: tabular-nums; }
   .dorm-portrait { height:124px; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden;
-    background: radial-gradient(ellipse at 50% 55%, #1c1c22 0%, #0e0e11 80%); border:1px solid rgba(255,255,255,.06); }
+    background:transparent; }
   .char-card.dorm-card.mine { border-color: rgba(255,255,255,.42); }
   .char-card.dorm-card.empty { cursor:default; background:transparent; border-style:dashed; opacity:.55; }
   .char-card.dorm-card.empty .cname { color: var(--muted); font-weight:600; }
@@ -6868,7 +6889,7 @@ function renderMyPageRoom() {
   const hall = name && dormData ? dormHallOf(name) : null;
   if (!hall) { box.style.display = 'none'; return; }
   box.style.display = '';
-  document.getElementById('myPageRoomSub').textContent = `${hall.name} · ${hall.slots.indexOf(name) + 1}호`;
+  document.getElementById('myPageRoomSub').textContent = hall.name;
   const prev = document.getElementById('myPageRoomPrev');
   prev.innerHTML = dormMiniHtml(name, 120, 100);
   prev.onclick = () => { document.getElementById('myPageModal').style.display = 'none'; openDorm(); openDormRoom(name); };
@@ -6944,7 +6965,7 @@ function renderDormTop() {
   if (dormView === 'room' && dormRoom) {
     const hall = dormData && dormHallOf(dormRoom.owner);
     segs.push(`<span class="sep">▶</span><div class="seg dorm-link" onclick="dormLeaveRoom()">${hall ? mailEsc(hall.name) : '기숙사'}</div>`);
-    segs.push(`<span class="sep">▶</span><div class="seg">${mailEsc(dormRoom.owner)}<span class="dorm-seg-sub">${hall ? ` ${hall.slots.indexOf(dormRoom.owner) + 1}호` : ''}</span></div>`);
+    segs.push(`<span class="sep">▶</span><div class="seg">${mailEsc(dormRoom.owner)}</div>`);
     const can = dormCanEdit(dormRoom.owner) && hall && !dormRoom.loading;
     if (dormEdit) right = `<button class="dorm-tbtn" onclick="dormEdit=null; dormSel=-1; dormPick=null; renderDorm()">취소</button>
       <button class="dorm-tbtn primary" onclick="saveDormRoom()"><i class="fa-solid fa-floppy-disk"></i> 저장</button>`;
@@ -6972,9 +6993,9 @@ function dormHallsHtml() {
       <span class="cnt">${n} / ${dormData.hall_size}</span></h2>
     <div class="dorm-cards holo-zone">${(h.slots || []).map((nm, i) => nm
       ? `<div class="char-card dorm-card ${nm === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(nm))})">
-          <div class="row1"><span class="cname">${mailEsc(nm)}</span><span class="crole">${i + 1}호</span></div>
+          <div class="row1"><span class="cname">${mailEsc(nm)}</span></div>
           <div class="dorm-portrait">${dormMiniHtml(nm, 150, 112)}</div></div>`
-      : `<div class="char-card dorm-card empty"><div class="row1"><span class="cname">빈 방</span><span class="crole">${i + 1}호</span></div>
+      : `<div class="char-card dorm-card empty"><div class="row1"><span class="cname">빈 방</span></div>
           <div class="dorm-portrait"><i class="fa-solid fa-door-closed"></i></div></div>`).join('')}</div></section>`;
   }).join('') + '</div>';
 }
