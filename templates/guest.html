@@ -1209,6 +1209,11 @@
     .char-card.v2 .portrait { width:72px; height:72px; }
     .card-grid.compact-list { grid-template-columns: repeat(2, 1fr); }
     .gm-bar-ctrl { margin-left:0; padding-left:0; border-left:none; }
+    /* 유저 리스트·상점·마이페이지는 팝업 대신 화면 전체를 쓰는 페이지로 */
+    .modal-box.userinfo-modal, .modal-box.shop-modal, .modal-box.mypage {
+      width:100vw; max-width:none; height:100dvh; max-height:none; border-radius:0; border:none;
+      padding:calc(20px + env(safe-area-inset-top)) 24px calc(16px + env(safe-area-inset-bottom)); }
+    .modal-box.mypage { overflow-y:auto; }
     .layout-grid:has(.with-grid-map) .member-col { flex-basis:32dvh; min-height:250px; }
     .map-frame { padding:12px; }
   }
