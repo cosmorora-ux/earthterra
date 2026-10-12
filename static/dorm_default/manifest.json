@@ -45,6 +45,29 @@
 ],
 "assets": [
 {
+"id": "p0001d",
+"name": "나무 바닥 방 (어둡게)",
+"category": "room",
+"set": "기본 고양이",
+"url": "/static/dorm_default/packs/base/room_wood_dark.png",
+"w": 401,
+"h": 403,
+"credit": "pk-psd",
+"s": 1.147,
+"fit": {
+"wall": [
+0,
+0,
+460
+],
+"floor": [
+0,
+205,
+460
+]
+}
+},
+{
 "id": "p0001",
 "name": "나무 바닥 방",
 "category": "room",
@@ -53,7 +76,19 @@
 "w": 401,
 "h": 403,
 "credit": "pk-psd",
-"s": 1.147
+"s": 1.147,
+"fit": {
+"wall": [
+0,
+0,
+460
+],
+"floor": [
+0,
+205,
+460
+]
+}
 },
 {
 "id": "p0002",
@@ -133,6 +168,28 @@
 "s": 2
 },
 {
+"id": "p0009d",
+"name": "기본방 (어둡게)",
+"category": "room",
+"set": "동양풍 마이룸",
+"url": "/static/dorm_default/packs/dodori-room/0009_dark.png",
+"w": 423,
+"h": 319,
+"credit": "pk-dodori-room",
+"fit": {
+"wall": [
+11,
+11,
+401
+],
+"floor": [
+11,
+129,
+401
+]
+}
+},
+{
 "id": "p0009",
 "name": "기본방",
 "category": "room",
@@ -140,7 +197,41 @@
 "url": "/static/dorm_default/packs/dodori-room/0009.png",
 "w": 423,
 "h": 319,
-"credit": "pk-dodori-room"
+"credit": "pk-dodori-room",
+"fit": {
+"wall": [
+11,
+11,
+401
+],
+"floor": [
+11,
+129,
+401
+]
+}
+},
+{
+"id": "p0010d",
+"name": "길쭉방 (어둡게)",
+"category": "room",
+"set": "동양풍 마이룸",
+"url": "/static/dorm_default/packs/dodori-room/0010_dark.png",
+"w": 421,
+"h": 496,
+"credit": "pk-dodori-room",
+"fit": {
+"wall": [
+11,
+11,
+401
+],
+"floor": [
+11,
+129,
+401
+]
+}
 },
 {
 "id": "p0010",
@@ -150,7 +241,41 @@
 "url": "/static/dorm_default/packs/dodori-room/0010.png",
 "w": 421,
 "h": 496,
-"credit": "pk-dodori-room"
+"credit": "pk-dodori-room",
+"fit": {
+"wall": [
+11,
+11,
+401
+],
+"floor": [
+11,
+129,
+401
+]
+}
+},
+{
+"id": "p0011d",
+"name": "납작방 (어둡게)",
+"category": "room",
+"set": "동양풍 마이룸",
+"url": "/static/dorm_default/packs/dodori-room/0011_dark.png",
+"w": 826,
+"h": 319,
+"credit": "pk-dodori-room",
+"fit": {
+"wall": [
+11,
+11,
+401
+],
+"floor": [
+11,
+129,
+401
+]
+}
 },
 {
 "id": "p0011",
@@ -160,7 +285,19 @@
 "url": "/static/dorm_default/packs/dodori-room/0011.png",
 "w": 826,
 "h": 319,
-"credit": "pk-dodori-room"
+"credit": "pk-dodori-room",
+"fit": {
+"wall": [
+11,
+11,
+401
+],
+"floor": [
+11,
+129,
+401
+]
+}
 },
 {
 "id": "p0012",
@@ -170,7 +307,8 @@
 "url": "/static/dorm_default/packs/dodori-room/0012.png",
 "w": 401,
 "h": 179,
-"credit": "pk-dodori-room"
+"credit": "pk-dodori-room",
+"slot": "floor"
 },
 {
 "id": "p0013",
@@ -180,7 +318,8 @@
 "url": "/static/dorm_default/packs/dodori-room/0013.png",
 "w": 401,
 "h": 116,
-"credit": "pk-dodori-room"
+"credit": "pk-dodori-room",
+"slot": "wall"
 },
 {
 "id": "p0014",
@@ -290,7 +429,8 @@
 "url": "/static/dorm_default/packs/dodori-room/0024.png",
 "w": 401,
 "h": 179,
-"credit": "pk-dodori-room"
+"credit": "pk-dodori-room",
+"slot": "floor"
 },
 {
 "id": "p0025",
@@ -350,7 +490,8 @@
 "url": "/static/dorm_default/packs/dodori-room/0030.png",
 "w": 401,
 "h": 116,
-"credit": "pk-dodori-room"
+"credit": "pk-dodori-room",
+"slot": "wall"
 },
 {
 "id": "p0031",
@@ -1252,6 +1393,28 @@
 "s": 1.5
 },
 {
+"id": "p0116d",
+"name": "기본 룸 (어둡게)",
+"category": "room",
+"set": "테마 기본 방",
+"url": "/static/dorm_default/packs/theme-room/0116_dark.png",
+"w": 460,
+"h": 437,
+"credit": "pk-themes",
+"fit": {
+"wall": [
+0,
+0,
+460
+],
+"floor": [
+0,
+205,
+460
+]
+}
+},
+{
 "id": "p0116",
 "name": "기본 룸",
 "category": "room",
@@ -1259,7 +1422,19 @@
 "url": "/static/dorm_default/packs/theme-room/0116.png",
 "w": 460,
 "h": 437,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"fit": {
+"wall": [
+0,
+0,
+460
+],
+"floor": [
+0,
+205,
+460
+]
+}
 },
 {
 "id": "p0117",
@@ -1279,7 +1454,8 @@
 "url": "/static/dorm_default/packs/gothic/0118.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0119",
@@ -1289,7 +1465,8 @@
 "url": "/static/dorm_default/packs/gothic/0119.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0120",
@@ -1389,7 +1566,8 @@
 "url": "/static/dorm_default/packs/gothic/0129.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0130",
@@ -1399,7 +1577,8 @@
 "url": "/static/dorm_default/packs/gothic/0130.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0131",
@@ -1499,7 +1678,8 @@
 "url": "/static/dorm_default/packs/gothic/0140.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0141",
@@ -1509,7 +1689,8 @@
 "url": "/static/dorm_default/packs/gothic/0141.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0142",
@@ -1599,7 +1780,8 @@
 "url": "/static/dorm_default/packs/gothic/0150.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0151",
@@ -1609,7 +1791,8 @@
 "url": "/static/dorm_default/packs/gothic/0151.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0152",
@@ -1699,7 +1882,8 @@
 "url": "/static/dorm_default/packs/gothic/0160.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0161",
@@ -1709,7 +1893,8 @@
 "url": "/static/dorm_default/packs/gothic/0161.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0162",
@@ -2819,7 +3004,8 @@
 "url": "/static/dorm_default/packs/kkong/0272.png",
 "w": 459,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0273",
@@ -2829,7 +3015,8 @@
 "url": "/static/dorm_default/packs/kkong/0273.png",
 "w": 459,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0274",
@@ -2839,7 +3026,8 @@
 "url": "/static/dorm_default/packs/kkong/0274.png",
 "w": 459,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0275",
@@ -2849,7 +3037,8 @@
 "url": "/static/dorm_default/packs/kkong/0275.png",
 "w": 459,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0276",
@@ -2859,7 +3048,8 @@
 "url": "/static/dorm_default/packs/kkong/0276.png",
 "w": 459,
 "h": 306,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0277",
@@ -2869,7 +3059,8 @@
 "url": "/static/dorm_default/packs/kkong/0277.png",
 "w": 459,
 "h": 306,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0278",
@@ -2879,7 +3070,8 @@
 "url": "/static/dorm_default/packs/kkong/0278.png",
 "w": 459,
 "h": 306,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0279",
@@ -2889,7 +3081,8 @@
 "url": "/static/dorm_default/packs/kkong/0279.png",
 "w": 459,
 "h": 306,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0280",
@@ -3379,7 +3572,8 @@
 "url": "/static/dorm_default/packs/agijagi/0328.png",
 "w": 459,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0329",
@@ -3389,7 +3583,8 @@
 "url": "/static/dorm_default/packs/agijagi/0329.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0330",
@@ -3459,7 +3654,8 @@
 "url": "/static/dorm_default/packs/agijagi/0336.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0337",
@@ -3469,7 +3665,8 @@
 "url": "/static/dorm_default/packs/agijagi/0337.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0338",
@@ -3539,7 +3736,8 @@
 "url": "/static/dorm_default/packs/agijagi/0344.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0345",
@@ -3549,7 +3747,8 @@
 "url": "/static/dorm_default/packs/agijagi/0345.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0346",
@@ -3619,7 +3818,8 @@
 "url": "/static/dorm_default/packs/agijagi/0352.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0353",
@@ -3629,7 +3829,8 @@
 "url": "/static/dorm_default/packs/agijagi/0353.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0354",
@@ -3699,7 +3900,8 @@
 "url": "/static/dorm_default/packs/agijagi/0360.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0361",
@@ -3709,7 +3911,8 @@
 "url": "/static/dorm_default/packs/agijagi/0361.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0362",
@@ -3769,7 +3972,8 @@
 "url": "/static/dorm_default/packs/agijagi/0367.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0368",
@@ -3779,7 +3983,8 @@
 "url": "/static/dorm_default/packs/agijagi/0368.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0369",
@@ -3839,7 +4044,8 @@
 "url": "/static/dorm_default/packs/agijagi/0374.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0375",
@@ -3849,7 +4055,8 @@
 "url": "/static/dorm_default/packs/agijagi/0375.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0376",
@@ -3909,7 +4116,8 @@
 "url": "/static/dorm_default/packs/agijagi/0381.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0382",
@@ -3919,7 +4127,8 @@
 "url": "/static/dorm_default/packs/agijagi/0382.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0383",
@@ -4599,7 +4808,8 @@
 "url": "/static/dorm_default/packs/eodume/0450.png",
 "w": 460,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0451",
@@ -4609,7 +4819,8 @@
 "url": "/static/dorm_default/packs/eodume/0451.png",
 "w": 460,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0452",
@@ -4619,7 +4830,8 @@
 "url": "/static/dorm_default/packs/eodume/0452.png",
 "w": 460,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0453",
@@ -4629,7 +4841,8 @@
 "url": "/static/dorm_default/packs/eodume/0453.png",
 "w": 460,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0454",
@@ -4639,7 +4852,8 @@
 "url": "/static/dorm_default/packs/eodume/0454.png",
 "w": 460,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0455",
@@ -4649,7 +4863,8 @@
 "url": "/static/dorm_default/packs/eodume/0455.png",
 "w": 460,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0456",
@@ -4659,7 +4874,8 @@
 "url": "/static/dorm_default/packs/eodume/0456.png",
 "w": 456,
 "h": 304,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0457",
@@ -4669,7 +4885,8 @@
 "url": "/static/dorm_default/packs/eodume/0457.png",
 "w": 456,
 "h": 304,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0458",
@@ -4679,7 +4896,8 @@
 "url": "/static/dorm_default/packs/eodume/0458.png",
 "w": 456,
 "h": 304,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0459",
@@ -4689,7 +4907,8 @@
 "url": "/static/dorm_default/packs/eodume/0459.png",
 "w": 456,
 "h": 304,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0460",
@@ -4699,7 +4918,8 @@
 "url": "/static/dorm_default/packs/eodume/0460.png",
 "w": 456,
 "h": 304,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0461",
@@ -4709,7 +4929,8 @@
 "url": "/static/dorm_default/packs/eodume/0461.png",
 "w": 456,
 "h": 304,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0462",
@@ -5369,7 +5590,8 @@
 "url": "/static/dorm_default/packs/oriental/0527.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0528",
@@ -5379,7 +5601,8 @@
 "url": "/static/dorm_default/packs/oriental/0528.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0529",
@@ -5389,7 +5612,8 @@
 "url": "/static/dorm_default/packs/oriental/0529.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0530",
@@ -5399,7 +5623,8 @@
 "url": "/static/dorm_default/packs/oriental/0530.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0531",
@@ -5409,7 +5634,8 @@
 "url": "/static/dorm_default/packs/oriental/0531.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0532",
@@ -5419,7 +5645,8 @@
 "url": "/static/dorm_default/packs/oriental/0532.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0533",
@@ -5429,7 +5656,8 @@
 "url": "/static/dorm_default/packs/oriental/0533.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0534",
@@ -5439,7 +5667,8 @@
 "url": "/static/dorm_default/packs/oriental/0534.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0535",
@@ -5449,7 +5678,8 @@
 "url": "/static/dorm_default/packs/oriental/0535.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0536",
@@ -5459,7 +5689,8 @@
 "url": "/static/dorm_default/packs/oriental/0536.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0537",
@@ -5469,7 +5700,8 @@
 "url": "/static/dorm_default/packs/oriental/0537.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0538",
@@ -5479,7 +5711,8 @@
 "url": "/static/dorm_default/packs/oriental/0538.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0539",
@@ -5489,7 +5722,8 @@
 "url": "/static/dorm_default/packs/oriental/0539.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0540",
@@ -5499,7 +5733,8 @@
 "url": "/static/dorm_default/packs/oriental/0540.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0541",
@@ -5509,7 +5744,8 @@
 "url": "/static/dorm_default/packs/oriental/0541.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0542",
@@ -5519,7 +5755,8 @@
 "url": "/static/dorm_default/packs/oriental/0542.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0543",
@@ -5529,7 +5766,8 @@
 "url": "/static/dorm_default/packs/oriental/0543.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0544",
@@ -5539,7 +5777,8 @@
 "url": "/static/dorm_default/packs/oriental/0544.png",
 "w": 458,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0545",
@@ -5549,7 +5788,8 @@
 "url": "/static/dorm_default/packs/oriental/0545.png",
 "w": 458,
 "h": 305,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0546",
@@ -5559,7 +5799,8 @@
 "url": "/static/dorm_default/packs/oriental/0546.png",
 "w": 458,
 "h": 313,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0547",
@@ -5569,7 +5810,8 @@
 "url": "/static/dorm_default/packs/oriental/0547.png",
 "w": 458,
 "h": 305,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0548",
@@ -5579,7 +5821,8 @@
 "url": "/static/dorm_default/packs/oriental/0548.png",
 "w": 458,
 "h": 305,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0549",
@@ -5589,7 +5832,8 @@
 "url": "/static/dorm_default/packs/oriental/0549.png",
 "w": 458,
 "h": 305,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0550",
@@ -5599,7 +5843,8 @@
 "url": "/static/dorm_default/packs/oriental/0550.png",
 "w": 458,
 "h": 313,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0551",
@@ -5609,7 +5854,8 @@
 "url": "/static/dorm_default/packs/oriental/0551.png",
 "w": 458,
 "h": 313,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0552",
@@ -5619,7 +5865,8 @@
 "url": "/static/dorm_default/packs/oriental/0552.png",
 "w": 458,
 "h": 313,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0553",
@@ -5629,7 +5876,8 @@
 "url": "/static/dorm_default/packs/oriental/0553.png",
 "w": 458,
 "h": 313,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0554",
@@ -6889,7 +7137,8 @@
 "url": "/static/dorm_default/packs/waguwagu/0679.png",
 "w": 460,
 "h": 233,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0680",
@@ -6899,7 +7148,8 @@
 "url": "/static/dorm_default/packs/waguwagu/0680.png",
 "w": 456,
 "h": 314,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0681",
@@ -6909,7 +7159,8 @@
 "url": "/static/dorm_default/packs/waguwagu/0681.png",
 "w": 456,
 "h": 314,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0682",
@@ -6919,7 +7170,8 @@
 "url": "/static/dorm_default/packs/waguwagu/0682.png",
 "w": 456,
 "h": 314,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0683",
@@ -6929,7 +7181,8 @@
 "url": "/static/dorm_default/packs/waguwagu/0683.png",
 "w": 456,
 "h": 314,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0684",
@@ -7279,7 +7532,8 @@
 "url": "/static/dorm_default/packs/koyakoya/0718.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0719",
@@ -7289,7 +7543,8 @@
 "url": "/static/dorm_default/packs/koyakoya/0719.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0720",
@@ -7299,7 +7554,8 @@
 "url": "/static/dorm_default/packs/koyakoya/0720.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0721",
@@ -7309,7 +7565,8 @@
 "url": "/static/dorm_default/packs/koyakoya/0721.png",
 "w": 460,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0722",
@@ -7319,7 +7576,8 @@
 "url": "/static/dorm_default/packs/koyakoya/0722.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0723",
@@ -7329,7 +7587,8 @@
 "url": "/static/dorm_default/packs/koyakoya/0723.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0724",
@@ -7339,7 +7598,8 @@
 "url": "/static/dorm_default/packs/koyakoya/0724.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0725",
@@ -7349,7 +7609,8 @@
 "url": "/static/dorm_default/packs/koyakoya/0725.png",
 "w": 460,
 "h": 316,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0726",
@@ -8259,7 +8520,8 @@
 "url": "/static/dorm_default/packs/cosmic/0816.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0817",
@@ -8269,7 +8531,8 @@
 "url": "/static/dorm_default/packs/cosmic/0817.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0818",
@@ -8279,7 +8542,8 @@
 "url": "/static/dorm_default/packs/cosmic/0818.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0819",
@@ -8289,7 +8553,8 @@
 "url": "/static/dorm_default/packs/cosmic/0819.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0820",
@@ -8299,7 +8564,8 @@
 "url": "/static/dorm_default/packs/cosmic/0820.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0821",
@@ -8309,7 +8575,8 @@
 "url": "/static/dorm_default/packs/cosmic/0821.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0822",
@@ -8319,7 +8586,8 @@
 "url": "/static/dorm_default/packs/cosmic/0822.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0823",
@@ -8329,7 +8597,8 @@
 "url": "/static/dorm_default/packs/cosmic/0823.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0824",
@@ -8339,7 +8608,8 @@
 "url": "/static/dorm_default/packs/cosmic/0824.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0825",
@@ -8349,7 +8619,8 @@
 "url": "/static/dorm_default/packs/cosmic/0825.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0826",
@@ -8359,7 +8630,8 @@
 "url": "/static/dorm_default/packs/cosmic/0826.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0827",
@@ -8369,7 +8641,8 @@
 "url": "/static/dorm_default/packs/cosmic/0827.png",
 "w": 458,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0828",
@@ -8739,7 +9012,8 @@
 "url": "/static/dorm_default/packs/cosmic/0864.png",
 "w": 455,
 "h": 311,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0865",
@@ -8749,7 +9023,8 @@
 "url": "/static/dorm_default/packs/cosmic/0865.png",
 "w": 455,
 "h": 311,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0866",
@@ -8759,7 +9034,8 @@
 "url": "/static/dorm_default/packs/cosmic/0866.png",
 "w": 455,
 "h": 311,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0867",
@@ -8769,7 +9045,8 @@
 "url": "/static/dorm_default/packs/cosmic/0867.png",
 "w": 455,
 "h": 311,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0868",
@@ -8779,7 +9056,8 @@
 "url": "/static/dorm_default/packs/cosmic/0868.png",
 "w": 455,
 "h": 311,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0869",
@@ -8789,7 +9067,8 @@
 "url": "/static/dorm_default/packs/cosmic/0869.png",
 "w": 455,
 "h": 311,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0870",
@@ -9369,7 +9648,8 @@
 "url": "/static/dorm_default/packs/hyacinth/0927.png",
 "w": 457,
 "h": 232,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "floor"
 },
 {
 "id": "p0928",
@@ -9399,7 +9679,8 @@
 "url": "/static/dorm_default/packs/hyacinth/0930.png",
 "w": 459,
 "h": 314,
-"credit": "pk-themes"
+"credit": "pk-themes",
+"slot": "wall"
 },
 {
 "id": "p0931",

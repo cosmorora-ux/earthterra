@@ -107,7 +107,8 @@ class Dorms:
 
     def room(self, name):
         r = self.rooms.get(name) or {}
-        return {"owner": name, "base": r.get("base") or DEFAULT_BASE, "items": r.get("items", []), "updated": r.get("updated")}
+        return {"owner": name, "base": r.get("base") or DEFAULT_BASE, "wall": r.get("wall"), "floor": r.get("floor"),
+                "items": r.get("items", []), "updated": r.get("updated")}
 
     # ---- 운영진 : 관 배치 ----
     def set_halls(self, halls, valid_names):
@@ -204,8 +205,13 @@ class Dorms:
             x = _clamp(it.get("x"), -w // 2, bw - w // 2, 0)
             y = _clamp(it.get("y"), -h // 2, bh - h // 2, 0)
             items.append({"a": a["id"], "x": x, "y": y, "f": bool(it.get("f")), "z": z})
+        # 벽지·바닥(방에 딱 맞춰 까는 것) : 자리(slot)가 맞는 자료만 받습니다.
+        def slot_asset(key, slot):
+            a = self.asset(data.get(key))
+            return a["id"] if a and a.get("slot") == slot else None
         with self.lock:
-            self.rooms[owner] = {"v": 2, "base": base["id"], "items": items, "updated": time.time()}
+            self.rooms[owner] = {"v": 2, "base": base["id"], "wall": slot_asset("wall", "wall"),
+                                 "floor": slot_asset("floor", "floor"), "items": items, "updated": time.time()}
             self.save()
         return self.room(owner)
 

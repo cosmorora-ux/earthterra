@@ -1595,6 +1595,7 @@
   .dorm-sizebar button:hover { background: rgba(255,255,255,.13); }
   .dorm-sizebar .val { min-width:46px; text-align:center; font-weight:700; font-size:13px; font-variant-numeric: tabular-nums; }
   .dorm-sizebar .rst { width:auto; padding:0 10px; font-size:12px; color:#cfcfd4; }
+  .dorm-surface { position:absolute; background-size:100% 100%; background-repeat:no-repeat; image-rendering: pixelated; pointer-events:none; }
   .dorm-asset { aspect-ratio:1; border-radius:8px; background:#0e0e11 center/contain no-repeat; background-origin:content-box; padding:6px; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); cursor:pointer; }
   .dorm-asset:hover { border-color: rgba(255,255,255,.2); }
   .dorm-asset.on { border-color: var(--point); box-shadow: 0 0 0 1px var(--point); }
@@ -6652,7 +6653,12 @@ function dormStageHtml(r, base, s, editing, mini) {
   const W = dormBW(base) * s, H = dormBH(base) * s;
   const items = (r.items || []).map((it, i) => ({ it, i, a: dormAsset(it.a) })).filter(o => o.a)
     .sort((p, q) => ((q.a.category === 'surface') - (p.a.category === 'surface')) || (p.a.category === 'surface' ? p.i - q.i : (p.it.y + p.a.h * dormZ(p.it, p.a)) - (q.it.y + q.a.h * dormZ(q.it, q.a))));
-  return `<div class="dorm-stage ${editing ? 'editing' : ''} ${mini ? 'mini' : ''}" ${mini ? '' : 'id="dormStage"'} style="width:${W}px; height:${H}px; background:url('${base.url}') 0 0 / 100% 100% no-repeat;">
+  const fit = base.fit || {}, fitted = [['wall', r.wall], ['floor', r.floor]].map(([k, id]) => {
+    const a = dormAsset(id), f = fit[k]; if (!a || !f) return '';
+    const sc = f[2] / a.w;
+    return `<div class="dorm-surface" style="left:${f[0] * s}px; top:${f[1] * s}px; width:${f[2] * s}px; height:${a.h * sc * s}px; background-image:url('${a.url}');"></div>`;
+  }).join('');
+  return `<div class="dorm-stage ${editing ? 'editing' : ''} ${mini ? 'mini' : ''}" ${mini ? '' : 'id="dormStage"'} style="width:${W}px; height:${H}px; background:url('${base.url}') 0 0 / 100% 100% no-repeat;">${fitted}
     ${items.map(({ it, i, a }) => `<div class="dorm-item ${it.f ? 'dflip' : ''} ${editing && i === dormSel ? 'sel' : ''}" data-i="${i}" title="${mailEsc(a.name)}"
       style="left:${it.x * s}px; top:${it.y * s}px; width:${a.w * dormZ(it, a) * s}px; height:${a.h * dormZ(it, a) * s}px; background-image:url('${a.url}');"></div>`).join('')}
     ${mini ? '' : '<div class="dorm-ghost" id="dormGhost"></div>'}</div>`;
@@ -6667,7 +6673,7 @@ function dormMiniHtml(owner, w) {
 }
 function startDormEdit() {
   const r = dormRoom;
-  dormEdit = { base: r.base || dormData.default_base, items: (r.items || []).map(i => Object.assign({}, i)) };
+  dormEdit = { base: r.base || dormData.default_base, wall: r.wall || null, floor: r.floor || null, items: (r.items || []).map(i => Object.assign({}, i)) };
   dormSel = -1; dormPick = null; renderDorm();
 }
 function saveDormRoom() {
@@ -6683,20 +6689,24 @@ function renderDormPalette() {
   const q = dormQ.trim().toLowerCase();
   const list = all.filter(a => (!dormSet || (a.set || '내가 올린 자료') === dormSet) && (!q || a.name.toLowerCase().includes(q)));
   const cur = dormCat === 'room' ? dormEdit.base : dormPick;
+  const isOn = (a) => dormCat === 'room' ? a.id === dormEdit.base : a.slot ? (dormEdit[a.slot] === a.id) : a.id === cur;
   const sel = dormSel >= 0 ? dormEdit.items[dormSel] : null;
   el.innerHTML = `<div class="dorm-ptabs">${DORM_CATS.map(([k, t]) => `<button class="${dormCat === k ? 'on' : ''}" onclick="dormCat='${k}'; dormPick=null; renderDormPalette(); dormUpdateGhost()">${t}</button>`).join('')}</div>
     <div class="dorm-pfilter"><select onchange="dormSet=this.value; renderDormPalette()"><option value="">전체 세트 (${all.length})</option>${sets.map(t => `<option ${t === dormSet ? 'selected' : ''}>${mailEsc(t)}</option>`).join('')}</select>
       <input type="text" placeholder="검색" value="${mailEsc(dormQ)}" oninput="dormQ=this.value; clearTimeout(window._dq); window._dq=setTimeout(()=>{renderDormPalette(); const i=document.querySelector('.dorm-pfilter input'); if(i){i.focus(); i.setSelectionRange(i.value.length,i.value.length);}},180)"></div>
-    ${list.length ? `<div class="dorm-assets">${list.map(a => `<div class="dorm-asset ${cur === a.id ? 'on' : ''}" title="${mailEsc(a.name)}${a.set ? ' · ' + mailEsc(a.set) : ''}" style="background-image:url('${a.url}')" onclick="pickDormAsset('${a.id}')"></div>`).join('')}</div>`
+    ${list.length ? `<div class="dorm-assets">${list.map(a => `<div class="dorm-asset ${isOn(a) ? 'on' : ''}" title="${mailEsc(a.name)}${a.set ? ' · ' + mailEsc(a.set) : ''}" style="background-image:url('${a.url}')" onclick="pickDormAsset('${a.id}')"></div>`).join('')}</div>`
       : `<div class="dorm-hint">${all.length ? '찾는 자료가 없어요.' : '이 종류의 도트 자료가 아직 없어요.' + (dormIsGm() ? ' 관리 → 도트 자료에서 올릴 수 있어요.' : '')}</div>`}
     ${sel ? `<div class="dorm-sizebar"><span class="lbl">크기</span><button onclick="dormResizeSel(-1)" aria-label="작게"><i class="fa-solid fa-minus"></i></button>
         <span class="val">×${dormZ(sel, dormAsset(sel.a))}</span><button onclick="dormResizeSel(1)" aria-label="크게"><i class="fa-solid fa-plus"></i></button>
         <button class="rst" onclick="dormResizeSel(0)">원래 크기</button></div>
       <div class="dorm-tools"><button class="btn-plain" onclick="dormFlipSel()"><i class="fa-solid fa-left-right"></i> 좌우 반전</button><button class="btn-plain" onclick="dormDeleteSel()"><i class="fa-solid fa-trash-can"></i> 치우기</button></div>` : ''}
-    <div class="dorm-hint">${dormCat === 'room' ? '고르면 방 바탕이 바뀌어요.' : dormCat === 'surface' ? '벽지·바닥은 항상 다른 자료보다 뒤에 깔려요. 놓은 뒤 끌어서 벽·바닥에 맞춰 주세요.' : '자료를 고르고 방을 눌러 놓아요. 놓은 소품은 끌어서 옮기고, 눌러서 크기·반전·치우기를 할 수 있어요. (Esc : 고르기 취소, - / + : 크기, Delete : 치우기)'}</div>`;
+    <div class="dorm-hint">${dormCat === 'room' ? '고르면 방 바탕이 바뀌어요.' : dormCat === 'surface' ? '벽지·바닥은 고르면 방에 딱 맞춰 깔려요. 한 번 더 누르면 걷어내요. 카펫은 원하는 곳에 놓을 수 있어요.' : '자료를 고르고 방을 눌러 놓아요. 놓은 소품은 끌어서 옮기고, 눌러서 크기·반전·치우기를 할 수 있어요. (Esc : 고르기 취소, - / + : 크기, Delete : 치우기)'}</div>`;
 }
 function pickDormAsset(id) {
   if (dormCat === 'room') { dormEdit.base = id; renderDorm(); return; }
+  const a = dormAsset(id);
+  // 벽지·바닥은 고르면 방에 딱 맞춰 깔리고, 한 번 더 누르면 걷어냅니다.
+  if (a && a.slot) { dormEdit[a.slot] = dormEdit[a.slot] === id ? null : id; dormPick = null; renderDorm(); return; }
   dormPick = dormPick === id ? null : id; dormSel = -1; renderDormPalette(); dormUpdateGhost();
 }
 function dormResizeSel(dir) {
