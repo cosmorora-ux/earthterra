@@ -1633,6 +1633,44 @@
   .dorm-gb-item .txt { margin-top:4px; font-size:13.5px; line-height:1.6; white-space:pre-wrap; word-break:break-word; color:#dcdce0; }
   .dorm-gb-empty { font-size:13px; color: var(--muted); padding:18px 0; text-align:center; }
   @media (max-width:900px) { .dorm-gb { width:auto; max-height:none; } }
+  .dorm-frame-wrap { flex:1; min-width:0; min-height:0; display:flex; position:relative; }
+  .dorm-frame-wrap .map-frame.dorm-frame { flex:1; }
+  .dorm-line-bubble { position:absolute; left:20px; top:18px; z-index:3; max-width:min(70%, 520px); display:flex; flex-direction:column; gap:3px;
+    padding:12px 16px; border-radius:14px 14px 14px 4px; background: rgba(12,12,15,.82); border:1px solid rgba(255,255,255,.1);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); pointer-events:none; }
+  .dorm-line-bubble b { font-size:12.5px; color: var(--muted); font-weight:700; }
+  .dorm-line-bubble span { font-size:15px; line-height:1.55; color:#ececf0; word-break:break-word; }
+  .dorm-roominfo { padding:12px 16px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:8px; }
+  .dorm-music { display:flex; align-items:center; gap:10px; min-width:0; }
+  .dorm-music .t { flex:1; min-width:0; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dorm-music .muted, .dorm-line-edit .muted { color: var(--muted); }
+  .dorm-music .bgm-eq.playing span { background:#5b8cff; animation: bgmEq 1s ease-in-out infinite; }
+  .dorm-music .bgm-eq.playing span:nth-child(2) { animation-delay:-.4s; } .dorm-music .bgm-eq.playing span:nth-child(3) { animation-delay:-.7s; } .dorm-music .bgm-eq.playing span:nth-child(4) { animation-delay:-.2s; }
+  .dorm-ibtn { width:30px; height:30px; flex:none; border-radius:8px; border:none; background: rgba(255,255,255,.06); color: var(--text); cursor:pointer; font-size:12px; }
+  .dorm-ibtn:hover { background: rgba(255,255,255,.12); }
+  .dorm-line-edit { display:flex; align-items:flex-start; gap:8px; width:100%; text-align:left; background: rgba(255,255,255,.035); border:none; border-radius:10px;
+    padding:9px 12px; color:#dcdce0; font-size:13.5px; line-height:1.5; cursor:pointer; }
+  .dorm-line-edit:hover { background: rgba(255,255,255,.07); }
+  .dorm-line-edit i { color: var(--muted); font-size:11px; margin-top:4px; }
+  .dorm-line-edit .ed { margin-left:auto; }
+  @media (max-width:900px) { .dorm-frame-wrap { flex:none; } .dorm-line-bubble { left:12px; top:12px; max-width:80%; padding:9px 12px; } }
+  .dorm-gb-write { padding:12px 16px 14px; border-bottom:1px solid var(--line); }
+  .modal-box.dorm-modal .dorm-gb-write textarea { width:100%; resize:none; font-size:14px; line-height:1.65; padding:10px 12px; min-height:0; }
+  .dorm-gb-write .row { display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+  .dorm-gb-write .n { font-size:12px; color: var(--muted); }
+  .dorm-tbtn.sm { height:32px; padding:0 14px; font-size:13px; }
+  .dorm-gb-list { display:flex; flex-direction:column; gap:10px; }
+  .dorm-note { position:relative; padding:14px 16px 12px; border-radius:12px; background: rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.05);
+    border-top:2px solid var(--nc); }
+  .dorm-note.mine { background: rgba(92,134,255,.07); }
+  .dorm-note .no { font-size:11.5px; font-weight:700; color: var(--muted); letter-spacing:.06em; font-variant-numeric: tabular-nums; }
+  .dorm-note p { margin:6px 0 10px; font-size:14.5px; line-height:1.7; color:#e6e6ea; white-space:pre-wrap; word-break:break-word; }
+  .dorm-note footer { display:flex; align-items:center; gap:6px; justify-content:flex-end; font-size:12px; color: var(--muted); }
+  .dorm-note footer .dot { width:6px; height:6px; border-radius:50%; background: var(--nc); }
+  .dorm-note footer b { color:#cfcfd4; font-weight:700; margin-right:4px; }
+  .dorm-note-del { position:absolute; top:8px; right:8px; width:24px; height:24px; border:none; border-radius:6px; background:none; color: var(--muted); cursor:pointer; opacity:0; font-size:12px; }
+  .dorm-note:hover .dorm-note-del { opacity:1; }
+  .dorm-note-del:hover { color: var(--accent-red); background: rgba(255,255,255,.06); }
   .dorm-asset { aspect-ratio:1; border-radius:8px; background:#0e0e11 center/contain no-repeat; background-origin:content-box; padding:6px; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); cursor:pointer; }
   .dorm-asset:hover { border-color: rgba(255,255,255,.2); }
   .dorm-asset.on { border-color: var(--point); box-shadow: 0 0 0 1px var(--point); }
@@ -2701,7 +2739,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-12.10";
+const EXPECTED_SERVER_BUILD = "2026-10-12.11";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5107,9 +5145,12 @@ function refreshVolumeUi() {
 }
 
 function applyVolume() {
+  // 기숙사 방 음악이 나오는 동안에는 전투 배경음악을 잠시 0으로 낮춥니다.
+  const v = (typeof dormMusicActive !== 'undefined' && dormMusicActive) ? 0 : musicVolume;
   const audio = document.getElementById('mp3Player');
-  if (audio) audio.volume = musicVolume / 100;
-  if (ytPlayer && ytPlayer.setVolume) { try { ytPlayer.setVolume(musicVolume); } catch (e) {} }
+  if (audio) audio.volume = v / 100;
+  if (ytPlayer && ytPlayer.setVolume) { try { ytPlayer.setVolume(v); } catch (e) {} }
+  if (typeof dormAudio !== 'undefined' && dormAudio) dormAudio.volume = musicVolume / 100;
 }
 
 (function loadYouTubeApi() {
@@ -6692,6 +6733,7 @@ function closeDorm() {
   if (dormEdit) { uiConfirm('저장하지 않은 꾸미기가 있어요. 닫을까요?', { title: '기숙사 닫기', okText: '닫기' }).then(ok => { if (ok) { dormEdit = null; closeDorm(); } }); return; }
   document.getElementById('dormModal').style.display = 'none';
   setMainView(false);
+  syncDormMusic();
 }
 function setDormView(v) { dormView = v; if (v === 'manage') { dormHallsDraft = null; dormCreditsDraft = null; } renderDorm(); }
 function openDormRoom(owner) { dormView = 'room'; dormRoom = { owner, loading: true }; dormEdit = null; dormSel = -1; socket.emit('dorm_room_get', { name: owner }); renderDorm(); }
@@ -6730,8 +6772,51 @@ function renderDorm() {
   const body = document.getElementById('dormBody');
   if (!dormData) { body.innerHTML = '<div class="dorm-empty"><i class="fa-solid fa-house"></i>불러오는 중…</div>'; return; }
   if (dormView === 'manage' && dormIsGm()) { body.innerHTML = dormManageHtml(); return; }
-  if (dormView === 'room' && dormRoom) { renderDormRoom(body); return; }
+  if (dormView === 'room' && dormRoom) { renderDormRoom(body); syncDormMusic(); return; }
   body.innerHTML = dormHallsHtml();
+  syncDormMusic();
+}
+// ---------- 방 음악 : 그 방에 있는 동안만 반복 재생 (음량은 배경음악 음량을 따라요) ----------
+var dormAudio = null, dormMusicActive = false, dormMusicUrl = null, dormMusicPaused = false;
+function syncDormMusic() {
+  const shown = document.getElementById('dormModal').style.display === 'flex';
+  const want = shown && dormView === 'room' && dormRoom && !dormRoom.loading && dormRoom.music ? dormRoom.music.url : null;
+  if (want !== dormMusicUrl) {
+    if (dormAudio) { dormAudio.pause(); dormAudio = null; }
+    dormMusicUrl = want; dormMusicPaused = false;
+    if (want) { dormAudio = new Audio(want); dormAudio.loop = true; dormAudio.volume = musicVolume / 100; dormAudio.play().catch(() => { dormMusicPaused = true; renderDormMusicBtn(); }); }
+  }
+  dormMusicActive = !!(dormAudio && !dormMusicPaused);
+  applyVolume();
+  renderDormMusicBtn();
+}
+function toggleDormMusic() {
+  if (!dormAudio) return;
+  dormMusicPaused = !dormMusicPaused;
+  if (dormMusicPaused) dormAudio.pause(); else dormAudio.play().catch(() => {});
+  dormMusicActive = !dormMusicPaused; applyVolume(); renderDormMusicBtn();
+}
+function renderDormMusicBtn() {
+  const b = document.getElementById('dormMusicBtn');
+  if (b) b.innerHTML = `<i class="fa-solid ${dormMusicPaused || !dormAudio ? 'fa-play' : 'fa-pause'}"></i>`;
+  const eq = document.getElementById('dormMusicEq'); if (eq) eq.classList.toggle('playing', !!(dormAudio && !dormMusicPaused));
+}
+function pickDormMusic() { document.getElementById('dormMusicFile').click(); }
+function onDormMusicFile(ev) {
+  const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  if (f.size > 12 * 1024 * 1024) { showShopToast('음악 파일이 너무 커요 (최대 12MB).'); return; }
+  showShopToast('음악을 올리는 중…');
+  f.arrayBuffer().then(buf => socket.emit('dorm_music_upload', { owner: dormRoom.owner, filename: f.name, data: buf }));
+}
+function clearDormMusic() {
+  uiConfirm('방 음악을 지울까요?', { title: '방 음악 지우기', okText: '지우기', danger: true }).then(ok => ok && socket.emit('dorm_music_clear', { owner: dormRoom.owner }));
+}
+function editDormLine() {
+  uiPrompt('방에 들어온 사람에게 보일 한마디를 적어 주세요. (80자까지, 비우면 지워져요)', dormRoom.line || '', { title: '방 주인 대사', okText: '저장' }).then(v => {
+    if (v == null) return;
+    socket.emit('dorm_line_save', { owner: dormRoom.owner, text: String(v).trim() });
+  });
 }
 // 상단 바 : 전투 화면 헤더와 같은 모양 (Dorm ▶ 관 ▶ 방) + 오른쪽 버튼
 function renderDormTop() {
@@ -6791,7 +6876,9 @@ function renderDormRoom(body) {
   const side = dormEdit
     ? `<div class="member-panel panel dorm-side"><div class="member-header"><b>Items</b></div><div class="dorm-side-body" id="dormPalette"></div></div>`
     : dormGuestbookHtml(r);
-  body.innerHTML = `<div class="dorm-room-layout"><div class="map-frame dorm-frame" id="dormStageBox"></div>${side}</div>`;
+  const isOwner = dormMe() && dormMe() === r.owner;
+  const bubble = r.line ? `<div class="dorm-line-bubble"><b>${mailEsc(r.owner)}</b><span>${mailEsc(r.line)}</span></div>` : '';
+  body.innerHTML = `<div class="dorm-room-layout"><div class="dorm-frame-wrap">${bubble}<div class="map-frame dorm-frame" id="dormStageBox"></div></div>${side}</div>`;
   const frame = document.getElementById('dormStageBox');
   const src = dormEdit || r, base = dormBase(src);
   const s = dormScale(frame, base);
@@ -6812,25 +6899,33 @@ function dormGuestbookHtml(r) {
   const me = dormLoggedName(), list = r.guestbook || [], mine = me && list.find(e => e.author === me);
   const draft = dormGbDraft[r.owner] != null ? dormGbDraft[r.owner] : (mine ? mine.text : '');
   const canDel = (e) => dormIsGm() || me === e.author || me === r.owner;
-  const fmt = (at) => { const d = new Date(at * 1000), h = d.getHours(); return `${d.getMonth() + 1}월 ${d.getDate()}일 ${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')}`; };
-  const av = (name) => {
-    if (name === '운영진') return '<div class="chat-dot chat-star">✶</div>';
-    const p = (typeof lastRosterMypage !== 'undefined' && lastRosterMypage[name]) || {};
-    return p.avatar_url ? `<div class="chat-avatar" style="background-image:url('${p.avatar_url}');"></div>`
-      : `<div class="chat-avatar initial" style="--ac:${p.color || '#5a5a62'}">${mailEsc((name || '?')[0])}</div>`;
-  };
-  const color = (name) => { const p = (typeof lastRosterMypage !== 'undefined' && lastRosterMypage[name]) || {}; return p.color ? ` style="color:${p.color}"` : ''; };
+  const fmt = (at) => { const d = new Date(at * 1000); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`; };
+  const color = (name) => { const p = (typeof lastRosterMypage !== 'undefined' && lastRosterMypage[name]) || {}; return p.color || '#6b6b73'; };
+  const isOwner = dormMe() && dormMe() === r.owner;
+  const music = r.music;
+  const info = (music || isOwner) ? `<div class="dorm-roominfo">
+      <div class="dorm-music">
+        <div class="bgm-eq" id="dormMusicEq"><span></span><span></span><span></span><span></span></div>
+        <div class="t">${music ? mailEsc(music.title) : '<span class="muted">방 음악이 없어요</span>'}</div>
+        ${music ? `<button class="dorm-ibtn" id="dormMusicBtn" onclick="toggleDormMusic()"><i class="fa-solid fa-pause"></i></button>` : ''}
+        ${isOwner ? `<button class="dorm-ibtn" onclick="pickDormMusic()" data-tip="${music ? '음악 바꾸기' : '음악 올리기'} (mp3·ogg·wav·m4a, 12MB)"><i class="fa-solid fa-upload"></i></button>
+          ${music ? `<button class="dorm-ibtn" onclick="clearDormMusic()" data-tip="음악 지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}
+          <input type="file" id="dormMusicFile" accept=".mp3,.ogg,.wav,.m4a,audio/*" style="display:none" onchange="onDormMusicFile(event)">` : ''}
+      </div>
+      ${isOwner ? `<button class="dorm-line-edit" onclick="editDormLine()"><i class="fa-solid fa-quote-left"></i>${r.line ? mailEsc(r.line) : '<span class="muted">방 주인 대사를 적어 보세요</span>'}<i class="fa-solid fa-pen ed"></i></button>` : ''}
+    </div>` : '';
   return `<div class="member-panel panel dorm-side">
-    <div class="member-header"><b>Guestbook</b><span class="dorm-gb-cnt">${list.length}</span></div>
-    <div class="dorm-side-body dorm-gb-list">${list.length ? list.map(e => `<div class="chat-line">${av(e.author)}
-        <div class="chat-body"><div class="chat-meta"><b${color(e.author)}>${mailEsc(e.author)}</b><span class="time">${fmt(e.at)}${e.edited ? ' · 수정됨' : ''}</span></div>
-        <div class="chat-text">${mailEsc(e.text)}</div></div>
-        ${canDel(e) ? `<button class="chat-del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})"><i class="fa-solid fa-trash-can"></i></button>` : ''}</div>`).join('')
-      : '<div class="dorm-gb-empty"><i class="fa-regular fa-comment"></i>아직 방명록이 없어요.</div>'}</div>
-    ${me ? `<div class="input-row"><input id="dormGbText" maxlength="300" value="${mailEsc(draft)}" placeholder="${mine ? '다시 쓰면 내 방명록이 고쳐져요.' : '방명록을 남겨 주세요. (한 사람당 하나)'}"
-        oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value" onkeydown="if(event.key==='Enter' && !event.isComposing) writeDormGuestbook()">
-      <button class="btn-plain send-btn icon-only" onclick="writeDormGuestbook()" aria-label="남기기"><i class="fa-solid fa-paper-plane"></i></button></div>`
+    <div class="member-header"><b>Guestbook</b><span class="dorm-gb-cnt">${list.length}</span></div>${info}
+    ${me ? `<div class="dorm-gb-write"><textarea id="dormGbText" maxlength="300" rows="3" placeholder="${mine ? '다시 쓰면 내 방명록이 고쳐져요.' : '이 방에 한마디 남겨 주세요. (한 사람당 하나)'}"
+        oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
+      <div class="row"><span class="n">${mine ? '내 방명록 고치기' : '방명록 쓰기'}</span><button class="dorm-tbtn primary sm" onclick="writeDormGuestbook()">${mine ? '고치기' : '남기기'}</button></div></div>`
       : '<div class="dorm-gb-login">캐릭터로 로그인하면 방명록을 남길 수 있어요.</div>'}
+    <div class="dorm-side-body dorm-gb-list">${list.length ? list.map((e, i) => `<article class="dorm-note ${e.author === me ? 'mine' : ''}" style="--nc:${color(e.author)}">
+        <span class="no">No.${String(list.length - i).padStart(2, '0')}</span>
+        ${canDel(e) ? `<button class="dorm-note-del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}
+        <p>${mailEsc(e.text)}</p>
+        <footer><i class="dot"></i><b>${mailEsc(e.author)}</b><span>${fmt(e.at)}${e.edited ? ' · 수정됨' : ''}</span></footer></article>`).join('')
+      : '<div class="dorm-gb-empty"><i class="fa-solid fa-feather-pointed"></i>아직 방명록이 없어요.</div>'}</div>
   </div>`;
 }
 

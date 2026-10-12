@@ -111,6 +111,7 @@ class Dorms:
         r = self.rooms.get(name) or {}
         return {"owner": name, "base": r.get("base") or DEFAULT_BASE, "wall": r.get("wall"), "floor": r.get("floor"),
                 "items": r.get("items", []), "updated": r.get("updated"),
+                "music": r.get("music"), "line": r.get("line") or "",
                 "guestbook": sorted(self.guestbooks.get(name, []), key=lambda e: -e.get("at", 0))}
 
     # ---- 관 이름 (그 관에 사는 사람 또는 운영진) ----
@@ -127,6 +128,27 @@ class Dorms:
                     self.save()
                     return h
         raise DormError("관을 찾을 수 없어요.")
+
+    # ---- 방 음악 · 방 주인 대사 (방 주인만) ----
+    def _room_rec(self, owner):
+        r = self.rooms.get(owner)
+        if not r:
+            r = self.rooms[owner] = {"v": 2, "base": DEFAULT_BASE, "wall": None, "floor": None, "items": []}
+        return r
+
+    def set_music(self, owner, music):
+        with self.lock:
+            r = self._room_rec(owner)
+            old = r.get("music")
+            r["music"] = music
+            self.save()
+        return old
+
+    def set_line(self, owner, text):
+        text = (text or "").strip()[:80]
+        with self.lock:
+            self._room_rec(owner)["line"] = text
+            self.save()
 
     # ---- 방명록 ----
     def write_guestbook(self, owner, author, text):
@@ -254,8 +276,10 @@ class Dorms:
             a = self.asset(data.get(key))
             return a["id"] if a and a.get("slot") == slot else None
         with self.lock:
+            old = self.rooms.get(owner) or {}
             self.rooms[owner] = {"v": 2, "base": base["id"], "wall": slot_asset("wall", "wall"),
-                                 "floor": slot_asset("floor", "floor"), "items": items, "updated": time.time()}
+                                 "floor": slot_asset("floor", "floor"), "items": items, "updated": time.time(),
+                                 "music": old.get("music"), "line": old.get("line", "")}
             self.save()
         return self.room(owner)
 

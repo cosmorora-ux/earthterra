@@ -34,7 +34,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-12.10"
+SERVER_BUILD = "2026-10-12.11"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2737,6 +2737,78 @@ def on_dorm_room_save(data):
     emit("dorm_result", {"ok": True, "message": "방을 저장했어요."})
     socketio.emit("dorm_room", saved)
     _dorm_broadcast()
+
+
+DORM_MUSIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "dorm_music")
+os.makedirs(DORM_MUSIC_DIR, exist_ok=True)
+DORM_MUSIC_MAX_BYTES = 12 * 1024 * 1024
+
+
+def _dorm_owner_only(owner):
+    """방 음악·대사는 그 방 주인 본인만 바꿀 수 있습니다(운영진 대리 불가)."""
+    me, is_gm, room = _mail_identity(request.sid)
+    dorms = dorm_mod.shared_dorms()
+    if not owner or me != owner or dorms.hall_of(owner) is None:
+        emit("dorm_result", {"ok": False, "message": "자기 방에서만 바꿀 수 있어요."})
+        return None
+    return dorms
+
+
+@socketio.on("dorm_music_upload")
+def on_dorm_music_upload(data):
+    data = data or {}
+    owner = (data.get("owner") or "").strip()
+    dorms = _dorm_owner_only(owner)
+    if dorms is None:
+        return
+    blob = data.get("data")
+    ext = os.path.splitext((data.get("filename") or "").lower())[1]
+    if ext not in (".mp3", ".ogg", ".wav", ".m4a") or not isinstance(blob, (bytes, bytearray)):
+        emit("dorm_result", {"ok": False, "message": "mp3·ogg·wav·m4a 음악 파일만 올릴 수 있어요."})
+        return
+    if len(blob) > DORM_MUSIC_MAX_BYTES:
+        emit("dorm_result", {"ok": False, "message": "음악 파일이 너무 커요 (최대 12MB)."})
+        return
+    filename = f"{uuid.uuid4().hex}{ext}"
+    with open(os.path.join(DORM_MUSIC_DIR, filename), "wb") as f:
+        f.write(blob)
+    title = os.path.splitext(data.get("filename") or "")[0].strip()[:60] or "음악"
+    old = dorms.set_music(owner, {"url": f"/static/dorm_music/{filename}", "title": title})
+    if old and (old.get("url") or "").startswith("/static/dorm_music/"):
+        try:
+            os.remove(os.path.join(DORM_MUSIC_DIR, os.path.basename(old["url"])))
+        except OSError:
+            pass
+    emit("dorm_result", {"ok": True, "message": "방 음악을 등록했어요."})
+    socketio.emit("dorm_room", dorms.room(owner))
+    _dorm_broadcast()
+
+
+@socketio.on("dorm_music_clear")
+def on_dorm_music_clear(data):
+    owner = ((data or {}).get("owner") or "").strip()
+    dorms = _dorm_owner_only(owner)
+    if dorms is None:
+        return
+    old = dorms.set_music(owner, None)
+    if old and (old.get("url") or "").startswith("/static/dorm_music/"):
+        try:
+            os.remove(os.path.join(DORM_MUSIC_DIR, os.path.basename(old["url"])))
+        except OSError:
+            pass
+    socketio.emit("dorm_room", dorms.room(owner))
+
+
+@socketio.on("dorm_line_save")
+def on_dorm_line_save(data):
+    data = data or {}
+    owner = (data.get("owner") or "").strip()
+    dorms = _dorm_owner_only(owner)
+    if dorms is None:
+        return
+    dorms.set_line(owner, data.get("text"))
+    emit("dorm_result", {"ok": True, "message": "방 주인 대사를 바꿨어요."})
+    socketio.emit("dorm_room", dorms.room(owner))
 
 
 @socketio.on("dorm_hall_rename")
