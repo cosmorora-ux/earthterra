@@ -1179,6 +1179,11 @@
      태블릿 대응 : 디자인은 그대로 두고 화면 폭에 맞춰 간격·열 배치만 조정합니다.
      ================================================================ */
   .app-shell { height:100dvh; }
+  .sidebar .m-chat-btn { display:none; }
+  .member-header .m-chat-close { display:none; align-items:center; justify-content:center; width:32px; height:32px; margin-left:4px;
+    background:none; border:none; color: var(--muted); font-size:18px; cursor:pointer; border-radius:8px; }
+  .member-header .m-chat-close:hover { color: var(--text); background: var(--card); }
+  @keyframes mChatIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
   @media (max-width:1180px) {
     .shell { padding:14px 14px 20px; }
     .topbar.v2 { gap:14px; padding:14px 20px; }
@@ -1199,7 +1204,8 @@
     .topbar.v2 .clock { font-size:13px; }
     .layout-grid { flex-direction:column; position:relative; }
     .teams-col { flex:1 1 auto; min-height:0; gap:12px; }
-    .member-col { width:auto; flex:0 0 38dvh; min-height:280px; }
+    .member-col { width:auto; flex:none; }
+    .teams-col > .action-bar-bottom:last-child, .teams-col > #commandSendBar { margin-top:auto; }
     .member-top { position:absolute; top:0; right:0; z-index:5; }
     .member-top .bgm-player .bgm-title { display:none; }
     .round-track { min-height:64px; max-height:110px; }
@@ -1210,15 +1216,24 @@
     .card-grid.compact-list { grid-template-columns: repeat(2, 1fr); }
     .gm-bar-ctrl { margin-left:0; padding-left:0; border-left:none; }
     /* 유저 리스트·상점·마이페이지는 팝업 대신 화면 전체를 쓰는 페이지로 */
-    .modal-box.userinfo-modal, .modal-box.shop-modal, .modal-box.mypage {
+    .modal-box.userinfo-modal, .modal-box.shop-modal, .modal-box.mypage, .modal-box.notice-modal {
       width:100vw; max-width:none; height:100dvh; max-height:none; border-radius:0; border:none;
       padding:calc(20px + env(safe-area-inset-top)) 24px calc(16px + env(safe-area-inset-bottom)); }
     .modal-box.mypage { overflow-y:auto; padding-bottom:calc(40px + env(safe-area-inset-bottom)); }
     .modal-box.mypage .mypage-cols { gap:0; }
+    .modal-box.userinfo-modal > *, .modal-box.shop-modal > *, .modal-box.notice-modal > * { width:100%; margin-left:auto; margin-right:auto; }
+    .modal-box.userinfo-modal > * { max-width:520px; }
+    .modal-box.shop-modal > * { max-width:680px; }
+    .modal-box.notice-modal > * { max-width:640px; }
+    /* 채팅은 카드 화면 위에 따로 여는 전체 화면 패널로 (코코포리아 모바일처럼) */
+    .member-col .member-panel { display:none; }
+    body.m-chat-open .member-col .member-panel { display:flex; position:fixed; inset:0; z-index:95; height:auto; border:none; border-radius:0;
+      padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); animation: mChatIn .22s ease-out; }
+    .sidebar .m-chat-btn { display:flex; }
+    .member-header .m-chat-close { display:inline-flex; }
     .modal-box.mypage .mypage-col + .mypage-col { padding-top:20px; }
     /* 전체 화면이어도 내용은 가운데 좁은 열로 모아 시선이 좌우로 멀리 가지 않게 */
     .modal-box.mypage .idc-head, .modal-box.mypage .mypage-cols { width:100%; max-width:520px; margin-left:auto; margin-right:auto; }
-    .layout-grid:has(.with-grid-map) .member-col { flex-basis:32dvh; min-height:250px; }
     .map-frame { padding:12px; }
   }
 </style>
@@ -1228,6 +1243,7 @@
 <div class="sidebar">
   <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
   <div class="sidebar-gap"></div>
+  <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
   <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i></button>
   <button class="sidebar-icon active"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
@@ -1702,6 +1718,7 @@
           <button onclick="closeGmMenu(); downloadLogs()"><i class="fa-solid fa-download"></i> 로그 내려받기</button>
         </div>
       </span>
+      <button class="m-chat-close" onclick="toggleMobileChat(false)" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </span>
   </div>
 
@@ -3346,7 +3363,29 @@ function updateUnreadBadges() {
   document.getElementById('unreadDotMeeting').classList.toggle('show', unreadChat.team);
   const logDot = document.getElementById('unreadDotLog');
   if (logDot) logDot.classList.toggle('show', unreadChat.log);
+  const mDot = document.getElementById('mChatDot');
+  if (mDot) mDot.classList.toggle('on', mobileChatUnread);
 }
+
+// 세로 태블릿(폭 900px 이하)에서는 카드 화면이 기본이고, 채팅은 사이드바 버튼으로 따로 엽니다.
+var mobileChatUnread = false;
+function isMobileChatHidden() {
+  return window.matchMedia('(max-width:900px)').matches && !document.body.classList.contains('m-chat-open');
+}
+function toggleMobileChat(force) {
+  const open = typeof force === 'boolean' ? force : !document.body.classList.contains('m-chat-open');
+  document.body.classList.toggle('m-chat-open', open);
+  if (open) {
+    mobileChatUnread = false;
+    updateUnreadBadges();
+    const el = document.getElementById('chatLog');
+    if (el) el.scrollTop = el.scrollHeight;
+  }
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.body.classList.contains('m-chat-open')
+      && !document.querySelector('.modal-overlay[style*="flex"]')) toggleMobileChat(false);
+});
 
 function setChatFilter(filter) {
   chatFilter = filter;
@@ -3577,6 +3616,7 @@ function appendChat(entry) {
   }
   // 그 글이 들어갈 탭을 지금 보고 있지 않으면(다른 탭/로그창을 보는 중) 탭 이름 옆에 안 읽음 점을 켭니다.
   const tab = chatTabFor(entry);
+  if (tab && isMobileChatHidden()) { mobileChatUnread = true; updateUnreadBadges(); }
   if (tab && CHAT_TAB_TO_VIEW[tab] !== currentMemberView) {
     unreadChat[tab] = true;
     updateUnreadBadges();
