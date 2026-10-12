@@ -22,3 +22,6 @@ notices.json
 notices.json.tmp
 # 운영진이 바꾼 기본 효과음 설정(서버 컴퓨터별)
 sfx.json
+# 우체통 편지(서버 컴퓨터별 실데이터)
+letters.json
+letters.json.tmp

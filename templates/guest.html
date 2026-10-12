@@ -1456,6 +1456,69 @@
   .scene-seg button:hover { color: var(--text); background: rgba(255,255,255,.08); }
   .scene-seg button.on { color:#fff; background: rgba(92,134,255,.18); border-color: rgba(92,134,255,.45); }
   .scene-mine { display:flex; align-items:center; gap:8px; font-size:12.5px; color: var(--muted); margin-top:14px; }
+
+  /* ================================================================
+     우체통
+     ================================================================ */
+  .modal-box.mail-modal { width:640px; max-width:calc(100vw - 32px); height:80vh; display:flex; flex-direction:column; padding:18px 20px; }
+  .mail-me { font-size:13px; color: var(--muted); }
+  .mail-me b { color: var(--text); font-weight:600; }
+  .mail-list { display:flex; flex-direction:column; gap:8px; padding:2px 0 12px; }
+  .mail-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; border:1px solid var(--line, rgba(255,255,255,.07));
+    background: rgba(255,255,255,.02); cursor:pointer; transition: background-color .15s, border-color .15s; }
+  .mail-item:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.14); }
+  .mail-ic { width:38px; height:38px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background: rgba(255,255,255,.05); color: var(--muted); font-size:14px; }
+  .mail-item.unread .mail-ic { background: rgba(92,134,255,.16); color: var(--point); }
+  .mail-main { flex:1; min-width:0; }
+  .mail-top { display:flex; align-items:center; gap:8px; }
+  .mail-who { font-weight:700; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mail-who.anon { color: var(--muted); font-weight:600; }
+  .mail-time { margin-left:auto; flex:none; font-size:12px; color: var(--muted); }
+  .mail-prev { margin-top:3px; font-size:13.5px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mail-item.unread .mail-prev { color:#cfcfd4; }
+  .mail-dot { width:7px; height:7px; border-radius:50%; background: var(--point); flex:none; }
+  .mail-badge { flex:none; font-size:11px; font-weight:600; padding:1px 7px; border-radius:999px; background: rgba(255,255,255,.07); color:#bdbdc3; }
+  .mail-empty { color: var(--muted); text-align:center; padding:56px 0; font-size:14px; line-height:1.8; }
+  .mail-empty i { display:block; font-size:28px; margin-bottom:12px; opacity:.5; }
+  .mail-empty .btn { margin-top:14px; }
+  /* 편지 읽기 */
+  .mail-back { display:inline-flex; align-items:center; gap:6px; background:none; border:none; color: var(--muted); font-size:13px; cursor:pointer; padding:4px 0; margin-bottom:10px; }
+  .mail-back:hover { color: var(--text); }
+  .mail-letter { position:relative; border-radius:18px; border:1px solid rgba(255,255,255,.08); padding:30px 30px 24px;
+    background: linear-gradient(180deg, #19191d 0%, #141417 100%); }
+  .mail-letter .to { font-size:13px; color: var(--muted); margin-bottom:18px; }
+  .mail-letter .to b { color: var(--text); font-weight:700; font-size:15px; margin-left:4px; }
+  .mail-letter .txt { font-size:15.5px; line-height:1.85; white-space:pre-wrap; word-break:break-word; color:#e8e8ec; min-height:120px; }
+  .mail-letter .from { margin-top:26px; text-align:right; font-size:13px; color: var(--muted); }
+  .mail-letter .from b { color: var(--text); font-weight:700; font-size:15px; margin-left:4px; }
+  .mail-letter .date { text-align:right; font-size:12px; color:#6f6f76; margin-top:4px; }
+  .mail-actions { display:flex; justify-content:space-between; align-items:center; margin-top:14px; }
+  .mail-del { display:inline-flex; align-items:center; gap:6px; background:none; border:none; color: var(--muted); font-size:13px; cursor:pointer; padding:6px 0; }
+  .mail-del:hover { color: var(--accent-red); }
+  /* 편지 쓰기 */
+  .mail-form { display:flex; flex-direction:column; gap:14px; padding-bottom:12px; }
+  .mail-label { font-size:13px; color: var(--muted); font-weight:600; margin-bottom:8px; }
+  .mail-seg { display:flex; gap:6px; }
+  .mail-seg button { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; background: rgba(255,255,255,.05); border:1px solid transparent;
+    color: var(--muted); border-radius:10px; padding:10px 12px; font-size:14px; cursor:pointer; }
+  .mail-seg button:hover { color: var(--text); background: rgba(255,255,255,.08); }
+  .mail-seg button.on { color:#fff; background: rgba(92,134,255,.16); border-color: rgba(92,134,255,.45); }
+  .mail-names { display:flex; flex-wrap:wrap; gap:6px; max-height:132px; overflow-y:auto; margin-top:8px; }
+  .mail-name { background: rgba(255,255,255,.05); border:1px solid transparent; color:#cfcfd4; border-radius:999px; padding:5px 12px; font-size:13px; cursor:pointer; }
+  .mail-name:hover { background: rgba(255,255,255,.09); }
+  .mail-name.on { background: var(--point); color:#fff; }
+  .mail-rand { font-size:13px; color: var(--muted); line-height:1.7; padding:12px 14px; border-radius:12px; background: rgba(255,255,255,.03); }
+  .modal-box.mail-modal textarea.mail-text { width:100%; min-height:200px; resize:vertical; font-size:15px; line-height:1.75; padding:14px 16px; }
+  .mail-foot { display:flex; align-items:center; gap:12px; }
+  .mail-anon { display:inline-flex; align-items:center; gap:8px; font-size:13.5px; color:#cfcfd4; cursor:pointer; user-select:none; }
+  .mail-count { margin-left:auto; font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .mail-send { display:inline-flex; align-items:center; gap:7px; }
+  @media (max-width:1180px) {
+    .modal-box.mail-modal { width:100vw; max-width:none; height:100dvh; max-height:none; border-radius:0; border:none;
+      padding:calc(20px + env(safe-area-inset-top)) 24px calc(16px + env(safe-area-inset-bottom)); }
+    .modal-box.mail-modal > * { width:100%; max-width:640px; margin-left:auto; margin-right:auto; }
+  }
 </style>
 </head>
 <body>
@@ -1470,6 +1533,7 @@
   <button class="sidebar-icon active"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
+  <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
   <div class="sidebar-grow"></div>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
@@ -1674,6 +1738,17 @@
   </div>
 </div>
 <div id="shopToast"></div>
+<div id="mailModal" class="modal-overlay" onclick="if(event.target===this) closeMail()">
+  <div class="modal-box mail-modal panel">
+    <div class="shop-head">
+      <div class="modal-title page-title">Mail</div>
+      <span class="mail-me" id="mailMe"></span>
+      <button class="shop-close" onclick="closeMail()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="shop-tabs" id="mailTabs"></div>
+    <div class="shop-body" id="mailBody"></div>
+  </div>
+</div>
 <div id="shopModal" class="modal-overlay" onclick="if(event.target===this) closeShop()">
   <div class="modal-box shop-modal panel">
     <div class="shop-head">
@@ -2366,7 +2441,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-12.6";
+const EXPECTED_SERVER_BUILD = "2026-10-12.7";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -6181,6 +6256,141 @@ var Weather = (function () {
     },
   };
 })();
+
+// ==================================================================
+// 우체통 : 캐릭터끼리 편지. 받는 사람 지정 / 랜덤, 익명 보내기. 운영진은 전체 편지를 볼 수 있습니다.
+// ==================================================================
+let mailData = null, mailTab = 'inbox', mailOpenId = null;
+const mailDraft = { mode: 'pick', to: '', q: '', anon: false, text: '' };
+function mailEsc(t) { return shopEsc(t); }
+function mailTime(at) {
+  const d = new Date(at * 1000), h = d.getHours();
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+function updateMailDot() {
+  const dot = document.getElementById('mailDot');
+  if (dot) dot.classList.toggle('on', !!(mailData && mailData.unread > 0));
+}
+function openMail(tab) {
+  if (tab) mailTab = tab;
+  mailOpenId = null;
+  document.getElementById('mailModal').style.display = 'flex';
+  socket.emit('mail_list');
+  renderMail();
+}
+function closeMail() { document.getElementById('mailModal').style.display = 'none'; }
+function setMailTab(t) { mailTab = t; mailOpenId = null; renderMail(); }
+socket.on('joined', () => socket.emit('mail_list'));
+socket.on('mail_data', (d) => {
+  mailData = d; updateMailDot();
+  // 편지를 쓰는 중이면 입력이 끊기지 않도록 다시 그리지 않습니다.
+  if (document.getElementById('mailModal').style.display === 'flex' && mailTab !== 'write') renderMail();
+});
+socket.on('mail_new', (d) => showShopToast(d && d.from ? `${d.from}에게서 편지가 왔어요.` : '새 편지가 도착했어요.'));
+socket.on('mail_result', (d) => {
+  showShopToast(d.message);
+  if (d.ok) { mailDraft.text = ''; mailDraft.to = ''; mailDraft.anon = false; mailTab = 'outbox'; mailOpenId = null; renderMail(); }
+  else { const b = document.getElementById('mailSendBtn'); if (b) b.disabled = false; }
+});
+
+function renderMail() {
+  const d = mailData || { me: null, inbox: [], outbox: [], roster: [] };
+  const body = document.getElementById('mailBody'), tabsEl = document.getElementById('mailTabs');
+  document.getElementById('mailMe').innerHTML = d.me ? `<b>${mailEsc(d.me)}</b>의 우체통` : '';
+  if (!d.me) {
+    tabsEl.innerHTML = '';
+    body.innerHTML = `<div class="mail-empty"><i class="fa-regular fa-envelope"></i>캐릭터로 로그인하면 편지를 주고받을 수 있어요.<br>
+      <button class="btn" onclick="closeMail(); onAvatarDotClick()">로그인</button></div>`;
+    return;
+  }
+  const tabs = [['inbox', 'fa-solid fa-inbox', '받은 편지', d.unread], ['outbox', 'fa-solid fa-paper-plane', '보낸 편지'], ['write', 'fa-solid fa-pen', '편지 쓰기']];
+  if (d.is_gm) tabs.push(['all', 'fa-solid fa-envelopes-bulk', '전체 편지']);
+  tabsEl.innerHTML = tabs.map(([k, ic, t, n]) => `<button class="shop-tab ${mailTab === k ? 'active' : ''}" onclick="setMailTab('${k}')"><i class="${ic}"></i>${t}${n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('');
+  if (mailTab === 'write') { body.innerHTML = mailComposeHtml(d); return; }
+  const list = mailTab === 'outbox' ? d.outbox : mailTab === 'all' ? (d.all || []) : d.inbox;
+  const open = mailOpenId && list.find(l => l.id === mailOpenId);
+  if (open) { body.innerHTML = mailLetterHtml(open, d); return; }
+  if (!list.length) {
+    const msg = mailTab === 'inbox' ? '아직 받은 편지가 없어요.' : mailTab === 'outbox' ? '아직 보낸 편지가 없어요.' : '편지가 없어요.';
+    body.innerHTML = `<div class="mail-empty"><i class="fa-regular fa-envelope-open"></i>${msg}</div>`;
+    return;
+  }
+  body.innerHTML = '<div class="mail-list">' + list.map(l => {
+    const unread = mailTab === 'inbox' && !l.read;
+    let who;
+    if (mailTab === 'inbox') who = l.from ? `<span class="mail-who">${mailEsc(l.from)}</span>` : '<span class="mail-who anon">익명</span>';
+    else if (mailTab === 'outbox') who = l.to ? `<span class="mail-who">To. ${mailEsc(l.to)}</span>` : '<span class="mail-who anon">To. 누군가 (랜덤)</span>';
+    else who = `<span class="mail-who">${mailEsc(l.from)} → ${mailEsc(l.to)}</span>`;
+    const badges = (l.anonymous && mailTab !== 'inbox' ? '<span class="mail-badge">익명</span>' : '') + (l.random && mailTab !== 'outbox' ? '<span class="mail-badge">랜덤</span>' : '');
+    return `<div class="mail-item ${unread ? 'unread' : ''}" onclick="openLetter('${l.id}')">
+      <div class="mail-ic"><i class="fa-solid ${unread ? 'fa-envelope' : 'fa-envelope-open'}"></i></div>
+      <div class="mail-main"><div class="mail-top">${who}${badges}<span class="mail-time">${mailTime(l.at)}</span>${unread ? '<span class="mail-dot"></span>' : ''}</div>
+      <div class="mail-prev">${mailEsc(l.text.replace(/\s+/g, ' '))}</div></div></div>`;
+  }).join('') + '</div>';
+}
+function openLetter(id) {
+  mailOpenId = id;
+  const l = mailData && mailData.inbox.find(x => x.id === id);
+  if (mailTab === 'inbox' && l && !l.read) { l.read = true; mailData.unread = Math.max(0, (mailData.unread || 1) - 1); updateMailDot(); socket.emit('mail_read', { id }); }
+  renderMail();
+}
+function mailLetterHtml(l, d) {
+  const toName = l.to ? mailEsc(l.to) : '누군가 (랜덤)';
+  const fromName = l.from ? mailEsc(l.from) : '익명';
+  const canDelete = mailTab !== 'all' || d.is_gm;
+  return `<button class="mail-back" onclick="mailOpenId=null; renderMail()"><i class="fa-solid fa-chevron-left"></i> 목록으로</button>
+    <div class="mail-letter"><div class="to">To.<b>${toName}</b></div><div class="txt">${mailEsc(l.text)}</div>
+      <div class="from">From.<b>${fromName}</b></div><div class="date">${mailTime(l.at)}</div></div>
+    <div class="mail-actions"><span style="display:flex;align-items:center;gap:10px;">
+      ${canDelete ? `<button class="mail-del" onclick="deleteLetter('${l.id}')"><i class="fa-solid fa-trash-can"></i> ${mailTab === 'all' ? '편지 지우기' : '내 목록에서 지우기'}</button>` : ''}
+      ${l.anonymous ? '<span class="mail-badge">익명 편지</span>' : ''}${l.random ? '<span class="mail-badge">랜덤 편지</span>' : ''}</span>
+      ${mailTab === 'inbox' && l.from ? `<button class="btn mail-send" onclick="replyLetter(${mailEsc(JSON.stringify(l.from))})"><i class="fa-solid fa-reply"></i> 답장</button>` : ''}</div>`;
+}
+function deleteLetter(id) {
+  uiConfirm('이 편지를 지울까요?', { title: '편지 지우기', okText: '지우기', danger: true }).then(ok => {
+    if (!ok) return;
+    socket.emit('mail_delete', { id }); mailOpenId = null; renderMail();
+  });
+}
+function replyLetter(name) { mailDraft.mode = 'pick'; mailDraft.to = name; mailTab = 'write'; mailOpenId = null; renderMail(); }
+function mailComposeHtml(d) {
+  const roster = (d.roster || []).filter(n => n !== d.me);
+  const q = mailDraft.q.trim().toLowerCase();
+  const names = roster.filter(n => !q || n.toLowerCase().includes(q));
+  const pick = mailDraft.mode === 'pick';
+  return `<div class="mail-form">
+    <div><div class="mail-label">받는 사람</div>
+      <div class="mail-seg"><button class="${pick ? 'on' : ''}" onclick="mailDraft.mode='pick'; renderMail()"><i class="fa-solid fa-user"></i> 직접 고르기</button>
+        <button class="${pick ? '' : 'on'}" onclick="mailDraft.mode='random'; renderMail()"><i class="fa-solid fa-shuffle"></i> 랜덤</button></div>
+      ${pick ? `<input type="text" style="margin-top:10px" placeholder="이름 검색" value="${mailEsc(mailDraft.q)}" oninput="mailDraft.q=this.value; mailRefreshNames()" autocomplete="off">
+        <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
+        : `<div class="mail-rand" style="margin-top:10px">등록된 캐릭터 중 한 명에게 무작위로 보내요. 누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</div>`}
+    </div>
+    <div><div class="mail-label">내용</div>
+      <textarea class="mail-text" id="mailText" maxlength="2000" placeholder="편지를 써 주세요." oninput="mailDraft.text=this.value; document.getElementById('mailCount').textContent=this.value.length+' / 2000'">${mailEsc(mailDraft.text)}</textarea></div>
+    <div class="mail-foot">
+      <label class="mail-anon"><input type="checkbox" ${mailDraft.anon ? 'checked' : ''} onchange="mailDraft.anon=this.checked"> 익명으로 보내기</label>
+      <span class="mail-count" id="mailCount">${mailDraft.text.length} / 2000</span>
+      <button class="btn mail-send" id="mailSendBtn" onclick="sendLetter()"><i class="fa-solid fa-paper-plane"></i> 보내기</button>
+    </div></div>`;
+}
+function mailNamesHtml(names) {
+  if (!names.length) return '<span class="mail-me">찾는 이름이 없어요.</span>';
+  return names.map(n => `<button class="mail-name ${mailDraft.to === n ? 'on' : ''}" onclick="mailDraft.to=${mailEsc(JSON.stringify(n))}; mailRefreshNames()">${mailEsc(n)}</button>`).join('');
+}
+function mailRefreshNames() {
+  const el = document.getElementById('mailNames');
+  if (!el || !mailData) return;
+  const q = mailDraft.q.trim().toLowerCase();
+  el.innerHTML = mailNamesHtml((mailData.roster || []).filter(n => n !== mailData.me && (!q || n.toLowerCase().includes(q))));
+}
+function sendLetter() {
+  const text = (mailDraft.text || '').trim();
+  if (!text) { showShopToast('편지 내용을 써 주세요.'); return; }
+  if (mailDraft.mode === 'pick' && !mailDraft.to) { showShopToast('받는 사람을 골라 주세요.'); return; }
+  document.getElementById('mailSendBtn').disabled = true;
+  socket.emit('mail_send', { to: mailDraft.mode === 'pick' ? mailDraft.to : '', random: mailDraft.mode === 'random', anonymous: mailDraft.anon, text });
+}
 // ==================================================================
 // 채팅 검색 / 운영진 메시지 삭제
 // ==================================================================

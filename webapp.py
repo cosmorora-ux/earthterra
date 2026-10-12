@@ -24,6 +24,7 @@ import config
 import shop as shop_mod
 import notices as notices_mod
 import log_export
+import mailbox as mailbox_mod
 from battle import Battle, BattleError
 from rooms import (
     create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
@@ -32,7 +33,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-12.6"
+SERVER_BUILD = "2026-10-12.7"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2606,6 +2607,89 @@ def on_set_track_bg(data):
     room.track_bg = cfg
     save_rooms()
     broadcast_state(room)
+
+
+# ----------------------------------------------------------------------
+# 우체통 : 캐릭터끼리 편지 (모든 방 공용)
+# ----------------------------------------------------------------------
+def _mail_identity(sid):
+    """이 접속의 우체통 이름. 운영진은 "운영진", 러너는 로그인한 캐릭터 이름, 그 외는 None."""
+    info = CONNECTIONS.get(sid)
+    if info is None:
+        return None, False, None
+    room = get_room(info["room_id"])
+    if room is None:
+        return None, False, None
+    if _require_gm_or_guest_gm(sid) is not None:
+        return mailbox_mod.GM_NAME, True, room
+    nickname = (info.get("nickname") or "").strip()
+    if nickname and nickname in room.game.db.characters:
+        return nickname, False, room
+    return None, False, room
+
+
+def _mail_candidates(room):
+    # BOSS/NOVA 같은 몹 이름은 편지 받는 사람에서 뺍니다.
+    return sorted(n for n, d in room.game.db.characters.items() if (d or {}).get("role") and not config.is_boss_name(n))
+
+
+def _emit_mail_data(sid):
+    me, is_gm, room = _mail_identity(sid)
+    if room is None:
+        return
+    if me is None:
+        socketio.emit("mail_data", {"me": None, "inbox": [], "outbox": [], "unread": 0,
+                                    "roster": _mail_candidates(room)}, to=sid)
+        return
+    data = mailbox_mod.shared_mailbox().payload(me, is_gm)
+    data["roster"] = _mail_candidates(room)
+    data["is_gm"] = is_gm
+    socketio.emit("mail_data", data, to=sid)
+
+
+@socketio.on("mail_list")
+def on_mail_list(data=None):
+    _emit_mail_data(request.sid)
+
+
+@socketio.on("mail_send")
+def on_mail_send(data):
+    data = data or {}
+    me, is_gm, room = _mail_identity(request.sid)
+    if me is None:
+        emit("mail_result", {"ok": False, "message": "캐릭터로 로그인해야 편지를 보낼 수 있어요."})
+        return
+    try:
+        letter = mailbox_mod.shared_mailbox().send(
+            me, (data.get("to") or "").strip(), data.get("text"),
+            anonymous=bool(data.get("anonymous")), random_pick=bool(data.get("random")),
+            candidates=_mail_candidates(room),
+        )
+    except mailbox_mod.MailError as e:
+        emit("mail_result", {"ok": False, "message": str(e)})
+        return
+    msg = "랜덤으로 누군가에게 편지를 보냈어요." if letter["random"] else f"{letter['to']}에게 편지를 보냈어요."
+    emit("mail_result", {"ok": True, "message": msg})
+    _emit_mail_data(request.sid)
+    # 받는 사람이 지금 접속해 있으면(어느 방이든) 바로 알려줍니다.
+    for sid, info in list(CONNECTIONS.items()):
+        if sid != request.sid and (info.get("nickname") or "").strip() == letter["to"]:
+            socketio.emit("mail_new", {"from": None if letter["anonymous"] else letter["from"]}, to=sid)
+            _emit_mail_data(sid)
+
+
+@socketio.on("mail_read")
+def on_mail_read(data):
+    me, is_gm, room = _mail_identity(request.sid)
+    if me and mailbox_mod.shared_mailbox().mark_read((data or {}).get("id"), me):
+        _emit_mail_data(request.sid)
+
+
+@socketio.on("mail_delete")
+def on_mail_delete(data):
+    me, is_gm, room = _mail_identity(request.sid)
+    if me and mailbox_mod.shared_mailbox().delete((data or {}).get("id"), me, is_gm=is_gm):
+        _emit_mail_data(request.sid)
 
 
 SCENE_WEATHERS = ("none", "snow", "blizzard", "rain", "storm", "lightning", "fog", "sakura", "leaves", "dandelion",
