@@ -240,7 +240,7 @@
   .ui-sec:first-child { margin-top:2px; }
   .ui-sec em { font-style:normal; font-weight:400; font-size:12px; color: var(--muted); }
   /* 접속 상태 원 : 접속 중이면 포인트 컬러 점이 은은하게 숨 쉬듯 빛나고, 아니면 빈 회색 원 */
-  .ui-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; border:1.5px solid #46464c; box-sizing:border-box; }
+  .ui-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; background:#3a3a40; }
   .userinfo-row.is-online .ui-dot { background: var(--point); border:none; animation: uiGlow 2.6s ease-in-out infinite; }
   @keyframes uiGlow {
     0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--point) 0%, transparent), 0 0 4px 1px color-mix(in srgb, var(--point) 55%, transparent); }
@@ -1153,6 +1153,8 @@
   input, textarea, select, button { letter-spacing:inherit; }
   .modal-box .modal-title { font-size:19px; line-height:1.3; letter-spacing:-0.02em; }
   .idc-title { font-family: var(--font-title); font-weight:400; line-height:1.1; letter-spacing:0; }
+  /* 팝업 페이지 제목 (ID card · User list · Shop) */
+  .modal-box .modal-title.page-title { font-family: var(--font-title); font-weight:400; font-size:28px; line-height:1.1; letter-spacing:0; }
   .mypage-head .mypage-name { line-height:1.2; letter-spacing:-0.025em; }
   .topbar.v2 .seg { line-height:1.2; letter-spacing:-0.025em; }
   .char-card .cname, .char-card.v2 .cname { line-height:1.25; letter-spacing:-0.02em; }
@@ -1323,7 +1325,7 @@
 <div id="shopModal" class="modal-overlay" onclick="if(event.target===this) closeShop()">
   <div class="modal-box shop-modal panel">
     <div class="shop-head">
-      <div class="modal-title">상점</div>
+      <div class="modal-title page-title">Shop</div>
       <div class="shop-wallet" id="shopWallet"></div>
       <button class="shop-close" onclick="closeShop()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </div>
@@ -1380,7 +1382,7 @@
 <div id="userInfoModal" class="modal-overlay">
   <div class="modal-box userinfo-modal panel">
     <div class="ui-head">
-      <div class="modal-title" style="margin:0;">유저 접속정보</div>
+      <div class="modal-title page-title" style="margin:0;">User list</div>
       <span class="ui-count" id="userInfoCount"></span>
       <button class="ui-close" onclick="closeUserInfoPanel()"><i class="fa-solid fa-xmark"></i></button>
     </div>
