@@ -1311,6 +1311,32 @@
     .char-card.v2 { padding:10px; }
     .char-card.v2 .cname { font-size:15px; }
     .char-card.v2 .crole { font-size:13px; margin-left:4px; }
+    .char-card.v2 .row1 > div:first-child { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    /* 한 화면에 다 보이도록 : 카드들이 남는 높이를 똑같이 나눠 갖고, 초상화는 그 높이에 맞춰 줄어듭니다 */
+    .teams-col:has(> .round-track) > .teams-col-scroll { overflow:hidden; }
+    .teams-col:has(> .round-track) .main-grid,
+    .teams-col:has(> .round-track) .main-grid > div,
+    .teams-col:has(> .round-track) .teams-columns { flex:1 1 0; min-height:0; }
+    .teams-col:has(> .round-track) .team-block { min-height:0; }
+    .teams-col:has(> .round-track) .team-block .card-grid { flex:1 1 0; min-height:0; grid-auto-rows:minmax(0,1fr); gap:8px; }
+    .main-grid:not(.with-grid-map) .team-block h2, .member-top { height:28px; margin-bottom:6px; }
+    .teams-col:has(> .round-track) .char-card.v2 { min-height:0; overflow:hidden; padding:9px 10px; }
+    .teams-col:has(> .round-track) .char-card.v2 .portrait-row { flex:1 1 0; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 34px;
+      grid-template-rows:minmax(0,1fr) auto; gap:6px 6px; margin-top:6px; }
+    .teams-col:has(> .round-track) .char-card.v2 .portrait-side { display:contents; }
+    .teams-col:has(> .round-track) .char-card.v2 .portrait-row .portrait { grid-row:1; grid-column:1; width:auto !important; height:100% !important;
+      max-width:100%; min-width:0 !important; min-height:0 !important; max-height:none !important; aspect-ratio:1/1; justify-self:start; }
+    .teams-col:has(> .round-track) .char-card.v2 .cbadges-row { grid-row:1; grid-column:2; width:auto; flex-direction:column; align-items:center; gap:4px; }
+    .teams-col:has(> .round-track) .char-card.v2 .cbadges { align-items:center; font-size:12px; gap:4px; }
+    .teams-col:has(> .round-track) .char-card.v2 .hpbar-wrap { grid-row:2; grid-column:1 / -1; flex-direction:row; align-items:center; gap:8px; margin-top:0; }
+    .teams-col:has(> .round-track) .char-card.v2 .hpbar-wrap .hpnum { order:2; font-size:12.5px; }
+    .teams-col:has(> .round-track) .char-card.v2 .hpbar-wrap .hpbar-track { flex:1; }
+    .teams-col > .round-track { height:60px !important; }
+    .rt-round { min-width:60px; }
+    .rt-round .n { font-size:24px; }
+    .rt-round .ph { display:none; }
+    .teams-col { gap:10px; }
+    .action-bar-bottom { padding:10px; gap:8px; }
     .teams-col > .round-track { height:92px; }
     .teams-col:has(> .round-track) .char-card.v2 .portrait { min-width:72px; min-height:72px; }
   }
