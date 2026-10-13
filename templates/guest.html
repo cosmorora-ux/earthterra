@@ -3029,6 +3029,8 @@
   .logblock.moves .mv-cells { color: var(--muted); font-variant-numeric: tabular-nums; }
   .lg-crit { display:inline-flex; align-items:center; gap:4px; margin-left:8px; font-size:.84em; font-weight:700; color:#ffd27a; white-space:nowrap; }
   .lg-crit i { font-size:.85em; }
+  /* 로그창 피해 정산 묶음 : 정산 1회 = 한 줄(공격자 · 방어 · 피해 · HP) */
+  .logblock.settle .st-atk { display:inline-block; min-width:4.5em; margin-right:10px; color:#d7d8de; font-weight:600; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -5420,7 +5422,7 @@ function mergeCritLines(lines) {
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i], n = lines[i + 1];
     if (l.tag === 'crit' && /^\s*크리티컬!?\s*$/.test(l.text || '') && n && (n.tag === 'damage' || n.tag === 'heal')) {
-      out.push({ ...n, _crit: true }); i++; continue;
+      out.push({ ...n, text: typeof n.text === 'string' ? n.text.replace(/\s*\(강제 크리티컬 적용\)/, '') : n.text, _crit: true }); i++; continue;
     }
     if (typeof l.text === 'string' && /\s*\(강제 크리티컬 적용\)/.test(l.text)) {
       out.push({ ...l, text: l.text.replace(/\s*\(강제 크리티컬 적용\)/, ''), _crit: true }); continue;
@@ -5450,8 +5452,66 @@ function tidySkillSection(section) {
   });
   return out;
 }
+// 피해 정산 : "[피해 정산] 공격자 → 대상" + 방어 값 · 피해량 · HP 줄들을 정산 1회 = 한 줄로 줄이고,
+// 같은 대상의 정산이 연달아 나오면(바로 앞의 "대상 방어 정산" 줄 포함) 한 블록으로 묶습니다.
+const LOG_SETTLE_RX = /^\[피해 정산\]\s*(.+?) → (.+)$/;
+function parseSettleSection(sec) {
+  const m = typeof sec[0].text === 'string' && sec[0].tag === 'action' && sec[0].text.match(LOG_SETTLE_RX);
+  if (!m) return null;
+  const row = { atk: m[1], tgt: m[2], def: null, dmg: null, hp: null, hpName: null, defCrit: false, notes: [] };
+  sec.slice(1).forEach(l => {
+    const t = typeof l.text === 'string' ? l.text : '';
+    let k;
+    if (l.tag === 'defend_value' && (k = t.match(/방어 값 (\d+)/))) row.def = k[1];
+    else if (l.tag === 'damage' && (k = t.match(/^피해량 (\d+)/))) row.dmg = k[1];
+    else if (l.tag === 'hp' && (k = t.match(/^(.+?) HP (\d+)\s*→\s*(\d+)/))) { row.hpName = k[1]; row.hp = [+k[2], +k[3]]; }
+    else if (l.tag === 'crit' && /방어 크리티컬/.test(t)) row.defCrit = true;
+    else row.notes.push(l);
+  });
+  return row;
+}
+function combineSettlements(sections) {
+  const out = [];
+  sections.forEach(sec => {
+    const row = parseSettleSection(sec);
+    if (!row) { out.push(sec); return; }
+    const prev = out[out.length - 1];
+    if (prev && prev.settle && prev.settle.tgt === row.tgt) { prev.settle.rows.push(row); return; }
+    // 바로 앞이 "대상 방어 정산" 한 줄짜리 블록이면 그 줄을 머리로 씁니다.
+    if (Array.isArray(prev) && prev.length === 1 && prev[0].text === `${row.tgt} 방어 정산`) {
+      out[out.length - 1] = { settle: { tgt: row.tgt, head: prev[0].text, rows: [row] } };
+      return;
+    }
+    out.push({ settle: { tgt: row.tgt, head: null, rows: [row] } });
+  });
+  return out;
+}
+function formatSettleGroupHtml(g) {
+  const nm = t => shopEsc(siteLabelize(t));
+  const head = `<div class="logline group-start tag-defend"><span class="li"><i class="fa-solid fa-shield-halved"></i></span>`
+    + `<span class="lt">${g.head ? nm(g.head) : `${nm(g.tgt)} 피해 정산`}${g.rows.length > 1 ? ` <span class="lg-lab">${g.rows.length}회</span>` : ''}</span></div>`;
+  const rows = g.rows.map(r => {
+    const parts = [];
+    if (r.def != null) parts.push(`방어 <b class="lg-num">${r.def}</b>`);
+    if (r.dmg != null) parts.push(`피해 <b class="lg-num">${r.dmg}</b>`);
+    let hp = '';
+    if (r.hp) {
+      const d = r.hp[1] - r.hp[0];
+      hp = ` <span class="lg-hp">${r.hpName && r.hpName !== r.tgt ? nm(r.hpName) + ' ' : ''}${r.hp[0]}<i>→</i><b>${r.hp[1]}</b>${d ? `<em class="down">${d}</em>` : ''}</span>`;
+    }
+    const crit = r.defCrit ? '<span class="lg-crit"><i class="fa-solid fa-star"></i>방어 크리티컬</span>' : '';
+    const notes = [...r.notes];
+    // 회피처럼 수치 줄이 없으면 첫 안내를 그 줄 내용으로 씁니다.
+    const body = parts.length ? parts.join(' · ') : (notes.length ? logLineParts(siteLabelize(notes.shift().text), 'heal').html : '');
+    return `<div class="logline tag-damage st-row"><span class="li"><i class="fa-solid fa-burst"></i></span>`
+      + `<span class="lt"><span class="st-atk">${nm(r.atk)}</span>${body}${hp}${crit}</span></div>`
+      + notes.map(l => formatLogLineHtml(l, false, false)).join('');
+  }).join('');
+  return `<div class="logblock settle">${head}${rows}</div>`;
+}
 function formatLogHtml(lines) {
-  return splitLogIntoSections(groupPhaseMoves(mergeLogRuns(mergeCritLines(dropFirstTeamLines(lines || []))))).map(section => {
+  return combineSettlements(splitLogIntoSections(groupPhaseMoves(mergeLogRuns(mergeCritLines(dropFirstTeamLines(lines || [])))))).map(section => {
+    if (section.settle) return formatSettleGroupHtml(section.settle);
     if (logSkillHead(section[0]) && section.length > 1) section = tidySkillSection(section);
     const head = section[0];
     if (head.tag === 'movegroup') return formatMoveGroupHtml(head);
@@ -5547,8 +5607,8 @@ function revealNewLogLines(view, fullLog, logTotal) {
   }
   if (logTotal === already) return;  // 새 줄 없음
   const newLines = fullLog.slice(already - sliceStart);
-  // 이동 줄은 단계 위쪽 이동 블록에 합쳐져야 하므로, 새 이동이 있으면 로그 전체를 다시 그립니다.
-  if (newLines.some(isLogMoveLine)) { renderCurrentLog(); return; }
+  // 이동 줄(단계 위쪽 이동 블록)과 피해 정산(같은 대상 정산 묶음)은 앞 블록에 합쳐져야 하므로, 있으면 로그 전체를 다시 그립니다.
+  if (newLines.some(l => isLogMoveLine(l) || (typeof l.text === 'string' && LOG_SETTLE_RX.test(l.text)))) { renderCurrentLog(); return; }
   logSeenTotal[view] = logTotal;
   logRevealQueue[view].push(...splitLogIntoSections(newLines));
   processLogRevealQueue(view);
