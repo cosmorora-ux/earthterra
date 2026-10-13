@@ -28,6 +28,7 @@ import mailbox as mailbox_mod
 import dorm as dorm_mod
 import world as world_mod
 from battle import Battle, BattleError
+from database import CharacterDatabase, shared_db
 from rooms import (
     create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
     ROOMS, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES, ensure_lounge,
@@ -35,7 +36,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.11"
+SERVER_BUILD = "2026-10-13.12"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -1698,51 +1699,10 @@ def on_preview_teams(data):
     broadcast_state(room)
 
 
-@socketio.on("start_battle")
-def on_start_battle(data):
-    room = _require_gm_or_guest_gm(request.sid)
-    if room is None:
-        emit("action_error", {"message": "권한이 없습니다."})
-        return
-    if room.battle_type == "lounge":
-        emit("action_error", {"message": "일반 룸에서는 전투를 할 수 없어요."})
-        return
-    forced_first_team = Battle.TEAM_A if room.battle_type == "siege" else None
-    formula_overrides = config.load_profile_overrides(room.battle_type)
-    site_auto_defense = room.battle_type in ("siege", "mass_raid")
-    grid_size = GRID_SIZES.get(room.battle_type)
-    is_grid_battle = grid_size is not None
-    grid_width = grid_size
-    grid_height = grid_size
-
-    team_a = data.get("team_a", [])
-    team_b = data.get("team_b", [])
-    if is_grid_battle and len(team_a) + len(team_b) > grid_width * grid_height:
-        emit("action_error", {"message": f"격자 칸({grid_width}×{grid_height})보다 인원이 많습니다."})
-        return
-
-    _archive_battle_logs(room)
-    try:
-        room.game.start_battle(
-            team_a, team_b,
-            forced_first_team=forced_first_team,
-            formula_overrides=formula_overrides,
-            site_auto_defense=site_auto_defense,
-            grid_width=grid_width, grid_height=grid_height,
-            alternate_first_team=(room.battle_type == "pvp"),
-        )
-    except BattleError as e:
-        emit("action_error", {"message": str(e)})
-        return
-    if room.game.battle is not None:
-        room.game.battle._started_label = time.strftime("%m-%d %H:%M")
-
-    # 전투가 방금 막 만들어져서 팀이 정해졌으므로, 이미 접속해 있던 소켓들의 아군 회의
-    # 채널 소속도 다시 계산해줍니다(전투 시작 전에는 팀이 없어서 못 넣었을 것이므로).
-    for sid, info in CONNECTIONS.items():
-        if info.get("room_id") == room.id:
-            _sync_team_channel(room, sid, info.get("nickname"), info.get("role"))
-
+def _apply_battle_rules(room, formula_overrides, grid_width, grid_height):
+    """전투가 막 만들어진 직후, 전투 유형별 행동 목록 · 격자 배치 · 방 상태 초기화를 적용합니다
+    (전투 시작과 모의전투 데모 방 만들기가 함께 씁니다)."""
+    is_grid_battle = grid_width is not None
     # 공성전 거점 / 마스 레이드 적군(2팀) : 방어가 자동이라 역할과 무관하게 "방어 정산"/"공격"/"힐"만
     # 직접 선택합니다. 포지션이 없으므로 공격/힐 모두 치명타가 발생할 수 있습니다.
     if room.battle_type in ("siege", "mass_raid"):
@@ -1788,6 +1748,54 @@ def on_start_battle(data):
     room.telegraph_round_no = None
     room.telegraph_damage_round_no = None
     room.preview_teams = None
+
+
+@socketio.on("start_battle")
+def on_start_battle(data):
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    if room.battle_type == "lounge":
+        emit("action_error", {"message": "일반 룸에서는 전투를 할 수 없어요."})
+        return
+    forced_first_team = Battle.TEAM_A if room.battle_type == "siege" else None
+    formula_overrides = config.load_profile_overrides(room.battle_type)
+    site_auto_defense = room.battle_type in ("siege", "mass_raid")
+    grid_size = GRID_SIZES.get(room.battle_type)
+    is_grid_battle = grid_size is not None
+    grid_width = grid_size
+    grid_height = grid_size
+
+    team_a = data.get("team_a", [])
+    team_b = data.get("team_b", [])
+    if is_grid_battle and len(team_a) + len(team_b) > grid_width * grid_height:
+        emit("action_error", {"message": f"격자 칸({grid_width}×{grid_height})보다 인원이 많습니다."})
+        return
+
+    _archive_battle_logs(room)
+    try:
+        room.game.start_battle(
+            team_a, team_b,
+            forced_first_team=forced_first_team,
+            formula_overrides=formula_overrides,
+            site_auto_defense=site_auto_defense,
+            grid_width=grid_width, grid_height=grid_height,
+            alternate_first_team=(room.battle_type == "pvp"),
+        )
+    except BattleError as e:
+        emit("action_error", {"message": str(e)})
+        return
+    if room.game.battle is not None:
+        room.game.battle._started_label = time.strftime("%m-%d %H:%M")
+
+    # 전투가 방금 막 만들어져서 팀이 정해졌으므로, 이미 접속해 있던 소켓들의 아군 회의
+    # 채널 소속도 다시 계산해줍니다(전투 시작 전에는 팀이 없어서 못 넣었을 것이므로).
+    for sid, info in CONNECTIONS.items():
+        if info.get("room_id") == room.id:
+            _sync_team_channel(room, sid, info.get("nickname"), info.get("role"))
+
+    _apply_battle_rules(room, formula_overrides, grid_width, grid_height)
 
     # 선후공은 이미 결정됐지만(room.game.start_battle 내부), 화면에는 "다이스 굴리는 중"
     # 서스펜스를 잠깐 보여준 뒤에 결과와 함께 라운드 제한시간을 시작시킵니다.
@@ -3185,10 +3193,205 @@ def _runtime_save_loop():
             print(f"[runtime save] 실패: {e}")
 
 
+# ----------------------------------------------------------------------
+# 모의전투 데모 방 : 지금까지의 화면 디자인(지도 표시 · 전조 · 로그 · 스킬 컷인 · 채팅 카드)을
+# 한눈에 볼 수 있도록, 가상의 러너와 NOVA로 마스 레이드를 1라운드 반 진행해 둔 방을 만듭니다.
+# 데모 캐릭터는 이 방 전투 안에만 있고 캐릭터 목록(characters.json)에는 저장하지 않습니다.
+# ----------------------------------------------------------------------
+DEMO_ROOM_NAME = "모의전투 · 디자인 미리보기"
+
+_DEMO_RUNNERS = [
+    # 이름, 역할, 스킬, (체력, 공격, 방어, 이능, 정신, 민첩, 행운), 컷인 (모션, 제목, 대사, 본문)
+    ("레아", "가디언", "차폐", (5, 2, 3, 3, 4, 2, 3), ("shutter", "PRISM WALL", "아무도 못 지나가.", "빛의 장벽이 아군을 감쌉니다.")),
+    ("카이", "가디언", "편광", (5, 2, 3, 2, 3, 3, 2), ("impact", "POLARIZE", "전부 나한테 와.", "흩어진 공격이 한 점으로 모입니다.")),
+    ("세린", "스트라이커", "붕괴", (3, 3, 1, 5, 3, 4, 4), ("slash", "COLLAPSE", "무너져라.", "공간이 갈라지며 두 번의 일격이 떨어집니다.")),
+    ("도윤", "스트라이커", "방출", (3, 3, 1, 4, 3, 3, 3), ("burst", "EMISSION", "남김없이 태운다.", "모든 적에게 빛이 쏟아집니다.")),
+    ("하루", "스트라이커", "붕괴", (3, 3, 2, 4, 2, 5, 5), ("glitch", "BREAK CODE", "버그는 지운다.", "")),
+    ("미오", "메딕", "환류", (4, 1, 2, 3, 5, 2, 4), ("rise", "REFLUX", "흘러간 만큼 돌려줄게.", "생명이 아군에게 되돌아갑니다.")),
+    ("유나", "메딕", "복원", (4, 1, 2, 3, 5, 3, 3), ("fade", "RESTORE", "다시 일어나.", "따뜻한 빛이 전장을 덮습니다.")),
+    ("한결", "가디언", None, (5, 2, 3, 2, 3, 1, 2), None),
+    ("리안", "스트라이커", None, (3, 3, 1, 3, 2, 5, 3), None),
+    ("시온", "메딕", None, (4, 1, 2, 2, 4, 2, 3), None),
+    ("이든", "스트라이커", None, (3, 3, 1, 3, 2, 3, 2), None),
+    ("노아", "가디언", None, (4, 2, 3, 2, 3, 2, 1), None),
+]
+_DEMO_COLORS = ["#7aa2ff", "#b98cff", "#ff8fa3", "#ffb86b", "#6fe3c1", "#9ad0ff", "#f5d76e",
+                "#c0c4cc", "#ff9e7a", "#8fdca8", "#d7a6ff", "#a0b4c8"]
+
+
+class _DemoCharacterDB(CharacterDatabase):
+    """데모 방 전용 캐릭터 목록 - 파일을 읽거나 쓰지 않습니다."""
+    def __init__(self):
+        self.path = None
+        self.characters = {}
+
+    def load(self):
+        pass
+
+    def save(self):
+        pass
+
+
+def _demo_character_db():
+    db = _DemoCharacterDB()
+    for i, (name, role, skill, st, fx) in enumerate(_DEMO_RUNNERS):
+        entry = {"role": role, "stats": dict(zip(config.STAT_KEYS, st)), "color": _DEMO_COLORS[i % len(_DEMO_COLORS)]}
+        if skill:
+            entry["skill"] = skill
+        if fx:
+            motion, title, catch, body = fx
+            entry.update({"skill_log_type": "text", "cutin_motion": motion, "skill_log_title": title,
+                          "catchphrase": catch, "skill_log_text": body})
+        db.characters[name] = entry
+    db.characters["NOVA"] = {"role": "스트라이커", "stats": dict(zip(config.STAT_KEYS, (5, 3, 3, 5, 5, 2, 3)))}
+    return db
+
+
+def _demo_chat(room, nickname, text, category="player", role="guest"):
+    entry = {"time": time.strftime("%H:%M:%S"), "nickname": nickname, "role": role, "category": category, "text": text}
+    room.chat_log.append(_with_chat_id(entry))
+
+
+def _demo_reveal_telegraph(room, battle, cells):
+    room.telegraph_cells = [list(c) for c in cells]
+    room.telegraph_round_no = battle.round_no
+    text = f"전조 공개 : {len(cells)}칸에 곧 피해가 발생합니다."
+    battle.log_event(text, tag="system")
+    post_system_chat(room, text, nickname="전조")
+
+
+def _demo_act(room, battle, action_type, payload, problems):
+    """battle_action 처리와 같은 순서로 행동 하나를 적용합니다(권한 확인만 생략)."""
+    actor_field = ACTOR_FIELD.get(action_type)
+    actor_name = payload.get(actor_field) if actor_field else None
+    actor_char = battle.find_character(actor_name) if actor_name else None
+    try:
+        ACTION_HANDLERS[action_type](battle, payload)
+    except BattleError as e:
+        problems.append(f"{action_type} {payload}: {e}")
+        return
+    emit_action_sfx(room, actor_char.name if actor_char else actor_name, action_type)
+    emit_attack_lines(room, action_type, payload)
+    _maybe_relocate_boss(battle, actor_char)
+    _maybe_resolve_telegraph_damage(room, battle)
+
+
+def build_demo_room():
+    """모의전투 데모 방을 새로 만들고, 행동을 미리 진행해 둔 뒤 방을 돌려줍니다."""
+    room = create_room("mass_raid", name=DEMO_ROOM_NAME)
+    formula_overrides = config.load_profile_overrides(room.battle_type)
+    size = GRID_SIZES["mass_raid"]
+    room.game.db = _demo_character_db()
+    problems = []
+    try:
+        names = [r[0] for r in _DEMO_RUNNERS]
+        room.game.start_battle(
+            names, ["NOVA"], forced_first_team=Battle.TEAM_A, formula_overrides=formula_overrides,
+            site_auto_defense=True, grid_width=size, grid_height=size,
+        )
+        battle = room.game.battle
+        battle._started_label = time.strftime("%m-%d %H:%M")
+        _apply_battle_rules(room, formula_overrides, size, size)
+
+        # 자리 : NOVA는 가운데, 러너는 주변에 흩어 두고 한 명은 지도 구석(가장자리 테두리 확인용)에.
+        for c in battle.team_b:
+            ox, oy = config.BOSS_SECTION_OFFSETS.get(c.boss_section, (0, 0))
+            c.grid_pos = (6 + ox, 6 + oy)
+        spots = {"레아": (5, 5), "카이": (8, 6), "세린": (4, 7), "도윤": (9, 9), "하루": (6, 9),
+                 "미오": (3, 4), "유나": (10, 4), "한결": (5, 9), "리안": (8, 3), "시온": (2, 10),
+                 "이든": (11, 10), "노아": (0, 13)}
+        for c in battle.team_a:
+            c.grid_pos = spots[c.name]
+
+        # 장면용 상태 : 몇 명은 이미 다친 상태로 시작합니다(HP 막대 색 · 로그의 HP 변화 확인용).
+        for name, ratio in (("하루", 0.5), ("노아", 0.05), ("이든", 0.4), ("세린", 0.7)):
+            ch = battle.find_character(name)
+            if ch is not None:
+                ch.current_hp = max(1, int(ch.max_hp * ratio))
+
+        _demo_chat(room, "GM", "모의전투를 시작합니다. 지도 · 로그 · 채팅의 표시를 확인하는 데모 방이에요.",
+                   category="operator", role="gm")
+        post_system_chat(room, "전투가 시작됩니다. 선공 팀은 러너 팀입니다.\n제한시간 내 행동해 주세요.", nickname="GM")
+
+        # ---- 1라운드 : 러너 선공 ----
+        _demo_reveal_telegraph(room, battle, [(x, 9) for x in range(3, 11)] + [(4, 10), (5, 10)])
+        _demo_chat(room, "하루", "아래 줄 전조 떴어요, 빠질게요!")
+        act = lambda t, p: _demo_act(room, battle, t, p, problems)
+        act("move", {"name": "하루", "x": 6, "y": 11})
+        act("move", {"name": "세린", "x": 4, "y": 6})
+        act("move", {"name": "리안", "x": 8, "y": 4})
+        act("shield", {"name": "레아", "target": "카이"})
+        act("command", {"guardian": "카이", "target": "NOVA-NW"})
+        act("collapse", {"attacker": "세린", "target": "NOVA-SW"})
+        act("emission", {"attacker": "도윤"})
+        act("attack", {"attacker": "하루", "target": "NOVA-SE"})
+        act("reflux", {"name": "미오", "targets": ["세린", "도윤", "하루"]})
+        act("restore", {"name": "유나", "target": "하루"})
+        act("guard", {"tanker": "한결", "target": "시온"})
+        act("attack", {"attacker": "리안", "target": "NOVA-NE"})
+        act("heal", {"healer": "시온", "target": "이든"})
+        act("defend", {"tanker": "이든", "target": "이든"})
+        act("timeout", {"name": "노아"})
+        _demo_chat(room, "세린", "붕괴 들어갔어요 👍")
+        act("advance_turn", {})
+        _maybe_resolve_telegraph_damage(room, battle)
+
+        # ---- 1라운드 : NOVA 후공 ----
+        act("defense_settle", {"name": "NOVA-NW"})
+        act("attack", {"attacker": "NOVA-NW", "target": "카이"})
+        act("attack", {"attacker": "NOVA-NE", "target": "이든"})
+        act("attack", {"attacker": "NOVA-SW", "target": "노아"})
+        act("heal", {"healer": "NOVA-SE", "target": "NOVA-SE"})
+        act("advance_turn", {})
+
+        # ---- 2라운드 : 진행 중인 상태로 남겨 둡니다(이동 표시 · 행동 완료 표시 · 미행동자 확인용) ----
+        _demo_reveal_telegraph(room, battle, [(x, y) for x in (9, 10, 11) for y in (2, 3, 4)] + [(5, 4), (6, 4), (7, 4)])
+        act("move", {"name": "유나", "x": 12, "y": 4})
+        act("move", {"name": "리안", "x": 8, "y": 5})
+        act("move", {"name": "레아", "x": 4, "y": 5})
+        act("polarize", {"name": "카이"})
+        act("attack", {"attacker": "리안", "target": "NOVA-NE"})
+        act("swap", {"medic": "미오", "target": "레아"})
+        _demo_chat(room, "카이", "편광 켰어요. 이번 턴은 저한테 다 몰려요.")
+        _demo_chat(room, "관전자", "와 컷인 멋있다", category="spectator")
+    finally:
+        # 이후 이 방에서 캐릭터를 고치거나 새 전투를 시작하면 평소처럼 공용 캐릭터 목록을 씁니다.
+        room.game.db = shared_db()
+    if problems:
+        print("[demo room] 건너뛴 행동:\n  " + "\n  ".join(problems))
+    sync_round_timer(room)
+    mark_runtime_dirty()
+    return room, problems
+
+
+@app.route("/create_demo_room", methods=["POST"])
+def create_demo_room_route():
+    room, _ = build_demo_room()
+    return redirect(url_for("guest_page", room_id=room.id, key=room.guest_key))
+
+
+def _ensure_demo_room_once():
+    """이 기능이 들어간 뒤 서버를 처음 켤 때 한 번만 데모 방을 만들어 둡니다(지워도 다시 생기지 않습니다)."""
+    if SITE_SETTINGS.get("demo_room_created"):
+        return
+    try:
+        build_demo_room()
+    except Exception as e:
+        print(f"[demo room] 만들지 못했습니다: {e}")
+        return
+    SITE_SETTINGS["demo_room_created"] = True
+    try:
+        with open(SITE_SETTINGS_PATH, "w", encoding="utf-8") as f:
+            json.dump(SITE_SETTINGS, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass
+
+
 if __name__ == "__main__":
     load_rooms()
     ensure_lounge()
     load_runtime()
+    _ensure_demo_room_once()
     socketio.start_background_task(_round_reminder_loop)
     socketio.start_background_task(_runtime_save_loop)
     port = int(os.environ.get("PORT", 5000))

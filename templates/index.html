@@ -173,6 +173,13 @@
   .field { background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.08); border-radius:12px; }
   .field:focus { border-color: rgba(var(--point-rgb), .7); box-shadow:0 0 0 3px rgba(var(--point-rgb), .14); background: rgba(0,0,0,.35); }
   @media (prefers-reduced-motion: reduce) { .bg .orbit, .room-card { animation:none; } }
+  .demo-row { display:flex; align-items:center; gap:14px; margin-top:14px; padding:14px 16px; border-radius:16px;
+    border:1px dashed rgba(255,255,255,.12); background: rgba(255,255,255,.02); }
+  .demo-row .demo-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .demo-row .demo-txt b { font-size:14px; font-weight:700; }
+  .demo-row .demo-txt span { font-size:12.5px; color: var(--muted); line-height:1.5; }
+  .demo-row .btn { flex:none; }
+  @media (max-width:560px) { .demo-row { flex-direction:column; align-items:stretch; } }
 </style>
 </head>
 <body>
@@ -229,6 +236,10 @@
         </label>
       </div>
       <div class="create-row"><button type="submit" class="btn primary"><i class="fa-solid fa-plus"></i> 방 만들기</button></div>
+    </form>
+    <form method="post" action="/create_demo_room" class="demo-row">
+      <div class="demo-txt"><b>모의전투 미리보기</b><span>가상의 러너와 NOVA로 1라운드 반을 진행해 둔 마스 레이드 방을 만들어요. 지도 · 전조 · 로그 · 스킬 컷인 표시를 한 번에 확인할 수 있어요.</span></div>
+      <button type="submit" class="btn"><i class="fa-solid fa-flask"></i> 데모 방 만들기</button>
     </form>
   </div>
 </div>

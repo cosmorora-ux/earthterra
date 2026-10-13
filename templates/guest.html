@@ -2997,14 +2997,36 @@
   .sr-play i { font-size:9px; color: var(--point); }
   .skill-rec:hover .sr-play { background: rgba(var(--point-rgb), .3); }
 
-  /* 격자 : 행동 완료 = 흐리게 + 모서리 ✓, 이동 완료(행동 대기) = 모서리 작은 삼각형 */
-  .gmap .gcell.acted { filter: grayscale(.6) brightness(.7); }
-  .gmap .gcell.acted::after { content:"✓"; position:absolute; top:1px; right:2px; z-index:9; font-size:10px; line-height:1; font-weight:800; color:#fff; opacity:.9; text-shadow:0 1px 2px rgba(0,0,0,.8); }
+  /* 격자 : 내 팀 차례 + 행동 전 = 샤인(빛이 천천히 훑고 지나감), 행동을 마치면 꺼짐. 이동 완료(행동 대기) = 모서리 작은 삼각형 */
+  .gmap .gcell.ready::before { content:""; position:absolute; inset:0; z-index:7; pointer-events:none;
+    background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.32) 50%, transparent 62%) no-repeat; background-size:260% 100%;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); animation: gReadyShine 2.6s ease-in-out infinite; }
+  @keyframes gReadyShine { 0% { background-position:160% 0; } 55%, 100% { background-position:-60% 0; } }
+  @media (prefers-reduced-motion: reduce) { .gmap .gcell.ready::before { animation:none; background:none; } }
   .gmap .gcell.moved::after { content:""; position:absolute; top:0; right:0; z-index:9; width:0; height:0;
     border-style:solid; border-width:0 7px 7px 0; border-color:transparent var(--point) transparent transparent; }
   /* 전조 칸 위에 캐릭터가 있어도 줄무늬가 보이게 */
   .gmap td[style*="background-image"] .gcell .gsel:not(.tgt) { background: repeating-linear-gradient(135deg, rgba(255,176,32,.32) 0 3px, transparent 3px 9px); }
-  #floatTip { white-space:pre-line; }
+  /* 격자 칸 툴팁 : 머리(이름 · 역할) / HP 막대 / 항목별 줄 / 알림 줄로 나눠 읽기 쉽게 */
+  #floatTip.rich { padding:0; min-width:210px; max-width:280px; font-size:13px; line-height:1.4; overflow:hidden; }
+  .tt-head { display:flex; align-items:baseline; gap:8px; padding:10px 12px 8px; }
+  .tt-head b { font-size:15px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tt-head span { color: var(--muted); font-size:12px; white-space:nowrap; }
+  .tt-head .tt-pos { margin-left:auto; font-variant-numeric: tabular-nums; }
+  .tt-hp { padding:0 12px 10px; }
+  .tt-hp .bar { height:4px; border-radius:2px; background:rgba(255,255,255,.1); overflow:hidden; }
+  .tt-hp .bar i { display:block; height:100%; background:#fff; }
+  .tt-hp .bar i.mid { background:#f5a524; } .tt-hp .bar i.low { background: var(--accent-red); }
+  .tt-hp .num { display:flex; justify-content:space-between; margin-top:5px; font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tt-hp .num b { color:#fff; font-weight:700; }
+  .tt-sec { border-top:1px solid rgba(255,255,255,.07); padding:8px 12px; }
+  .tt-sec .k { font-size:11px; font-weight:700; letter-spacing:.08em; color: var(--muted); margin-bottom:5px; }
+  .tt-tags { display:flex; flex-wrap:wrap; gap:4px; }
+  .tt-tags span { padding:2px 7px; border-radius:6px; background:rgba(255,255,255,.07); color:#e6e7ea; font-size:12px; white-space:nowrap; }
+  .tt-note { display:flex; align-items:center; gap:7px; border-top:1px solid rgba(255,255,255,.07); padding:7px 12px; font-size:12.5px; color:#d7d8de; }
+  .tt-note i { width:12px; text-align:center; font-size:11px; color: var(--muted); }
+  .tt-note.warn { color:#ffc861; background:rgba(255,176,32,.08); } .tt-note.warn i { color:#ffb020; }
+  .tt-note.bad { color:#fff; font-weight:700; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -4107,7 +4129,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.11";
+const EXPECTED_SERVER_BUILD = "2026-10-13.12";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -4759,18 +4781,23 @@ let telegraphRevealedCells = new Set();
 
 // 격자 칸 툴팁 : 이름 · 포지션 · 팀 / 체력 · 위치 / 이번 라운드 상태 / 걸린 효과 / 전조 · 범위
 function gridCellTip(c, x, y, key, telKeys, rangeCells, rangeIsAction) {
+  // 칸 툴팁(HTML) : 이름 · 역할 · 칸 / HP / 효과 / 전조 · 범위 알림. 행동 완료 여부는 지도 샤인으로만 구분합니다.
+  const e = shopEsc;
   const pos = cellLabel(x, y);
-  const lines = [];
+  let h = '';
   if (c) {
     const team = c.teamLabel === 'A' ? (BATTLE_TYPE === 'pvp' ? '1팀' : '러너') : (BATTLE_TYPE === 'siege' ? '거점' : (BATTLE_TYPE === 'pvp' ? '2팀' : '보스'));
-    lines.push(`${displayNameOf(c)} · ${c.role || '-'} · ${team}`);
-    lines.push(`HP ${c.current_hp} / ${c.max_hp}${c.shield_hp ? ` (+보호막 ${c.shield_hp})` : ''} · ${pos}`);
-    const st = isDefeatedStatus(c) ? statusTagFor(c).replace(/^\s*\*/, '')
-      : c.status === 'downed' ? '기절'
-      : c.has_acted ? '이번 라운드 행동 완료'
-      : c.moved_this_round ? '이동 완료 · 행동 대기' : '이동 전';
-    lines.push(st + (c.dodging_this_round ? ' · 회피 태세' : ''));
+    h += `<div class="tt-head"><b>${e(displayNameOf(c))}</b><span>${e([c.role, team].filter(Boolean).join(' · '))}</span><span class="tt-pos">${pos}</span></div>`;
+    const ratio = c.max_hp > 0 ? Math.max(0, Math.min(1, c.current_hp / c.max_hp)) : 0;
+    const cls = ratio <= 0.3 ? 'low' : (ratio <= 0.6 ? 'mid' : '');
+    h += `<div class="tt-hp"><div class="bar"><i class="${cls}" style="width:${ratio * 100}%"></i></div>`
+      + `<div class="num"><span>HP <b>${c.current_hp}</b> / ${c.max_hp}</span>${c.shield_hp ? `<span>보호막 <b>${c.shield_hp}</b></span>` : ''}</div></div>`;
+    if (isDefeatedStatus(c) || c.status === 'downed') {
+      const st = c.status === 'downed' ? '기절' : statusTagFor(c).replace(/^\s*\*/, '');
+      h += `<div class="tt-note bad"><i class="fa-solid fa-skull"></i>${e(st)}</div>`;
+    }
     const fx = [];
+    if (c.dodging_this_round) fx.push('회피 태세');
     if (c.self_defense_count) fx.push('직접 방어');
     const guard = (c.defense_count || 0) - (c.self_defense_count || 0);
     if (guard > 0) fx.push(`수호${guard > 1 ? ' ×' + guard : ''}`);
@@ -4778,15 +4805,19 @@ function gridCellTip(c, x, y, key, telKeys, rangeCells, rangeIsAction) {
     if (c.has_leech_buff) fx.push('흡수');
     if (c.pending_attacks) fx.push(`피해 보류 ${c.pending_attacks}`);
     if (c.pending_heals) fx.push(`회복 예정 +${c.pending_heals}`);
-    if (c.interceptors && c.interceptors.length) fx.push(`대리 방어 ${c.interceptors.join(', ')}`);
-    if (c.commanded_by) fx.push(`지휘 ${c.commanded_by}`);
-    if (fx.length) lines.push('효과 : ' + fx.join(', '));
+    if (c.interceptors && c.interceptors.length) fx.push(`대리 방어 · ${c.interceptors.join(', ')}`);
+    if (c.commanded_by) fx.push(`지휘 · ${c.commanded_by}`);
+    if (fx.length) h += `<div class="tt-sec"><div class="k">효과</div><div class="tt-tags">${fx.map(f => `<span>${e(f)}</span>`).join('')}</div></div>`;
   } else {
-    lines.push(pos);
+    h += `<div class="tt-head"><b>${pos}</b><span>빈 칸</span></div>`;
   }
-  if (telKeys.has(key)) lines.push(telegraphRevealedCells.has(key) ? '⚠ 전조 구역 — 곧 피해' : '⚠ 전조로 고른 칸');
-  if (rangeCells.has(key)) lines.push(rangeIsAction ? '사거리 안' : '이동 가능');
-  return lines.join('\n');
+  if (telKeys.has(key)) {
+    h += `<div class="tt-note warn"><i class="fa-solid fa-triangle-exclamation"></i>${telegraphRevealedCells.has(key) ? '전조 구역 · 곧 피해가 발생합니다' : '전조로 고른 칸'}</div>`;
+  }
+  if (rangeCells.has(key)) {
+    h += `<div class="tt-note"><i class="fa-solid ${rangeIsAction ? 'fa-crosshairs' : 'fa-shoe-prints'}"></i>${rangeIsAction ? '사거리 안' : '이동 가능한 칸'}</div>`;
+  }
+  return h;
 }
 
 function cellLabel(x, y) {
@@ -4960,7 +4991,8 @@ function renderGrid(battle, all) {
         const inRangeOrExempt = highlightCells.has(key) || (actorIgnoresRange && c.teamLabel === selChar.teamLabel);
         const isTargetable = canTargetNow && !isSelectedActor && inRangeOrExempt;
         const isSelfTargetable = canTargetNow && isSelectedActor;
-        // 행동 완료 = 흐리게 + 모서리 ✓ / 이동 완료(행동 대기) = 모서리 작은 삼각형 (테두리는 쓰지 않음)
+        // 내 팀 차례인데 아직 행동 전 = 빛이 훑고 지나가는 샤인, 행동을 마치면 샤인이 꺼집니다.
+        // 이동만 마치고 행동 전이면 모서리에 작은 삼각형을 함께 둡니다.
         cursor = 'pointer';
         onclick = (isSelfTargetable || isTargetable)
           ? `onclick="onGridTargetClick('${selectedGridChar}','${c.name}')"`
@@ -4974,8 +5006,9 @@ function renderGrid(battle, all) {
         } else {
           cellCls = c.teamLabel === 'A' ? 'ally' : 'enemy';
         }
-        if (c.has_acted) cellCls += ' acted';
-        else if (c.moved_this_round) cellCls += ' moved';
+        const turnLbl = battle && !battle.finished && battle.current_turn_team ? (battle.current_turn_team === '1팀' ? 'A' : 'B') : null;
+        if (turnLbl && c.teamLabel === turnLbl && !c.has_acted && !isDefeatedStatus(c) && c.status !== 'downed') cellCls += ' ready';
+        if (!c.has_acted && c.moved_this_round) cellCls += ' moved';
       } else if (highlightCells.has(key) && !highlightIsAction) {
         cursor = 'pointer';
         onclick = `onclick="onGridMoveClick(${x},${y})"`;
@@ -5015,7 +5048,7 @@ function renderGrid(battle, all) {
 
       }
       const glow = '';
-      const title = shopEsc(gridCellTip(c, x, y, key, telKeys, highlightCells, highlightIsAction)).replace(/\n/g, '&#10;');
+      const title = shopEsc(gridCellTip(c, x, y, key, telKeys, highlightCells, highlightIsAction));
       let inner = '';
       if (c) {
         // BOSS 부위는 칸이 4개라 이름 앞 두 글자만(예: NOVA → NO) 씁니다. 본인이 정한 표기 이름이 있으면 그걸 우선합니다.
@@ -5029,7 +5062,7 @@ function renderGrid(battle, all) {
         inner = `<span class="gname" style="font-size:${Math.max(window.innerWidth <= 900 ? 7 : 9, fitPx)}px;">${label}</span>`
           + `<div class="ghp"><div class="${hpCls}" style="width:${ratio * 100}%;"></div></div>`;
       }
-      html += `<td ${onclick} data-tip="${title}" style="cursor:${cursor}; ${tdStyle}">`
+      html += `<td ${onclick} data-tip-html="${title}" style="cursor:${cursor}; ${tdStyle}">`
         + `<div class="gcell ${cellCls}" style="width:${cellPx}px; height:${cellPx}px; ${cellStyle} ${glow}">${inner}<div class="gsel ${isGridTarget(c) ? 'tgt' : ''}" style="${isGridTarget(c) ? '' : selBorder}"></div></div></td>`;
     }
     html += '</tr>';
@@ -9421,7 +9454,9 @@ socket.on('export_log_result', (d) => {
   let cur = null;
   function show(el) {
     cur = el;
-    tip.textContent = el.getAttribute('data-tip');
+    const rich = el.getAttribute('data-tip-html');
+    tip.classList.toggle('rich', !!rich);
+    if (rich) tip.innerHTML = rich; else tip.textContent = el.getAttribute('data-tip');
     tip.style.display = 'block';
     const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, m = 8;
     const left = Math.max(m, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - m));
@@ -9431,9 +9466,9 @@ socket.on('export_log_result', (d) => {
   }
   function hide() { cur = null; tip.style.display = 'none'; }
   document.addEventListener('mouseover', (e) => {
-    const el = e.target.closest && e.target.closest('[data-tip]');
+    const el = e.target.closest && e.target.closest('[data-tip],[data-tip-html]');
     if (el === cur) return;
-    if (el && el.getAttribute('data-tip')) show(el); else hide();
+    if (el && (el.getAttribute('data-tip') || el.getAttribute('data-tip-html'))) show(el); else hide();
   });
   document.addEventListener('mousedown', hide);
   document.addEventListener('scroll', hide, true);
