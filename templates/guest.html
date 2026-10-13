@@ -1683,13 +1683,113 @@
 
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
   body.is-lounge #sidebarBattleBtn, body.is-lounge #sidebarUserListBtn, body.is-lounge .m-battle-tools { display:none !important; }
-  body.is-battle #sidebarDormBtn, body.is-battle #sidebarMailBtn, body.is-battle #newsMailRow, body.is-battle #myPageRoomBox { display:none !important; }
+  body.is-battle #sidebarDormBtn, body.is-battle #sidebarMapBtn, body.is-battle #sidebarMailBtn, body.is-battle #newsMailRow, body.is-battle #myPageRoomBox { display:none !important; }
   /* 일반 룸 : 우체통은 로그인 전에도 메뉴에 바로 보입니다(누르면 로그인 안내). 휴대폰 하단 탭도 공지 · 우체통을 따로 둡니다. */
   body.is-lounge.logged-out #sidebarMailBtn { display:flex !important; }
   @media (max-width:900px) {
     body.is-lounge .sidebar #sidebarMailBtn, body.is-lounge .sidebar #sidebarNoticeBtn { display:flex !important; }
     body.is-lounge .sidebar .m-news-btn { display:none !important; }
   }
+
+  /* ================================================================
+     맵 (일반 룸) : 장소가 선 위에 놓인 세계 지도 + 고른 장소 설명 + 스토리 챕터 해금 트랙
+     ================================================================ */
+  .world-page { display:none; flex:1; min-height:0; flex-direction:column; }
+  body.view-map .shell > *:not(.modal-overlay):not(#worldPage):not(#shopToast):not(#floatTip) { display:none !important; }
+  body.view-map #worldPage { display:flex; }
+  .topbar.v2.world-topbar { flex:none; display:flex !important; flex-wrap:nowrap; margin-bottom:14px; }
+  .world-topbar .world-brand { font-family: var(--font-title); font-weight:400; font-size:24px; letter-spacing:.02em; }
+  .world-topbar .seg { white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .world-body { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:16px; padding-bottom:20px; }
+  .wm-card { background: var(--panel); border:1px solid var(--line); border-radius:16px; }
+  .wm-h { display:flex; align-items:baseline; gap:10px; padding:16px 20px 0; }
+  .wm-h .en { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; }
+  .wm-h .sub { font-size:12.5px; color: var(--muted); }
+  .wm-h .sp { flex:1; }
+  /* 챕터 트랙 */
+  .wm-track { position:relative; display:flex; justify-content:space-between; margin:22px 34px 8px; }
+  .wm-track::before, .wm-track::after { content:""; position:absolute; left:14px; right:14px; top:14px; height:2px; border-radius:2px; background: rgba(255,255,255,.08); }
+  .wm-track::after { right:auto; width:calc((100% - 28px) * var(--fill, 0)); background: rgba(var(--point-rgb),.7); }
+  .wm-cnode { position:relative; z-index:1; width:30px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .wm-cnode .dot { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;
+    background:#1b1b20; color: var(--muted); border:1px solid var(--line); box-shadow:0 0 0 4px var(--panel); font-variant-numeric: tabular-nums; }
+  .wm-cnode.open .dot { background: rgba(var(--point-rgb),.18); color: var(--point-soft); border-color: rgba(var(--point-rgb),.5); }
+  .wm-cnode.now .dot { background: var(--accent-blue); color: var(--on-accent); border-color: transparent; box-shadow:0 0 0 4px var(--panel), 0 0 0 7px rgba(var(--point-rgb),.25); }
+  .wm-cnode .t { position:absolute; top:38px; width:110px; text-align:center; font-size:12px; color: var(--muted); line-height:1.35; word-break:keep-all; }
+  .wm-cnode.open .t { color:#dcdce2; }
+  .wm-cnode.gm { cursor:pointer; }
+  .wm-chlist { display:flex; flex-direction:column; gap:2px; padding:44px 20px 16px; }
+  .wm-chrow { display:grid; grid-template-columns:86px 1fr auto; gap:12px; align-items:baseline; padding:10px 0; border-top:1px solid rgba(255,255,255,.05); }
+  .wm-chrow .no { font-family: var(--font-title); font-size:15px; color: var(--muted); }
+  .wm-chrow .tt { font-weight:700; font-size:14px; }
+  .wm-chrow .sm { grid-column:2 / 3; font-size:13px; color:#b9b9c0; line-height:1.65; white-space:pre-wrap; }
+  .wm-chrow .st { font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .wm-chrow .st.open { color: var(--point-soft); background: rgba(var(--point-rgb),.12); }
+  .wm-chrow .st.now { color: var(--on-accent); background: var(--accent-blue); }
+  .wm-chrow .st.lock { color: var(--muted); background: rgba(255,255,255,.05); }
+  .wm-chrow.locked .tt { color: var(--muted); font-weight:500; }
+  /* 지도 무대 : 오른쪽 위로 번지는 동심원 위에 장소가 선으로 이어져 있습니다 */
+  .wm-stage { position:relative; overflow-x:auto; overflow-y:hidden; border-radius:16px 16px 0 0; scrollbar-width:thin;
+    background:
+      radial-gradient(circle at 92% 50%, rgba(var(--point-rgb),.10) 0%, transparent 32%),
+      repeating-radial-gradient(circle at 92% 50%, transparent 0 118px, rgba(255,255,255,.045) 118px 119px),
+      linear-gradient(180deg, #0f1218, #0b0d12); }
+  .wm-row { --top:215px; position:relative; display:flex; align-items:stretch; gap:0; min-width:100%; width:max-content; height:380px; padding:0 48px; }
+  .wm-row::before { content:""; position:absolute; left:48px; right:48px; top:calc(var(--top) + 29px); height:1px; background: rgba(255,255,255,.18); }
+  .wm-node { position:relative; z-index:1; width:118px; flex:none; display:flex; flex-direction:column; align-items:center; padding-top:var(--top); cursor:pointer; }
+  .wm-node .ic { width:58px; height:58px; border-radius:50%; background:#1a1e27 center/cover no-repeat; border:2px solid rgba(255,255,255,.28);
+    box-shadow:0 0 0 5px #0d1016; display:flex; align-items:center; justify-content:center; color: rgba(255,255,255,.55); font-size:18px; transition: transform .2s, border-color .2s, box-shadow .2s; }
+  .wm-node:hover .ic { border-color: rgba(255,255,255,.55); }
+  .wm-node.sel .ic { transform:scale(1.28); border-color:#fff; box-shadow:0 0 0 5px #0d1016, 0 0 0 7px rgba(var(--point-rgb),.55), 0 0 30px rgba(var(--point-rgb),.45); }
+  .wm-node .nm { position:absolute; bottom:calc(100% - var(--top) + 16px); left:50%; transform-origin:0 100%; transform:rotate(-62deg); white-space:nowrap;
+    font-family: var(--font-title); font-weight:400; font-size:17px; letter-spacing:.06em; color: rgba(255,255,255,.42); }
+  .wm-node .nm.ko { font-family:inherit; font-weight:800; letter-spacing:.02em; font-size:15px; }
+  .wm-node.sel .nm { color:#fff; }
+  .wm-node .nm.long { font-size:13.5px; }
+  .wm-node .sb { position:absolute; top:calc(var(--top) + 76px); width:110px; text-align:center; font-size:12.5px; line-height:1.4; color: rgba(255,255,255,.45); word-break:keep-all; }
+  .wm-node.sel .sb { color:#fff; font-weight:700; }
+  .wm-node.locked { cursor:default; }
+  .wm-node.locked .ic { border-style:dashed; border-color: rgba(255,255,255,.18); background:#12151c; }
+  .wm-node.locked .nm, .wm-node.locked .sb { color: rgba(255,255,255,.22); }
+  .wm-node.gmlock .ic::after { content:"\f023"; font-family:"Font Awesome 6 Free"; font-weight:900; position:absolute; right:-4px; bottom:-4px; font-size:10px; color:#fff;
+    width:18px; height:18px; border-radius:50%; background:#3a3a44; display:flex; align-items:center; justify-content:center; }
+  .wm-node .ic { position:relative; }
+  /* 고른 장소 설명 */
+  .wm-detail { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:22px; padding:20px 22px 22px; border-top:1px solid var(--line); }
+  .wm-detail .name { font-size:24px; font-weight:800; letter-spacing:-0.01em; }
+  .wm-detail .en { font-family: var(--font-title); font-size:15px; color: var(--muted); margin-top:2px; letter-spacing:.04em; }
+  .wm-detail .tags { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 12px; }
+  .wm-detail .tag { font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; background: rgba(255,255,255,.06); color:#cfcfd4; }
+  .wm-detail .tag.pt { background: rgba(var(--point-rgb),.14); color: var(--point-soft); }
+  .wm-detail .desc { font-size:14px; line-height:1.75; color:#d6d6dc; white-space:pre-wrap; }
+  .wm-info { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px 18px; align-content:start; padding:16px 18px; border-radius:12px;
+    background: rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.08); }
+  .wm-info .k { font-size:11.5px; font-weight:800; letter-spacing:.06em; color: var(--point); margin-bottom:4px; }
+  .wm-info .v { font-size:13px; line-height:1.5; color:#e6e6ea; }
+  .wm-empty { padding:40px 20px; text-align:center; color: var(--muted); font-size:14px; line-height:1.8; }
+  .wm-empty i { display:block; font-size:22px; margin-bottom:8px; opacity:.6; }
+  /* 운영진 편집 */
+  .wm-edit { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:16px; align-items:start; }
+  .wm-edit .ops-card { margin:0; }
+  .wm-list { display:flex; flex-direction:column; gap:6px; }
+  .wm-li { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.02); cursor:pointer; }
+  .wm-li.on { border-color: rgba(var(--point-rgb),.6); background: rgba(var(--point-rgb),.08); }
+  .wm-li .nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; font-size:13.5px; }
+  .wm-li .ch { font-size:11.5px; color: var(--muted); flex:none; }
+  .wm-li .ops-btn.icon { width:26px; height:26px; }
+  .wm-kv { display:grid; grid-template-columns:120px 1fr 30px; gap:6px; margin-bottom:6px; }
+  .wm-imgpick { display:flex; align-items:center; gap:12px; }
+  .wm-imgpick .pv { width:56px; height:56px; border-radius:50%; background:#1a1e27 center/cover no-repeat; border:2px solid rgba(255,255,255,.25); flex:none; }
+  @media (max-width:900px) {
+    .wm-detail, .wm-edit { grid-template-columns:minmax(0,1fr); }
+    .wm-row { --top:178px; height:330px; padding:0 30px; }
+    .wm-row::before { left:30px; right:30px; }
+    .wm-node { width:96px; }
+    .wm-track { margin:22px 20px 8px; }
+    .wm-cnode .t { width:76px; font-size:11px; }
+    .wm-chrow { grid-template-columns:70px 1fr auto; }
+  }
+  @media (max-width:560px) { .topbar.v2.world-topbar { padding:10px 12px; } .world-topbar .world-brand { font-size:18px; } .dorm-tools-r .dorm-tbtn .t { display:none; } }
 
   /* ================================================================
      운영 페이지 (GM 전용) : 전투 준비 · 캐릭터 · 음악 · 방 설정. 예전 운영진 화면 기능을 러너 화면으로 옮겼습니다.
@@ -2261,8 +2361,9 @@
   <div class="sidebar-gap" id="sidebarAlign"></div>
   <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
   <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
-  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeOps(); openDorm()" data-tip="기숙사"><i class="fa-solid fa-house"></i></button>
+  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="기숙사"><i class="fa-solid fa-house"></i></button>
   <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
+  <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i></button>
   <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps()" data-tip="운영" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
@@ -2483,6 +2584,11 @@
     <div class="topbar v2 panel dorm-topbar" id="dormTop"></div>
     <div class="dorm-main" id="dormBody"></div>
   </div>
+</div>
+<div id="worldPage" class="world-page">
+  <div class="topbar v2 panel world-topbar"><div class="seg world-brand">World</div><span class="sep">▶</span><div class="seg" id="worldTopSeg">맵</div>
+    <div class="spacer"></div><div class="dorm-tools-r" id="worldTools"></div></div>
+  <div class="world-body" id="worldBody"></div>
 </div>
 <div id="opsPage" class="ops-page">
   <div class="topbar v2 panel ops-topbar"><div class="seg ops-brand">Admin</div><span class="sep">▶</span><div class="seg" id="opsTopSeg">전투 준비</div></div>
@@ -3257,7 +3363,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.7";
+const EXPECTED_SERVER_BUILD = "2026-10-13.8";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -8333,6 +8439,7 @@ function syncOpsBtn() {
 }
 function openOps() {
   if (!opsIsGm()) return;
+  closeWorldMap(true);
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
   document.body.classList.add('view-ops');
@@ -8700,6 +8807,189 @@ socket.on('gm_state', (state) => {
   const btn = document.getElementById('pendingRevealBtn');
   if (btn) btn.style.display = state.pending_reveal ? '' : 'none';
 });
+
+// ==================================================================
+// 맵 (일반 룸) : 장소 지도 + 챕터 해금 트랙. 운영진은 '편집'으로 장소·챕터를 고치고 해금 챕터를 정합니다.
+// 잠긴 장소·챕터 내용은 서버가 러너에게 보내지 않습니다(??? 로만 보임).
+// ==================================================================
+let worldData = null, worldSel = null, worldEditMode = false, worldDraft = null, worldEditIdx = 0;
+const worldEsc = (t) => mailEsc(t == null ? '' : String(t));
+function worldOpen() { return document.body.classList.contains('view-map'); }
+function worldIsGm() { return !!(worldData && worldData.gm) && myControlInfo(lastBattleForPanel).scope === 'all'; }
+function openWorldMap() {
+  if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
+  if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
+  if (typeof closeOps === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); }
+  document.body.classList.add('view-map');
+  ['sidebarBattleBtn', 'sidebarDormBtn'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('sidebarMapBtn').classList.add('active');
+  socket.emit('world_get');
+  renderWorld();
+}
+function closeWorldMap(silent) {
+  if (!worldOpen()) return;
+  document.body.classList.remove('view-map');
+  document.getElementById('sidebarMapBtn').classList.remove('active');
+  worldEditMode = false; worldDraft = null;
+  if (!silent && IS_LOUNGE) openDorm();
+}
+socket.on('world_data', (d) => {
+  worldData = d;
+  if (!d.gm) { worldEditMode = false; worldDraft = null; }
+  if (worldOpen() && !worldEditMode) renderWorld();
+});
+socket.on('world_result', (d) => showShopToast(d.message));
+socket.on('joined', () => { if (worldOpen()) socket.emit('world_get'); });
+socket.on('world_image_result', (d) => {
+  if (!d.ok || !worldDraft) return;
+  const p = worldDraft.places.find(x => x.id === d.for); if (p) { p.image = d.url; renderWorld(); }
+});
+
+function renderWorld() {
+  const body = document.getElementById('worldBody'), tools = document.getElementById('worldTools');
+  if (!body) return;
+  const gm = worldIsGm();
+  tools.innerHTML = !gm ? '' : worldEditMode
+    ? `<button class="dorm-tbtn" onclick="worldEditMode=false; worldDraft=null; renderWorld()" data-tip="취소"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
+       <button class="dorm-tbtn primary" onclick="saveWorld()" data-tip="저장"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`
+    : `<button class="dorm-tbtn" onclick="startWorldEdit()" data-tip="맵 편집"><i class="fa-solid fa-pen-ruler"></i><span class="t">편집</span></button>`;
+  if (!worldData) { body.innerHTML = '<div class="wm-empty">불러오는 중…</div>'; return; }
+  if (worldEditMode) { document.getElementById('worldTopSeg').textContent = '편집'; body.innerHTML = worldEditHtml(); return; }
+  const places = worldData.places || [];
+  if (!worldSel || !places.some(p => p.id === worldSel)) worldSel = (places.find(p => !p.locked) || places[0] || {}).id || null;
+  const sel = places.find(p => p.id === worldSel);
+  document.getElementById('worldTopSeg').textContent = sel && !sel.locked ? sel.name : '맵';
+  body.innerHTML = worldMapHtml(places, sel) + worldChaptersHtml();
+  // 고른 장소가 화면 가운데 오도록 지도를 가로로 옮깁니다(좁은 화면).
+  const st = body.querySelector('.wm-stage'), el = body.querySelector('.wm-node.sel');
+  if (st && el && st.scrollWidth > st.clientWidth) st.scrollLeft = el.offsetLeft - st.clientWidth / 2 + el.offsetWidth / 2;
+}
+
+function worldChaptersHtml() {
+  const chs = worldData.chapters || [], n = worldData.unlocked || 0, gm = worldIsGm();
+  if (!chs.length) return gm ? '' : '';
+  const fill = chs.length > 1 ? Math.max(0, (n - 1) / (chs.length - 1)) : (n ? 1 : 0);
+  const nodes = chs.map((c, i) => {
+    const open = i < n, now = i === n - 1;
+    const title = c.locked ? '???' : worldEsc(c.title);
+    return `<div class="wm-cnode ${open ? 'open' : ''} ${now ? 'now' : ''} ${gm ? 'gm' : ''}" ${gm ? `onclick="setWorldUnlocked(${i + 1})" data-tip="여기까지 해금"` : ''}>
+      <span class="dot">${open ? i + 1 : '<i class="fa-solid fa-lock" style="font-size:10px"></i>'}</span><span class="t">${title}</span></div>`;
+  }).join('');
+  const rows = chs.map((c, i) => {
+    const open = i < n, now = i === n - 1, locked = !!c.locked || !open;
+    const st = now ? '<span class="st now">진행 중</span>' : open ? '<span class="st open">해금</span>' : '<span class="st lock"><i class="fa-solid fa-lock"></i> 잠김</span>';
+    return `<div class="wm-chrow ${locked && !gm ? 'locked' : ''}"><span class="no">Ch. ${i + 1}</span>
+      <span class="tt">${c.locked ? '아직 공개되지 않은 챕터입니다.' : worldEsc(c.title)}</span>${st}
+      ${!c.locked && (open || gm) && c.summary ? `<span class="sm">${worldEsc(c.summary)}</span>` : ''}</div>`;
+  }).join('');
+  return `<div class="wm-card"><div class="wm-h"><span class="en">Chapter</span><span class="sub">${n} / ${chs.length} 해금</span><span class="sp"></span>
+    ${gm ? '<span class="sub">점을 누르면 그 챕터까지 해금돼요</span>' : ''}</div>
+    <div class="wm-track" style="--fill:${fill}">${nodes}</div><div class="wm-chlist">${rows}</div></div>`;
+}
+function setWorldUnlocked(k) {
+  if (!worldIsGm()) return;
+  const n = worldData.unlocked === k ? k - 1 : k;
+  socket.emit('world_save', { ...worldData, unlocked: n });
+}
+
+function worldMapHtml(places, sel) {
+  const gm = worldIsGm(), n = worldData.unlocked || 0;
+  if (!places.length) return `<div class="wm-card"><div class="wm-empty"><i class="fa-solid fa-map"></i>아직 등록된 장소가 없습니다.${gm ? '<br>오른쪽 위 편집에서 장소를 추가해 주세요.' : ''}</div></div>`;
+  const nodes = places.map(p => {
+    const locked = !!p.locked, gmlock = gm && p.chapter > n;
+    const label = locked ? '???' : (p.en || p.name);
+    return `<div class="wm-node ${p.id === worldSel ? 'sel' : ''} ${locked ? 'locked' : ''} ${gmlock ? 'gmlock' : ''}" onclick="worldSel='${p.id}'; renderWorld()">
+      <span class="nm ${!locked && !p.en ? 'ko' : ''} ${label.length > 12 ? 'long' : ''}">${worldEsc(label)}</span>
+      <span class="ic" style="${!locked && p.image ? `background-image:url('${worldEsc(p.image)}')` : ''}">${locked ? '<i class="fa-solid fa-lock"></i>' : (p.image ? '' : '<i class="fa-solid fa-location-dot"></i>')}</span>
+      <span class="sb">${locked ? '' : worldEsc(p.sub || '')}</span></div>`;
+  }).join('');
+  let detail = '';
+  if (sel && sel.locked) {
+    detail = `<div class="wm-empty"><i class="fa-solid fa-lock"></i>아직 해금되지 않은 장소입니다.${sel.chapter ? `<br>Chapter ${sel.chapter}에서 공개됩니다.` : ''}</div>`;
+  } else if (sel) {
+    const tags = [sel.sub ? `<span class="tag pt">${worldEsc(sel.sub)}</span>` : '',
+      sel.chapter ? `<span class="tag">Chapter ${sel.chapter}부터${gm && sel.chapter > n ? ' · 미공개' : ''}</span>` : ''].join('');
+    const info = (sel.info || []).filter(i => i.k || i.v);
+    detail = `<div class="wm-detail"><div><div class="name">${worldEsc(sel.name)}</div>${sel.en ? `<div class="en">${worldEsc(sel.en)}</div>` : ''}
+      <div class="tags">${tags}</div><div class="desc">${worldEsc(sel.desc || '')}</div></div>
+      ${info.length ? `<div class="wm-info">${info.map(i => `<div><div class="k">${worldEsc(i.k)}</div><div class="v">${worldEsc(i.v)}</div></div>`).join('')}</div>` : '<div></div>'}</div>`;
+  }
+  return `<div class="wm-card"><div class="wm-stage"><div class="wm-row">${nodes}</div></div>${detail}</div>`;
+}
+
+// ---------- 운영진 편집 ----------
+function startWorldEdit() {
+  if (!worldIsGm()) return;
+  worldDraft = JSON.parse(JSON.stringify({ chapters: worldData.chapters || [], places: worldData.places || [], unlocked: worldData.unlocked || 0 }));
+  worldEditIdx = Math.max(0, worldDraft.places.findIndex(p => p.id === worldSel));
+  worldEditMode = true; renderWorld();
+}
+function saveWorld() {
+  if (!worldDraft) return;
+  socket.emit('world_save', worldDraft);
+  worldEditMode = false; worldDraft = null;
+}
+function worldMove(list, i, d) { const a = worldDraft[list], j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; if (list === 'places' && worldEditIdx === i) worldEditIdx = j; renderWorld(); }
+function worldDel(list, i) {
+  uiConfirm(list === 'places' ? '이 장소를 삭제할까요?' : '이 챕터를 삭제할까요?', { title: '삭제', okText: '삭제', danger: true }).then(ok => {
+    if (!ok) return; worldDraft[list].splice(i, 1);
+    if (list === 'chapters') { worldDraft.unlocked = Math.min(worldDraft.unlocked, worldDraft.chapters.length); worldDraft.places.forEach(p => { if (p.chapter > worldDraft.chapters.length) p.chapter = worldDraft.chapters.length; }); }
+    if (list === 'places') worldEditIdx = Math.max(0, Math.min(worldEditIdx, worldDraft.places.length - 1));
+    renderWorld();
+  });
+}
+function worldAddChapter() { worldDraft.chapters.push({ id: Math.random().toString(16).slice(2, 10), title: `Chapter ${worldDraft.chapters.length + 1}`, summary: '' }); renderWorld(); }
+function worldAddPlace() {
+  worldDraft.places.push({ id: Math.random().toString(16).slice(2, 10), name: '새 장소', en: '', sub: '', desc: '', info: [], image: null, chapter: 0 });
+  worldEditIdx = worldDraft.places.length - 1; renderWorld();
+}
+function worldPlaceImage(ev, id) {
+  const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  if (f.size > 4 * 1024 * 1024) { showShopToast('4MB 이하의 이미지만 등록할 수 있습니다.'); return; }
+  f.arrayBuffer().then(buf => socket.emit('world_image', { filename: f.name, data: buf, for: id }));
+}
+function worldEditHtml() {
+  const d = worldDraft, chs = d.chapters, ps = d.places;
+  const chOpts = (sel) => `<option value="0" ${!sel ? 'selected' : ''}>처음부터 공개</option>` + chs.map((c, i) => `<option value="${i + 1}" ${sel === i + 1 ? 'selected' : ''}>Chapter ${i + 1} · ${worldEsc(c.title)}</option>`).join('');
+  const chapterRows = chs.map((c, i) => `<div class="ops-card" style="padding:14px 16px;">
+      <div class="ops-row"><span class="ops-hint" style="width:44px; flex:none;">Ch. ${i + 1}</span>
+        <input class="ops-in" value="${worldEsc(c.title)}" maxlength="40" placeholder="챕터 제목" oninput="worldDraft.chapters[${i}].title=this.value">
+        <button class="ops-btn icon" onclick="worldMove('chapters',${i},-1)" data-tip="위로"><i class="fa-solid fa-angle-up"></i></button>
+        <button class="ops-btn icon" onclick="worldMove('chapters',${i},1)" data-tip="아래로"><i class="fa-solid fa-angle-down"></i></button>
+        <button class="ops-btn icon" onclick="worldDel('chapters',${i})" data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>
+      <textarea class="ops-in" style="min-height:70px; margin-top:8px;" maxlength="600" placeholder="챕터 요약 (해금되면 러너에게 공개됩니다.)" oninput="worldDraft.chapters[${i}].summary=this.value">${worldEsc(c.summary)}</textarea></div>`).join('');
+  const p = ps[worldEditIdx];
+  const placeList = ps.map((x, i) => `<div class="wm-li ${i === worldEditIdx ? 'on' : ''}" onclick="worldEditIdx=${i}; renderWorld()">
+      <span class="nm">${worldEsc(x.name)}</span><span class="ch">${x.chapter ? 'Ch. ' + x.chapter : '공개'}</span>
+      <button class="ops-btn icon" onclick="event.stopPropagation(); worldMove('places',${i},-1)" data-tip="앞으로"><i class="fa-solid fa-angle-left"></i></button>
+      <button class="ops-btn icon" onclick="event.stopPropagation(); worldMove('places',${i},1)" data-tip="뒤로"><i class="fa-solid fa-angle-right"></i></button>
+      <button class="ops-btn icon" onclick="event.stopPropagation(); worldDel('places',${i})" data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>`).join('');
+  const editor = !p ? '<div class="wm-empty">장소를 추가해 주세요.</div>' : `
+    <div class="ops-field"><span class="lb">아이콘 이미지</span><div class="wm-imgpick"><span class="pv" style="${p.image ? `background-image:url('${worldEsc(p.image)}')` : ''}"></span>
+      <label class="ops-btn"><i class="fa-solid fa-image"></i> 이미지 삽입<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="worldPlaceImage(event,'${p.id}')"></label>
+      ${p.image ? `<button class="ops-btn" onclick="worldDraft.places[${worldEditIdx}].image=null; renderWorld()">이미지 삭제</button>` : ''}</div></div>
+    <div class="ops-row" style="margin-top:14px;"><div class="ops-field" style="flex:1; margin:0;"><span class="lb">장소 이름</span><input class="ops-in" maxlength="30" value="${worldEsc(p.name)}" oninput="worldDraft.places[${worldEditIdx}].name=this.value"></div>
+      <div class="ops-field" style="flex:1; margin:0;"><span class="lb">영문 표기 (지도 위 큰 글자)</span><input class="ops-in" maxlength="30" value="${worldEsc(p.en)}" placeholder="THE SHADOW" oninput="worldDraft.places[${worldEditIdx}].en=this.value"></div></div>
+    <div class="ops-row" style="margin-top:14px;"><div class="ops-field" style="flex:1; margin:0;"><span class="lb">한 줄 소개 (지도 아래 작은 글자)</span><input class="ops-in" maxlength="30" value="${worldEsc(p.sub)}" placeholder="GUILD vs GUILD" oninput="worldDraft.places[${worldEditIdx}].sub=this.value"></div>
+      <div class="ops-field" style="flex:1; margin:0;"><span class="lb">공개 시점</span><select class="ops-in" onchange="worldDraft.places[${worldEditIdx}].chapter=+this.value">${chOpts(p.chapter)}</select></div></div>
+    <div class="ops-field" style="margin-top:14px;"><span class="lb">장소 설명</span><textarea class="ops-in" maxlength="1200" style="min-height:110px;" oninput="worldDraft.places[${worldEditIdx}].desc=this.value">${worldEsc(p.desc)}</textarea></div>
+    <div class="ops-field"><span class="lb">정보 칸 (최대 8개)</span>
+      ${(p.info || []).map((it, k) => `<div class="wm-kv"><input class="ops-in" maxlength="20" placeholder="항목" value="${worldEsc(it.k)}" oninput="worldDraft.places[${worldEditIdx}].info[${k}].k=this.value">
+        <input class="ops-in" maxlength="80" placeholder="내용" value="${worldEsc(it.v)}" oninput="worldDraft.places[${worldEditIdx}].info[${k}].v=this.value">
+        <button class="ops-btn icon" onclick="worldDraft.places[${worldEditIdx}].info.splice(${k},1); renderWorld()"><i class="fa-solid fa-xmark"></i></button></div>`).join('')}
+      ${(p.info || []).length < 8 ? `<button class="ops-btn" onclick="(worldDraft.places[${worldEditIdx}].info=worldDraft.places[${worldEditIdx}].info||[]).push({k:'',v:''}); renderWorld()"><i class="fa-solid fa-plus"></i> 정보 추가</button>` : ''}</div>`;
+  return `<div class="wm-edit">
+    <div class="ops-card"><h3><i class="fa-solid fa-book-open"></i> 챕터<span class="sub">
+      <select class="ops-in" style="height:32px; width:auto;" onchange="worldDraft.unlocked=+this.value"><option value="0">해금 없음</option>${chs.map((c, i) => `<option value="${i + 1}" ${d.unlocked === i + 1 ? 'selected' : ''}>Ch. ${i + 1}까지 해금</option>`).join('')}</select></span></h3>
+      <div style="display:flex; flex-direction:column; gap:10px;">${chapterRows || '<div class="ops-hint">챕터가 없습니다.</div>'}</div>
+      <div class="ops-foot"><button class="ops-btn" onclick="worldAddChapter()"><i class="fa-solid fa-plus"></i> 챕터 추가</button></div></div>
+    <div class="ops-card"><h3><i class="fa-solid fa-map-location-dot"></i> 장소<span class="sub">지도에는 위 목록 순서대로 왼쪽부터 놓입니다</span></h3>
+      <div class="wm-list">${placeList}</div>
+      <div class="ops-foot" style="padding-top:10px; margin-top:0; justify-content:flex-start;"><button class="ops-btn" onclick="worldAddPlace()"><i class="fa-solid fa-plus"></i> 장소 추가</button></div>
+      <div style="border-top:1px solid var(--line); margin-top:14px; padding-top:16px;">${editor}</div></div>
+  </div>`;
+}
 
 // PC 사이드바 : 전체 화면 버튼은 맨 위, 나머지 메뉴는 "Team 1" 제목 높이부터 나열
 function alignSidebar() {

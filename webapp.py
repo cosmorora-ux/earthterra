@@ -26,6 +26,7 @@ import notices as notices_mod
 import log_export
 import mailbox as mailbox_mod
 import dorm as dorm_mod
+import world as world_mod
 from battle import Battle, BattleError
 from rooms import (
     create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
@@ -34,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.7"
+SERVER_BUILD = "2026-10-13.8"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2795,6 +2796,56 @@ def on_mail_delete(data):
 DORM_ASSET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "dorm_assets")
 os.makedirs(DORM_ASSET_DIR, exist_ok=True)
 DORM_ASSET_MAX_BYTES = 2 * 1024 * 1024
+
+
+# ----------------------------------------------------------------------
+# 맵(일반 룸) : 장소 · 챕터 해금. 러너에게는 잠긴 장소·챕터 내용을 보내지 않으므로 접속마다 따로 보냅니다.
+# ----------------------------------------------------------------------
+WORLD_IMG_DIR = os.path.join(_THIS_DIR, "static", "world")
+WORLD_IMG_MAX_BYTES = 4 * 1024 * 1024
+
+
+def _world_broadcast():
+    w = world_mod.shared_world()
+    gm_payload, pub_payload = w.payload(True), w.payload(False)
+    for sid in list(CONNECTIONS.keys()):
+        socketio.emit("world_data", gm_payload if _require_gm_or_guest_gm(sid) is not None else pub_payload, to=sid)
+
+
+@socketio.on("world_get")
+def on_world_get(data=None):
+    emit("world_data", world_mod.shared_world().payload(_require_gm_or_guest_gm(request.sid) is not None))
+
+
+@socketio.on("world_save")
+def on_world_save(data):
+    if _require_gm_or_guest_gm(request.sid) is None:
+        emit("action_error", {"message": "운영진만 맵을 편집할 수 있습니다."})
+        return
+    world_mod.shared_world().set_all(data or {})
+    emit("world_result", {"ok": True, "message": "맵이 저장되었습니다."})
+    _world_broadcast()
+
+
+@socketio.on("world_image")
+def on_world_image(data):
+    """운영진 : 장소 아이콘 그림 올리기 → 주소를 돌려줍니다(저장은 world_save로)."""
+    if _require_gm_or_guest_gm(request.sid) is None:
+        return
+    data = data or {}
+    blob = data.get("data")
+    ext = os.path.splitext((data.get("filename") or "").lower())[1]
+    if ext not in (".png", ".gif", ".webp", ".jpg", ".jpeg") or not isinstance(blob, (bytes, bytearray)):
+        emit("world_result", {"ok": False, "message": "PNG · JPG · GIF · WEBP 이미지만 등록할 수 있습니다."})
+        return
+    if len(blob) > WORLD_IMG_MAX_BYTES:
+        emit("world_result", {"ok": False, "message": "4MB 이하의 이미지만 등록할 수 있습니다."})
+        return
+    os.makedirs(WORLD_IMG_DIR, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}{ext}"
+    with open(os.path.join(WORLD_IMG_DIR, filename), "wb") as f:
+        f.write(blob)
+    emit("world_image_result", {"ok": True, "url": f"/static/world/{filename}", "for": data.get("for")})
 
 
 def _dorm_broadcast():

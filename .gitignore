@@ -32,3 +32,5 @@ static/dorm_assets/
 static/dorm_music/
 gm_password.txt
 site_settings.json
+world.json
+static/world/
