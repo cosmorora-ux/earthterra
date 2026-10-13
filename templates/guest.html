@@ -1642,17 +1642,19 @@
   .ops-tabs { flex:none; gap:4px; margin-bottom:16px; overflow-x:auto; scrollbar-width:none; }
   .ops-tabs button { flex:none; padding:10px 16px; }
   .ops-body { flex:1; min-height:0; overflow-y:auto; padding-bottom:20px; }
-  .ops-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; }
+  .ops-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:stretch; }
+  .ops-col { display:flex; flex-direction:column; gap:16px; min-width:0; }
   .ops-grid.wide-left { grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); }
-  .ops-card { background: var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 20px; min-width:0; }
-  .ops-grid > div > .ops-card + .ops-card, #opsLive + .ops-grid { margin-top:16px; }
-  #opsLive:empty + .ops-grid { margin-top:0; }
-  .ops-card h3 { display:flex; align-items:center; gap:8px; margin:0 0 14px; font-size:15px; font-weight:700; }
+  .ops-card { background: var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px 22px; min-width:0; display:flex; flex-direction:column; }
+  .ops-foot { margin-top:auto; padding-top:16px; display:flex; justify-content:flex-end; gap:8px; }
+  #opsLive:not(:empty) { margin-bottom:16px; }
+  .ops-card h3 { display:flex; align-items:center; gap:8px; margin:0 0 16px; min-height:32px; font-size:15px; font-weight:700; }
   .ops-card h3 i { color: var(--muted); font-size:14px; }
-  .ops-card h3 .sub { margin-left:auto; font-size:12.5px; font-weight:500; color: var(--muted); }
+  .ops-card h3 { white-space:nowrap; }
+  .ops-card h3 .sub { margin-left:auto; padding-left:12px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12.5px; font-weight:500; color: var(--muted); }
   .ops-hint { font-size:12.5px; color: var(--muted); line-height:1.6; }
   .ops-row { display:flex; align-items:center; gap:8px; }
-  .ops-row + .ops-row, .ops-field + .ops-field { margin-top:10px; }
+  .ops-row + .ops-row, .ops-field + .ops-field { margin-top:14px; }
   .ops-field > .lb { display:block; font-size:12.5px; color: var(--muted); margin-bottom:6px; }
   .ops-in { width:100%; min-width:0; height:38px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:#0c0c0d; color: var(--text); font-size:14px; }
   .ops-in:focus { outline:none; border-color: rgba(var(--point-rgb),.6); }
@@ -1672,7 +1674,7 @@
   .ops-seg button.on { background: rgba(var(--point-rgb),.16); color:#fff; }
   /* 전투 준비 */
   .ops-teams { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .ops-team { border:1px solid var(--line); border-radius:12px; padding:12px; min-height:140px; background: rgba(255,255,255,.015); }
+  .ops-team { border:1px solid var(--line); border-radius:12px; padding:14px; min-height:160px; background: rgba(255,255,255,.015); }
   .ops-team-h { display:flex; align-items:baseline; gap:8px; margin-bottom:10px; }
   .ops-team-h .en { font-family: var(--font-title); font-size:18px; }
   .ops-team-h .cnt { margin-left:auto; font-size:12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -1683,7 +1685,14 @@
   .ops-chip button { width:22px; height:22px; border:none; border-radius:50%; background:none; color: var(--muted); cursor:pointer; font-size:11px; }
   .ops-chip button:hover { background: rgba(255,255,255,.1); color:#fff; }
   .ops-empty { font-size:13px; color: var(--muted); padding:8px 2px; }
-  .ops-pool { max-height:420px; overflow-y:auto; margin-top:10px; border-top:1px solid var(--line); }
+  .ops-pool { flex:1; min-height:0; overflow-y:auto; margin-top:12px; border-top:1px solid var(--line); }
+  /* 목록 카드(.fit)는 옆 카드 높이에 맞추고 안쪽만 스크롤 */
+  @media (min-width:901px) { .ops-card.fit { contain:size; min-height:420px; } }
+  @media (max-width:900px) { .ops-pool, .ops-roster { max-height:420px; } }
+  .ops-teams { flex:1; }
+  .ops-bar { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:16px; padding-top:16px; border-top:1px solid var(--line); }
+  .ops-num { display:inline-flex; align-items:center; gap:6px; }
+  .ops-num em { font-style:normal; font-size:12.5px; color: var(--muted); }
   .ops-prow { display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid rgba(255,255,255,.04); }
   .ops-prow .nm { font-weight:600; font-size:14px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ops-prow .rl { font-size:12.5px; flex:none; }
@@ -1706,6 +1715,7 @@
   .ops-roles { display:flex; gap:6px; }
   .ops-roles button { flex:1; height:36px; border-radius:10px; border:1px solid var(--line); background:none; color: var(--muted); font-size:13.5px; font-weight:700; cursor:pointer; }
   .ops-roles button.on { color: var(--rc); border-color: var(--rc); background: rgba(255,255,255,.04); }
+  .ops-roster { flex:1; min-height:0; overflow-y:auto; margin-top:12px; padding-right:4px; }
   .ops-rgroup + .ops-rgroup { margin-top:14px; }
   .ops-rgroup-h { font-size:12.5px; font-weight:700; margin:0 2px 4px; }
   .ops-rgroup-h span { color: var(--muted); font-weight:500; margin-left:4px; }
@@ -1715,6 +1725,20 @@
   .ops-result { margin-top:10px; font-size:13px; line-height:1.6; }
   .ops-result .ok { color:#8fd4a6; }
   .ops-result .bad { color:#ff9a9a; }
+  .ops-now { display:flex; align-items:center; gap:12px; height:56px; padding:0 14px; border-radius:12px; background:#0c0c0d; border:1px solid var(--line); margin-bottom:16px; }
+  .ops-now .ic { width:32px; height:32px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background: rgba(var(--point-rgb),.14); color: var(--point); flex:none; }
+  .ops-now .t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; font-size:14px; }
+  .ops-file { flex:1; min-width:0; display:flex; align-items:center; gap:10px; height:38px; padding:0 12px; border-radius:10px; border:1px dashed var(--line); background:#0c0c0d;
+    color: var(--muted); font-size:13.5px; cursor:pointer; }
+  .ops-file:hover { color: var(--text); border-color: rgba(255,255,255,.22); }
+  .ops-file input { display:none; }
+  .ops-file span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ops-scene { display:flex; gap:14px; align-items:center; }
+  .ops-scene .thumb { width:120px; height:68px; flex:none; border-radius:10px; border:1px solid var(--line); background:#0c0c0d center/cover no-repeat;
+    display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:18px; }
+  .ops-scene .kv { display:flex; flex-direction:column; gap:8px; font-size:14px; min-width:0; }
+  .ops-scene .kv > div { display:flex; gap:12px; }
+  .ops-scene .k { width:32px; color: var(--muted); font-size:12.5px; flex:none; padding-top:1px; }
   .ops-swatches { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
   .ops-swatch { display:flex; align-items:center; gap:10px; height:48px; padding:0 14px; border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.02);
     color:#dcdce2; font-size:14px; font-weight:600; cursor:pointer; }
@@ -1733,8 +1757,10 @@
   @media (max-width:560px) {
     .ops-teams { grid-template-columns:1fr; }
     .ops-team { min-height:0; }
+    .ops-swatches { gap:8px; }
+    .ops-swatch { padding:0 10px; gap:8px; font-size:13px; white-space:nowrap; }
     .ops-row.wrap { flex-wrap:wrap; }
-    .ops-start .ops-btn.primary { flex:1; }
+    .ops-start .ops-btn.primary, .ops-bar .ops-btn.primary { flex:1; }
   }
 
   /* 기숙사 페이지 : 전투 화면 자리를 그대로 씁니다 */
@@ -2684,8 +2710,6 @@
         <button class="gear icon-btn" id="chatTabSettingsBtn" style="display:none;" onclick="toggleGmMenu(event)"><i class="fa-solid fa-gear"></i></button>
         <div class="gm-menu" id="gmMenu">
           <button onclick="closeGmMenu(); toggleChatTabSettings()"><i class="fa-solid fa-comments"></i> 채팅 탭 설정</button>
-          <button onclick="closeGmMenu(); toggleFormulaPanel()"><i class="fa-solid fa-sliders"></i> 전투 수식 설정</button>
-          <button onclick="closeGmMenu(); openSceneModal()"><i class="fa-solid fa-cloud-sun"></i> 배경 · 날씨</button>
           <button onclick="closeGmMenu(); downloadLogs()"><i class="fa-solid fa-download"></i> 로그 내려받기</button>
         </div>
       </span>
@@ -7905,27 +7929,20 @@ function opsBattleHtml() {
   const [la, lb] = opsTeamLabels();
   return `<div id="opsLive"></div>
   <div class="ops-grid wide-left">
-    <div>
-      <div class="ops-card">
-        <h3><i class="fa-solid fa-users"></i> 팀 편성<span class="sub">{{ battle_type_label }}</span></h3>
-        <div class="ops-teams" id="opsTeams"></div>
-        <div class="ops-start">
-          <span class="ops-hint">편성을 바꾸면 러너 화면에 미리보기 카드로 바로 보여요.</span>
-          <button class="ops-btn" onclick="opsClearTeams()"><i class="fa-solid fa-eraser"></i> 비우기</button>
-          <button class="ops-btn primary big" onclick="opsStartBattle()"><i class="fa-solid fa-flag"></i> 전투 시작</button>
-        </div>
-      </div>
-      <div class="ops-card">
-        <h3><i class="fa-solid fa-shuffle"></i> 무작위 배치</h3>
-        <div class="ops-row wrap">
-          <span class="ops-hint">${la}</span><input class="ops-in num" id="opsCountA" type="number" min="1" max="30" value="${OPS_DEFAULT_A}">
-          <span class="ops-hint" style="margin-left:8px;">${lb}</span><input class="ops-in num" id="opsCountB" type="number" min="1" max="30" value="${OPS_DEFAULT_B}">
-          <span style="flex:1"></span>
-          <button class="ops-btn" onclick="opsRandomAssign()"><i class="fa-solid fa-shuffle"></i> 섞어서 배치</button>
-        </div>
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-users"></i> 팀 편성<span class="sub">{{ battle_type_label }} · 편성을 바꾸면 러너 화면에 미리보기로 보여요</span></h3>
+      <div class="ops-teams" id="opsTeams"></div>
+      <div class="ops-bar">
+        <span class="ops-hint">무작위</span>
+        <span class="ops-num"><em>${la}</em><input class="ops-in num" id="opsCountA" type="number" min="1" max="30" value="${OPS_DEFAULT_A}"></span>
+        <span class="ops-num"><em>${lb}</em><input class="ops-in num" id="opsCountB" type="number" min="1" max="30" value="${OPS_DEFAULT_B}"></span>
+        <button class="ops-btn" onclick="opsRandomAssign()"><i class="fa-solid fa-shuffle"></i> 섞어서 배치</button>
+        <span style="flex:1"></span>
+        <button class="ops-btn" onclick="opsClearTeams()"><i class="fa-solid fa-eraser"></i> 비우기</button>
+        <button class="ops-btn primary" onclick="opsStartBattle()"><i class="fa-solid fa-flag"></i> 전투 시작</button>
       </div>
     </div>
-    <div class="ops-card">
+    <div class="ops-card fit">
       <h3><i class="fa-solid fa-id-card"></i> 명단<span class="sub" id="opsPoolCount"></span></h3>
       <input class="ops-in" id="opsPoolQ" placeholder="이름 검색" autocomplete="off" oninput="opsRenderPool()">
       <div class="ops-pool" id="opsPool"></div>
@@ -8019,10 +8036,10 @@ function opsCharsHtml() {
         <input class="ops-in num" id="opsDummyN" type="number" min="1" max="100" value="6"><button class="ops-btn" onclick="opsDummies()">더미 생성</button></div>`}
       <div class="ops-result" id="opsRegResult">${opsResultHtml}</div>
     </div>
-    <div class="ops-card">
+    <div class="ops-card fit">
       <h3><i class="fa-solid fa-address-book"></i> 등록된 캐릭터<span class="sub" id="opsRosterCount"></span></h3>
       <input class="ops-in" id="opsRosterQ" placeholder="이름 검색" autocomplete="off" oninput="opsRenderRoster()">
-      <div id="opsRoster" style="margin-top:12px;"></div>
+      <div id="opsRoster" class="ops-roster"></div>
     </div>
   </div>`;
 }
@@ -8122,20 +8139,26 @@ function opsDelete(name) {
 
 // ---------- 음악 ----------
 function opsMusicHtml() {
-  return `<div class="ops-grid"><div class="ops-card">
-    <h3><i class="fa-solid fa-music"></i> 배경음악<span class="sub">모두에게 같은 위치로 재생</span></h3>
-    <div class="ops-music-now"><i class="fa-solid fa-compact-disc"></i><span class="t" id="opsMusicNow">재생 없음</span>
-      <button class="ops-btn" onclick="socket.emit('stop_music', {})"><i class="fa-solid fa-stop"></i> 정지</button></div>
-    <div class="ops-field"><span class="lb">표시 이름 (비우면 '배경음악')</span>
-      <div class="ops-row"><input class="ops-in" id="opsMusicTitle" maxlength="40" placeholder="러너 화면에 보일 곡 이름">
-      <button class="ops-btn" onclick="socket.emit('set_music_title', { title: opsMusicTitle() })" data-tip="재생 위치는 그대로">이름만 변경</button></div></div>
-    <div class="ops-field"><span class="lb">유튜브</span>
-      <div class="ops-row"><input class="ops-in" id="opsMusicYt" placeholder="https://www.youtube.com/watch?v=...">
-      <button class="ops-btn primary" onclick="opsPlayYoutube()"><i class="fa-solid fa-play"></i> 재생</button></div></div>
-    <div class="ops-field"><span class="lb">mp3 파일</span>
-      <div class="ops-row"><input class="ops-in" id="opsMusicFile" type="file" accept=".mp3" style="padding-top:7px;">
-      <button class="ops-btn primary" onclick="opsPlayMp3()"><i class="fa-solid fa-upload"></i> 올려서 재생</button></div></div>
-  </div></div>`;
+  return `<div class="ops-grid">
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-compact-disc"></i> 지금 재생<span class="sub">모두에게 같은 위치로 재생</span></h3>
+      <div class="ops-now"><span class="ic"><i class="fa-solid fa-music"></i></span><span class="t" id="opsMusicNow">재생 없음</span></div>
+      <div class="ops-field"><span class="lb">표시 이름 (비우면 '배경음악')</span>
+        <div class="ops-row"><input class="ops-in" id="opsMusicTitle" maxlength="40" placeholder="러너 화면에 보일 곡 이름">
+        <button class="ops-btn" onclick="socket.emit('set_music_title', { title: opsMusicTitle() })" data-tip="재생 위치는 그대로">이름 변경</button></div></div>
+      <div class="ops-foot"><button class="ops-btn danger" onclick="socket.emit('stop_music', {})"><i class="fa-solid fa-stop"></i> 정지</button></div>
+    </div>
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-play"></i> 새 곡 재생</h3>
+      <div class="ops-field"><span class="lb">유튜브 링크</span>
+        <div class="ops-row"><input class="ops-in" id="opsMusicYt" placeholder="https://www.youtube.com/watch?v=...">
+        <button class="ops-btn primary" onclick="opsPlayYoutube()"><i class="fa-solid fa-play"></i> 재생</button></div></div>
+      <div class="ops-field"><span class="lb">mp3 파일</span>
+        <div class="ops-row"><label class="ops-file"><input type="file" id="opsMusicFile" accept=".mp3" onchange="document.getElementById('opsMusicFileName').textContent = this.files[0] ? this.files[0].name : '파일을 골라 주세요'">
+          <i class="fa-solid fa-file-audio"></i><span id="opsMusicFileName">파일을 골라 주세요</span></label>
+        <button class="ops-btn primary" onclick="opsPlayMp3()"><i class="fa-solid fa-upload"></i> 올려서 재생</button></div></div>
+    </div>
+  </div>`;
 }
 function opsMusicTitle() { return ((document.getElementById('opsMusicTitle') || {}).value || '').trim(); }
 function opsRenderMusicNow() {
@@ -8171,19 +8194,31 @@ function opsRoomHtml() {
         <div class="ops-row"><input class="ops-in" id="opsGuestLink" readonly onclick="this.select()">
         <button class="ops-btn" onclick="opsCopyLink()"><i class="fa-regular fa-copy"></i> 복사</button></div></div>
     </div>
-    <div>
     <div class="ops-card">
-      <h3><i class="fa-solid fa-palette"></i> 포인트 컬러<span class="sub">모든 방·모든 화면에 바로 적용</span></h3>
+      <h3><i class="fa-solid fa-palette"></i> 포인트 컬러<span class="sub">모든 방 · 모든 화면에 바로 적용</span></h3>
       <div class="ops-swatches" id="opsSwatches"></div>
+      <div class="ops-hint" style="margin-top:12px;">국가 색(아르카디아 노랑 · 노바 파랑)은 바뀌지 않아요.</div>
     </div>
     <div class="ops-card">
-      <h3><i class="fa-solid fa-lock"></i> 운영진 전용</h3>
-      <div class="ops-hint" style="margin-bottom:12px;">전투 수식과 운영진 로그는 GM으로 로그인한 화면에만 서버가 보내요. 러너 화면에는 데이터가 가지 않아요.</div>
-      <div class="ops-row"><button class="ops-btn" onclick="toggleFormulaPanel()"><i class="fa-solid fa-square-root-variable"></i> 전투 수식</button>
-        <button class="ops-btn" onclick="socket.emit('export_log', {})"><i class="fa-solid fa-download"></i> 로그 내려받기 (운영진 로그 포함)</button></div>
+      <h3><i class="fa-solid fa-cloud-sun"></i> 배경 · 날씨</h3>
+      <div class="ops-scene" id="opsScene"></div>
+      <div class="ops-foot"><button class="ops-btn" onclick="openSceneModal()"><i class="fa-solid fa-sliders"></i> 배경 · 날씨 설정</button></div>
     </div>
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-lock"></i> 전투 수식</h3>
+      <div class="ops-hint">수식과 운영진 로그는 GM으로 로그인한 화면에만 서버가 보내요. 러너 화면에는 데이터가 가지 않아요.</div>
+      <div class="ops-foot"><button class="ops-btn" onclick="toggleFormulaPanel()"><i class="fa-solid fa-square-root-variable"></i> 전투 수식 설정</button></div>
     </div>
   </div>`;
+}
+function opsRenderScene() {
+  const el = document.getElementById('opsScene'); if (!el) return;
+  const cfg = sceneCfg();
+  const wb = document.querySelector(`#sceneModal button[data-v="${cfg.weather}"]`);
+  const wname = cfg.weather && cfg.weather !== 'none' && wb ? wb.textContent.trim() : '없음';
+  el.innerHTML = `<div class="thumb" style="${cfg.url ? `background-image:url('${cfg.url}')` : ''}">${cfg.url ? '' : '<i class="fa-regular fa-image"></i>'}</div>
+    <div class="kv"><div><span class="k">배경</span><span>${cfg.url ? `이미지 · 어둡게 ${cfg.dim}%` : '없음'}</span></div>
+    <div><span class="k">날씨</span><span>${mailEsc(wname)}</span></div></div>`;
 }
 const OPS_POINTS = [['purple', '보라', '#a48dff'], ['blue', '파랑', '#6f93ff'], ['yellow', '노랑', '#f0c862']];
 function opsRenderSwatches() {
@@ -8193,7 +8228,7 @@ function opsRenderSwatches() {
     <span class="sw"></span>${t}${k === cur ? '<i class="fa-solid fa-check"></i>' : ''}</button>`).join('');
 }
 function opsRenderRoomInfo() {
-  opsRenderSwatches();
+  opsRenderSwatches(); opsRenderScene();
   const n = document.getElementById('opsRoomName');
   if (n && document.activeElement !== n) n.value = (opsLastPublic && opsLastPublic.room_name) || ROOM_ID;
   const l = document.getElementById('opsGuestLink');
