@@ -34,7 +34,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.1"
+SERVER_BUILD = "2026-10-13.2"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -69,8 +69,7 @@ SKILL_ACTIONS = ("collapse", "emission", "shield", "polarize", "reflux", "restor
 CONNECTIONS = {}
 
 # 참가자(guest) 링크에서 닉네임을 "GM"으로 입력해 전체 조작 권한("all")을 얻으려면
-# 이 비밀번호가 필요합니다. 운영진(gm) 링크 자체는 gm_key만으로 이미 전체 권한을 가지므로
-# 영향받지 않습니다.
+# 이 비밀번호가 필요합니다. 운영진 화면은 없앴으므로 운영 권한을 얻는 방법은 이것뿐입니다.
 # 저장소가 공개되어 있으므로 실제 비밀번호는 git에 올라가지 않는 gm_password.txt(첫 줄)에 둡니다.
 # 파일이 없을 때만 예전 비밀번호를 그대로 씁니다(이 값은 이미 공개되어 있으니 파일을 꼭 만들어 바꾸세요).
 def _load_gm_password():
@@ -161,9 +160,8 @@ def index():
             "name": room.name,
             "battle_type": room.battle_type,
             "battle_type_label": BATTLE_TYPE_LABELS.get(room.battle_type, room.battle_type),
-            "gm_url": url_for("gm_page", room_id=room.id, key=room.gm_key, _external=True),
             "guest_url": url_for("guest_page", room_id=room.id, key=room.guest_key, _external=True),
-            "gm_key": room.gm_key,
+            "guest_key": room.guest_key,
         }
         for room in list_rooms()
     ]
@@ -180,7 +178,7 @@ def create_room_route():
     battle_type = request.form.get("battle_type", "pvp")
     room_name = request.form.get("room_name", "")
     room = create_room(battle_type, name=room_name)
-    return redirect(url_for("gm_page", room_id=room.id, key=room.gm_key))
+    return redirect(url_for("guest_page", room_id=room.id, key=room.guest_key))
 
 
 @app.route("/delete_room", methods=["POST"])
@@ -188,28 +186,10 @@ def delete_room_route():
     room_id = request.form.get("room_id", "")
     key = request.form.get("key", "")
     room = get_room(room_id)
-    if room is not None and key == room.gm_key:
+    if room is not None and key in (room.gm_key, room.guest_key):
         delete_room(room_id)
     return redirect(url_for("index"))
 
-
-@app.route("/room/<room_id>/gm")
-def gm_page(room_id):
-    room = get_room(room_id)
-    if room is None:
-        abort(404)
-    key = request.args.get("key", "")
-    if key != room.gm_key:
-        abort(403)
-    guest_url = url_for("guest_page", room_id=room_id, key=room.guest_key, _external=True)
-    default_team_a, default_team_b = BATTLE_TYPE_DEFAULTS.get(room.battle_type, (3, 3))
-    return render_template(
-        "gm.html", room_id=room_id, key=key, guest_url=guest_url,
-        battle_type=room.battle_type,
-        battle_type_label=BATTLE_TYPE_LABELS.get(room.battle_type, "PVP"),
-        default_team_a=default_team_a, default_team_b=default_team_b,
-        grid_size=GRID_SIZES.get(room.battle_type, 0),
-    )
 
 
 @app.route("/room/<room_id>")
@@ -251,9 +231,9 @@ def upload_music():
     room_id = request.form.get("room_id", "")
     key = request.form.get("key", "")
     room = get_room(room_id)
-    # 운영진 링크(gm_key) 또는, 러너 링크로 GM 인증(비밀번호)까지 마친 소켓(sid)만 올릴 수 있습니다.
+    # 러너 링크로 GM 인증(비밀번호)까지 마친 소켓(sid)만 올릴 수 있습니다.
     sid_room = _require_gm_or_guest_gm(request.form.get("sid", ""))
-    if room is None or not (key == room.gm_key or (sid_room is not None and sid_room.id == room.id)):
+    if room is None or sid_room is None or sid_room.id != room.id:
         return jsonify({"error": "권한이 없습니다."}), 403
 
     f = request.files.get("file")
@@ -943,9 +923,9 @@ def on_join(data):
         emit("error", {"message": "존재하지 않는 방입니다."})
         return
 
-    if key == room.gm_key:
-        role = "gm"
-    elif key == room.guest_key:
+    # 운영진 화면은 없앴습니다. 운영 권한은 참가자 링크에서 "GM" + 비밀번호로만 얻습니다
+    # (gm_key는 방 목록 페이지에 노출될 수 있어 더 이상 권한을 주지 않습니다).
+    if key == room.guest_key:
         role = "guest"
     else:
         emit("error", {"message": "잘못된 접속 키입니다."})
