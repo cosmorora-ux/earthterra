@@ -50,6 +50,8 @@ BUILTIN_ASSETS = [dict(a, builtin=True) for a in _m.get("assets", [])]
 SEED_CREDITS = _m.get("credits", [])
 DEFAULT_BASE = next((a["id"] for a in BUILTIN_ASSETS if a["category"] == "room"), None)
 _BUILTIN_BY_ID = {a["id"]: a for a in BUILTIN_ASSETS}
+# 좌우만 다른 같은 그림은 하나만 남겼습니다. 지운 자료 id → 남긴 자료(+ 좌우 반전 여부). 예전에 놓아 둔 소품은 이걸로 바꿔 그대로 보입니다.
+ASSET_ALIASES = _m.get("aliases", {})
 
 
 class DormError(Exception):
@@ -91,6 +93,26 @@ class Dorms:
         self.rooms = {k: v for k, v in (d.get("rooms") or {}).items() if v.get("v") == 2}
         # 방명록 : {방 주인: [{"author", "text", "at"}, ...]} - 한 방에 한 사람당 한 개
         self.guestbooks = d.get("guestbooks", {})
+        if self._apply_aliases():
+            self.save()
+
+    def _apply_aliases(self):
+        """지운(좌우 중복) 기본 자료를 쓰던 방을 남긴 자료 + 좌우 반전으로 바꿉니다. 바뀐 게 있으면 True."""
+        changed = False
+        for r in self.rooms.values():
+            for it in r.get("items", []):
+                al = ASSET_ALIASES.get(it.get("a"))
+                if al:
+                    it["a"] = al["to"]
+                    if al.get("flip"):
+                        it["f"] = not it.get("f")
+                    changed = True
+            for key in ("base", "wall", "floor"):
+                al = ASSET_ALIASES.get(r.get(key))
+                if al:
+                    r[key] = al["to"]
+                    changed = True
+        return changed
 
     def save(self):
         tmp = self.path + ".tmp"

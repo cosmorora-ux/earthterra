@@ -1469,16 +1469,6 @@
 "slot": "wall"
 },
 {
-"id": "p0120",
-"name": "빨강 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0120.png",
-"w": 77,
-"h": 94,
-"credit": "pk-themes"
-},
-{
 "id": "p0121",
 "name": "의자 빨강",
 "category": "deco",
@@ -1601,56 +1591,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0133",
-"name": "조명 회전",
-"category": "deco",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0133.png",
-"w": 40,
-"h": 33,
-"credit": "pk-themes"
-},
-{
-"id": "p0134",
-"name": "책장 검정 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0134.png",
-"w": 79,
-"h": 130,
-"credit": "pk-themes"
-},
-{
-"id": "p0135",
-"name": "침대 검정 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0135.png",
-"w": 122,
-"h": 90,
-"credit": "pk-themes"
-},
-{
-"id": "p0136",
-"name": "카펫 검정 회전",
-"category": "surface",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0136.png",
-"w": 102,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0137",
-"name": "테이블 검정 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0137.png",
-"w": 99,
-"h": 68,
-"credit": "pk-themes"
-},
-{
 "id": "p0138",
 "name": "티세트 보라",
 "category": "deco",
@@ -1691,16 +1631,6 @@
 "h": 316,
 "credit": "pk-themes",
 "slot": "wall"
-},
-{
-"id": "p0142",
-"name": "소파 검정 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0142.png",
-"w": 77,
-"h": 94,
-"credit": "pk-themes"
 },
 {
 "id": "p0143",
@@ -1815,46 +1745,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0154",
-"name": "책장 보라 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0154.png",
-"w": 79,
-"h": 130,
-"credit": "pk-themes"
-},
-{
-"id": "p0155",
-"name": "침대 보라 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0155.png",
-"w": 122,
-"h": 90,
-"credit": "pk-themes"
-},
-{
-"id": "p0156",
-"name": "카펫 보라 회전",
-"category": "surface",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0156.png",
-"w": 102,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0157",
-"name": "테이블 보라 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0157.png",
-"w": 99,
-"h": 68,
-"credit": "pk-themes"
-},
-{
 "id": "p0158",
 "name": "티세트 초록",
 "category": "deco",
@@ -1895,16 +1785,6 @@
 "h": 316,
 "credit": "pk-themes",
 "slot": "wall"
-},
-{
-"id": "p0162",
-"name": "소파 보라 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0162.png",
-"w": 77,
-"h": 94,
-"credit": "pk-themes"
 },
 {
 "id": "p0163",
@@ -1977,46 +1857,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0170",
-"name": "책장 빨강 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0170.png",
-"w": 79,
-"h": 130,
-"credit": "pk-themes"
-},
-{
-"id": "p0171",
-"name": "침대 빨강 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0171.png",
-"w": 122,
-"h": 90,
-"credit": "pk-themes"
-},
-{
-"id": "p0172",
-"name": "카펫 빨강 회전",
-"category": "surface",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0172.png",
-"w": 102,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0173",
-"name": "테이블 빨강 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0173.png",
-"w": 99,
-"h": 68,
-"credit": "pk-themes"
-},
-{
 "id": "p0174",
 "name": "소파 초록",
 "category": "furniture",
@@ -2062,56 +1902,6 @@
 "category": "furniture",
 "set": "고딕",
 "url": "/static/dorm_default/packs/gothic/0178.png",
-"w": 99,
-"h": 68,
-"credit": "pk-themes"
-},
-{
-"id": "p0179",
-"name": "소파 초록 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0179.png",
-"w": 77,
-"h": 94,
-"credit": "pk-themes"
-},
-{
-"id": "p0180",
-"name": "책장 초록 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0180.png",
-"w": 79,
-"h": 130,
-"credit": "pk-themes"
-},
-{
-"id": "p0181",
-"name": "침대 초록 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0181.png",
-"w": 122,
-"h": 90,
-"credit": "pk-themes"
-},
-{
-"id": "p0182",
-"name": "카펫 초록 회전",
-"category": "surface",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0182.png",
-"w": 102,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0183",
-"name": "테이블 초록 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0183.png",
 "w": 99,
 "h": 68,
 "credit": "pk-themes"
@@ -2167,71 +1957,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0189",
-"name": "소파 파랑 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0189.png",
-"w": 77,
-"h": 94,
-"credit": "pk-themes"
-},
-{
-"id": "p0190",
-"name": "책장 파랑 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0190.png",
-"w": 79,
-"h": 130,
-"credit": "pk-themes"
-},
-{
-"id": "p0191",
-"name": "침대 파랑 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0191.png",
-"w": 122,
-"h": 90,
-"credit": "pk-themes"
-},
-{
-"id": "p0192",
-"name": "카펫 파랑 회전",
-"category": "surface",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0192.png",
-"w": 102,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0193",
-"name": "테이블 파랑 회전",
-"category": "furniture",
-"set": "고딕",
-"url": "/static/dorm_default/packs/gothic/0193.png",
-"w": 99,
-"h": 68,
-"credit": "pk-themes"
-},
-{
 "id": "p0194",
 "name": "스피커 검정",
 "category": "deco",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0194.png",
-"w": 38,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0195",
-"name": "스피커 검정 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0195.png",
 "w": 38,
 "h": 52,
 "credit": "pk-themes"
@@ -2247,31 +1977,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0197",
-"name": "스피커 노랑 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0197.png",
-"w": 38,
-"h": 52,
-"credit": "pk-themes"
-},
-{
 "id": "p0198",
 "name": "스피커 보라",
 "category": "deco",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0198.png",
-"w": 38,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0199",
-"name": "스피커 보라 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0199.png",
 "w": 38,
 "h": 52,
 "credit": "pk-themes"
@@ -2287,31 +1997,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0201",
-"name": "스피커 분홍 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0201.png",
-"w": 38,
-"h": 52,
-"credit": "pk-themes"
-},
-{
 "id": "p0202",
 "name": "스피커 빨강",
 "category": "deco",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0202.png",
-"w": 38,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0203",
-"name": "스피커 빨강 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0203.png",
 "w": 38,
 "h": 52,
 "credit": "pk-themes"
@@ -2327,31 +2017,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0205",
-"name": "스피커 파랑 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0205.png",
-"w": 38,
-"h": 52,
-"credit": "pk-themes"
-},
-{
 "id": "p0206",
 "name": "스피커 하양",
 "category": "deco",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0206.png",
-"w": 38,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0207",
-"name": "스피커 하양 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0207.png",
 "w": 38,
 "h": 52,
 "credit": "pk-themes"
@@ -2407,31 +2077,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0213",
-"name": "옷장 검정 회전",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0213.png",
-"w": 145,
-"h": 280,
-"credit": "pk-themes"
-},
-{
 "id": "p0214",
 "name": "옷장 노랑",
 "category": "furniture",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0214.png",
-"w": 145,
-"h": 280,
-"credit": "pk-themes"
-},
-{
-"id": "p0215",
-"name": "옷장 노랑 회전",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0215.png",
 "w": 145,
 "h": 280,
 "credit": "pk-themes"
@@ -2447,31 +2097,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0217",
-"name": "옷장 보라 회전",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0217.png",
-"w": 145,
-"h": 280,
-"credit": "pk-themes"
-},
-{
 "id": "p0218",
 "name": "옷장 분홍",
 "category": "furniture",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0218.png",
-"w": 145,
-"h": 280,
-"credit": "pk-themes"
-},
-{
-"id": "p0219",
-"name": "옷장 분홍 회전",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0219.png",
 "w": 145,
 "h": 280,
 "credit": "pk-themes"
@@ -2487,31 +2117,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0221",
-"name": "옷장 빨강 회전",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0221.png",
-"w": 145,
-"h": 280,
-"credit": "pk-themes"
-},
-{
 "id": "p0222",
 "name": "옷장 초록",
 "category": "furniture",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0222.png",
-"w": 145,
-"h": 280,
-"credit": "pk-themes"
-},
-{
-"id": "p0223",
-"name": "옷장 초록 회전",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0223.png",
 "w": 145,
 "h": 280,
 "credit": "pk-themes"
@@ -2527,31 +2137,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0225",
-"name": "옷장 파랑 회전",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0225.png",
-"w": 145,
-"h": 280,
-"credit": "pk-themes"
-},
-{
 "id": "p0226",
 "name": "옷장 하양",
 "category": "furniture",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0226.png",
-"w": 145,
-"h": 280,
-"credit": "pk-themes"
-},
-{
-"id": "p0227",
-"name": "옷장 하양 회전",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0227.png",
 "w": 145,
 "h": 280,
 "credit": "pk-themes"
@@ -2567,31 +2157,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0229",
-"name": "의자 기본 반",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0229.png",
-"w": 37,
-"h": 50,
-"credit": "pk-themes"
-},
-{
 "id": "p0230",
 "name": "책걸상 기본",
 "category": "furniture",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0230.png",
-"w": 90,
-"h": 117,
-"credit": "pk-themes"
-},
-{
-"id": "p0231",
-"name": "책걸상 기본 반",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0231.png",
 "w": 90,
 "h": 117,
 "credit": "pk-themes"
@@ -2607,31 +2177,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0233",
-"name": "초록 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0233.png",
-"w": 38,
-"h": 52,
-"credit": "pk-themes"
-},
-{
 "id": "p0234",
 "name": "침대 기본",
 "category": "furniture",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0234.png",
-"w": 92,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0235",
-"name": "침대 기본 반",
-"category": "furniture",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0235.png",
 "w": 92,
 "h": 71,
 "credit": "pk-themes"
@@ -2647,31 +2197,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0237",
-"name": "턴테이블 검정 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0237.png",
-"w": 75,
-"h": 45,
-"credit": "pk-themes"
-},
-{
 "id": "p0238",
 "name": "턴테이블 노랑",
 "category": "deco",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0238.png",
-"w": 75,
-"h": 45,
-"credit": "pk-themes"
-},
-{
-"id": "p0239",
-"name": "턴테이블 노랑 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0239.png",
 "w": 75,
 "h": 45,
 "credit": "pk-themes"
@@ -2687,31 +2217,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0241",
-"name": "턴테이블 보라 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0241.png",
-"w": 75,
-"h": 45,
-"credit": "pk-themes"
-},
-{
 "id": "p0242",
 "name": "턴테이블 분홍",
 "category": "deco",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0242.png",
-"w": 75,
-"h": 45,
-"credit": "pk-themes"
-},
-{
-"id": "p0243",
-"name": "턴테이블 분홍 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0243.png",
 "w": 75,
 "h": 45,
 "credit": "pk-themes"
@@ -2727,31 +2237,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0245",
-"name": "턴테이블 빨강 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0245.png",
-"w": 75,
-"h": 45,
-"credit": "pk-themes"
-},
-{
 "id": "p0246",
 "name": "턴테이블 초록",
 "category": "deco",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0246.png",
-"w": 75,
-"h": 45,
-"credit": "pk-themes"
-},
-{
-"id": "p0247",
-"name": "턴테이블 초록 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0247.png",
 "w": 75,
 "h": 45,
 "credit": "pk-themes"
@@ -2767,31 +2257,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0249",
-"name": "턴테이블 파랑 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0249.png",
-"w": 75,
-"h": 45,
-"credit": "pk-themes"
-},
-{
 "id": "p0250",
 "name": "턴테이블 하양",
 "category": "deco",
 "set": "기본 가구",
 "url": "/static/dorm_default/packs/basic/0250.png",
-"w": 75,
-"h": 45,
-"credit": "pk-themes"
-},
-{
-"id": "p0251",
-"name": "턴테이블 하양 회전",
-"category": "deco",
-"set": "기본 가구",
-"url": "/static/dorm_default/packs/basic/0251.png",
 "w": 75,
 "h": 45,
 "credit": "pk-themes"
@@ -2832,46 +2302,6 @@
 "category": "deco",
 "set": "꽁꽁",
 "url": "/static/dorm_default/packs/kkong/0255.png",
-"w": 54,
-"h": 32,
-"credit": "pk-themes"
-},
-{
-"id": "p0256",
-"name": "낚시 반 핑크",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0256.png",
-"w": 54,
-"h": 32,
-"credit": "pk-themes"
-},
-{
-"id": "p0257",
-"name": "낚시 반 노랑",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0257.png",
-"w": 54,
-"h": 32,
-"credit": "pk-themes"
-},
-{
-"id": "p0258",
-"name": "낚시 반 연두",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0258.png",
-"w": 54,
-"h": 32,
-"credit": "pk-themes"
-},
-{
-"id": "p0259",
-"name": "낚시 반 파랑",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0259.png",
 "w": 54,
 "h": 32,
 "credit": "pk-themes"
@@ -2952,46 +2382,6 @@
 "category": "deco",
 "set": "꽁꽁",
 "url": "/static/dorm_default/packs/kkong/0267.png",
-"w": 61,
-"h": 32,
-"credit": "pk-themes"
-},
-{
-"id": "p0268",
-"name": "물범 반 핑크",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0268.png",
-"w": 61,
-"h": 32,
-"credit": "pk-themes"
-},
-{
-"id": "p0269",
-"name": "물범 반 노랑",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0269.png",
-"w": 61,
-"h": 32,
-"credit": "pk-themes"
-},
-{
-"id": "p0270",
-"name": "물범 반 연두",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0270.png",
-"w": 61,
-"h": 32,
-"credit": "pk-themes"
-},
-{
-"id": "p0271",
-"name": "물범 반 파랑",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0271.png",
 "w": 61,
 "h": 32,
 "credit": "pk-themes"
@@ -3125,46 +2515,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0284",
-"name": "서랍 반 핑크",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0284.png",
-"w": 70,
-"h": 97,
-"credit": "pk-themes"
-},
-{
-"id": "p0285",
-"name": "서랍 반 노랑",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0285.png",
-"w": 70,
-"h": 97,
-"credit": "pk-themes"
-},
-{
-"id": "p0286",
-"name": "서랍 반 연두",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0286.png",
-"w": 70,
-"h": 97,
-"credit": "pk-themes"
-},
-{
-"id": "p0287",
-"name": "서랍 반 파랑",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0287.png",
-"w": 70,
-"h": 97,
-"credit": "pk-themes"
-},
-{
 "id": "p0288",
 "name": "소파 핑크",
 "category": "furniture",
@@ -3200,46 +2550,6 @@
 "category": "furniture",
 "set": "꽁꽁",
 "url": "/static/dorm_default/packs/kkong/0291.png",
-"w": 83,
-"h": 76,
-"credit": "pk-themes"
-},
-{
-"id": "p0292",
-"name": "소파 반 핑크",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0292.png",
-"w": 83,
-"h": 76,
-"credit": "pk-themes"
-},
-{
-"id": "p0293",
-"name": "소파 반 노랑",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0293.png",
-"w": 83,
-"h": 76,
-"credit": "pk-themes"
-},
-{
-"id": "p0294",
-"name": "소파 반 연두",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0294.png",
-"w": 83,
-"h": 76,
-"credit": "pk-themes"
-},
-{
-"id": "p0295",
-"name": "소파 반 파랑",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0295.png",
 "w": 83,
 "h": 76,
 "credit": "pk-themes"
@@ -3285,46 +2595,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0300",
-"name": "의자 반 핑크",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0300.png",
-"w": 45,
-"h": 62,
-"credit": "pk-themes"
-},
-{
-"id": "p0301",
-"name": "의자 반 노랑",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0301.png",
-"w": 45,
-"h": 62,
-"credit": "pk-themes"
-},
-{
-"id": "p0302",
-"name": "의자 반 연두",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0302.png",
-"w": 45,
-"h": 62,
-"credit": "pk-themes"
-},
-{
-"id": "p0303",
-"name": "의자 반 파랑",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0303.png",
-"w": 45,
-"h": 62,
-"credit": "pk-themes"
-},
-{
 "id": "p0304",
 "name": "조명 핑크",
 "category": "deco",
@@ -3360,46 +2630,6 @@
 "category": "deco",
 "set": "꽁꽁",
 "url": "/static/dorm_default/packs/kkong/0307.png",
-"w": 29,
-"h": 50,
-"credit": "pk-themes"
-},
-{
-"id": "p0308",
-"name": "조명 반 핑크",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0308.png",
-"w": 29,
-"h": 50,
-"credit": "pk-themes"
-},
-{
-"id": "p0309",
-"name": "조명 반 노랑",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0309.png",
-"w": 29,
-"h": 50,
-"credit": "pk-themes"
-},
-{
-"id": "p0310",
-"name": "조명 반 연두",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0310.png",
-"w": 29,
-"h": 50,
-"credit": "pk-themes"
-},
-{
-"id": "p0311",
-"name": "조명 반 파랑",
-"category": "deco",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0311.png",
 "w": 29,
 "h": 50,
 "credit": "pk-themes"
@@ -3445,46 +2675,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0316",
-"name": "침대 반 핑크",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0316.png",
-"w": 130,
-"h": 103,
-"credit": "pk-themes"
-},
-{
-"id": "p0317",
-"name": "침대 반 노랑",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0317.png",
-"w": 130,
-"h": 103,
-"credit": "pk-themes"
-},
-{
-"id": "p0318",
-"name": "침대 반 연두",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0318.png",
-"w": 130,
-"h": 103,
-"credit": "pk-themes"
-},
-{
-"id": "p0319",
-"name": "침대 반 파랑",
-"category": "furniture",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0319.png",
-"w": 130,
-"h": 103,
-"credit": "pk-themes"
-},
-{
 "id": "p0320",
 "name": "카펫 핑크",
 "category": "surface",
@@ -3525,46 +2715,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0324",
-"name": "카펫 반 핑크",
-"category": "surface",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0324.png",
-"w": 65,
-"h": 34,
-"credit": "pk-themes"
-},
-{
-"id": "p0325",
-"name": "카펫 반 노랑",
-"category": "surface",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0325.png",
-"w": 65,
-"h": 34,
-"credit": "pk-themes"
-},
-{
-"id": "p0326",
-"name": "카펫 반 연두",
-"category": "surface",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0326.png",
-"w": 65,
-"h": 34,
-"credit": "pk-themes"
-},
-{
-"id": "p0327",
-"name": "카펫 반 파랑",
-"category": "surface",
-"set": "꽁꽁",
-"url": "/static/dorm_default/packs/kkong/0327.png",
-"w": 65,
-"h": 34,
-"credit": "pk-themes"
-},
-{
 "id": "p0328",
 "name": "바닥지 검정",
 "category": "surface",
@@ -3587,16 +2737,6 @@
 "slot": "wall"
 },
 {
-"id": "p0330",
-"name": "보라 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0330.png",
-"w": 39,
-"h": 50,
-"credit": "pk-themes"
-},
-{
 "id": "p0331",
 "name": "소파 검정",
 "category": "furniture",
@@ -3604,16 +2744,6 @@
 "url": "/static/dorm_default/packs/agijagi/0331.png",
 "w": 107,
 "h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0332",
-"name": "시계 검정 회전",
-"category": "wall",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0332.png",
-"w": 34,
-"h": 49,
 "credit": "pk-themes"
 },
 {
@@ -3679,16 +2809,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0339",
-"name": "소파 검정 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0339.png",
-"w": 107,
-"h": 89,
-"credit": "pk-themes"
-},
-{
 "id": "p0340",
 "name": "시계 노랑",
 "category": "wall",
@@ -3696,36 +2816,6 @@
 "url": "/static/dorm_default/packs/agijagi/0340.png",
 "w": 34,
 "h": 49,
-"credit": "pk-themes"
-},
-{
-"id": "p0341",
-"name": "침대 검정 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0341.png",
-"w": 149,
-"h": 114,
-"credit": "pk-themes"
-},
-{
-"id": "p0342",
-"name": "테이블 검정 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0342.png",
-"w": 70,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0343",
-"name": "파랑 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0343.png",
-"w": 39,
-"h": 50,
 "credit": "pk-themes"
 },
 {
@@ -3751,16 +2841,6 @@
 "slot": "wall"
 },
 {
-"id": "p0346",
-"name": "분홍 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0346.png",
-"w": 39,
-"h": 50,
-"credit": "pk-themes"
-},
-{
 "id": "p0347",
 "name": "소파 노랑",
 "category": "furniture",
@@ -3768,16 +2848,6 @@
 "url": "/static/dorm_default/packs/agijagi/0347.png",
 "w": 107,
 "h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0348",
-"name": "시계 노랑 회전",
-"category": "wall",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0348.png",
-"w": 34,
-"h": 49,
 "credit": "pk-themes"
 },
 {
@@ -3843,16 +2913,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0355",
-"name": "소파 노랑 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0355.png",
-"w": 107,
-"h": 89,
-"credit": "pk-themes"
-},
-{
 "id": "p0356",
 "name": "시계 보라",
 "category": "wall",
@@ -3860,36 +2920,6 @@
 "url": "/static/dorm_default/packs/agijagi/0356.png",
 "w": 34,
 "h": 49,
-"credit": "pk-themes"
-},
-{
-"id": "p0357",
-"name": "침대 노랑 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0357.png",
-"w": 149,
-"h": 114,
-"credit": "pk-themes"
-},
-{
-"id": "p0358",
-"name": "테이블 노랑 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0358.png",
-"w": 70,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0359",
-"name": "하양 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0359.png",
-"w": 39,
-"h": 50,
 "credit": "pk-themes"
 },
 {
@@ -3915,16 +2945,6 @@
 "slot": "wall"
 },
 {
-"id": "p0362",
-"name": "빨강 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0362.png",
-"w": 39,
-"h": 50,
-"credit": "pk-themes"
-},
-{
 "id": "p0363",
 "name": "소파 보라",
 "category": "furniture",
@@ -3932,16 +2952,6 @@
 "url": "/static/dorm_default/packs/agijagi/0363.png",
 "w": 107,
 "h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0364",
-"name": "시계 보라 회전",
-"category": "wall",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0364.png",
-"w": 34,
-"h": 49,
 "credit": "pk-themes"
 },
 {
@@ -3987,16 +2997,6 @@
 "slot": "wall"
 },
 {
-"id": "p0369",
-"name": "소파 보라 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0369.png",
-"w": 107,
-"h": 89,
-"credit": "pk-themes"
-},
-{
 "id": "p0370",
 "name": "시계 분홍",
 "category": "wall",
@@ -4014,26 +3014,6 @@
 "url": "/static/dorm_default/packs/agijagi/0371.png",
 "w": 39,
 "h": 50,
-"credit": "pk-themes"
-},
-{
-"id": "p0372",
-"name": "침대 보라 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0372.png",
-"w": 149,
-"h": 114,
-"credit": "pk-themes"
-},
-{
-"id": "p0373",
-"name": "테이블 보라 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0373.png",
-"w": 70,
-"h": 52,
 "credit": "pk-themes"
 },
 {
@@ -4066,26 +3046,6 @@
 "url": "/static/dorm_default/packs/agijagi/0376.png",
 "w": 107,
 "h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0377",
-"name": "시계 분홍 회전",
-"category": "wall",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0377.png",
-"w": 34,
-"h": 49,
-"credit": "pk-themes"
-},
-{
-"id": "p0378",
-"name": "의자 노랑 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0378.png",
-"w": 39,
-"h": 50,
 "credit": "pk-themes"
 },
 {
@@ -4131,16 +3091,6 @@
 "slot": "wall"
 },
 {
-"id": "p0383",
-"name": "소파 분홍 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0383.png",
-"w": 107,
-"h": 89,
-"credit": "pk-themes"
-},
-{
 "id": "p0384",
 "name": "시계 빨강",
 "category": "wall",
@@ -4161,26 +3111,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0386",
-"name": "침대 분홍 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0386.png",
-"w": 149,
-"h": 114,
-"credit": "pk-themes"
-},
-{
-"id": "p0387",
-"name": "테이블 분홍 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0387.png",
-"w": 70,
-"h": 52,
-"credit": "pk-themes"
-},
-{
 "id": "p0388",
 "name": "소파 빨강",
 "category": "furniture",
@@ -4188,16 +3118,6 @@
 "url": "/static/dorm_default/packs/agijagi/0388.png",
 "w": 107,
 "h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0389",
-"name": "시계 빨강 회전",
-"category": "wall",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0389.png",
-"w": 34,
-"h": 49,
 "credit": "pk-themes"
 },
 {
@@ -4231,16 +3151,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0393",
-"name": "소파 빨강 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0393.png",
-"w": 107,
-"h": 89,
-"credit": "pk-themes"
-},
-{
 "id": "p0394",
 "name": "시계 시계 검정",
 "category": "wall",
@@ -4248,36 +3158,6 @@
 "url": "/static/dorm_default/packs/agijagi/0394.png",
 "w": 34,
 "h": 49,
-"credit": "pk-themes"
-},
-{
-"id": "p0395",
-"name": "초록 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0395.png",
-"w": 39,
-"h": 50,
-"credit": "pk-themes"
-},
-{
-"id": "p0396",
-"name": "침대 빨강 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0396.png",
-"w": 149,
-"h": 114,
-"credit": "pk-themes"
-},
-{
-"id": "p0397",
-"name": "테이블 빨강 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0397.png",
-"w": 70,
-"h": 52,
 "credit": "pk-themes"
 },
 {
@@ -4316,46 +3196,6 @@
 "category": "deco",
 "set": "아기자기",
 "url": "/static/dorm_default/packs/agijagi/0401.png",
-"w": 70,
-"h": 52,
-"credit": "pk-themes"
-},
-{
-"id": "p0402",
-"name": "소파 초록 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0402.png",
-"w": 107,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0403",
-"name": "시계 초록 회전",
-"category": "wall",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0403.png",
-"w": 34,
-"h": 49,
-"credit": "pk-themes"
-},
-{
-"id": "p0404",
-"name": "침대 초록 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0404.png",
-"w": 149,
-"h": 114,
-"credit": "pk-themes"
-},
-{
-"id": "p0405",
-"name": "테이블 초록 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0405.png",
 "w": 70,
 "h": 52,
 "credit": "pk-themes"
@@ -4401,46 +3241,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0410",
-"name": "소파 파랑 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0410.png",
-"w": 107,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0411",
-"name": "시계 파랑 회전",
-"category": "wall",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0411.png",
-"w": 34,
-"h": 49,
-"credit": "pk-themes"
-},
-{
-"id": "p0412",
-"name": "침대 파랑 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0412.png",
-"w": 149,
-"h": 114,
-"credit": "pk-themes"
-},
-{
-"id": "p0413",
-"name": "테이블 파랑 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0413.png",
-"w": 70,
-"h": 52,
-"credit": "pk-themes"
-},
-{
 "id": "p0414",
 "name": "소파 하양",
 "category": "furniture",
@@ -4481,61 +3281,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0418",
-"name": "소파 하양 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0418.png",
-"w": 107,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0419",
-"name": "시계 하양 회전",
-"category": "wall",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0419.png",
-"w": 34,
-"h": 49,
-"credit": "pk-themes"
-},
-{
-"id": "p0420",
-"name": "침대 하양 회전",
-"category": "furniture",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0420.png",
-"w": 149,
-"h": 114,
-"credit": "pk-themes"
-},
-{
-"id": "p0421",
-"name": "테이블 하양 회전",
-"category": "deco",
-"set": "아기자기",
-"url": "/static/dorm_default/packs/agijagi/0421.png",
-"w": 70,
-"h": 52,
-"credit": "pk-themes"
-},
-{
 "id": "p0422",
 "name": "도끼",
 "category": "furniture",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0422.png",
-"w": 59,
-"h": 92,
-"credit": "pk-themes"
-},
-{
-"id": "p0423",
-"name": "도끼 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0423.png",
 "w": 59,
 "h": 92,
 "credit": "pk-themes"
@@ -4551,31 +3301,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0425",
-"name": "벽등 반",
-"category": "wall",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0425.png",
-"w": 20,
-"h": 38,
-"credit": "pk-themes"
-},
-{
 "id": "p0426",
 "name": "어두메거울 검정",
 "category": "deco",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0426.png",
-"w": 48,
-"h": 78,
-"credit": "pk-themes"
-},
-{
-"id": "p0427",
-"name": "어두메거울 검정 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0427.png",
 "w": 48,
 "h": 78,
 "credit": "pk-themes"
@@ -4591,31 +3321,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0429",
-"name": "어두메거울 보라 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0429.png",
-"w": 48,
-"h": 78,
-"credit": "pk-themes"
-},
-{
 "id": "p0430",
 "name": "어두메거울 빨강",
 "category": "deco",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0430.png",
-"w": 48,
-"h": 78,
-"credit": "pk-themes"
-},
-{
-"id": "p0431",
-"name": "어두메거울 빨강 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0431.png",
 "w": 48,
 "h": 78,
 "credit": "pk-themes"
@@ -4631,31 +3341,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0433",
-"name": "어두메거울 초록 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0433.png",
-"w": 48,
-"h": 78,
-"credit": "pk-themes"
-},
-{
 "id": "p0434",
 "name": "어두메거울 파랑",
 "category": "deco",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0434.png",
-"w": 48,
-"h": 78,
-"credit": "pk-themes"
-},
-{
-"id": "p0435",
-"name": "어두메거울 파랑 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0435.png",
 "w": 48,
 "h": 78,
 "credit": "pk-themes"
@@ -4671,31 +3361,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0437",
-"name": "어두메거울 핑크 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0437.png",
-"w": 48,
-"h": 78,
-"credit": "pk-themes"
-},
-{
 "id": "p0438",
 "name": "어두메구슬 검정",
 "category": "deco",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0438.png",
-"w": 53,
-"h": 53,
-"credit": "pk-themes"
-},
-{
-"id": "p0439",
-"name": "어두메구슬 검정 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0439.png",
 "w": 53,
 "h": 53,
 "credit": "pk-themes"
@@ -4711,31 +3381,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0441",
-"name": "어두메구슬 보라 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0441.png",
-"w": 53,
-"h": 53,
-"credit": "pk-themes"
-},
-{
 "id": "p0442",
 "name": "어두메구슬 빨강",
 "category": "deco",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0442.png",
-"w": 53,
-"h": 53,
-"credit": "pk-themes"
-},
-{
-"id": "p0443",
-"name": "어두메구슬 빨강 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0443.png",
 "w": 53,
 "h": 53,
 "credit": "pk-themes"
@@ -4751,16 +3401,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0445",
-"name": "어두메구슬 초록 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0445.png",
-"w": 53,
-"h": 53,
-"credit": "pk-themes"
-},
-{
 "id": "p0446",
 "name": "어두메구슬 파랑",
 "category": "deco",
@@ -4771,31 +3411,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0447",
-"name": "어두메구슬 파랑 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0447.png",
-"w": 53,
-"h": 53,
-"credit": "pk-themes"
-},
-{
 "id": "p0448",
 "name": "어두메구슬 핑크",
 "category": "deco",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0448.png",
-"w": 53,
-"h": 53,
-"credit": "pk-themes"
-},
-{
-"id": "p0449",
-"name": "어두메구슬 핑크 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0449.png",
 "w": 53,
 "h": 53,
 "credit": "pk-themes"
@@ -4943,31 +3563,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0463",
-"name": "어두메책장 검정 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0463.png",
-"w": 101,
-"h": 162,
-"credit": "pk-themes"
-},
-{
 "id": "p0464",
 "name": "어두메책장 보라",
 "category": "furniture",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0464.png",
-"w": 101,
-"h": 162,
-"credit": "pk-themes"
-},
-{
-"id": "p0465",
-"name": "어두메책장 보라 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0465.png",
 "w": 101,
 "h": 162,
 "credit": "pk-themes"
@@ -4983,31 +3583,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0467",
-"name": "어두메책장 빨강 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0467.png",
-"w": 101,
-"h": 162,
-"credit": "pk-themes"
-},
-{
 "id": "p0468",
 "name": "어두메책장 초록",
 "category": "furniture",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0468.png",
-"w": 101,
-"h": 162,
-"credit": "pk-themes"
-},
-{
-"id": "p0469",
-"name": "어두메책장 초록 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0469.png",
 "w": 101,
 "h": 162,
 "credit": "pk-themes"
@@ -5023,31 +3603,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0471",
-"name": "어두메책장 파랑 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0471.png",
-"w": 101,
-"h": 162,
-"credit": "pk-themes"
-},
-{
 "id": "p0472",
 "name": "어두메책장 핑크",
 "category": "furniture",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0472.png",
-"w": 101,
-"h": 162,
-"credit": "pk-themes"
-},
-{
-"id": "p0473",
-"name": "어두메책장 핑크 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0473.png",
 "w": 101,
 "h": 162,
 "credit": "pk-themes"
@@ -5063,31 +3623,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0475",
-"name": "어두메침대 검정 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0475.png",
-"w": 158,
-"h": 145,
-"credit": "pk-themes"
-},
-{
 "id": "p0476",
 "name": "어두메침대 보라",
 "category": "furniture",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0476.png",
-"w": 158,
-"h": 145,
-"credit": "pk-themes"
-},
-{
-"id": "p0477",
-"name": "어두메침대 보라 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0477.png",
 "w": 158,
 "h": 145,
 "credit": "pk-themes"
@@ -5103,31 +3643,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0479",
-"name": "어두메침대 빨강 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0479.png",
-"w": 158,
-"h": 145,
-"credit": "pk-themes"
-},
-{
 "id": "p0480",
 "name": "어두메침대 초록",
 "category": "furniture",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0480.png",
-"w": 158,
-"h": 145,
-"credit": "pk-themes"
-},
-{
-"id": "p0481",
-"name": "어두메침대 초록 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0481.png",
 "w": 158,
 "h": 145,
 "credit": "pk-themes"
@@ -5143,31 +3663,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0483",
-"name": "어두메침대 파랑 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0483.png",
-"w": 158,
-"h": 145,
-"credit": "pk-themes"
-},
-{
 "id": "p0484",
 "name": "어두메침대 핑크",
 "category": "furniture",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0484.png",
-"w": 158,
-"h": 145,
-"credit": "pk-themes"
-},
-{
-"id": "p0485",
-"name": "어두메침대 핑크 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0485.png",
 "w": 158,
 "h": 145,
 "credit": "pk-themes"
@@ -5183,31 +3683,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0487",
-"name": "어두메테이블 검정 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0487.png",
-"w": 150,
-"h": 119,
-"credit": "pk-themes"
-},
-{
 "id": "p0488",
 "name": "어두메테이블 보라",
 "category": "furniture",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0488.png",
-"w": 150,
-"h": 119,
-"credit": "pk-themes"
-},
-{
-"id": "p0489",
-"name": "어두메테이블 보라 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0489.png",
 "w": 150,
 "h": 119,
 "credit": "pk-themes"
@@ -5223,31 +3703,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0491",
-"name": "어두메테이블 빨강 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0491.png",
-"w": 150,
-"h": 119,
-"credit": "pk-themes"
-},
-{
 "id": "p0492",
 "name": "어두메테이블 초락",
 "category": "furniture",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0492.png",
-"w": 150,
-"h": 119,
-"credit": "pk-themes"
-},
-{
-"id": "p0493",
-"name": "어두메테이블 초록 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0493.png",
 "w": 150,
 "h": 119,
 "credit": "pk-themes"
@@ -5263,16 +3723,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0495",
-"name": "어두메테이블 파랑 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0495.png",
-"w": 150,
-"h": 119,
-"credit": "pk-themes"
-},
-{
 "id": "p0496",
 "name": "어두메테이블 핑크",
 "category": "furniture",
@@ -5283,31 +3733,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0497",
-"name": "어두메테이블 핑크 반",
-"category": "furniture",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0497.png",
-"w": 150,
-"h": 119,
-"credit": "pk-themes"
-},
-{
 "id": "p0498",
 "name": "촛대",
 "category": "deco",
 "set": "어두메",
 "url": "/static/dorm_default/packs/eodume/0498.png",
-"w": 23,
-"h": 62,
-"credit": "pk-themes"
-},
-{
-"id": "p0499",
-"name": "촛대 반",
-"category": "deco",
-"set": "어두메",
-"url": "/static/dorm_default/packs/eodume/0499.png",
 "w": 23,
 "h": 62,
 "credit": "pk-themes"
@@ -5488,96 +3918,6 @@
 "category": "deco",
 "set": "오리엔탈",
 "url": "/static/dorm_default/packs/oriental/0517.png",
-"w": 30,
-"h": 44,
-"credit": "pk-themes"
-},
-{
-"id": "p0518",
-"name": "등 반 하양",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0518.png",
-"w": 30,
-"h": 44,
-"credit": "pk-themes"
-},
-{
-"id": "p0519",
-"name": "등 반 검정",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0519.png",
-"w": 30,
-"h": 44,
-"credit": "pk-themes"
-},
-{
-"id": "p0520",
-"name": "등 반 보라",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0520.png",
-"w": 30,
-"h": 44,
-"credit": "pk-themes"
-},
-{
-"id": "p0521",
-"name": "등 반 블루",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0521.png",
-"w": 30,
-"h": 44,
-"credit": "pk-themes"
-},
-{
-"id": "p0522",
-"name": "등 반 핑크",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0522.png",
-"w": 30,
-"h": 44,
-"credit": "pk-themes"
-},
-{
-"id": "p0523",
-"name": "등 반 청록",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0523.png",
-"w": 30,
-"h": 44,
-"credit": "pk-themes"
-},
-{
-"id": "p0524",
-"name": "등 반 연두",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0524.png",
-"w": 30,
-"h": 44,
-"credit": "pk-themes"
-},
-{
-"id": "p0525",
-"name": "등 반 노랑",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0525.png",
-"w": 30,
-"h": 44,
-"credit": "pk-themes"
-},
-{
-"id": "p0526",
-"name": "등 반 빨강",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0526.png",
 "w": 30,
 "h": 44,
 "credit": "pk-themes"
@@ -5970,96 +4310,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0563",
-"name": "소파 반 하양",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0563.png",
-"w": 91,
-"h": 83,
-"credit": "pk-themes"
-},
-{
-"id": "p0564",
-"name": "소파 반 검정",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0564.png",
-"w": 91,
-"h": 83,
-"credit": "pk-themes"
-},
-{
-"id": "p0565",
-"name": "소파 반 보라",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0565.png",
-"w": 91,
-"h": 83,
-"credit": "pk-themes"
-},
-{
-"id": "p0566",
-"name": "소파 반 블루",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0566.png",
-"w": 91,
-"h": 83,
-"credit": "pk-themes"
-},
-{
-"id": "p0567",
-"name": "소파 반 핑크",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0567.png",
-"w": 91,
-"h": 83,
-"credit": "pk-themes"
-},
-{
-"id": "p0568",
-"name": "소파 반 청록",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0568.png",
-"w": 91,
-"h": 83,
-"credit": "pk-themes"
-},
-{
-"id": "p0569",
-"name": "소파 반 연두",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0569.png",
-"w": 91,
-"h": 83,
-"credit": "pk-themes"
-},
-{
-"id": "p0570",
-"name": "소파 반 노랑",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0570.png",
-"w": 91,
-"h": 83,
-"credit": "pk-themes"
-},
-{
-"id": "p0571",
-"name": "소파 반 빨강",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0571.png",
-"w": 91,
-"h": 83,
-"credit": "pk-themes"
-},
-{
 "id": "p0572",
 "name": "액자 하양",
 "category": "wall",
@@ -6145,96 +4395,6 @@
 "category": "wall",
 "set": "오리엔탈",
 "url": "/static/dorm_default/packs/oriental/0580.png",
-"w": 84,
-"h": 107,
-"credit": "pk-themes"
-},
-{
-"id": "p0581",
-"name": "액자 반 하양",
-"category": "wall",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0581.png",
-"w": 84,
-"h": 107,
-"credit": "pk-themes"
-},
-{
-"id": "p0582",
-"name": "액자 반 검정",
-"category": "wall",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0582.png",
-"w": 84,
-"h": 107,
-"credit": "pk-themes"
-},
-{
-"id": "p0583",
-"name": "액자 반 보라",
-"category": "wall",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0583.png",
-"w": 84,
-"h": 107,
-"credit": "pk-themes"
-},
-{
-"id": "p0584",
-"name": "액자 반 블루",
-"category": "wall",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0584.png",
-"w": 84,
-"h": 107,
-"credit": "pk-themes"
-},
-{
-"id": "p0585",
-"name": "액자 반 핑크",
-"category": "wall",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0585.png",
-"w": 84,
-"h": 107,
-"credit": "pk-themes"
-},
-{
-"id": "p0586",
-"name": "액자 반 청록",
-"category": "wall",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0586.png",
-"w": 84,
-"h": 107,
-"credit": "pk-themes"
-},
-{
-"id": "p0587",
-"name": "액자 반 연두",
-"category": "wall",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0587.png",
-"w": 84,
-"h": 107,
-"credit": "pk-themes"
-},
-{
-"id": "p0588",
-"name": "액자 반 노랑",
-"category": "wall",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0588.png",
-"w": 84,
-"h": 107,
-"credit": "pk-themes"
-},
-{
-"id": "p0589",
-"name": "액자 반 빨강",
-"category": "wall",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0589.png",
 "w": 84,
 "h": 107,
 "credit": "pk-themes"
@@ -6330,96 +4490,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0599",
-"name": "옷장 반 하양",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0599.png",
-"w": 63,
-"h": 123,
-"credit": "pk-themes"
-},
-{
-"id": "p0600",
-"name": "옷장 반 검정",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0600.png",
-"w": 63,
-"h": 123,
-"credit": "pk-themes"
-},
-{
-"id": "p0601",
-"name": "옷장 반 보라",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0601.png",
-"w": 63,
-"h": 123,
-"credit": "pk-themes"
-},
-{
-"id": "p0602",
-"name": "옷장 반 블루",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0602.png",
-"w": 63,
-"h": 123,
-"credit": "pk-themes"
-},
-{
-"id": "p0603",
-"name": "옷장 반 핑크",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0603.png",
-"w": 63,
-"h": 123,
-"credit": "pk-themes"
-},
-{
-"id": "p0604",
-"name": "옷장 반 청록",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0604.png",
-"w": 63,
-"h": 123,
-"credit": "pk-themes"
-},
-{
-"id": "p0605",
-"name": "옷장 반 연두",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0605.png",
-"w": 63,
-"h": 123,
-"credit": "pk-themes"
-},
-{
-"id": "p0606",
-"name": "옷장 반 노랑",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0606.png",
-"w": 63,
-"h": 123,
-"credit": "pk-themes"
-},
-{
-"id": "p0607",
-"name": "옷장 반 빨강",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0607.png",
-"w": 63,
-"h": 123,
-"credit": "pk-themes"
-},
-{
 "id": "p0608",
 "name": "의자 하양",
 "category": "deco",
@@ -6505,96 +4575,6 @@
 "category": "deco",
 "set": "오리엔탈",
 "url": "/static/dorm_default/packs/oriental/0616.png",
-"w": 44,
-"h": 43,
-"credit": "pk-themes"
-},
-{
-"id": "p0617",
-"name": "의자 반 하양",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0617.png",
-"w": 44,
-"h": 43,
-"credit": "pk-themes"
-},
-{
-"id": "p0618",
-"name": "의자 반 검정",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0618.png",
-"w": 44,
-"h": 43,
-"credit": "pk-themes"
-},
-{
-"id": "p0619",
-"name": "의자 반 보라",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0619.png",
-"w": 44,
-"h": 43,
-"credit": "pk-themes"
-},
-{
-"id": "p0620",
-"name": "의자 반 블루",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0620.png",
-"w": 44,
-"h": 43,
-"credit": "pk-themes"
-},
-{
-"id": "p0621",
-"name": "의자 반 핑크",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0621.png",
-"w": 44,
-"h": 43,
-"credit": "pk-themes"
-},
-{
-"id": "p0622",
-"name": "의자 반 청록",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0622.png",
-"w": 44,
-"h": 43,
-"credit": "pk-themes"
-},
-{
-"id": "p0623",
-"name": "의자 반 연두",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0623.png",
-"w": 44,
-"h": 43,
-"credit": "pk-themes"
-},
-{
-"id": "p0624",
-"name": "의자 반 노랑",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0624.png",
-"w": 44,
-"h": 43,
-"credit": "pk-themes"
-},
-{
-"id": "p0625",
-"name": "의자 반 빨강",
-"category": "deco",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0625.png",
 "w": 44,
 "h": 43,
 "credit": "pk-themes"
@@ -6690,86 +4670,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0635",
-"name": "장식장 반 하양",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0635.png",
-"w": 65,
-"h": 93,
-"credit": "pk-themes"
-},
-{
-"id": "p0636",
-"name": "장식장 반 검정",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0636.png",
-"w": 65,
-"h": 93,
-"credit": "pk-themes"
-},
-{
-"id": "p0637",
-"name": "장식장 반 보라",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0637.png",
-"w": 65,
-"h": 93,
-"credit": "pk-themes"
-},
-{
-"id": "p0638",
-"name": "장식장 반 블루",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0638.png",
-"w": 65,
-"h": 93,
-"credit": "pk-themes"
-},
-{
-"id": "p0639",
-"name": "장식장 반 핑크",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0639.png",
-"w": 65,
-"h": 93,
-"credit": "pk-themes"
-},
-{
-"id": "p0640",
-"name": "장식장 반 청록",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0640.png",
-"w": 65,
-"h": 93,
-"credit": "pk-themes"
-},
-{
-"id": "p0641",
-"name": "장식장 반 연두",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0641.png",
-"w": 65,
-"h": 93,
-"credit": "pk-themes"
-},
-{
-"id": "p0642",
-"name": "장식장 반 노랑",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0642.png",
-"w": 65,
-"h": 93,
-"credit": "pk-themes"
-},
-{
 "id": "p0643",
 "name": "침대 하양",
 "category": "furniture",
@@ -6855,96 +4755,6 @@
 "category": "furniture",
 "set": "오리엔탈",
 "url": "/static/dorm_default/packs/oriental/0651.png",
-"w": 131,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0652",
-"name": "침대 반 하양",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0652.png",
-"w": 131,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0653",
-"name": "침대 반 검정",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0653.png",
-"w": 131,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0654",
-"name": "침대 반 보라",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0654.png",
-"w": 131,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0655",
-"name": "침대 반 블루",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0655.png",
-"w": 131,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0656",
-"name": "침대 반 핑크",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0656.png",
-"w": 131,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0657",
-"name": "침대 반 청록",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0657.png",
-"w": 131,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0658",
-"name": "침대 반 연두",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0658.png",
-"w": 131,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0659",
-"name": "침대 반 노랑",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0659.png",
-"w": 131,
-"h": 71,
-"credit": "pk-themes"
-},
-{
-"id": "p0660",
-"name": "침대 반 빨강",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0660.png",
 "w": 131,
 "h": 71,
 "credit": "pk-themes"
@@ -7040,96 +4850,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0670",
-"name": "파티션 반 하양",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0670.png",
-"w": 63,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0671",
-"name": "파티션 반 검정",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0671.png",
-"w": 63,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0672",
-"name": "파티션 반 보라",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0672.png",
-"w": 63,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0673",
-"name": "파티션 반 블루",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0673.png",
-"w": 63,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0674",
-"name": "파티션 반 핑크",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0674.png",
-"w": 63,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0675",
-"name": "파티션 반 청록",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0675.png",
-"w": 63,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0676",
-"name": "파티션 반 연두",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0676.png",
-"w": 63,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0677",
-"name": "파티션 반 노랑",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0677.png",
-"w": 63,
-"h": 89,
-"credit": "pk-themes"
-},
-{
-"id": "p0678",
-"name": "파티션 반 빨강",
-"category": "furniture",
-"set": "오리엔탈",
-"url": "/static/dorm_default/packs/oriental/0678.png",
-"w": 63,
-"h": 89,
-"credit": "pk-themes"
-},
-{
 "id": "p0679",
 "name": "바닥지",
 "category": "surface",
@@ -7190,16 +4910,6 @@
 "category": "furniture",
 "set": "와구와구",
 "url": "/static/dorm_default/packs/waguwagu/0684.png",
-"w": 119,
-"h": 94,
-"credit": "pk-themes"
-},
-{
-"id": "p0685",
-"name": "소파 반",
-"category": "furniture",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0685.png",
 "w": 119,
 "h": 94,
 "credit": "pk-themes"
@@ -7285,61 +4995,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0694",
-"name": "아이스크림 반 노랑",
-"category": "deco",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0694.png",
-"w": 27,
-"h": 35,
-"credit": "pk-themes"
-},
-{
-"id": "p0695",
-"name": "아이스크림 반 분홍",
-"category": "deco",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0695.png",
-"w": 27,
-"h": 35,
-"credit": "pk-themes"
-},
-{
-"id": "p0696",
-"name": "아이스크림 반 파랑",
-"category": "deco",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0696.png",
-"w": 27,
-"h": 35,
-"credit": "pk-themes"
-},
-{
-"id": "p0697",
-"name": "아이스크림 반 빨강",
-"category": "deco",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0697.png",
-"w": 27,
-"h": 35,
-"credit": "pk-themes"
-},
-{
 "id": "p0698",
 "name": "오븐",
 "category": "furniture",
 "set": "와구와구",
 "url": "/static/dorm_default/packs/waguwagu/0698.png",
-"w": 84,
-"h": 85,
-"credit": "pk-themes"
-},
-{
-"id": "p0699",
-"name": "오븐 반",
-"category": "furniture",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0699.png",
 "w": 84,
 "h": 85,
 "credit": "pk-themes"
@@ -7360,16 +5020,6 @@
 "category": "deco",
 "set": "와구와구",
 "url": "/static/dorm_default/packs/waguwagu/0701.png",
-"w": 21,
-"h": 25,
-"credit": "pk-themes"
-},
-{
-"id": "p0702",
-"name": "와구와구 반",
-"category": "deco",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0702.png",
 "w": 21,
 "h": 25,
 "credit": "pk-themes"
@@ -7415,46 +5065,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0707",
-"name": "의자 반 노랑",
-"category": "deco",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0707.png",
-"w": 32,
-"h": 62,
-"credit": "pk-themes"
-},
-{
-"id": "p0708",
-"name": "의자 반 분홍",
-"category": "deco",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0708.png",
-"w": 32,
-"h": 62,
-"credit": "pk-themes"
-},
-{
-"id": "p0709",
-"name": "의자 반 파랑",
-"category": "deco",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0709.png",
-"w": 32,
-"h": 62,
-"credit": "pk-themes"
-},
-{
-"id": "p0710",
-"name": "의자 반 빨강",
-"category": "deco",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0710.png",
-"w": 32,
-"h": 62,
-"credit": "pk-themes"
-},
-{
 "id": "p0711",
 "name": "침대",
 "category": "furniture",
@@ -7465,31 +5075,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0712",
-"name": "침대 반",
-"category": "furniture",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0712.png",
-"w": 140,
-"h": 101,
-"credit": "pk-themes"
-},
-{
 "id": "p0713",
 "name": "카펫",
 "category": "surface",
 "set": "와구와구",
 "url": "/static/dorm_default/packs/waguwagu/0713.png",
-"w": 60,
-"h": 34,
-"credit": "pk-themes"
-},
-{
-"id": "p0714",
-"name": "카펫 반",
-"category": "surface",
-"set": "와구와구",
-"url": "/static/dorm_default/packs/waguwagu/0714.png",
 "w": 60,
 "h": 34,
 "credit": "pk-themes"
@@ -7623,31 +5213,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0727",
-"name": "대형 곰 인형 노랑 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0727.png",
-"w": 118,
-"h": 142,
-"credit": "pk-themes"
-},
-{
 "id": "p0728",
 "name": "대형 곰 인형 보라",
 "category": "furniture",
 "set": "코야코야",
 "url": "/static/dorm_default/packs/koyakoya/0728.png",
-"w": 118,
-"h": 142,
-"credit": "pk-themes"
-},
-{
-"id": "p0729",
-"name": "대형 곰 인형 보라 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0729.png",
 "w": 118,
 "h": 142,
 "credit": "pk-themes"
@@ -7663,31 +5233,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0731",
-"name": "대형 곰 인형 분홍 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0731.png",
-"w": 118,
-"h": 142,
-"credit": "pk-themes"
-},
-{
 "id": "p0732",
 "name": "대형 곰 인형 파랑",
 "category": "furniture",
 "set": "코야코야",
 "url": "/static/dorm_default/packs/koyakoya/0732.png",
-"w": 118,
-"h": 142,
-"credit": "pk-themes"
-},
-{
-"id": "p0733",
-"name": "대형 곰 인형 파랑 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0733.png",
 "w": 118,
 "h": 142,
 "credit": "pk-themes"
@@ -7703,31 +5253,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0735",
-"name": "대형 토끼 인형 노랑 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0735.png",
-"w": 115,
-"h": 162,
-"credit": "pk-themes"
-},
-{
 "id": "p0736",
 "name": "대형 토끼 인형 보라",
 "category": "furniture",
 "set": "코야코야",
 "url": "/static/dorm_default/packs/koyakoya/0736.png",
-"w": 115,
-"h": 162,
-"credit": "pk-themes"
-},
-{
-"id": "p0737",
-"name": "대형 토끼 인형 보라 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0737.png",
 "w": 115,
 "h": 162,
 "credit": "pk-themes"
@@ -7743,31 +5273,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0739",
-"name": "대형 토끼 인형 분홍 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0739.png",
-"w": 115,
-"h": 162,
-"credit": "pk-themes"
-},
-{
 "id": "p0740",
 "name": "대형 토끼 인형 파랑",
 "category": "furniture",
 "set": "코야코야",
 "url": "/static/dorm_default/packs/koyakoya/0740.png",
-"w": 115,
-"h": 162,
-"credit": "pk-themes"
-},
-{
-"id": "p0741",
-"name": "대형 토끼 인형 파랑 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0741.png",
 "w": 115,
 "h": 162,
 "credit": "pk-themes"
@@ -7783,31 +5293,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0743",
-"name": "소형 고양이 인형 노랑 회전",
-"category": "deco",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0743.png",
-"w": 78,
-"h": 61,
-"credit": "pk-themes"
-},
-{
 "id": "p0744",
 "name": "소형 고양이 인형 보라",
 "category": "deco",
 "set": "코야코야",
 "url": "/static/dorm_default/packs/koyakoya/0744.png",
-"w": 78,
-"h": 61,
-"credit": "pk-themes"
-},
-{
-"id": "p0745",
-"name": "소형 고양이 인형 보라 회전",
-"category": "deco",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0745.png",
 "w": 78,
 "h": 61,
 "credit": "pk-themes"
@@ -7823,16 +5313,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0747",
-"name": "소형 고양이 인형 분홍 회전",
-"category": "deco",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0747.png",
-"w": 78,
-"h": 61,
-"credit": "pk-themes"
-},
-{
 "id": "p0748",
 "name": "소형 고양이 인형 파랑",
 "category": "deco",
@@ -7840,26 +5320,6 @@
 "url": "/static/dorm_default/packs/koyakoya/0748.png",
 "w": 78,
 "h": 61,
-"credit": "pk-themes"
-},
-{
-"id": "p0749",
-"name": "소형 고양이 인형 파랑 회전",
-"category": "deco",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0749.png",
-"w": 78,
-"h": 61,
-"credit": "pk-themes"
-},
-{
-"id": "p0750",
-"name": "소형 토끼 인형 노랑 회전",
-"category": "deco",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0750.png",
-"w": 85,
-"h": 55,
 "credit": "pk-themes"
 },
 {
@@ -7873,31 +5333,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0752",
-"name": "소형 토끼 인형 보라 회전",
-"category": "deco",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0752.png",
-"w": 85,
-"h": 55,
-"credit": "pk-themes"
-},
-{
 "id": "p0753",
 "name": "소형 토끼 인형 분홍",
 "category": "deco",
 "set": "코야코야",
 "url": "/static/dorm_default/packs/koyakoya/0753.png",
-"w": 85,
-"h": 55,
-"credit": "pk-themes"
-},
-{
-"id": "p0754",
-"name": "소형 토끼 인형 분홍 회전",
-"category": "deco",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0754.png",
 "w": 85,
 "h": 55,
 "credit": "pk-themes"
@@ -7923,31 +5363,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0757",
-"name": "소형 토끼 인형 파랑 회전",
-"category": "deco",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0757.png",
-"w": 85,
-"h": 55,
-"credit": "pk-themes"
-},
-{
 "id": "p0758",
 "name": "침대 노랑",
 "category": "furniture",
 "set": "코야코야",
 "url": "/static/dorm_default/packs/koyakoya/0758.png",
-"w": 210,
-"h": 159,
-"credit": "pk-themes"
-},
-{
-"id": "p0759",
-"name": "침대 노랑 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0759.png",
 "w": 210,
 "h": 159,
 "credit": "pk-themes"
@@ -7963,16 +5383,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0761",
-"name": "침대 보라 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0761.png",
-"w": 210,
-"h": 159,
-"credit": "pk-themes"
-},
-{
 "id": "p0762",
 "name": "침대 분홍",
 "category": "furniture",
@@ -7983,31 +5393,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0763",
-"name": "침대 분홍 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0763.png",
-"w": 210,
-"h": 159,
-"credit": "pk-themes"
-},
-{
 "id": "p0764",
 "name": "침대 파랑",
 "category": "furniture",
 "set": "코야코야",
 "url": "/static/dorm_default/packs/koyakoya/0764.png",
-"w": 210,
-"h": 159,
-"credit": "pk-themes"
-},
-{
-"id": "p0765",
-"name": "침대 파랑 회전",
-"category": "furniture",
-"set": "코야코야",
-"url": "/static/dorm_default/packs/koyakoya/0765.png",
 "w": 210,
 "h": 159,
 "credit": "pk-themes"
@@ -8028,26 +5418,6 @@
 "category": "furniture",
 "set": "코즈믹",
 "url": "/static/dorm_default/packs/cosmic/0767.png",
-"w": 139,
-"h": 98,
-"credit": "pk-themes"
-},
-{
-"id": "p0768",
-"name": "코즈믹 창문 초록 - 복사본",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0768.png",
-"w": 139,
-"h": 98,
-"credit": "pk-themes"
-},
-{
-"id": "p0769",
-"name": "코즈믹 창문 초록",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0769.png",
 "w": 139,
 "h": 98,
 "credit": "pk-themes"
@@ -8645,306 +6015,6 @@
 "slot": "floor"
 },
 {
-"id": "p0828",
-"name": "코즈믹 반 망원경 검정",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0828.png",
-"w": 65,
-"h": 77,
-"credit": "pk-themes"
-},
-{
-"id": "p0829",
-"name": "코즈믹 반 망원경 초록",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0829.png",
-"w": 65,
-"h": 77,
-"credit": "pk-themes"
-},
-{
-"id": "p0830",
-"name": "코즈믹 반 망원경 노랑",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0830.png",
-"w": 65,
-"h": 77,
-"credit": "pk-themes"
-},
-{
-"id": "p0831",
-"name": "코즈믹 반 망원경 보라",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0831.png",
-"w": 65,
-"h": 77,
-"credit": "pk-themes"
-},
-{
-"id": "p0832",
-"name": "코즈믹 반 망원경 파랑",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0832.png",
-"w": 65,
-"h": 77,
-"credit": "pk-themes"
-},
-{
-"id": "p0833",
-"name": "코즈믹 반 망원경 핑크",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0833.png",
-"w": 65,
-"h": 77,
-"credit": "pk-themes"
-},
-{
-"id": "p0834",
-"name": "코즈믹 반 창문 검정",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0834.png",
-"w": 139,
-"h": 98,
-"credit": "pk-themes"
-},
-{
-"id": "p0835",
-"name": "코즈믹 반 창문 초록",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0835.png",
-"w": 139,
-"h": 98,
-"credit": "pk-themes"
-},
-{
-"id": "p0836",
-"name": "코즈믹 반 창문 노랑",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0836.png",
-"w": 139,
-"h": 98,
-"credit": "pk-themes"
-},
-{
-"id": "p0837",
-"name": "코즈믹 반 창문 보라",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0837.png",
-"w": 139,
-"h": 98,
-"credit": "pk-themes"
-},
-{
-"id": "p0838",
-"name": "코즈믹 반 창문 파랑",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0838.png",
-"w": 139,
-"h": 98,
-"credit": "pk-themes"
-},
-{
-"id": "p0839",
-"name": "코즈믹 반 창문 핑크",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0839.png",
-"w": 139,
-"h": 98,
-"credit": "pk-themes"
-},
-{
-"id": "p0840",
-"name": "코즈믹 반 CCTV 검정",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0840.png",
-"w": 28,
-"h": 27,
-"credit": "pk-themes"
-},
-{
-"id": "p0841",
-"name": "코즈믹 반 CCTV 초록",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0841.png",
-"w": 28,
-"h": 27,
-"credit": "pk-themes"
-},
-{
-"id": "p0842",
-"name": "코즈믹 반 CCTV 노랑",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0842.png",
-"w": 28,
-"h": 27,
-"credit": "pk-themes"
-},
-{
-"id": "p0843",
-"name": "코즈믹 반 CCTV 보라",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0843.png",
-"w": 28,
-"h": 27,
-"credit": "pk-themes"
-},
-{
-"id": "p0844",
-"name": "코즈믹 반 CCTV 파랑",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0844.png",
-"w": 28,
-"h": 27,
-"credit": "pk-themes"
-},
-{
-"id": "p0845",
-"name": "코즈믹 반 CCTV 핑크",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0845.png",
-"w": 28,
-"h": 27,
-"credit": "pk-themes"
-},
-{
-"id": "p0846",
-"name": "코즈믹 반 조명 검정",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0846.png",
-"w": 57,
-"h": 64,
-"credit": "pk-themes"
-},
-{
-"id": "p0847",
-"name": "코즈믹 반 조명 초록",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0847.png",
-"w": 57,
-"h": 64,
-"credit": "pk-themes"
-},
-{
-"id": "p0848",
-"name": "코즈믹 반 조명 노랑",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0848.png",
-"w": 57,
-"h": 64,
-"credit": "pk-themes"
-},
-{
-"id": "p0849",
-"name": "코즈믹 반 조명 보라",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0849.png",
-"w": 57,
-"h": 64,
-"credit": "pk-themes"
-},
-{
-"id": "p0850",
-"name": "코즈믹 반 조명 파랑",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0850.png",
-"w": 57,
-"h": 64,
-"credit": "pk-themes"
-},
-{
-"id": "p0851",
-"name": "코즈믹 반 조명 핑크",
-"category": "deco",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0851.png",
-"w": 57,
-"h": 64,
-"credit": "pk-themes"
-},
-{
-"id": "p0852",
-"name": "코즈믹 반 의자 검정",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0852.png",
-"w": 97,
-"h": 87,
-"credit": "pk-themes"
-},
-{
-"id": "p0853",
-"name": "코즈믹 반 의자 초록",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0853.png",
-"w": 97,
-"h": 87,
-"credit": "pk-themes"
-},
-{
-"id": "p0854",
-"name": "코즈믹 반 의자 노랑",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0854.png",
-"w": 97,
-"h": 87,
-"credit": "pk-themes"
-},
-{
-"id": "p0855",
-"name": "코즈믹 반 의자 보라",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0855.png",
-"w": 97,
-"h": 87,
-"credit": "pk-themes"
-},
-{
-"id": "p0856",
-"name": "코즈믹 반 의자 파랑",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0856.png",
-"w": 97,
-"h": 87,
-"credit": "pk-themes"
-},
-{
-"id": "p0857",
-"name": "코즈믹 반 의자 핑크",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0857.png",
-"w": 97,
-"h": 87,
-"credit": "pk-themes"
-},
-{
 "id": "p0858",
 "name": "코즈믹 반 침대 검정",
 "category": "furniture",
@@ -9128,66 +6198,6 @@
 "url": "/static/dorm_default/packs/cosmic/0875.png",
 "w": 19,
 "h": 32,
-"credit": "pk-themes"
-},
-{
-"id": "p0876",
-"name": "코즈믹 침대 검정",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0876.png",
-"w": 132,
-"h": 79,
-"credit": "pk-themes"
-},
-{
-"id": "p0877",
-"name": "코즈믹 침대 노랑",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0877.png",
-"w": 132,
-"h": 79,
-"credit": "pk-themes"
-},
-{
-"id": "p0878",
-"name": "코즈믹 침대 보라",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0878.png",
-"w": 132,
-"h": 79,
-"credit": "pk-themes"
-},
-{
-"id": "p0879",
-"name": "코즈믹 침대 초록",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0879.png",
-"w": 132,
-"h": 79,
-"credit": "pk-themes"
-},
-{
-"id": "p0880",
-"name": "코즈믹 침대 파랑",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0880.png",
-"w": 132,
-"h": 79,
-"credit": "pk-themes"
-},
-{
-"id": "p0881",
-"name": "코즈믹 침대 핑크",
-"category": "furniture",
-"set": "코즈믹",
-"url": "/static/dorm_default/packs/cosmic/0881.png",
-"w": 132,
-"h": 79,
 "credit": "pk-themes"
 },
 {
@@ -9541,16 +6551,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0917",
-"name": "드라이 히아신스 반",
-"category": "deco",
-"set": "히아신스",
-"url": "/static/dorm_default/packs/hyacinth/0917.png",
-"w": 31,
-"h": 74,
-"credit": "pk-themes"
-},
-{
 "id": "p0918",
 "name": "히아신스 꽃잎",
 "category": "deco",
@@ -9561,31 +6561,11 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0919",
-"name": "히아신스 꽃잎 반",
-"category": "deco",
-"set": "히아신스",
-"url": "/static/dorm_default/packs/hyacinth/0919.png",
-"w": 47,
-"h": 22,
-"credit": "pk-themes"
-},
-{
 "id": "p0920",
 "name": "히아신스 러그",
 "category": "deco",
 "set": "히아신스",
 "url": "/static/dorm_default/packs/hyacinth/0920.png",
-"w": 83,
-"h": 45,
-"credit": "pk-themes"
-},
-{
-"id": "p0921",
-"name": "히아신스 러그 반",
-"category": "deco",
-"set": "히아신스",
-"url": "/static/dorm_default/packs/hyacinth/0921.png",
 "w": 83,
 "h": 45,
 "credit": "pk-themes"
@@ -9616,16 +6596,6 @@
 "category": "deco",
 "set": "히아신스",
 "url": "/static/dorm_default/packs/hyacinth/0924.png",
-"w": 35,
-"h": 46,
-"credit": "pk-themes"
-},
-{
-"id": "p0925",
-"name": "히아신스 무드등 반",
-"category": "deco",
-"set": "히아신스",
-"url": "/static/dorm_default/packs/hyacinth/0925.png",
 "w": 35,
 "h": 46,
 "credit": "pk-themes"
@@ -9662,16 +6632,6 @@
 "credit": "pk-themes"
 },
 {
-"id": "p0929",
-"name": "히아신스 벤치 반",
-"category": "furniture",
-"set": "히아신스",
-"url": "/static/dorm_default/packs/hyacinth/0929.png",
-"w": 84,
-"h": 86,
-"credit": "pk-themes"
-},
-{
 "id": "p0930",
 "name": "히아신스 벽지",
 "category": "surface",
@@ -9701,16 +6661,1228 @@
 "w": 121,
 "h": 145,
 "credit": "pk-themes"
-},
-{
-"id": "p0933",
-"name": "히아신스 침대 반",
-"category": "furniture",
-"set": "히아신스",
-"url": "/static/dorm_default/packs/hyacinth/0933.png",
-"w": 121,
-"h": 145,
-"credit": "pk-themes"
 }
-]
+],
+"aliases": {
+"p0120": {
+"to": "p0169",
+"flip": true
+},
+"p0133": {
+"to": "p0122",
+"flip": true
+},
+"p0134": {
+"to": "p0123",
+"flip": true
+},
+"p0135": {
+"to": "p0124",
+"flip": true
+},
+"p0136": {
+"to": "p0125",
+"flip": true
+},
+"p0137": {
+"to": "p0126",
+"flip": true
+},
+"p0142": {
+"to": "p0131",
+"flip": true
+},
+"p0154": {
+"to": "p0144",
+"flip": true
+},
+"p0155": {
+"to": "p0145",
+"flip": true
+},
+"p0156": {
+"to": "p0146",
+"flip": true
+},
+"p0157": {
+"to": "p0147",
+"flip": true
+},
+"p0162": {
+"to": "p0152",
+"flip": true
+},
+"p0170": {
+"to": "p0164",
+"flip": true
+},
+"p0171": {
+"to": "p0165",
+"flip": true
+},
+"p0172": {
+"to": "p0166",
+"flip": true
+},
+"p0173": {
+"to": "p0167",
+"flip": true
+},
+"p0179": {
+"to": "p0174",
+"flip": true
+},
+"p0180": {
+"to": "p0175",
+"flip": true
+},
+"p0181": {
+"to": "p0176",
+"flip": true
+},
+"p0182": {
+"to": "p0177",
+"flip": true
+},
+"p0183": {
+"to": "p0178",
+"flip": true
+},
+"p0189": {
+"to": "p0184",
+"flip": true
+},
+"p0190": {
+"to": "p0185",
+"flip": true
+},
+"p0191": {
+"to": "p0186",
+"flip": true
+},
+"p0192": {
+"to": "p0187",
+"flip": true
+},
+"p0193": {
+"to": "p0188",
+"flip": true
+},
+"p0195": {
+"to": "p0194",
+"flip": true
+},
+"p0197": {
+"to": "p0196",
+"flip": true
+},
+"p0199": {
+"to": "p0198",
+"flip": true
+},
+"p0201": {
+"to": "p0200",
+"flip": true
+},
+"p0203": {
+"to": "p0202",
+"flip": true
+},
+"p0205": {
+"to": "p0204",
+"flip": true
+},
+"p0207": {
+"to": "p0206",
+"flip": true
+},
+"p0213": {
+"to": "p0212",
+"flip": true
+},
+"p0215": {
+"to": "p0214",
+"flip": true
+},
+"p0217": {
+"to": "p0216",
+"flip": true
+},
+"p0219": {
+"to": "p0218",
+"flip": true
+},
+"p0221": {
+"to": "p0220",
+"flip": true
+},
+"p0223": {
+"to": "p0222",
+"flip": true
+},
+"p0225": {
+"to": "p0224",
+"flip": true
+},
+"p0227": {
+"to": "p0226",
+"flip": true
+},
+"p0229": {
+"to": "p0228",
+"flip": true
+},
+"p0231": {
+"to": "p0230",
+"flip": true
+},
+"p0233": {
+"to": "p0232",
+"flip": true
+},
+"p0235": {
+"to": "p0234",
+"flip": true
+},
+"p0237": {
+"to": "p0236",
+"flip": true
+},
+"p0239": {
+"to": "p0238",
+"flip": true
+},
+"p0241": {
+"to": "p0240",
+"flip": true
+},
+"p0243": {
+"to": "p0242",
+"flip": true
+},
+"p0245": {
+"to": "p0244",
+"flip": true
+},
+"p0247": {
+"to": "p0246",
+"flip": true
+},
+"p0249": {
+"to": "p0248",
+"flip": true
+},
+"p0251": {
+"to": "p0250",
+"flip": true
+},
+"p0256": {
+"to": "p0252",
+"flip": true
+},
+"p0257": {
+"to": "p0253",
+"flip": true
+},
+"p0258": {
+"to": "p0254",
+"flip": true
+},
+"p0259": {
+"to": "p0255",
+"flip": true
+},
+"p0268": {
+"to": "p0264",
+"flip": true
+},
+"p0269": {
+"to": "p0265",
+"flip": true
+},
+"p0270": {
+"to": "p0266",
+"flip": true
+},
+"p0271": {
+"to": "p0267",
+"flip": true
+},
+"p0284": {
+"to": "p0280",
+"flip": true
+},
+"p0285": {
+"to": "p0281",
+"flip": true
+},
+"p0286": {
+"to": "p0282",
+"flip": true
+},
+"p0287": {
+"to": "p0283",
+"flip": true
+},
+"p0292": {
+"to": "p0288",
+"flip": true
+},
+"p0293": {
+"to": "p0289",
+"flip": true
+},
+"p0294": {
+"to": "p0290",
+"flip": true
+},
+"p0295": {
+"to": "p0291",
+"flip": true
+},
+"p0300": {
+"to": "p0296",
+"flip": true
+},
+"p0301": {
+"to": "p0297",
+"flip": true
+},
+"p0302": {
+"to": "p0298",
+"flip": true
+},
+"p0303": {
+"to": "p0299",
+"flip": true
+},
+"p0308": {
+"to": "p0304",
+"flip": true
+},
+"p0309": {
+"to": "p0305",
+"flip": true
+},
+"p0310": {
+"to": "p0306",
+"flip": true
+},
+"p0311": {
+"to": "p0307",
+"flip": true
+},
+"p0316": {
+"to": "p0312",
+"flip": true
+},
+"p0317": {
+"to": "p0313",
+"flip": true
+},
+"p0318": {
+"to": "p0314",
+"flip": true
+},
+"p0319": {
+"to": "p0315",
+"flip": true
+},
+"p0324": {
+"to": "p0320",
+"flip": true
+},
+"p0325": {
+"to": "p0321",
+"flip": true
+},
+"p0326": {
+"to": "p0322",
+"flip": true
+},
+"p0327": {
+"to": "p0323",
+"flip": true
+},
+"p0330": {
+"to": "p0385",
+"flip": true
+},
+"p0339": {
+"to": "p0331",
+"flip": true
+},
+"p0332": {
+"to": "p0394",
+"flip": true
+},
+"p0341": {
+"to": "p0333",
+"flip": true
+},
+"p0342": {
+"to": "p0334",
+"flip": true
+},
+"p0343": {
+"to": "p0335",
+"flip": true
+},
+"p0346": {
+"to": "p0338",
+"flip": true
+},
+"p0348": {
+"to": "p0340",
+"flip": true
+},
+"p0355": {
+"to": "p0347",
+"flip": true
+},
+"p0357": {
+"to": "p0349",
+"flip": true
+},
+"p0358": {
+"to": "p0350",
+"flip": true
+},
+"p0359": {
+"to": "p0351",
+"flip": true
+},
+"p0362": {
+"to": "p0354",
+"flip": true
+},
+"p0364": {
+"to": "p0356",
+"flip": true
+},
+"p0369": {
+"to": "p0363",
+"flip": true
+},
+"p0372": {
+"to": "p0365",
+"flip": true
+},
+"p0373": {
+"to": "p0366",
+"flip": true
+},
+"p0377": {
+"to": "p0370",
+"flip": true
+},
+"p0378": {
+"to": "p0371",
+"flip": true
+},
+"p0383": {
+"to": "p0376",
+"flip": true
+},
+"p0386": {
+"to": "p0379",
+"flip": true
+},
+"p0387": {
+"to": "p0380",
+"flip": true
+},
+"p0389": {
+"to": "p0384",
+"flip": true
+},
+"p0393": {
+"to": "p0388",
+"flip": true
+},
+"p0395": {
+"to": "p0390",
+"flip": true
+},
+"p0396": {
+"to": "p0391",
+"flip": true
+},
+"p0397": {
+"to": "p0392",
+"flip": true
+},
+"p0402": {
+"to": "p0398",
+"flip": true
+},
+"p0403": {
+"to": "p0399",
+"flip": true
+},
+"p0404": {
+"to": "p0400",
+"flip": true
+},
+"p0405": {
+"to": "p0401",
+"flip": true
+},
+"p0410": {
+"to": "p0406",
+"flip": true
+},
+"p0411": {
+"to": "p0407",
+"flip": true
+},
+"p0412": {
+"to": "p0408",
+"flip": true
+},
+"p0413": {
+"to": "p0409",
+"flip": true
+},
+"p0418": {
+"to": "p0414",
+"flip": true
+},
+"p0419": {
+"to": "p0415",
+"flip": true
+},
+"p0420": {
+"to": "p0416",
+"flip": true
+},
+"p0421": {
+"to": "p0417",
+"flip": true
+},
+"p0423": {
+"to": "p0422",
+"flip": true
+},
+"p0425": {
+"to": "p0424",
+"flip": true
+},
+"p0427": {
+"to": "p0426",
+"flip": true
+},
+"p0429": {
+"to": "p0428",
+"flip": true
+},
+"p0431": {
+"to": "p0430",
+"flip": true
+},
+"p0433": {
+"to": "p0432",
+"flip": true
+},
+"p0435": {
+"to": "p0434",
+"flip": true
+},
+"p0437": {
+"to": "p0436",
+"flip": true
+},
+"p0439": {
+"to": "p0438",
+"flip": true
+},
+"p0441": {
+"to": "p0440",
+"flip": true
+},
+"p0443": {
+"to": "p0442",
+"flip": true
+},
+"p0445": {
+"to": "p0444",
+"flip": true
+},
+"p0447": {
+"to": "p0446",
+"flip": true
+},
+"p0449": {
+"to": "p0448",
+"flip": true
+},
+"p0463": {
+"to": "p0462",
+"flip": true
+},
+"p0465": {
+"to": "p0464",
+"flip": true
+},
+"p0467": {
+"to": "p0466",
+"flip": true
+},
+"p0469": {
+"to": "p0468",
+"flip": true
+},
+"p0471": {
+"to": "p0470",
+"flip": true
+},
+"p0473": {
+"to": "p0472",
+"flip": true
+},
+"p0475": {
+"to": "p0474",
+"flip": true
+},
+"p0477": {
+"to": "p0476",
+"flip": true
+},
+"p0479": {
+"to": "p0478",
+"flip": true
+},
+"p0481": {
+"to": "p0480",
+"flip": true
+},
+"p0483": {
+"to": "p0482",
+"flip": true
+},
+"p0485": {
+"to": "p0484",
+"flip": true
+},
+"p0487": {
+"to": "p0486",
+"flip": true
+},
+"p0489": {
+"to": "p0488",
+"flip": true
+},
+"p0491": {
+"to": "p0490",
+"flip": true
+},
+"p0493": {
+"to": "p0492",
+"flip": true
+},
+"p0495": {
+"to": "p0494",
+"flip": true
+},
+"p0497": {
+"to": "p0496",
+"flip": true
+},
+"p0499": {
+"to": "p0498",
+"flip": true
+},
+"p0518": {
+"to": "p0509",
+"flip": true
+},
+"p0519": {
+"to": "p0510",
+"flip": true
+},
+"p0520": {
+"to": "p0511",
+"flip": true
+},
+"p0521": {
+"to": "p0512",
+"flip": true
+},
+"p0522": {
+"to": "p0513",
+"flip": true
+},
+"p0523": {
+"to": "p0514",
+"flip": true
+},
+"p0524": {
+"to": "p0515",
+"flip": true
+},
+"p0525": {
+"to": "p0516",
+"flip": true
+},
+"p0526": {
+"to": "p0517",
+"flip": true
+},
+"p0563": {
+"to": "p0554",
+"flip": true
+},
+"p0564": {
+"to": "p0555",
+"flip": true
+},
+"p0565": {
+"to": "p0556",
+"flip": true
+},
+"p0566": {
+"to": "p0557",
+"flip": true
+},
+"p0567": {
+"to": "p0558",
+"flip": true
+},
+"p0568": {
+"to": "p0559",
+"flip": true
+},
+"p0569": {
+"to": "p0560",
+"flip": true
+},
+"p0570": {
+"to": "p0561",
+"flip": true
+},
+"p0571": {
+"to": "p0562",
+"flip": true
+},
+"p0581": {
+"to": "p0572",
+"flip": true
+},
+"p0582": {
+"to": "p0573",
+"flip": true
+},
+"p0583": {
+"to": "p0574",
+"flip": true
+},
+"p0584": {
+"to": "p0575",
+"flip": true
+},
+"p0585": {
+"to": "p0576",
+"flip": true
+},
+"p0586": {
+"to": "p0577",
+"flip": true
+},
+"p0587": {
+"to": "p0578",
+"flip": true
+},
+"p0588": {
+"to": "p0579",
+"flip": true
+},
+"p0589": {
+"to": "p0580",
+"flip": true
+},
+"p0599": {
+"to": "p0590",
+"flip": true
+},
+"p0600": {
+"to": "p0591",
+"flip": true
+},
+"p0601": {
+"to": "p0592",
+"flip": true
+},
+"p0602": {
+"to": "p0593",
+"flip": true
+},
+"p0603": {
+"to": "p0594",
+"flip": true
+},
+"p0604": {
+"to": "p0595",
+"flip": true
+},
+"p0605": {
+"to": "p0596",
+"flip": true
+},
+"p0606": {
+"to": "p0597",
+"flip": true
+},
+"p0607": {
+"to": "p0598",
+"flip": true
+},
+"p0617": {
+"to": "p0608",
+"flip": true
+},
+"p0618": {
+"to": "p0609",
+"flip": true
+},
+"p0619": {
+"to": "p0610",
+"flip": true
+},
+"p0620": {
+"to": "p0611",
+"flip": true
+},
+"p0621": {
+"to": "p0612",
+"flip": true
+},
+"p0622": {
+"to": "p0613",
+"flip": true
+},
+"p0623": {
+"to": "p0614",
+"flip": true
+},
+"p0624": {
+"to": "p0615",
+"flip": true
+},
+"p0625": {
+"to": "p0616",
+"flip": true
+},
+"p0635": {
+"to": "p0626",
+"flip": true
+},
+"p0636": {
+"to": "p0627",
+"flip": true
+},
+"p0637": {
+"to": "p0628",
+"flip": true
+},
+"p0638": {
+"to": "p0629",
+"flip": true
+},
+"p0639": {
+"to": "p0630",
+"flip": true
+},
+"p0640": {
+"to": "p0631",
+"flip": true
+},
+"p0641": {
+"to": "p0632",
+"flip": true
+},
+"p0642": {
+"to": "p0633",
+"flip": true
+},
+"p0652": {
+"to": "p0643",
+"flip": true
+},
+"p0653": {
+"to": "p0644",
+"flip": true
+},
+"p0654": {
+"to": "p0645",
+"flip": true
+},
+"p0655": {
+"to": "p0646",
+"flip": true
+},
+"p0656": {
+"to": "p0647",
+"flip": true
+},
+"p0657": {
+"to": "p0648",
+"flip": true
+},
+"p0658": {
+"to": "p0649",
+"flip": true
+},
+"p0659": {
+"to": "p0650",
+"flip": true
+},
+"p0660": {
+"to": "p0651",
+"flip": true
+},
+"p0670": {
+"to": "p0661",
+"flip": true
+},
+"p0671": {
+"to": "p0662",
+"flip": true
+},
+"p0672": {
+"to": "p0663",
+"flip": true
+},
+"p0673": {
+"to": "p0664",
+"flip": true
+},
+"p0674": {
+"to": "p0665",
+"flip": true
+},
+"p0675": {
+"to": "p0666",
+"flip": true
+},
+"p0676": {
+"to": "p0667",
+"flip": true
+},
+"p0677": {
+"to": "p0668",
+"flip": true
+},
+"p0678": {
+"to": "p0669",
+"flip": true
+},
+"p0685": {
+"to": "p0684",
+"flip": true
+},
+"p0694": {
+"to": "p0690",
+"flip": true
+},
+"p0695": {
+"to": "p0691",
+"flip": true
+},
+"p0696": {
+"to": "p0692",
+"flip": true
+},
+"p0697": {
+"to": "p0693",
+"flip": true
+},
+"p0699": {
+"to": "p0698",
+"flip": true
+},
+"p0702": {
+"to": "p0701",
+"flip": true
+},
+"p0707": {
+"to": "p0703",
+"flip": true
+},
+"p0708": {
+"to": "p0704",
+"flip": true
+},
+"p0709": {
+"to": "p0705",
+"flip": true
+},
+"p0710": {
+"to": "p0706",
+"flip": true
+},
+"p0712": {
+"to": "p0711",
+"flip": true
+},
+"p0714": {
+"to": "p0713",
+"flip": true
+},
+"p0727": {
+"to": "p0726",
+"flip": true
+},
+"p0729": {
+"to": "p0728",
+"flip": true
+},
+"p0731": {
+"to": "p0730",
+"flip": true
+},
+"p0733": {
+"to": "p0732",
+"flip": true
+},
+"p0735": {
+"to": "p0734",
+"flip": true
+},
+"p0737": {
+"to": "p0736",
+"flip": true
+},
+"p0739": {
+"to": "p0738",
+"flip": true
+},
+"p0741": {
+"to": "p0740",
+"flip": true
+},
+"p0743": {
+"to": "p0742",
+"flip": true
+},
+"p0745": {
+"to": "p0744",
+"flip": true
+},
+"p0747": {
+"to": "p0746",
+"flip": true
+},
+"p0749": {
+"to": "p0748",
+"flip": true
+},
+"p0750": {
+"to": "p0755",
+"flip": true
+},
+"p0752": {
+"to": "p0751",
+"flip": true
+},
+"p0754": {
+"to": "p0753",
+"flip": true
+},
+"p0757": {
+"to": "p0756",
+"flip": true
+},
+"p0759": {
+"to": "p0758",
+"flip": true
+},
+"p0761": {
+"to": "p0760",
+"flip": true
+},
+"p0763": {
+"to": "p0762",
+"flip": true
+},
+"p0765": {
+"to": "p0764",
+"flip": true
+},
+"p0834": {
+"to": "p0766",
+"flip": true
+},
+"p0835": {
+"to": "p0767",
+"flip": true
+},
+"p0836": {
+"to": "p0770",
+"flip": true
+},
+"p0837": {
+"to": "p0771",
+"flip": true
+},
+"p0838": {
+"to": "p0772",
+"flip": true
+},
+"p0839": {
+"to": "p0773",
+"flip": true
+},
+"p0840": {
+"to": "p0780",
+"flip": true
+},
+"p0841": {
+"to": "p0781",
+"flip": true
+},
+"p0842": {
+"to": "p0782",
+"flip": true
+},
+"p0843": {
+"to": "p0783",
+"flip": true
+},
+"p0844": {
+"to": "p0784",
+"flip": true
+},
+"p0845": {
+"to": "p0785",
+"flip": true
+},
+"p0846": {
+"to": "p0786",
+"flip": true
+},
+"p0847": {
+"to": "p0787",
+"flip": true
+},
+"p0848": {
+"to": "p0788",
+"flip": true
+},
+"p0849": {
+"to": "p0789",
+"flip": true
+},
+"p0850": {
+"to": "p0790",
+"flip": true
+},
+"p0851": {
+"to": "p0791",
+"flip": true
+},
+"p0852": {
+"to": "p0798",
+"flip": true
+},
+"p0853": {
+"to": "p0799",
+"flip": true
+},
+"p0854": {
+"to": "p0800",
+"flip": true
+},
+"p0855": {
+"to": "p0801",
+"flip": true
+},
+"p0856": {
+"to": "p0802",
+"flip": true
+},
+"p0857": {
+"to": "p0803",
+"flip": true
+},
+"p0828": {
+"to": "p0810",
+"flip": true
+},
+"p0830": {
+"to": "p0811",
+"flip": true
+},
+"p0831": {
+"to": "p0812",
+"flip": true
+},
+"p0829": {
+"to": "p0813",
+"flip": true
+},
+"p0832": {
+"to": "p0814",
+"flip": true
+},
+"p0833": {
+"to": "p0815",
+"flip": true
+},
+"p0876": {
+"to": "p0858",
+"flip": true
+},
+"p0877": {
+"to": "p0859",
+"flip": true
+},
+"p0878": {
+"to": "p0860",
+"flip": true
+},
+"p0879": {
+"to": "p0861",
+"flip": true
+},
+"p0880": {
+"to": "p0862",
+"flip": true
+},
+"p0881": {
+"to": "p0863",
+"flip": true
+},
+"p0917": {
+"to": "p0916",
+"flip": true
+},
+"p0919": {
+"to": "p0918",
+"flip": true
+},
+"p0921": {
+"to": "p0920",
+"flip": true
+},
+"p0925": {
+"to": "p0924",
+"flip": true
+},
+"p0929": {
+"to": "p0928",
+"flip": true
+},
+"p0933": {
+"to": "p0932",
+"flip": true
+},
+"p0768": {
+"to": "p0767",
+"flip": false
+},
+"p0769": {
+"to": "p0767",
+"flip": false
+}
+}
 }
