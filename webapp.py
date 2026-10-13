@@ -35,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.10"
+SERVER_BUILD = "2026-10-13.11"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -65,6 +65,7 @@ SKILL_LOG_BODY_MAX = 300
 SKILL_LOG_TAGS = {"b", "strong", "i", "em", "br", "div", "p", "span"}
 # 이 행동을 하면 그 캐릭터의 스킬 이펙트(컷인)를 모두의 화면에 띄웁니다.
 SKILL_ACTIONS = ("collapse", "emission", "shield", "polarize", "reflux", "restore")
+SKILL_ACTION_LABELS = {"collapse": "붕괴", "emission": "방출", "shield": "차폐", "polarize": "편광", "reflux": "환류", "restore": "복원"}
 
 # socket id -> {"room_id", "role", "nickname"}
 CONNECTIONS = {}
@@ -719,6 +720,19 @@ def emit_action_sfx(room, actor_name, action_type):
         fx = skill_cutin_payload(room.game.db.get(actor_name))
         if fx:
             socketio.emit("skill_cutin", dict(fx, actor=actor_name), room=room_channel(room.id, "all"))
+        # 채팅창에도 '스킬 사용' 기록을 남깁니다(누르면 그때의 컷인을 다시 볼 수 있게 컷인 내용을 함께 저장).
+        entry = {
+            "time": time.strftime("%H:%M:%S"),
+            "nickname": actor_name,
+            "role": "system",
+            "category": "skill",
+            "text": f"【{SKILL_ACTION_LABELS.get(action_type, action_type)}】",
+            "skill": SKILL_ACTION_LABELS.get(action_type, action_type),
+            "fx": dict(fx, actor=actor_name) if fx else None,
+        }
+        room.chat_log.append(_with_chat_id(entry))
+        mark_runtime_dirty()
+        socketio.emit("chat_message", entry, room=room_channel(room.id, "all"))
 
 
 # 격자 전투(공성전/마스 레이드)에서 보스·거점(2팀)이 공격하면, 지도에 공격자 → 피격자 방향의

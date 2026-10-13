@@ -2947,6 +2947,46 @@
   .action-bar-bottom.armed select { border-color: rgba(var(--point-rgb), .45) !important; }
   .action-bar-bottom.armed .send-btn:not(:disabled), .action-bar-bottom.armed .gm-run { animation: armPulse 1.6s ease-in-out infinite; }
   @keyframes armPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--point-rgb), .55); } 50% { box-shadow: 0 0 0 6px rgba(var(--point-rgb), 0), 0 0 20px rgba(var(--point-rgb), .6); } }
+
+  .action-bar-bottom.gm-bar.wrap-fields { flex-wrap:wrap; }
+  .action-bar-bottom.gm-bar.wrap-fields .gm-bar-fields { flex:1 1 100%; }
+  .action-bar-bottom.gm-bar.wrap-fields .gm-bar-ctrl { border-left:none; padding-left:0; }
+
+  /* 로그창 꾸밈 */
+  .lg-skill { display:inline-block; padding:1px 8px; margin:0 2px; border-radius:6px; font-weight:800; font-size:.92em; color:#fff;
+    background: radial-gradient(130% 140% at 0% 50%, rgba(var(--point-rgb), .5), rgba(var(--point-rgb), .14) 60%); border:1px solid rgba(var(--point-rgb), .5); }
+  .lg-lab { display:inline-block; padding:0 7px; margin-right:6px; border-radius:5px; font-size:.82em; font-weight:700; color: var(--muted);
+    background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); vertical-align:1px; }
+  .logline.tag-heal .lg-lab { color:#8fe3a8; background: rgba(80,200,120,.1); border-color: rgba(80,200,120,.25); }
+  .lg-plus { display:inline-block; padding:0 6px; border-radius:5px; font-weight:800; color:#7ee2a0; background: rgba(80,200,120,.12); font-variant-numeric: tabular-nums; }
+  .lg-hp { display:inline-flex; align-items:center; gap:5px; padding:0 7px; margin-left:4px; border-radius:5px; font-size:.88em; color: var(--muted);
+    background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); font-variant-numeric: tabular-nums; vertical-align:1px; }
+  .lg-hp i { font-size:.75em; opacity:.6; }
+  .lg-hp b { color: var(--text); font-weight:700; }
+  .lg-hp em { font-style:normal; font-weight:700; font-size:.92em; }
+  .lg-hp em.up { color:#7ee2a0; } .lg-hp em.down { color:#ff7a7a; }
+
+  /* 채팅창 스킬 사용 기록 */
+  .chat-line.is-skill { display:flex; align-items:stretch; gap:6px; margin:10px 0; }
+  .skill-rec { position:relative; flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; cursor:pointer;
+    padding:10px 44px 10px 14px; border-radius:12px; overflow:hidden; color: var(--text);
+    background: radial-gradient(120% 160% at 0% 50%, rgba(var(--point-rgb), .3) 0%, rgba(var(--point-rgb), .06) 55%, rgba(255,255,255,.02) 100%);
+    border:1px solid rgba(var(--point-rgb), .45); box-shadow: 0 0 22px rgba(var(--point-rgb), .15), inset 0 1px 0 rgba(255,255,255,.08); transition: transform .15s, box-shadow .15s; }
+  .skill-rec::before { content:""; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:0 3px 3px 0; background: var(--sc); box-shadow:0 0 10px var(--sc); }
+  .skill-rec::after { content:""; position:absolute; inset:0; pointer-events:none;
+    background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.18) 50%, transparent 60%) no-repeat; background-size:260% 100%; animation: armSweep 1.2s ease-out 1 both; }
+  .skill-rec:hover { transform:translateY(-1px); box-shadow: 0 0 28px rgba(var(--point-rgb), .3), inset 0 1px 0 rgba(255,255,255,.1); }
+  .skill-rec.nofx { cursor:default; }
+  .skill-rec.nofx:hover { transform:none; }
+  .sr-top { display:flex; align-items:center; gap:8px; font-size:12px; color: var(--muted); }
+  .sr-k { font-size:10px; font-weight:800; letter-spacing:.32em; padding:1px 6px 1px calc(6px + .32em); border-radius:3px; color: var(--on-accent); background: var(--point); }
+  .sr-who { color: var(--sc); font-weight:800; font-size:13px; }
+  .sr-top .time { font-size:11px; }
+  .sr-name { font-size:24px; line-height:1.15; font-weight:900; font-style:italic; letter-spacing:-0.01em; transform:skewX(-6deg); transform-origin:left;
+    background: linear-gradient(180deg, #fff 0%, #fff 50%, var(--point-soft) 100%); -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter: drop-shadow(0 2px 10px rgba(var(--point-rgb), .45)); }
+  .sr-play { position:absolute; right:14px; top:50%; transform:translateY(-50%); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:11px; color: var(--on-accent); background: var(--point); box-shadow:0 0 14px rgba(var(--point-rgb), .6); }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -4049,7 +4089,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.10";
+const EXPECTED_SERVER_BUILD = "2026-10-13.11";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -4847,6 +4887,9 @@ function renderGrid(battle, all) {
   const zl = document.getElementById('gridZoomLabel'); if (zl) zl.textContent = Math.round(zoom * 100) + '%';
   const fontPx = Math.max(11, Math.round(cellPx * 0.3));
 
+  // 전조 구역 : 운영진이 고르는 중이면 고른 칸, 아니면 공개된 칸
+  const telSelecting = typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all';
+  const telKeys = telSelecting ? new Set([...telegraphSelectedCells, ...telegraphRevealedCells]) : telegraphRevealedCells;
   let html = '<table class="gmap">';
   for (let y = 0; y < gridHeight; y++) {
     html += '<tr>';
@@ -4894,21 +4937,25 @@ function renderGrid(battle, all) {
         const edge = (dx, dy) => {
           const nk = `${x + dx},${y + dy}`;
           if (selfKey && (key === selfKey || nk === selfKey)) return 'var(--point)';
-          return rngCol && highlightCells.has(key) !== highlightCells.has(nk) ? rngCol : null;
+          if (rngCol && highlightCells.has(key) !== highlightCells.has(nk)) return rngCol;
+          // 전조 구역(운영진이 고르는 중이거나 공개된 칸)도 같은 방식 : 구역 바깥 격자 선만 붉게
+          if (telKeys.has(key) !== telKeys.has(nk)) return '#ff6b6b';
+          return null;
         };
         [['top', 0, -1], ['right', 1, 0], ['bottom', 0, 1], ['left', -1, 0]].forEach(([side, dx, dy]) => {
           const col = edge(dx, dy); if (col) tdStyle += `border-${side}-color:${col};`;
         });
         if (key === selfKey) tdStyle += 'background-color:color-mix(in srgb, var(--point) 18%, transparent);';
+        else if (telKeys.has(key)) tdStyle += 'background-color:rgba(255,80,80,.24);';
         else if (rngCol && highlightCells.has(key)) tdStyle += `background-color:color-mix(in srgb, ${rngCol} 12%, transparent);`;
       }
       // 운영진 전조 선택 중 : 모든 칸을 눌러 고르고(Shift+클릭 가로 한 줄, Shift+우클릭 세로 한 줄), 고른 칸은 붉게 표시
       if (typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all') {
         cursor = 'crosshair';
         onclick = `onclick="onTelegraphCellClick(${x},${y},event)" oncontextmenu="return onTelegraphCellRightClick(${x},${y},event)"`;
-        if (telegraphSelectedCells.has(key)) { selBorder = 'box-shadow: inset 0 0 0 2px #ff6b6b;'; tdStyle += 'background-color:rgba(255,80,80,.32);'; }
+
       }
-      const glow = telegraphRevealedCells.has(key) ? 'background-color:rgba(255,80,80,.28); box-shadow: inset 0 0 12px 3px rgba(255,120,120,0.55);' : '';
+      const glow = '';
       const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
       const telegraphText = telegraphRevealedCells.has(key) ? ' · 전조(곧 피해)' : '';
       const title = c ? `${displayNameOf(c)} (${c.role}) HP ${c.current_hp}/${c.max_hp}${stateText}${telegraphText}` : (telegraphText ? telegraphText.replace(/^\s*·\s*/, '') : '');
@@ -4956,6 +5003,11 @@ function renderGridNotice(battle, guide) {
   if (!el) return;
   if (guide !== undefined) lastGridGuide = guide;
   const parts = [];
+  // 운영진 전조 선택 중 : 다른 안내 대신 선택 방법과 고른 칸 수만
+  if (typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all') {
+    el.textContent = `전조 선택 중 · 고른 칸 ${telegraphSelectedCells.size}개 — 칸을 눌러 고르고, Shift+클릭은 가로 한 줄, Shift+우클릭은 세로 한 줄을 한꺼번에 골라요.`;
+    return;
+  }
   if (BATTLE_TYPE === 'siege' && lastSiteDice && lastSiteDice.value != null && !lastSiteDice.stale) {
     parts.push(`이번 턴 적이 ${lastSiteDice.value}회 공격합니다.`);
   }
@@ -5090,6 +5142,24 @@ function siteLabelize(text) {
   });
   return out;
 }
+// 로그 글자 꾸밈 : 【스킬】은 포인트 배지, 맨 앞 [분류]는 작은 표찰, 회복 +N은 초록 칩, (시작→끝)은 체력 칩.
+// (태그 안쪽은 건드리지 않도록 HTML 태그를 피해서 글자 부분만 바꿉니다)
+function decorateLogText(text, tag) {
+  if (typeof text !== 'string') return text;
+  return text.split(/(<[^>]+>)/).map((seg, i) => {
+    if (i % 2) return seg;
+    let t = seg;
+    t = t.replace(/^\s*\[([^\]]{1,30})\]\s*/, (m, lab) => `<span class="lg-lab">${lab.replace(/\s*-\s*/g, ' · ')}</span>`);
+    t = t.replace(/【([^】]{1,20})】/g, '<span class="lg-skill">$1</span>');
+    t = t.replace(/\((\d+)\s*→\s*(\d+)\)/g, (m, a, b) => {
+      const d = (+b) - (+a);
+      return `<span class="lg-hp"><span>${a}</span><i class="fa-solid fa-arrow-right"></i><b>${b}</b>${d ? `<em class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${d}</em>` : ''}</span>`;
+    });
+    if (tag === 'heal') t = t.replace(/(^|\s)\+(\d+)(?=\s|$)/g, '$1<span class="lg-plus">+$2</span>');
+    t = t.replace(/(본인 회복|회복)\s+(\d+)(?=\s|<|$)/g, '$1 <span class="lg-plus">+$2</span>');
+    return t;
+  }).join('');
+}
 function formatLogLineHtml(l, noIcon) {
   l = { ...l, text: stripLegacyEmoji(l.text) };
   if (l.tag !== 'hp') l.text = siteLabelize(l.text);
@@ -5099,7 +5169,8 @@ function formatLogLineHtml(l, noIcon) {
   }
   const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
   const icon = noIcon ? '' : (LOG_TAG_ICON[l.tag] || '');
-  const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${l.text}</span>` : l.text;
+  const deco = decorateLogText(l.text, l.tag);
+  const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${deco}</span>` : deco;
   return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${body}</div>`;
 }
 // 블록 첫 줄의 내용으로 공격/방어/힐 중 어떤 행동인지 구분해 그 색을 입힙니다. 피해 정산처럼
@@ -5493,7 +5564,7 @@ function matchesFilter(entry) {
   if (entry.category === 'presence') return false;
   if (chatFilter === 'team') return entry.category === 'team' && canSeeTeamMeeting(entry);
   if (chatFilter === 'spectator') return entry.category === 'spectator';
-  return entry.category === 'player' || entry.category === 'operator' || entry.category === 'round';
+  return entry.category === 'player' || entry.category === 'operator' || entry.category === 'round' || entry.category === 'skill';
 }
 
 // 운영진이 전투 관전/아군 회의 탭을 켜둘지/이름을 바꿀지 고르는 설정 (방 전체 공통 - public_state.chat_tabs).
@@ -5626,6 +5697,19 @@ function fmtChat(entry) {
   const canDel = entry.id && myControlInfo(lastBattleForPanel).scope === 'all';
   const delBtn = canDel ? `<button class="chat-del" onclick="deleteChatMessage('${entry.id}')"><i class="fa-solid fa-trash-can"></i></button>` : '';
   const idAttr = entry.id ? ` data-chat-id="${entry.id}"` : '';
+  if (entry.category === 'skill') {
+    // 스킬 사용 기록 : 굵은 기울임 그라데이션 글자 카드, 누르면 그때의 컷인을 다시 봅니다.
+    const c = typeof sfxCharacter === 'function' ? sfxCharacter(entry.nickname) : null;
+    const who = c ? displayNameOf(c) : entry.nickname;
+    const col = chatProfileOf(entry.nickname).color || 'var(--point)';
+    const can = !!entry.fx;
+    return `<div class="chat-line is-skill"${idAttr}>
+      <button type="button" class="skill-rec ${can ? '' : 'nofx'}" ${can ? `onclick="replaySkillCutin('${entry.id}')" data-tip="컷인 다시 보기"` : ''} style="--sc:${col}">
+        <span class="sr-top"><span class="sr-k">SKILL</span><b class="sr-who">${shopEsc(who || '')}</b><span class="time">${formatChatTime(entry.time)}</span></span>
+        <span class="sr-name">${shopEsc(entry.skill || entry.text || '')}</span>
+        ${can ? '<i class="fa-solid fa-play sr-play"></i>' : ''}
+      </button>${delBtn}</div>`;
+  }
   if (entry.category === 'round') {
     const main = /^round\s*\d+/i.test((entry.text || '').trim());
     return `<div class="chat-line is-round${main ? ' is-round-main' : ''}"${idAttr}>${roundHeadHtml(entry.text, highlightChat)}${delBtn}</div>`;
@@ -5651,6 +5735,13 @@ function fmtChat(entry) {
     <div class="chat-text">${highlightChat(entry.text)}</div></div>
     ${delBtn}
   </div>`;
+}
+
+function replaySkillCutin(id) {
+  const e = (lastChat || []).find(x => x.id === id);
+  if (!e || !e.fx) return;
+  const c = typeof sfxCharacter === 'function' ? sfxCharacter(e.fx.actor) : null;
+  showSkillCutin({ ...e.fx, actor: c ? displayNameOf(c) : e.fx.actor });
 }
 
 function appendChat(entry) {
@@ -5747,6 +5838,7 @@ let telegraphSelectedCells = new Set();  // GM이 고른 칸 (아직 미공개, 
 function toggleTelegraphMode() {
   telegraphMode = !telegraphMode;
   if (!telegraphMode) telegraphSelectedCells.clear();
+  else { selectedGridChar = null; selectedGridTargetName = null; disarmGridCommand(); }
   renderTelegraphControls();
   renderGrid(lastBattleForPanel, lastAllForCards);
 }
@@ -5821,9 +5913,9 @@ function renderTelegraphControls() {
   modeBtn.classList.toggle('on', telegraphMode);
   revealBtn.style.display = telegraphMode ? '' : 'none';
   clearBtn.style.display = telegraphRevealedCells.size > 0 ? '' : 'none';
-  status.textContent = telegraphMode
-    ? `선택된 칸 ${telegraphSelectedCells.size}개 · Shift+좌클릭 가로 일괄, Shift+우클릭 세로 일괄`
-    : (telegraphRevealedCells.size > 0 ? `공개된 전조 ${telegraphRevealedCells.size}칸` : '');
+  // 안내는 지도 위 알림줄(라디오 아이콘 옆)에서 합니다.
+  status.textContent = '';
+  renderGridNotice(lastBattleForPanel);
   status.title = status.textContent;
 }
 
@@ -5840,6 +5932,8 @@ function refreshGmActPanelVisibility() {
   // GM은 러너용 커맨드 바 대신 이 한 블록(캐릭터·행동·대상·실행 + 진행 버튼)만 씁니다.
   panel.style.display = isGm ? '' : 'none';
   document.getElementById('gmActFields').style.display = fields ? '' : 'none';
+  // 마스 레이드 : 지도에서 대상을 골라 행동 칸이 나타나면 진행 버튼과 겹치지 않게 두 줄로
+  panel.classList.toggle('wrap-fields', fields && BATTLE_TYPE === 'mass_raid');
   const runnerBar = document.getElementById('commandSendBar');
   if (runnerBar) runnerBar.style.display = isGm ? 'none' : '';
   if (fields) refreshGmActorOptions();
