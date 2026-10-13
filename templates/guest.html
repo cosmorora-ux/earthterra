@@ -2749,6 +2749,19 @@
     .breadcrumb-row .bgm-player input[type=range] { width:64px; }
     #gridSection.map-v2 .map-frame { padding:10px; }
   }
+
+  /* 휴대폰 격자 지도 : 확대 · 축소 · 맞춤 버튼(지도 오른쪽 위, 세로) */
+  #gridSection.map-v2 { position:relative; }
+  .gzoom { display:none; }
+  @media (max-width:600px) {
+    .gzoom { display:flex; flex-direction:column; gap:4px; position:absolute; top:8px; right:8px; z-index:12; padding:4px; border-radius:12px;
+      background: rgba(12,12,15,.78); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border:1px solid rgba(255,255,255,.1); }
+    .gzoom button { width:34px; height:34px; border:none; border-radius:8px; background:none; color:#d6d6dc; font-size:14px; cursor:pointer; }
+    .gzoom button:active { background: rgba(255,255,255,.1); }
+    #gridSection.map-v2 .map-frame.zoomed { flex:1 1 0; min-height:0; overflow:auto; justify-content:flex-start; align-items:flex-start;
+      -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-x pan-y; }
+    #gridSection.map-v2 .map-frame.zoomed #gridMap { display:block; width:max-content; margin:auto; }
+  }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -3315,6 +3328,11 @@
   <div id="gridSection" class="map-v2">
     <div class="map-frame">
       <div id="gridMap"></div>
+    </div>
+    <div class="gzoom" id="gridZoomCtl">
+      <button type="button" onclick="gridZoomBy(1.4)" aria-label="확대"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+      <button type="button" onclick="gridZoomBy(1 / 1.4)" aria-label="축소"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+      <button type="button" onclick="gridZoomFit()" aria-label="화면에 맞춤"><i class="fa-solid fa-expand"></i></button>
     </div>
     <div id="gridLegend"></div>
     <div id="gridActionPopup" style="display:none; margin-top:8px; padding:8px; border:1px solid #4ad0ff; border-radius:6px; background:#183042;"></div>
@@ -4596,7 +4614,11 @@ function renderGrid(battle, all) {
   }
   const byW = Math.floor((avail - gridWidth) / gridWidth);
   const byH = Math.floor((availH - gridHeight) / gridHeight);
-  const cellPx = Math.max(window.innerWidth <= 900 ? 18 : 28, Math.min(120, byW, byH > 0 ? byH : byW));
+  const fitCellPx = Math.max(window.innerWidth <= 900 ? 18 : 28, Math.min(120, byW, byH > 0 ? byH : byW));
+  // 휴대폰 : 확대 배율(맞춤 = 1). 확대하면 칸이 커지고 지도 틀 안에서 스크롤 · 드래그로 이동합니다.
+  const zoom = gridZoomOn() ? gridZoom : 1;
+  const cellPx = Math.min(96, Math.round(fitCellPx * zoom));
+  frame.classList.toggle('zoomed', zoom > 1.001);
   const fontPx = Math.max(11, Math.round(cellPx * 0.3));
 
   let html = '<table class="gmap">';
@@ -8839,12 +8861,59 @@ function maybeShowRoundBanner(battle) {
 // 격자 지도 공격선 : 보스·거점이 공격하면 공격자 → 피격자로 빨간 점선을 긋고,
 // 점선이 공격 방향으로 흐르다가 사라집니다.
 // ==================================================================
+// ---------- 휴대폰 격자 지도 확대 · 축소 · 맞춤 (+ 두 손가락 확대) ----------
+let gridZoom = 1;
+const GRID_ZOOM_MAX = 4;
+function gridZoomOn() { return window.innerWidth <= 600; }
+function gridZoomFrame() { return document.querySelector('#gridSection .map-frame'); }
+// 화면의 (cx, cy) 지점이 확대 전후에 같은 칸을 가리키도록 스크롤을 맞춥니다.
+function gridZoomTo(z, cx, cy) {
+  const f = gridZoomFrame(); if (!f) return;
+  z = Math.max(1, Math.min(GRID_ZOOM_MAX, z));
+  if (Math.abs(z - gridZoom) < 0.01) return;
+  if (cx == null) { cx = f.clientWidth / 2; cy = f.clientHeight / 2; }
+  const fx = (f.scrollLeft + cx) / Math.max(1, f.scrollWidth), fy = (f.scrollTop + cy) / Math.max(1, f.scrollHeight);
+  gridZoom = z;
+  renderGrid(lastBattleForPanel, lastAllForCards || []);
+  f.scrollLeft = fx * f.scrollWidth - cx;
+  f.scrollTop = fy * f.scrollHeight - cy;
+  drawAttackLines();
+}
+function gridZoomBy(k) { gridZoomTo(gridZoom * k); }
+function gridZoomFit() {
+  gridZoom = 1;
+  renderGrid(lastBattleForPanel, lastAllForCards || []);
+  const f = gridZoomFrame(); if (f) { f.scrollLeft = 0; f.scrollTop = 0; }
+}
+(function bindGridPinch() {
+  const f = gridZoomFrame(); if (!f) return;
+  let pinch = null, raf = 0;
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  f.addEventListener('touchstart', (e) => {
+    if (!gridZoomOn() || e.touches.length !== 2) return;
+    const r = f.getBoundingClientRect();
+    pinch = { d: dist(e.touches), z: gridZoom,
+      cx: (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left, cy: (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top };
+  }, { passive: true });
+  f.addEventListener('touchmove', (e) => {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    const z = pinch.z * dist(e.touches) / pinch.d;
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => gridZoomTo(z, pinch && pinch.cx, pinch && pinch.cy));
+  }, { passive: false });
+  const end = (e) => { if (e.touches.length < 2) pinch = null; };
+  f.addEventListener('touchend', end); f.addEventListener('touchcancel', end);
+})();
+window.addEventListener('resize', () => { if (!gridZoomOn() && gridZoom !== 1) gridZoomFit(); });
+
 function gridCellCenter(frame, x, y) {
   const table = document.querySelector('#gridMap table.gmap');
   const cell = table && table.rows[y] && table.rows[y].cells[x];
   if (!cell) return null;
   const r = cell.getBoundingClientRect(), f = frame.getBoundingClientRect();
-  return { x: r.left - f.left + r.width / 2, y: r.top - f.top + r.height / 2 };
+  // 확대해서 지도 틀이 스크롤된 상태여도 선이 칸에 맞도록 스크롤 양을 더합니다.
+  return { x: r.left - f.left + frame.scrollLeft + r.width / 2, y: r.top - f.top + frame.scrollTop + r.height / 2 };
 }
 function gridCharCenter(frame, name) {
   const all = lastAllForCards || [];
@@ -8865,8 +8934,8 @@ function drawAttackLines() {
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('class', 'atk-lines');
-  svg.setAttribute('width', frame.clientWidth);
-  svg.setAttribute('height', frame.clientHeight);
+  svg.setAttribute('width', frame.scrollWidth);
+  svg.setAttribute('height', frame.scrollHeight);
   lastAttackLines.forEach(l => {
     const from = gridCharCenter(frame, l.from), to = gridCharCenter(frame, l.to);
     if (!from || !to) return;
