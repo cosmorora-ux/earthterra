@@ -2269,27 +2269,58 @@
   /* ================================================================
      로그인 화면 : 방에 들어오면 먼저 캐릭터 이름(운영진은 GM + 비밀번호)으로 로그인합니다.
      ================================================================ */
-  #loginGate { display:none; position:fixed; inset:0; z-index:950; background: var(--bg);
-    align-items:center; justify-content:center; padding:24px 16px; box-sizing:border-box; overflow-y:auto; }
+  #loginGate { display:none; position:fixed; inset:0; z-index:950; background: var(--bg); overflow:hidden auto;
+    align-items:center; justify-content:center; padding:32px 16px; box-sizing:border-box; }
   #loginGate.on { display:flex; }
-  #loginGate::before { content:""; position:absolute; inset:0; pointer-events:none;
-    background: radial-gradient(60% 50% at 50% 38%, rgba(var(--point-rgb), .10), transparent 70%); }
-  .gate-box { position:relative; width:360px; max-width:100%; display:flex; flex-direction:column; gap:10px;
-    background: var(--panel); border:1px solid var(--card-border); border-radius:16px; padding:30px 26px 24px; box-sizing:border-box;
-    animation: fxBoxIn .3s cubic-bezier(.2,.9,.25,1); }
-  .gate-box .gate-title { font-family: var(--font-title); font-size:34px; line-height:1; letter-spacing:.02em; color: var(--text); }
-  .gate-box .gate-room { font-size:13px; color: var(--muted); margin:2px 0 14px; display:flex; align-items:center; gap:6px; }
-  .gate-box .gate-room i { color: var(--point); font-size:12px; }
-  .gate-box label { font-size:12px; color: var(--muted); font-weight:600; margin-top:4px; }
-  .gate-box input { width:100%; box-sizing:border-box; height:44px; padding:0 14px; font-size:15px; border-radius:10px;
-    background: rgba(255,255,255,.03); border:1px solid var(--card-border); color: var(--text); }
-  .gate-box input:focus { outline:none; border-color: var(--point); }
-  .gate-box .err { min-height:18px; font-size:13px; color:#ff6b6b; }
-  .gate-box .gate-go { height:46px; border-radius:10px; font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; }
-  .gate-box .gate-hint { font-size:12px; color: var(--muted); line-height:1.6; text-align:center; margin-top:4px; }
-  .gate-box .gate-wait { display:none; align-items:center; justify-content:center; gap:10px; color: var(--muted); font-size:14px; padding:18px 0 8px; }
+  /* 배경 : 포인트 색 빛 + 옅은 점 격자 + 천천히 도는 궤도 선 */
+  #loginGate .gate-bg { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  #loginGate .gate-bg::before { content:""; position:absolute; inset:0;
+    background: radial-gradient(55% 45% at 50% 42%, rgba(var(--point-rgb), .16), transparent 70%),
+                radial-gradient(rgba(255,255,255,.07) 1px, transparent 1.2px) 0 0 / 22px 22px;
+    -webkit-mask-image: radial-gradient(70% 60% at 50% 45%, #000 30%, transparent 75%); mask-image: radial-gradient(70% 60% at 50% 45%, #000 30%, transparent 75%); }
+  #loginGate .gate-orbit { position:absolute; left:50%; top:45%; border-radius:50%; border:1px solid rgba(var(--point-rgb), .16);
+    transform:translate(-50%,-50%); animation: gateSpin 60s linear infinite; }
+  #loginGate .gate-orbit.o1 { width:min(560px, 130vw); height:min(560px, 130vw); }
+  #loginGate .gate-orbit.o2 { width:min(820px, 190vw); height:min(820px, 190vw); border-style:dashed; border-color: rgba(255,255,255,.06); animation-duration:120s; animation-direction:reverse; }
+  #loginGate .gate-orbit::after { content:""; position:absolute; top:-3px; left:50%; width:6px; height:6px; border-radius:50%;
+    background: var(--point); box-shadow:0 0 12px 2px rgba(var(--point-rgb), .6); }
+  #loginGate .gate-orbit.o2::after { background:#fff; opacity:.5; box-shadow:none; width:4px; height:4px; top:-2px; }
+  @keyframes gateSpin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+  .gate-wrap { position:relative; width:380px; max-width:100%; display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .gate-eyebrow { font-size:11px; font-weight:700; letter-spacing:.42em; color: var(--muted); padding-left:.42em; display:flex; align-items:center; gap:12px; }
+  .gate-eyebrow::before, .gate-eyebrow::after { content:""; width:28px; height:1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.25)); }
+  .gate-eyebrow::after { transform:scaleX(-1); }
+  .gate-box { position:relative; width:100%; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; padding:34px 28px 26px;
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)), rgba(16,16,19,.78);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    border:1px solid rgba(255,255,255,.08); border-radius:20px; box-shadow:0 30px 80px rgba(0,0,0,.55);
+    animation: gateIn .5s cubic-bezier(.2,.9,.25,1) both; }
+  .gate-box::before { content:""; position:absolute; left:24px; right:24px; top:-1px; height:1px;
+    background: linear-gradient(90deg, transparent, var(--point), transparent); opacity:.9; }
+  @keyframes gateIn { from { opacity:0; transform:translateY(16px) scale(.985); } }
+  .gate-box .gate-title { font-family: var(--font-title); font-size:42px; line-height:1; color: var(--text); text-align:center; }
+  .gate-box .gate-room { align-self:center; display:inline-flex; align-items:center; gap:7px; margin:6px 0 18px; padding:5px 12px;
+    border-radius:999px; background: rgba(var(--point-rgb), .10); border:1px solid rgba(var(--point-rgb), .22); color: var(--text); font-size:12px; font-weight:600; }
+  .gate-box .gate-room i { color: var(--point); font-size:11px; }
+  .gate-field { position:relative; }
+  .gate-field > i { position:absolute; left:15px; top:50%; transform:translateY(-50%); color: var(--muted); font-size:14px; pointer-events:none; transition: color .15s; }
+  .gate-field:focus-within > i { color: var(--point); }
+  .gate-box input { width:100%; box-sizing:border-box; height:50px; padding:0 14px 0 42px; font-size:15px; border-radius:12px;
+    background: rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.08); color: var(--text); transition: border-color .15s, box-shadow .15s; }
+  .gate-box input::placeholder { color: rgba(255,255,255,.32); }
+  .gate-box input:focus { outline:none; border-color: rgba(var(--point-rgb), .7); box-shadow:0 0 0 3px rgba(var(--point-rgb), .14); }
+  .gate-box .err { min-height:18px; font-size:13px; color:#ff7a7a; text-align:center; }
+  .gate-box .gate-go { height:50px; border-radius:12px; font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;
+    box-shadow:0 10px 30px rgba(var(--point-rgb), .25); transition: transform .15s, box-shadow .15s, filter .15s; }
+  .gate-box .gate-go:hover:not(:disabled) { transform:translateY(-1px); filter:brightness(1.08); box-shadow:0 14px 34px rgba(var(--point-rgb), .35); }
+  .gate-box .gate-go:disabled { opacity:.6; cursor:default; }
+  .gate-box .gate-hint { font-size:12px; color: var(--muted); line-height:1.6; text-align:center; margin-top:6px; }
+  .gate-box .gate-wait { display:none; align-items:center; justify-content:center; gap:10px; color: var(--muted); font-size:14px; padding:22px 0 12px; }
   #loginGate.checking .gate-form { display:none; }
   #loginGate.checking .gate-wait { display:flex; }
+  .gate-x { display:inline-flex; align-items:center; gap:8px; color: var(--muted); font-size:12px; text-decoration:none; transition: color .15s; }
+  .gate-x:hover { color: var(--text); }
+  @media (prefers-reduced-motion: reduce) { #loginGate .gate-orbit, .gate-box { animation:none; } }
 
   /* ================================================================
      기숙사 페이지 : 전투 화면과 같은 구성(상단 바 + 카드 / 지도 + 오른쪽 패널)
@@ -2476,6 +2507,13 @@
     body.is-battle .sidebar #sidebarChatBtn { order:4; }
     body.is-battle .sidebar #sidebarMyPageBtn { order:5; }
     body.is-battle .sidebar #sidebarOpsBtn { order:6; }
+    /* 일반 룸 하단 탭 순서 : 소식 · 상점 · 기숙사 · 맵 · 마이페이지 (운영진은 맨 끝에 운영) */
+    body.is-lounge .sidebar #sidebarNewsBtn { order:1; }
+    body.is-lounge .sidebar #sidebarShopBtn { order:2; }
+    body.is-lounge .sidebar #sidebarDormBtn { order:3; }
+    body.is-lounge .sidebar #sidebarMapBtn { order:4; }
+    body.is-lounge .sidebar #sidebarMyPageBtn { order:5; }
+    body.is-lounge .sidebar #sidebarOpsBtn { order:6; }
     /* 하단 탭 : 눌린 회색 배경 없이, 채팅이 열려 있으면 채팅만 켜진 탭으로 표시 */
     .sidebar .sidebar-icon:hover, .sidebar .sidebar-icon:focus { background:none !important; }
     body.m-chat-open .sidebar .sidebar-icon.active { color: var(--muted); }
@@ -2494,19 +2532,24 @@
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
 <div id="loginGate" class="on checking">
-  <div class="gate-box">
-    <div class="gate-title">Login</div>
-    <div class="gate-room"><i class="fa-solid fa-door-open"></i><span id="gateRoomName">{{ room_id }}</span></div>
-    <div class="gate-wait"><i class="fa-solid fa-circle-notch fa-spin"></i>접속 중입니다</div>
-    <div class="gate-form" style="display:contents">
-      <label for="joinNameInput">캐릭터 이름</label>
-      <input id="joinNameInput" placeholder="캐릭터 이름을 정확히 입력해 주세요" autocomplete="username" oninput="onJoinNameInput()" onkeydown="if(event.key==='Enter') submitJoinModal()">
-      <label for="joinPasswordInput" id="joinPasswordLabel" style="display:none;">비밀번호</label>
-      <input id="joinPasswordInput" type="password" placeholder="운영진 비밀번호" autocomplete="current-password" style="display:none;" onkeydown="if(event.key==='Enter') submitJoinModal()">
-      <div id="joinModalError" class="err"></div>
-      <button class="btn-primary gate-go" id="gateGoBtn" onclick="submitJoinModal()"><i class="fa-solid fa-right-to-bracket"></i>입장</button>
-      <div class="gate-hint">등록된 캐릭터 이름으로 입장합니다. 운영진은 GM으로 입장해 주세요.</div>
+  <div class="gate-bg"><span class="gate-orbit o2"></span><span class="gate-orbit o1"></span></div>
+  <div class="gate-wrap">
+    <div class="gate-eyebrow">EARTHTERRA</div>
+    <div class="gate-box">
+      <div class="gate-title">Login</div>
+      <div class="gate-room"><i class="fa-solid fa-door-open"></i><span id="gateRoomName">{{ room_id }}</span></div>
+      <div class="gate-wait"><i class="fa-solid fa-circle-notch fa-spin"></i>접속 중입니다</div>
+      <div class="gate-form" style="display:contents">
+        <div class="gate-field"><i class="fa-solid fa-user"></i>
+          <input id="joinNameInput" placeholder="캐릭터 이름" aria-label="캐릭터 이름" autocomplete="username" oninput="onJoinNameInput()" onkeydown="if(event.key==='Enter') submitJoinModal()"></div>
+        <div class="gate-field" id="joinPasswordLabel" style="display:none;"><i class="fa-solid fa-key"></i>
+          <input id="joinPasswordInput" type="password" placeholder="운영진 비밀번호" aria-label="운영진 비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitJoinModal()"></div>
+        <div id="joinModalError" class="err"></div>
+        <button class="btn-primary gate-go" id="gateGoBtn" onclick="submitJoinModal()">입장<i class="fa-solid fa-arrow-right"></i></button>
+        <div class="gate-hint">등록된 캐릭터 이름으로 입장합니다.<br>운영진은 GM으로 입장해 주세요.</div>
+      </div>
     </div>
+    <a class="gate-x" href="https://x.com/EarthTerrA__" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-x-twitter"></i>@EarthTerrA__</a>
   </div>
 </div>
 <div id="sceneBg"></div>
