@@ -651,7 +651,8 @@
     padding:9px 10px; border-radius:7px; cursor:pointer; text-align:left; white-space:nowrap; }
   .gm-menu button:hover { background:#232327; }
   .gm-menu button i { width:16px; text-align:center; color: var(--muted); }
-  .chat-search-btn { background:none; border:1px solid transparent; color: var(--muted); width:30px; height:30px; border-radius:8px; font-size:14px; }
+  .chat-search-btn { display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer;
+    background:none; border:1px solid transparent; color: var(--muted); width:30px; height:30px; border-radius:8px; font-size:14px; }
   .chat-search-btn:hover, .chat-search-btn.on { color: var(--text); background:rgba(255,255,255,.06); }
   .chat-search-bar { display:none; flex:1; min-width:0; align-items:center; gap:8px; margin-right:8px; }
   .member-header.searching #memberTitle { display:none; }
@@ -2468,7 +2469,13 @@
     .topbar .m-battle-tools { display:none !important; }
     /* 전투 룸 : 하단 탭에 채팅, 유저 리스트는 채팅창 위쪽 도구에서 엽니다. 채팅은 채팅 탭을 다시 누르면 닫힙니다(X 없음). */
     body.is-battle .sidebar #sidebarChatBtn { display:flex !important; }
+    /* 하단 탭 : 눌린 회색 배경 없이, 채팅이 열려 있으면 채팅만 켜진 탭으로 표시 */
+    .sidebar .sidebar-icon:hover, .sidebar .sidebar-icon:focus { background:none !important; }
+    body.m-chat-open .sidebar .sidebar-icon.active { color: var(--muted); }
+    body.m-chat-open .sidebar .sidebar-icon.active::before { display:none; }
     body.m-chat-open .sidebar #sidebarChatBtn { color: var(--point); }
+    body.m-chat-open .sidebar #sidebarChatBtn::before { content:""; position:absolute; left:50%; top:-6px; transform:translateX(-50%);
+      width:22px; height:3px; border-radius:0 0 3px 3px; background: var(--point); }
     body.is-battle .member-header .m-userlist-btn { display:inline-flex; }
     .member-header .m-chat-close { display:none !important; }
     .m-battle-tools button { position:relative; width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.05);
