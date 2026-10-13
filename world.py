@@ -15,13 +15,29 @@ import os
 import threading
 import uuid
 
+from world_zones import ZONE_DEFAULTS
+
 WORLD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "world.json")
 MAX_PLACES, MAX_CHAPTERS, MAX_INFO = 40, 60, 8
 ZONES = 4  # 장소마다 1~4구역 카드
 
 
+ZONE_DESC_MAX, ZONE_LINES_MAX, ZONE_LINE_LEN = 4000, 20, 120
+
+
 def _default_zones():
-    return [{"title": "", "image": None, "desc": "", "info": []} for i in range(ZONES)]
+    return [{"title": "", "image": None, "desc": "", "info": [], "ref": "", "lines": []} for i in range(ZONES)]
+
+
+def _clean_lines(rows):
+    out = []
+    for r in (rows if isinstance(rows, list) else str(rows or "").split("\n")):
+        t = _s(r, ZONE_LINE_LEN)
+        if t:
+            out.append(t)
+        if len(out) >= ZONE_LINES_MAX:
+            break
+    return out
 
 
 def _img_ok(img):
@@ -38,8 +54,12 @@ def _clean_zones(zones):
     for i in range(ZONES):
         z = (zones or [])[i] if i < len(zones or []) else {}
         out.append({"title": _s(z.get("title"), 30), "image": _img_ok(z.get("image")),
-                    "desc": _text(z.get("desc"), 600), "info": _clean_info(z.get("info"), 4)})
+                    "desc": _text(z.get("desc"), ZONE_DESC_MAX), "info": _clean_info(z.get("info"), 4),
+                    "ref": _s(z.get("ref"), 200), "lines": _clean_lines(z.get("lines"))})
     return out
+
+# 예전 기본 구역 설명 : 운영진이 고치지 않은 채 남아 있으면 새 기본 내용으로 바꿉니다.
+OLD_ZONE_DESCS = {'수업과 행정이 이루어지는 아카데미의 중심 건물입니다.', '학생들이 생활하는 기숙사 건물입니다. 관별 6인실로 운영됩니다.', '두 국가의 기록과 서적이 함께 보관된 장소입니다.', '공화국 의회와 광장이 있는 수도의 중심지입니다.', '국경 가까이 자리한 작은 마을들입니다.', '공화국의 기술 연구소가 모여 있는 구역입니다.', '공장과 연구 시설이 늘어선 연방의 생산 기지입니다.', '연방 의회와 주요 관청이 모여 있는 연방의 중심부입니다.', '대외 교역을 담당하는 항구와 창고가 모인 지역입니다.', '각 주의 상인이 모여드는 시장과 항구가 있는 지역입니다.', '노바 공화국과 맞닿은 경계를 지키는 군사 시설입니다.', '실습과 모의 전투가 열리는 야외 훈련 시설입니다.'}
 
 # 처음(world.json이 없을 때) 보여줄 기본 맵 : 운영진이 편집에서 고쳐 쓰면 됩니다.
 DEFAULT_WORLD = {
@@ -50,15 +70,15 @@ DEFAULT_WORLD = {
         {"id": "ch3", "title": "경계 너머", "summary": "챕터 요약을 입력해 주세요."},
     ],
     "places": [
-        {"zones": [{"title": "중앙 행정구", "image": None, "desc": "연방 의회와 주요 관청이 모여 있는 연방의 중심부입니다.", "info": [{"k": "구분", "v": "행정"}, {"k": "치안", "v": "높음"}]}, {"title": "상업 지구", "image": None, "desc": "각 주의 상인이 모여드는 시장과 항구가 있는 지역입니다.", "info": [{"k": "구분", "v": "상업"}, {"k": "유동 인구", "v": "많음"}]}, {"title": "산업 지대", "image": None, "desc": "공장과 연구 시설이 늘어선 연방의 생산 기지입니다.", "info": [{"k": "구분", "v": "산업"}, {"k": "출입", "v": "허가 필요"}]}, {"title": "국경 요새", "image": None, "desc": "노바 공화국과 맞닿은 경계를 지키는 군사 시설입니다.", "info": [{"k": "구분", "v": "군사"}, {"k": "치안", "v": "통제"}]}], "id": "arcadia", "name": "아르카디아 연방", "en": "ARCADIA FEDERATION", "sub": "연방국", "chapter": 0,
+        {"zones": ZONE_DEFAULTS["arcadia"], "id": "arcadia", "name": "아르카디아 연방", "en": "ARCADIA FEDERATION", "sub": "연방국", "chapter": 0,
          "image": "/static/world_default/arcadia.svg",
          "desc": "여러 주(州)가 하나로 모인 연방 국가입니다. 상징색은 노랑입니다.\n장소 설명은 편집에서 바꿀 수 있습니다.",
          "info": [{"k": "체제", "v": "연방제"}, {"k": "상징색", "v": "노랑"}, {"k": "수도", "v": "-"}, {"k": "특징", "v": "-"}]},
-        {"zones": [{"title": "본관", "image": None, "desc": "수업과 행정이 이루어지는 아카데미의 중심 건물입니다.", "info": [{"k": "구분", "v": "교육"}, {"k": "개방", "v": "수업 시간"}]}, {"title": "기숙사동", "image": None, "desc": "학생들이 생활하는 기숙사 건물입니다. 관별 6인실로 운영됩니다.", "info": [{"k": "구분", "v": "생활"}, {"k": "통금", "v": "22:00"}]}, {"title": "훈련장", "image": None, "desc": "실습과 모의 전투가 열리는 야외 훈련 시설입니다.", "info": [{"k": "구분", "v": "실습"}, {"k": "사용", "v": "예약제"}]}, {"title": "도서관", "image": None, "desc": "두 국가의 기록과 서적이 함께 보관된 장소입니다.", "info": [{"k": "구분", "v": "학습"}, {"k": "개방", "v": "상시"}]}], "id": "nexus", "name": "넥서스 아카데미", "en": "NEXUS ACADEMY", "sub": "학교", "chapter": 0,
+        {"zones": ZONE_DEFAULTS["nexus"], "id": "nexus", "name": "넥서스 아카데미", "en": "NEXUS ACADEMY", "sub": "학교", "chapter": 0,
          "image": "/static/world_default/nexus.svg",
          "desc": "아르카디아 연방과 노바 공화국 사이에 자리한 학교입니다. 두 국가의 학생들이 함께 지냅니다.\n장소 설명은 편집에서 바꿀 수 있습니다.",
          "info": [{"k": "구분", "v": "교육 기관"}, {"k": "위치", "v": "두 국가의 경계"}, {"k": "기숙사", "v": "관별 6인실"}, {"k": "특징", "v": "-"}]},
-        {"zones": [{"title": "수도 중심가", "image": None, "desc": "공화국 의회와 광장이 있는 수도의 중심지입니다.", "info": [{"k": "구분", "v": "행정"}, {"k": "치안", "v": "높음"}]}, {"title": "항만 지구", "image": None, "desc": "대외 교역을 담당하는 항구와 창고가 모인 지역입니다.", "info": [{"k": "구분", "v": "교역"}, {"k": "유동 인구", "v": "많음"}]}, {"title": "연구 단지", "image": None, "desc": "공화국의 기술 연구소가 모여 있는 구역입니다.", "info": [{"k": "구분", "v": "연구"}, {"k": "출입", "v": "허가 필요"}]}, {"title": "변방 마을", "image": None, "desc": "국경 가까이 자리한 작은 마을들입니다.", "info": [{"k": "구분", "v": "거주"}, {"k": "치안", "v": "보통"}]}], "id": "nova", "name": "노바 공화국", "en": "NOVA REPUBLIC", "sub": "공화국", "chapter": 0,
+        {"zones": ZONE_DEFAULTS["nova"], "id": "nova", "name": "노바 공화국", "en": "NOVA REPUBLIC", "sub": "공화국", "chapter": 0,
          "image": "/static/world_default/nova.svg",
          "desc": "시민이 대표를 뽑아 다스리는 공화국입니다. 상징색은 파랑입니다.\n장소 설명은 편집에서 바꿀 수 있습니다.",
          "info": [{"k": "체제", "v": "공화제"}, {"k": "상징색", "v": "파랑"}, {"k": "수도", "v": "-"}, {"k": "특징", "v": "-"}]},
@@ -92,11 +112,21 @@ class World:
         if d is None:  # 아직 저장한 적이 없으면 기본 맵
             d = json.loads(json.dumps(DEFAULT_WORLD))
         self.places = d.get("places", [])
-        for p in self.places:  # 구역이 없던 예전 장소에도 1~4구역 자리를 만듭니다
-            if len(p.get("zones") or []) != ZONES:
-                p["zones"] = _clean_zones(p.get("zones"))
+        migrated = False
+        for p in self.places:  # 구역이 없던 예전 장소에도 1~4구역 자리를 만들고, 새 칸(참고 · 한 줄 문구)을 채웁니다
+            p["zones"] = _clean_zones(p.get("zones"))
+            new = ZONE_DEFAULTS.get(p.get("id"))
+            if not new:
+                continue
+            for i, z in enumerate(p["zones"]):
+                # 운영진이 손대지 않은 예전 기본 구역(또는 빈 구역)만 새 기본 내용으로 바꿉니다(올린 그림은 유지)
+                if z["desc"] in OLD_ZONE_DESCS or (not z["desc"] and not z["title"]):
+                    p["zones"][i] = dict(json.loads(json.dumps(new[i])), image=z.get("image"))
+                    migrated = True
         self.chapters = d.get("chapters", [])
         self.unlocked = int(d.get("unlocked") or 0)
+        if migrated and os.path.exists(self.path):
+            self.save()
 
     def save(self):
         tmp = self.path + ".tmp"

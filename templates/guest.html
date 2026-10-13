@@ -2683,9 +2683,53 @@
     .wm-node { flex-basis:96px; }
     .wm-node .sb { font-size:11.5px; }
   }
+
+  /* 맵 구역 카드 : 설명은 몇 줄만 보이고 '자세히 보기'로 전체를 읽습니다. 카드를 누르면 한 줄 문구가 토스트로 떴다 사라집니다. */
+  .wm-zone { cursor:pointer; }
+  .wm-zone .foot p.clamp { display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; white-space:pre-line; min-height:0; margin-bottom:8px; }
+  .wm-more { display:inline-flex; align-items:center; gap:6px; margin:0 0 12px; padding:0; border:none; background:none; color: var(--point); font-size:12px; font-weight:700; cursor:pointer; }
+  .wm-more i { font-size:10px; transition: transform .15s; }
+  .wm-more:hover i { transform:translateX(3px); }
+  .wm-ref { display:flex; gap:7px; align-items:flex-start; margin-top:10px; font-size:11.5px; line-height:1.55; color:#8d8d96; }
+  .wm-ref i { margin-top:2px; font-size:11px; color: var(--point); flex:none; }
+  .wm-toast { position:fixed; left:50%; bottom:40px; z-index:320; max-width:min(560px, calc(100vw - 32px)); box-sizing:border-box; pointer-events:none;
+    padding:14px 22px; border-radius:16px; text-align:center; opacity:0; transform:translate(-50%, 14px);
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)), rgba(14,14,17,.88);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border:1px solid rgba(255,255,255,.1); box-shadow:0 18px 50px rgba(0,0,0,.55);
+    transition: opacity .35s ease, transform .35s cubic-bezier(.2,.9,.25,1); }
+  .wm-toast::before { content:""; position:absolute; left:22px; right:22px; top:-1px; height:1px; background: linear-gradient(90deg, transparent, var(--point), transparent); }
+  .wm-toast.on { opacity:1; transform:translate(-50%, 0); }
+  .wm-toast .l1 { font-size:14px; font-weight:600; color: var(--text); }
+  .wm-toast .l1 b { color: var(--point); font-weight:800; }
+  .wm-toast .l2 { margin-top:6px; font-size:13.5px; line-height:1.6; color:#c9c9d0; }
+  @media (max-width:900px) { .wm-toast { bottom:calc(var(--mbar-h, 57px) + 18px); } }
+  .modal-box.wm-reader { position:relative; width:min(720px, calc(100vw - 32px)); max-height:min(820px, calc(100vh - 48px)); display:flex; flex-direction:column; padding:0; overflow:hidden; }
+  .wm-reader::before { content:""; position:absolute; left:28px; right:28px; top:0; height:1px; background: linear-gradient(90deg, transparent, var(--point), transparent); z-index:2; }
+  .wm-reader .wr-close { position:absolute; top:18px; right:18px; z-index:3; }
+  .wm-reader .wr-body { overflow-y:auto; padding:30px 34px 32px; }
+  .wr-cap { font-size:12px; color: var(--muted); letter-spacing:.04em; }
+  .wr-title { margin:8px 0 14px; font-size:28px; font-weight:800; letter-spacing:-0.01em; }
+  .wr-info { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+  .wr-info span { display:inline-flex; gap:8px; align-items:center; padding:5px 12px; border-radius:999px; font-size:12.5px; background: rgba(var(--point-rgb), .08); border:1px solid rgba(var(--point-rgb), .2); }
+  .wr-info em { font-style:normal; color: var(--muted); }
+  .wr-img { aspect-ratio:16 / 9; border-radius:12px; background:#0d0d10 center/cover no-repeat; margin-bottom:18px; }
+  .wr-desc p { margin:0 0 14px; font-size:14.5px; line-height:1.85; color:#d6d6dc; word-break:keep-all; }
+  .wr-home { margin-top:16px; display:flex; gap:8px; align-items:center; font-size:13px; color: var(--text); }
+  .wr-home i { color: var(--point); }
+  @media (max-width:900px) {
+    .modal-box.wm-reader { width:100vw; max-width:none; height:100%; max-height:none; border-radius:0; border:none; }
+    .wm-reader .wr-body { padding:calc(22px + env(safe-area-inset-top)) 20px 24px; }
+    .wr-title { font-size:24px; padding-right:40px; }
+  }
+  /* 마이페이지 출신지 */
+  .mp-home { min-width:0; }
+  .mp-home .none, .mp-home .v { font-size:13px; color: var(--muted); }
+  .mp-home .v { color: var(--text); }
+  .mp-home-sel { max-width:100%; height:30px; padding:0 30px 0 12px; border-radius:999px; border:1px solid var(--line); background:#0c0c0d; color: var(--text); font-size:13px; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
+<div id="wmToast" class="wm-toast" role="status" aria-live="polite"></div>
 <div id="loginGate" class="on checking">
   <div class="gate-bg"><span class="gate-orbit o2"></span><span class="gate-orbit o1"></span></div>
   <div class="gate-wrap">
@@ -2759,6 +2803,12 @@
       <button class="btn" style="background:transparent;border:1px solid var(--card-border);color:var(--text);font-weight:500;" onclick="uiConfirm('배경 이미지를 지우고 기본 배경으로 되돌릴까요?', {title:'기본 배경으로', okText:'되돌리기', danger:true}).then(ok => ok && setMapBg({reset:true}))">기본으로 되돌리기</button>
       <button class="btn" onclick="closeMapBgModal()">닫기</button>
     </div>
+  </div>
+</div>
+<div id="wmReader" class="modal-overlay" onclick="if(event.target===this) this.style.display='none'">
+  <div class="modal-box panel wm-reader">
+    <button class="shop-close wr-close" onclick="document.getElementById('wmReader').style.display='none'" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+    <div class="wr-body" id="wmReaderBody"></div>
   </div>
 </div>
 <div id="noticeModal" class="modal-overlay" onclick="if(event.target===this) closeNotices()">
@@ -3083,6 +3133,7 @@
         <div class="mp-tags">
           <div class="mp-tagrow"><span class="mp-k">포지션</span><div class="mypage-roles" id="myPageRoles"></div></div>
           <div class="mp-tagrow"><span class="mp-k">국가</span><div class="mp-nations" id="myPageNation"></div></div>
+          <div class="mp-tagrow"><span class="mp-k">출신지</span><div class="mp-home" id="myPageHome"></div></div>
         </div>
       </div>
       <div class="mp-hero-side">
@@ -3768,7 +3819,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.8";
+const EXPECTED_SERVER_BUILD = "2026-10-13.9";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5830,6 +5881,26 @@ function renderMyPageNation(c) {
   el.innerHTML = NATIONS.map(([n, col]) => `<button class="${n === cur ? 'on' : ''}" style="--nc:${col}" onclick='setMyPageNation(${JSON.stringify(c.name)}, ${JSON.stringify(n === cur ? '' : n)})'>${n}</button>`).join('');
 }
 function setMyPageNation(name, nation) { socket.emit('set_mypage_gm_fields', { name, nation }); }
+// 출신지 : 맵의 장소 · 구역 중에서 고릅니다(맵 구역 카드를 누르면 '00의 출신지.'로 나옵니다). 본인과 운영진이 바꿀 수 있어요.
+function myPageHomeLabel(key) {
+  const [pid, zi] = String(key || '').split(':');
+  const p = ((worldData && worldData.places) || []).find(x => x.id === pid);
+  if (!p || p.locked) return key ? '비공개 지역' : '';
+  const z = (p.zones || [])[+zi] || {};
+  return `${p.name} · ${+zi + 1}구역${z.title ? ' ' + z.title : ''}`;
+}
+function renderMyPageHome(c) {
+  const el = document.getElementById('myPageHome'); if (!el) return;
+  if (!c) { el.innerHTML = ''; return; }
+  if (!worldData) socket.emit('world_get');
+  const cur = ((lastRosterMypage || {})[c.name] || {}).hometown || '';
+  if (!canEditMyPage()) { el.innerHTML = cur ? `<span class="v">${worldEsc(myPageHomeLabel(cur))}</span>` : '<span class="none">없음</span>'; return; }
+  const places = ((worldData && worldData.places) || []).filter(p => !p.locked && (p.zones || []).length);
+  el.innerHTML = `<select class="mp-home-sel" onchange="setMyPageHome(this.value)"><option value="">없음</option>${places.map(p => `<optgroup label="${worldEsc(p.name)}">${p.zones.map((z, i) =>
+    `<option value="${worldEsc(p.id)}:${i}" ${cur === `${p.id}:${i}` ? 'selected' : ''}>${worldEsc(p.name)} · ${i + 1}구역${z.title ? ' ' + worldEsc(z.title) : ''}</option>`).join('')}</optgroup>`).join('')}
+    ${cur && !places.some(p => cur.startsWith(p.id + ':')) ? `<option value="${worldEsc(cur)}" selected>${worldEsc(myPageHomeLabel(cur) || cur)}</option>` : ''}</select>`;
+}
+function setMyPageHome(v) { if (canEditMyPage()) socket.emit('set_my_skill_log', { name: myPageEditName(), hometown: v }); }
 
 function renderMyPage() {
   if (document.getElementById('myPageModal').style.display !== 'flex') return;
@@ -5852,6 +5923,7 @@ function renderMyPage() {
     document.getElementById('myPageRaidNameInput').disabled = true;
     document.getElementById('myPageRoles').innerHTML = '';
     renderMyPageNation(null);
+    renderMyPageHome(null);
     document.getElementById('myPageCurrentHpView').textContent = '000';
     document.getElementById('myPageMaxHp').textContent = '000';
     document.getElementById('myPageHpBar').style.width = '0%';
@@ -5879,6 +5951,7 @@ function renderMyPage() {
   if (document.activeElement !== raidInput) raidInput.value = c.raid_display_name || '';
   renderMyPageRoles(c, canEdit);
   renderMyPageNation(c);
+  renderMyPageHome(c);
 
   const hasHp = c.max_hp != null;
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
@@ -9253,6 +9326,7 @@ socket.on('world_data', (d) => {
   worldData = d;
   if (!d.gm) { worldEditMode = false; worldDraft = null; }
   if (worldOpen() && !worldEditMode) renderWorld();
+  if (typeof renderMyPage === 'function') renderMyPage();
 });
 socket.on('world_result', (d) => showShopToast(d.message));
 socket.on('joined', () => { if (worldOpen()) socket.emit('world_get'); });
@@ -9410,14 +9484,55 @@ function worldZonesHtml(p) {
   if (!zs.length) return '';
   return `<div class="wm-zones">${zs.map((z, i) => {
     const info = (z.info || []).filter(r => r.k || r.v);
-    return `<article class="wm-zone" style="--i:${i}">
+    return `<article class="wm-zone" style="--i:${i}" onclick="worldZoneToast('${p.id}',${i})">
       <div class="cap"><span>${i + 1}구역 — ${worldEsc(p.name)}</span></div>
       <div class="img ${z.image ? '' : 'empty'}" style="${z.image ? `background-image:url('${worldEsc(z.image)}')` : ''}">${z.image ? '' : `${WM_NOSIGNAL}<span>No Signal</span>`}</div>
       <div class="ttl"><b>${worldEsc(z.title || `${i + 1}구역`)}</b><span>${String(i + 1).padStart(2, '0')} / ${String(zs.length).padStart(2, '0')}</span></div>
-      <div class="foot">${z.desc ? `<p>${worldEsc(z.desc)}</p>` : '<p class="muted">구역 설명이 아직 없습니다.</p>'}
-        ${info.length ? `<dl>${info.map(r => `<div><dt>${worldEsc(r.k)}</dt><dd>${worldEsc(r.v)}</dd></div>`).join('')}</dl>` : ''}</div>
+      <div class="foot">${z.desc ? `<p class="clamp">${worldEsc(z.desc)}</p>
+          <button class="wm-more" onclick="event.stopPropagation(); openWorldZone('${p.id}',${i})">자세히 보기<i class="fa-solid fa-arrow-right"></i></button>` : '<p class="muted">구역 설명이 아직 없습니다.</p>'}
+        ${info.length ? `<dl>${info.map(r => `<div><dt>${worldEsc(r.k)}</dt><dd>${worldEsc(r.v)}</dd></div>`).join('')}</dl>` : ''}
+        ${z.ref ? `<div class="wm-ref"><i class="fa-solid fa-circle-info"></i>${worldEsc(z.ref)}</div>` : ''}</div>
     </article>`;
   }).join('')}</div>`;
+}
+
+// ---------- 구역 카드 : 누르면 한 줄 문구 토스트 / 자세히 보기 ----------
+function worldZoneOf(pid, i) { const p = ((worldData && worldData.places) || []).find(x => x.id === pid); return p && p.zones ? [p, p.zones[i]] : [null, null]; }
+// 출신지 : 마이페이지에서 고른 '장소id:구역번호'
+function worldHomeNames(pid, i) {
+  const key = `${pid}:${i}`;
+  return Object.entries(lastRosterMypage || {}).filter(([, d]) => d && d.hometown === key).map(([n]) => n).sort((a, b) => a.localeCompare(b, 'ko'));
+}
+let wmToastTimer = null, wmToastLast = {};
+function worldZoneToast(pid, i) {
+  const [p, z] = worldZoneOf(pid, i); if (!z) return;
+  const names = worldHomeNames(pid, i), lines = z.lines || [];
+  // 같은 문구가 연달아 나오지 않게 합니다.
+  let line = '';
+  if (lines.length) {
+    const key = `${pid}:${i}`; let k = Math.floor(Math.random() * lines.length);
+    if (lines.length > 1 && k === wmToastLast[key]) k = (k + 1) % lines.length;
+    wmToastLast[key] = k; line = lines[k];
+  }
+  const t = document.getElementById('wmToast');
+  const head = names.length ? `<b>${names.map(worldEsc).join(', ')}</b>의 출신지.` : `${i + 1}구역 · ${worldEsc(z.title || p.name)}`;
+  t.innerHTML = `<div class="l1">${head}</div>${line ? `<div class="l2">${worldEsc(line)}</div>` : ''}`;
+  t.classList.remove('on'); void t.offsetWidth; t.classList.add('on');
+  clearTimeout(wmToastTimer); wmToastTimer = setTimeout(() => t.classList.remove('on'), 3600);
+}
+function openWorldZone(pid, i) {
+  const [p, z] = worldZoneOf(pid, i); if (!z) return;
+  const info = (z.info || []).filter(r => r.k || r.v), names = worldHomeNames(pid, i);
+  document.getElementById('wmReaderBody').innerHTML = `
+    <div class="wr-cap">${i + 1}구역 — ${worldEsc(p.name)}</div>
+    <div class="wr-title">${worldEsc(z.title || `${i + 1}구역`)}</div>
+    ${info.length ? `<div class="wr-info">${info.map(r => `<span><em>${worldEsc(r.k)}</em>${worldEsc(r.v)}</span>`).join('')}</div>` : ''}
+    ${z.image ? `<div class="wr-img" style="background-image:url('${worldEsc(z.image)}')"></div>` : ''}
+    <div class="wr-desc">${(z.desc || '').split(/\n+/).filter(Boolean).map(t => `<p>${worldEsc(t)}</p>`).join('')}</div>
+    ${z.ref ? `<div class="wm-ref"><i class="fa-solid fa-circle-info"></i>${worldEsc(z.ref)}</div>` : ''}
+    ${names.length ? `<div class="wr-home"><i class="fa-solid fa-location-dot"></i>${names.map(worldEsc).join(', ')}의 출신지</div>` : ''}`;
+  document.getElementById('wmReader').style.display = 'flex';
+  document.getElementById('wmReaderBody').scrollTop = 0;
 }
 
 // ---------- 운영진 편집 ----------
@@ -9444,7 +9559,7 @@ function worldDel(list, i) {
 function worldAddChapter() { worldDraft.chapters.push({ id: Math.random().toString(16).slice(2, 10), title: `Chapter ${worldDraft.chapters.length + 1}`, summary: '' }); renderWorld(); }
 function worldAddPlace() {
   worldDraft.places.push({ id: Math.random().toString(16).slice(2, 10), name: '새 장소', en: '', sub: '', desc: '', info: [], image: null, chapter: 0,
-    zones: [0, 1, 2, 3].map(() => ({ title: '', image: null, desc: '', info: [] })) });
+    zones: [0, 1, 2, 3].map(() => ({ title: '', image: null, desc: '', info: [], ref: '', lines: [] })) });
   worldEditIdx = worldDraft.places.length - 1; renderWorld();
 }
 function worldPlaceImage(ev, id) {
@@ -9462,7 +9577,10 @@ function worldZoneEditHtml(p) {
       <label class="ops-btn"><i class="fa-solid fa-image"></i> 이미지 삽입<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="worldPlaceImage(event,'${p.id}:z${i}')"></label>
       ${z.image ? `<button class="ops-btn icon" onclick="worldDraft.places[${pi}].zones[${i}].image=null; renderWorld()" data-tip="이미지 삭제"><i class="fa-solid fa-xmark"></i></button>` : ''}</div>
     <input class="ops-in" style="margin-top:8px;" maxlength="30" placeholder="구역 이름" value="${worldEsc(z.title)}" oninput="worldDraft.places[${pi}].zones[${i}].title=this.value">
-    <textarea class="ops-in" style="min-height:64px; margin-top:8px;" maxlength="600" placeholder="구역 설명을 입력해 주세요." oninput="worldDraft.places[${pi}].zones[${i}].desc=this.value">${worldEsc(z.desc)}</textarea>
+    <textarea class="ops-in" style="min-height:140px; margin-top:8px;" maxlength="4000" placeholder="구역 설명을 입력해 주세요. (줄을 바꾸면 문단이 나뉩니다.)" oninput="worldDraft.places[${pi}].zones[${i}].desc=this.value">${worldEsc(z.desc)}</textarea>
+    <input class="ops-in" style="margin-top:8px;" maxlength="200" placeholder="참고 (ⓘ 표시와 함께 카드 아래에 나옵니다.)" value="${worldEsc(z.ref || '')}" oninput="worldDraft.places[${pi}].zones[${i}].ref=this.value">
+    <div class="ops-hint" style="margin-top:10px;">구역 카드 문구 · 한 줄에 한 문구를 입력해 주세요. 카드를 누를 때마다 무작위로 출력됩니다.</div>
+    <textarea class="ops-in" style="min-height:96px; margin-top:6px;" placeholder="예) 항구에서는 갈매기가 우는 소리가 들린다." oninput="worldDraft.places[${pi}].zones[${i}].lines=this.value.split('\\n')">${worldEsc((z.lines || []).join('\n'))}</textarea>
     ${(z.info || []).map((r, k) => `<div class="wm-kv" style="margin-top:6px;"><input class="ops-in" maxlength="20" placeholder="항목" value="${worldEsc(r.k)}" oninput="worldDraft.places[${pi}].zones[${i}].info[${k}].k=this.value">
       <input class="ops-in" maxlength="80" placeholder="내용" value="${worldEsc(r.v)}" oninput="worldDraft.places[${pi}].zones[${i}].info[${k}].v=this.value">
       <button class="ops-btn icon" onclick="worldDraft.places[${pi}].zones[${i}].info.splice(${k},1); renderWorld()"><i class="fa-solid fa-xmark"></i></button></div>`).join('')}

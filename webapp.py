@@ -35,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.8"
+SERVER_BUILD = "2026-10-13.9"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -458,6 +458,7 @@ def build_preview_character(room, name):
         "points": int(data.get("points") or 0),
         "items": dict(data.get("items") or {}),
         "nation": data.get("nation") or "",
+        "hometown": data.get("hometown") or "",
     }
 
 
@@ -1299,6 +1300,13 @@ def on_set_my_skill_log(data):
             entry.pop("catchphrase", None)
     if data.get("cutin_motion") in CUTIN_MOTIONS:
         entry["cutin_motion"] = data["cutin_motion"]
+    # 출신지 : 맵의 '장소id:구역번호(0~3)' (맵 구역 카드를 누르면 '00의 출신지.'로 나옵니다)
+    if "hometown" in data:
+        home = (data.get("hometown") or "").strip()
+        if home and re.fullmatch(r"[A-Za-z0-9_-]{1,16}:[0-3]", home):
+            entry["hometown"] = home
+        elif not home:
+            entry.pop("hometown", None)
     if data.get("clear_image"):
         entry.pop("skill_log_image", None)
     blob = data.get("image_data")
