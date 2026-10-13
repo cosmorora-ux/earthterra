@@ -2952,15 +2952,16 @@
   .action-bar-bottom.gm-bar.wrap-fields .gm-bar-fields { flex:1 1 100%; }
   .action-bar-bottom.gm-bar.wrap-fields .gm-bar-ctrl { border-left:none; padding-left:0; }
 
-  /* 로그창 꾸밈 : 글줄 높이를 넘지 않는 낮은 표시만(배경 상자 최소화) */
+  /* 로그창 : 아이콘 칸(22px) + 글 칸 두 칸으로 맞춰, 줄이 넘어가도 글 칸 안에서 정렬됩니다. 상자 · 칩 없이 글자만으로 */
   .logline.tag-round + .logblock.cont { margin-top:8px; }
-  .lg-skill { display:inline; padding:1px 6px; margin:0 1px; border-radius:4px; font-weight:700; color:#fff; background: rgba(var(--point-rgb), .22); }
-  .lg-lab { display:inline; padding:1px 6px; margin-right:6px; border-radius:4px; font-size:.8em; font-weight:700; color: var(--muted); background: rgba(255,255,255,.06); }
-  .logline.tag-heal .lg-lab { color: var(--role-메딕); background: rgba(255,224,102,.08); }
-  .lg-plus { font-weight:700; color:#e6e6ea; font-variant-numeric: tabular-nums; }
+  .logline:not(.tag-round) { display:grid; grid-template-columns:22px minmax(0,1fr); column-gap:4px; align-items:baseline; }
+  .logline .li { width:auto; margin:0; text-align:center; color: var(--muted); opacity:.8; font-size:.9em; }
+  .logblock .logline:not(.group-start) { padding-left:0; }
+  .lg-skill { color: var(--point-soft); font-weight:700; }
+  .lg-lab { color: var(--muted); font-size:.85em; font-weight:600; margin-right:8px; }
+  .lg-plus, .lg-num { font-weight:700; color:#ececf0; font-variant-numeric: tabular-nums; }
   .lg-it { white-space:nowrap; }
-  .lg-hp { margin-left:6px; font-size:.88em; color: var(--muted); font-variant-numeric: tabular-nums; white-space:nowrap; }
-  .lg-hp > span { opacity:.8; }
+  .lg-hp { margin-left:8px; font-size:.85em; color: var(--muted); font-variant-numeric: tabular-nums; white-space:nowrap; }
   .lg-hp i { font-size:.7em; margin:0 3px; opacity:.55; }
   .lg-hp b { color:#c8cad0; font-weight:700; }
   .lg-hp em { font-style:normal; font-weight:700; margin-left:4px; }
@@ -5151,9 +5152,13 @@ function decorateLogText(text, tag) {
     t = t.replace(/\s*\((\d+)\s*→\s*(\d+)\)/g, (m, a, b) => {
       const d = (+b) - (+a);
       if (!d) return '';
-      return ` <span class="lg-hp"><span>${a}</span><i class="fa-solid fa-arrow-right"></i><b>${b}</b><em class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${d}</em></span>`;
+      // 회복 줄은 회복량을 이미 써 두므로 변화량(+N)은 다시 쓰지 않습니다.
+      const em = (tag === 'heal' && d > 0) ? '' : `<em class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${d}</em>`;
+      return ` <span class="lg-hp"><span>${a}</span><i class="fa-solid fa-arrow-right"></i><b>${b}</b>${em}</span>`;
     });
-    if (tag === 'heal') t = t.replace(/(^|\s)\+(\d+)(?=\s|$)/g, '$1<span class="lg-plus">+$2</span>');
+    if (tag === 'heal') t = t.replace(/(^|\s)\+(\d+)(?=\s|\*|$)/g, '$1<span class="lg-plus">+$2</span>');
+    // 수치 강조 : '공격 수치 127', '피해량 32' 등은 숫자만 굵게
+    t = t.replace(/(수치|피해량|보호막 \+)\s*(\d+)/g, '$1 <b class="lg-num">$2</b>');
     t = t.replace(/(본인 회복|회복)\s+(\d+)(?=\s|<|$)/g, '$1 <span class="lg-plus">+$2</span>');
     return t;
   }).join('');
@@ -5167,9 +5172,9 @@ function formatLogLineHtml(l, noIcon) {
   }
   const cls = LOG_GROUP_START_TAGS.has(l.tag) ? 'logline group-start' : 'logline';
   const icon = noIcon ? '' : (LOG_TAG_ICON[l.tag] || '');
-  const deco = decorateLogText(l.text, l.tag);
-  const body = l.role ? `<span style="color:${roleColorVar(l.role)};">${deco}</span>` : deco;
-  return `<div class="${cls} tag-${l.tag}">${icon ? `<span class="li">${icon}</span>` : ''}${body}</div>`;
+  // 직군 색은 블록 왼쪽 선이 맡고, 글줄은 모두 같은 색으로 둡니다(아이콘 칸 + 글 칸 두 칸 정렬).
+  const body = decorateLogText(l.text, l.tag);
+  return `<div class="${cls} tag-${l.tag}"><span class="li">${icon}</span><span class="lt">${body}</span></div>`;
 }
 // 블록 첫 줄의 내용으로 공격/방어/힐 중 어떤 행동인지 구분해 그 색을 입힙니다. 피해 정산처럼
 // 자동으로 발생한 안내성 줄("["로 시작)이나 이동/배치처럼 셋 중 어디에도 안 속하는 행동은
