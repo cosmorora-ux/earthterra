@@ -7722,7 +7722,7 @@ function renderDormPalette() {
   renderDormGrid();
 }
 // ---------- 아이템 추가 (참가자 : 가구 · 캐릭터 SD) ----------
-// 큰 그림은 방 크기에 맞게 미리 줄여서 올립니다(가구 220px · 캐릭터 160px 안). 움직이는 gif는 그대로 두고 기본 배율만 줄여요.
+// 그림은 원본 그대로 올리고, 큰 그림은 방에 처음 놓일 때 가구 220px · 캐릭터 160px 안에 들어오게 기본 배율만 정합니다.
 const DORM_ADD_BOX = { furniture: 220, chara: 160 };
 let dormAdd = null;
 function openDormAddModal(editId) {
@@ -7762,16 +7762,10 @@ function onDormAddFile(ev) {
   img.src = dormAdd.url;
 }
 async function dormAddPrepare() {
+  // 원본 파일을 그대로 올립니다(압축·축소 없음). 큰 그림은 방에 놓일 때의 기본 배율(scale)만 작게 잡아요.
   const { file, img, type } = dormAdd, box = DORM_ADD_BOX[type];
   const w = img.naturalWidth, h = img.naturalHeight, fit = Math.min(1, box / w, box / h);
-  const isGif = /\.gif$/i.test(file.name) || file.type === 'image/gif';
-  if (fit >= 1) return { data: await file.arrayBuffer(), filename: file.name, w, h, px: true };
-  if (isGif) return { data: await file.arrayBuffer(), filename: file.name, w, h, px: false, scale: fit };
-  const cw = Math.max(1, Math.round(w * fit)), ch = Math.max(1, Math.round(h * fit));
-  const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
-  const ctx = cv.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, cw, ch);
-  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
-  return { data: await blob.arrayBuffer(), filename: 'item.png', w: cw, h: ch, px: false };
+  return { data: await file.arrayBuffer(), filename: file.name, w, h, px: fit >= 1, scale: fit < 1 ? fit : undefined };
 }
 async function submitDormAdd() {
   if (!dormAdd) return;
@@ -7819,7 +7813,7 @@ function renderDormEditBar() {
     const a = dormAsset(sel.a) || {};
     bar.className = 'dorm-edit-bar on';
     bar.innerHTML = `<span class="th" style="background-image:url('${a.url}')"></span><span class="nm">${mailEsc(a.name || '')}</span><span class="sep"></span>
-      <button onclick="dormResizeSel(-1)" data-tip="작게 ( - )"><i class="fa-solid fa-minus"></i></button><span class="val">×${dormZ(sel, a)}</span>
+      <button onclick="dormResizeSel(-1)" data-tip="작게 ( - )"><i class="fa-solid fa-minus"></i></button><span class="val">×${a.smooth ? +(dormZ(sel, a) / (a.s || 1)).toFixed(2) : dormZ(sel, a)}</span>
       <button onclick="dormResizeSel(1)" data-tip="크게 ( + )"><i class="fa-solid fa-plus"></i></button>
       <button class="txt" onclick="dormResizeSel(0)">원래 크기</button><span class="sep"></span>
       <button onclick="dormLayerSel('top')" data-tip="최상단으로"><i class="fa-solid fa-angles-up"></i></button>
@@ -7851,7 +7845,10 @@ function dormResizeSel(dir) {
   if (dormSel < 0) return;
   const it = dormEdit.items[dormSel], a = dormAsset(it.a);
   const cur = dormZ(it, a), def = (a && a.s) || 1;
-  const z = dir === 0 ? def : Math.max(0.25, Math.min(4, Math.round((cur + dir * 0.25) * 4) / 4));
+  // 원본 그림(smooth)은 기본 크기의 0.25배 단위로, 도트는 원래처럼 0.25배 단위로
+  const z = dir === 0 ? def : a && a.smooth
+    ? Math.max(def * 0.25, Math.min(def * 4, Math.round((cur / def + dir * 0.25) * 4) / 4 * def))
+    : Math.max(0.25, Math.min(4, Math.round((cur + dir * 0.25) * 4) / 4));
   // 크기가 바뀌어도 바닥에 닿은 아래쪽 가운데 위치는 그대로 둡니다.
   const cx = it.x + a.w * cur / 2, by = it.y + a.h * cur;
   it.z = z; it.x = Math.round(cx - a.w * z / 2); it.y = Math.round(by - a.h * z);
@@ -7898,6 +7895,11 @@ function bindDormStage(s) {
     if (a) {
       if (!dormGhostPos) { dormGhostPos = Object.assign(ptAt(e), { s }); dormUpdateGhost(); }
       if (dormEdit.items.length >= 150) { showShopToast('소품은 150개까지 놓을 수 있어요.'); return; }
+      // 캐릭터 SD는 방에 하나만 : 이미 있으면 새 캐릭터로 바꿉니다.
+      if (a.category === 'chara' && dormEdit.items.some(x => (dormAsset(x.a) || {}).category === 'chara')) {
+        dormEdit.items = dormEdit.items.filter(x => (dormAsset(x.a) || {}).category !== 'chara');
+        dormSel = -1; showShopToast('캐릭터 SD는 방에 하나만 배치할 수 있어 기존 캐릭터를 교체했습니다.');
+      }
       const nit = { a: a.id, x: dormGhostPos.x, y: dormGhostPos.y, f: false, z: a.s || 1 };
       const os = dormEdit.items.filter(x => x.o != null).map(x => x.o);
       if (os.length) nit.o = Math.max(...os) + 1;  // 순서를 정해 둔 방이면 새 소품은 맨 앞에

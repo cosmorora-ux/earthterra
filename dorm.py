@@ -233,7 +233,7 @@ class Dorms:
             asset["smooth"] = True
         if scale:
             try:
-                asset["s"] = max(0.25, min(4.0, round(float(scale) * 4) / 4))
+                asset["s"] = max(0.02, min(4.0, round(float(scale), 3)))
             except (TypeError, ValueError):
                 pass
         if category == "chara":
@@ -307,7 +307,10 @@ class Dorms:
             if not a or a["category"] == "room":
                 continue
             try:
-                z = max(0.25, min(4.0, round(float(it.get("z") or a.get("s", 1)) * 4) / 4))
+                z = float(it.get("z") or a.get("s", 1))
+                # 도트는 0.25배 단위, 참가자가 올린 원본 그림(smooth)은 큰 그림을 작게 놓으므로 세밀하게
+                z = (max(0.02, min(4.0, round(z, 3))) if a.get("smooth")
+                     else max(0.25, min(4.0, round(z * 4) / 4)))
             except (TypeError, ValueError):
                 z = a.get("s", 1)
             w, h = a["w"] * z, a["h"] * z
@@ -321,6 +324,11 @@ class Dorms:
                 except (TypeError, ValueError):
                     pass
             items.append(rec)
+        # 캐릭터 SD는 방에 하나만 : 여러 개면 마지막에 놓은 것만 남깁니다.
+        charas = [i for i, rec in enumerate(items) if (self.asset(rec["a"]) or {}).get("category") == "chara"]
+        if len(charas) > 1:
+            drop = set(charas[:-1])
+            items = [rec for i, rec in enumerate(items) if i not in drop]
         # 벽지·바닥(방에 딱 맞춰 까는 것) : 자리(slot)가 맞는 자료만 받습니다.
         def slot_asset(key, slot):
             a = self.asset(data.get(key))
