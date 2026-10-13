@@ -1768,6 +1768,35 @@
   .wm-info .v { font-size:13px; line-height:1.5; color:#e6e6ea; }
   .wm-empty { padding:40px 20px; text-align:center; color: var(--muted); font-size:14px; line-height:1.8; }
   .wm-empty i { display:block; font-size:22px; margin-bottom:8px; opacity:.6; }
+  /* 구역 카드 : 검정 세로 카드 4장 (위 캡션 · 이미지 · 구역 이름 · 아래 설명과 정보 줄) */
+  .wm-zones { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px; padding:0 22px 22px; }
+  .wm-zone { display:flex; flex-direction:column; min-width:0; background:#050506; border:1px solid rgba(255,255,255,.08); border-radius:22px; padding:16px 16px 18px; color:#ededf0; }
+  .wm-zone .cap { font-size:11px; color:#c8c8cf; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.55); }
+  .wm-zone .img { position:relative; aspect-ratio:1 / 1; margin:14px 0 12px; border-radius:6px; background:#0d0d10 center/cover no-repeat; }
+  .wm-zone .img.empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#e4e4e8; }
+  .wm-zone .img.empty .ns { width:46%; position:absolute; opacity:.9; }
+  .wm-zone .img.empty span { position:relative; z-index:1; font-size:13px; padding:2px 8px; background:#0d0d10; }
+  .wm-zone .ttl { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:10px 0; border-top:1px solid rgba(255,255,255,.55); }
+  .wm-zone .ttl b { font-size:16px; font-weight:600; letter-spacing:-0.01em; }
+  .wm-zone .ttl span { font-size:11px; color:#9a9aa2; font-variant-numeric: tabular-nums; flex:none; }
+  .wm-zone .foot { }
+  .wm-zone .foot p { margin:0 0 10px; min-height:3.2em; font-size:12px; line-height:1.6; color:#c9c9cf; white-space:pre-wrap; }
+  .wm-zone .foot p.muted { color:#6c6c74; }
+  .wm-zone dl { margin:0; }
+  .wm-zone dl > div { display:grid; grid-template-columns:44% 1fr; gap:8px; padding:6px 0; border-top:1px solid rgba(255,255,255,.4); font-size:12.5px; }
+  .wm-zone dl > div:last-child { border-bottom:1px solid rgba(255,255,255,.4); }
+  .wm-zone dt { color:#f2f2f4; }
+  .wm-zone dd { margin:0; color:#d6d6dc; }
+  .wm-zedit { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+  .wm-zed { padding:12px; border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.02); min-width:0; }
+  .wm-zno { font-weight:800; font-size:13px; flex:none; }
+  .wm-zed .pv { width:38px; height:38px; border-radius:8px; background:#0d0d10 center/cover no-repeat; border:1px solid var(--line); flex:none; }
+  @media (max-width:1180px) { .wm-zones { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  @media (max-width:900px) {
+    .wm-zones { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; padding:0 16px 18px; gap:12px; }
+    .wm-zone { flex:0 0 78%; scroll-snap-align:center; }
+    .wm-zedit { grid-template-columns:minmax(0,1fr); }
+  }
   /* 운영진 편집 */
   .wm-edit { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:16px; align-items:start; }
   .wm-edit .ops-card { margin:0; }
@@ -8843,7 +8872,11 @@ socket.on('world_result', (d) => showShopToast(d.message));
 socket.on('joined', () => { if (worldOpen()) socket.emit('world_get'); });
 socket.on('world_image_result', (d) => {
   if (!d.ok || !worldDraft) return;
-  const p = worldDraft.places.find(x => x.id === d.for); if (p) { p.image = d.url; renderWorld(); }
+  const [pid, zi] = String(d.for || '').split(':z');
+  const p = worldDraft.places.find(x => x.id === pid); if (!p) return;
+  if (zi != null && zi !== '') { (p.zones = p.zones || [])[+zi] = Object.assign(p.zones[+zi] || {}, { image: d.url }); }
+  else p.image = d.url;
+  renderWorld();
 });
 
 function renderWorld() {
@@ -8915,7 +8948,26 @@ function worldMapHtml(places, sel) {
       <div class="tags">${tags}</div><div class="desc">${worldEsc(sel.desc || '')}</div></div>
       ${info.length ? `<div class="wm-info">${info.map(i => `<div><div class="k">${worldEsc(i.k)}</div><div class="v">${worldEsc(i.v)}</div></div>`).join('')}</div>` : '<div></div>'}</div>`;
   }
-  return `<div class="wm-card"><div class="wm-stage"><div class="wm-row">${nodes}</div></div>${detail}</div>`;
+  const zones = sel && !sel.locked ? worldZonesHtml(sel) : '';
+  return `<div class="wm-card"><div class="wm-stage"><div class="wm-row">${nodes}</div></div>${detail}${zones}</div>`;
+}
+
+// ---------- 구역 카드 (장소마다 1~4구역) : 이미지 · 구역 이름 · 설명 · 정보 칸. 이미지가 없으면 No Signal ----------
+const WM_NOSIGNAL = `<svg class="ns" viewBox="0 0 120 120" aria-hidden="true">${[0, 45, 90, 135, 180, 225, 270, 315].map(r =>
+  `<rect x="57" y="8" width="6" height="26" fill="currentColor" transform="rotate(${r} 60 60)"/>`).join('')}</svg>`;
+function worldZonesHtml(p) {
+  const zs = p.zones || [];
+  if (!zs.length) return '';
+  return `<div class="wm-zones">${zs.map((z, i) => {
+    const info = (z.info || []).filter(r => r.k || r.v);
+    return `<article class="wm-zone">
+      <div class="cap"><span>${i + 1}구역 — ${worldEsc(p.name)}</span></div>
+      <div class="img ${z.image ? '' : 'empty'}" style="${z.image ? `background-image:url('${worldEsc(z.image)}')` : ''}">${z.image ? '' : `${WM_NOSIGNAL}<span>No Signal</span>`}</div>
+      <div class="ttl"><b>${worldEsc(z.title || `${i + 1}구역`)}</b><span>${String(i + 1).padStart(2, '0')} / ${String(zs.length).padStart(2, '0')}</span></div>
+      <div class="foot">${z.desc ? `<p>${worldEsc(z.desc)}</p>` : '<p class="muted">구역 설명이 아직 없습니다.</p>'}
+        ${info.length ? `<dl>${info.map(r => `<div><dt>${worldEsc(r.k)}</dt><dd>${worldEsc(r.v)}</dd></div>`).join('')}</dl>` : ''}</div>
+    </article>`;
+  }).join('')}</div>`;
 }
 
 // ---------- 운영진 편집 ----------
@@ -8941,7 +8993,8 @@ function worldDel(list, i) {
 }
 function worldAddChapter() { worldDraft.chapters.push({ id: Math.random().toString(16).slice(2, 10), title: `Chapter ${worldDraft.chapters.length + 1}`, summary: '' }); renderWorld(); }
 function worldAddPlace() {
-  worldDraft.places.push({ id: Math.random().toString(16).slice(2, 10), name: '새 장소', en: '', sub: '', desc: '', info: [], image: null, chapter: 0 });
+  worldDraft.places.push({ id: Math.random().toString(16).slice(2, 10), name: '새 장소', en: '', sub: '', desc: '', info: [], image: null, chapter: 0,
+    zones: [0, 1, 2, 3].map(() => ({ title: '', image: null, desc: '', info: [] })) });
   worldEditIdx = worldDraft.places.length - 1; renderWorld();
 }
 function worldPlaceImage(ev, id) {
@@ -8949,6 +9002,22 @@ function worldPlaceImage(ev, id) {
   if (!f) return;
   if (f.size > 4 * 1024 * 1024) { showShopToast('4MB 이하의 이미지만 등록할 수 있습니다.'); return; }
   f.arrayBuffer().then(buf => socket.emit('world_image', { filename: f.name, data: buf, for: id }));
+}
+function worldZoneEditHtml(p) {
+  const pi = worldEditIdx;
+  if (!p.zones || p.zones.length !== 4) p.zones = [0, 1, 2, 3].map(i => (p.zones || [])[i] || { title: '', image: null, desc: '', info: [] });
+  return `<div class="wm-zedit">${p.zones.map((z, i) => `<div class="wm-zed">
+    <div class="ops-row"><span class="wm-zno">${i + 1}구역</span>
+      <span class="pv" style="${z.image ? `background-image:url('${worldEsc(z.image)}')` : ''}"></span>
+      <label class="ops-btn"><i class="fa-solid fa-image"></i> 이미지 삽입<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="worldPlaceImage(event,'${p.id}:z${i}')"></label>
+      ${z.image ? `<button class="ops-btn icon" onclick="worldDraft.places[${pi}].zones[${i}].image=null; renderWorld()" data-tip="이미지 삭제"><i class="fa-solid fa-xmark"></i></button>` : ''}</div>
+    <input class="ops-in" style="margin-top:8px;" maxlength="30" placeholder="구역 이름" value="${worldEsc(z.title)}" oninput="worldDraft.places[${pi}].zones[${i}].title=this.value">
+    <textarea class="ops-in" style="min-height:64px; margin-top:8px;" maxlength="600" placeholder="구역 설명을 입력해 주세요." oninput="worldDraft.places[${pi}].zones[${i}].desc=this.value">${worldEsc(z.desc)}</textarea>
+    ${(z.info || []).map((r, k) => `<div class="wm-kv" style="margin-top:6px;"><input class="ops-in" maxlength="20" placeholder="항목" value="${worldEsc(r.k)}" oninput="worldDraft.places[${pi}].zones[${i}].info[${k}].k=this.value">
+      <input class="ops-in" maxlength="80" placeholder="내용" value="${worldEsc(r.v)}" oninput="worldDraft.places[${pi}].zones[${i}].info[${k}].v=this.value">
+      <button class="ops-btn icon" onclick="worldDraft.places[${pi}].zones[${i}].info.splice(${k},1); renderWorld()"><i class="fa-solid fa-xmark"></i></button></div>`).join('')}
+    ${(z.info || []).length < 4 ? `<button class="ops-btn" style="margin-top:6px;" onclick="(worldDraft.places[${pi}].zones[${i}].info=worldDraft.places[${pi}].zones[${i}].info||[]).push({k:'',v:''}); renderWorld()"><i class="fa-solid fa-plus"></i> 정보 추가</button>` : ''}
+  </div>`).join('')}</div>`;
 }
 function worldEditHtml() {
   const d = worldDraft, chs = d.chapters, ps = d.places;
@@ -8979,7 +9048,8 @@ function worldEditHtml() {
       ${(p.info || []).map((it, k) => `<div class="wm-kv"><input class="ops-in" maxlength="20" placeholder="항목" value="${worldEsc(it.k)}" oninput="worldDraft.places[${worldEditIdx}].info[${k}].k=this.value">
         <input class="ops-in" maxlength="80" placeholder="내용" value="${worldEsc(it.v)}" oninput="worldDraft.places[${worldEditIdx}].info[${k}].v=this.value">
         <button class="ops-btn icon" onclick="worldDraft.places[${worldEditIdx}].info.splice(${k},1); renderWorld()"><i class="fa-solid fa-xmark"></i></button></div>`).join('')}
-      ${(p.info || []).length < 8 ? `<button class="ops-btn" onclick="(worldDraft.places[${worldEditIdx}].info=worldDraft.places[${worldEditIdx}].info||[]).push({k:'',v:''}); renderWorld()"><i class="fa-solid fa-plus"></i> 정보 추가</button>` : ''}</div>`;
+      ${(p.info || []).length < 8 ? `<button class="ops-btn" onclick="(worldDraft.places[${worldEditIdx}].info=worldDraft.places[${worldEditIdx}].info||[]).push({k:'',v:''}); renderWorld()"><i class="fa-solid fa-plus"></i> 정보 추가</button>` : ''}</div>
+    <div class="ops-field" style="margin-top:6px;"><span class="lb">구역 카드 (1~4구역)</span>${worldZoneEditHtml(p)}</div>`;
   return `<div class="wm-edit">
     <div class="ops-card"><h3><i class="fa-solid fa-book-open"></i> 챕터<span class="sub">
       <select class="ops-in" style="height:32px; width:auto;" onchange="worldDraft.unlocked=+this.value"><option value="0">해금 없음</option>${chs.map((c, i) => `<option value="${i + 1}" ${d.unlocked === i + 1 ? 'selected' : ''}>Ch. ${i + 1}까지 해금</option>`).join('')}</select></span></h3>
