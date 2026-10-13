@@ -34,7 +34,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.2"
+SERVER_BUILD = "2026-10-13.4"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -84,6 +84,30 @@ def _load_gm_password():
 
 
 GM_GUEST_PASSWORD = _load_gm_password()
+
+# 국가 (마이페이지에서 운영진이 배치)
+NATIONS = ("아르카디아", "노바")
+
+# 포인트 컬러 : 운영진이 고르면 모든 방·모든 화면에 함께 적용됩니다(site_settings.json, git 밖).
+POINT_THEMES = ("blue", "purple", "yellow")
+SITE_SETTINGS_PATH = os.path.join(_THIS_DIR, "site_settings.json")
+
+
+def _load_site_settings():
+    try:
+        with open(SITE_SETTINGS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+SITE_SETTINGS = _load_site_settings()
+
+
+def point_theme():
+    t = SITE_SETTINGS.get("point_theme")
+    return t if t in POINT_THEMES else "blue"
 
 # 전투 로그(public_log/operator_log)는 방 하나가 몇 시간씩 이어지면 수천 줄까지 쌓일 수
 # 있습니다 - 매 행동마다 상태를 통째로 재전송하는 구조라, 로그를 자르지 않으면 세션이
@@ -165,7 +189,7 @@ def index():
         }
         for room in list_rooms()
     ]
-    return render_template("index.html", rooms=rooms_view, battle_type_labels=BATTLE_TYPE_LABELS)
+    return render_template("index.html", rooms=rooms_view, battle_type_labels=BATTLE_TYPE_LABELS, point_theme=point_theme())
 
 
 @app.route("/yacht")
@@ -207,6 +231,7 @@ def guest_page(room_id):
         battle_type_label=BATTLE_TYPE_LABELS.get(room.battle_type, "PVP"),
         grid_size=GRID_SIZES.get(room.battle_type, 0),
         default_team_a=default_team_a, default_team_b=default_team_b,
+        point_theme=point_theme(),
     )
 
 
@@ -562,6 +587,7 @@ def build_public_state(room):
         "preview_teams": preview_teams,
         "server_now": time.time(),
         "server_build": SERVER_BUILD,
+        "point_theme": point_theme(),
     }
     if room.battle_type == "siege":
         payload["site_dice"] = {
@@ -1369,7 +1395,37 @@ def on_set_mypage_gm_fields(data):
 avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
 sound_effect_volume=existing.get("sound_effect_volume"),
         )
+    # 국가 배치 : 아르카디아 / 노바 / 없음
+    if "nation" in data:
+        nation = (data.get("nation") or "").strip()
+        if nation in NATIONS or nation == "":
+            entry = room.game.db.get(name)
+            if entry is not None:
+                if nation:
+                    entry["nation"] = nation
+                else:
+                    entry.pop("nation", None)
+                room.game.db.save()
     broadcast_state(room)
+
+
+@socketio.on("set_point_theme")
+def on_set_point_theme(data):
+    """운영진 : 포인트 컬러를 바꾸면 모든 방의 모든 접속자 화면에 바로 적용됩니다."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    theme = (data or {}).get("theme")
+    if theme not in POINT_THEMES:
+        return
+    SITE_SETTINGS["point_theme"] = theme
+    tmp = SITE_SETTINGS_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(SITE_SETTINGS, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, SITE_SETTINGS_PATH)
+    for r in list_rooms():
+        broadcast_state(r)
 
 
 # ----------------------------------------------------------------------

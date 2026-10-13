@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-point="{{ point_theme }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -35,6 +35,10 @@
   :root { --font-title: "Baunk", "42dot Sans", "Pretendard", sans-serif; }
   /* 브라우저 기본 UI(자동완성 목록, 색상 선택기, 숫자 칸 등)도 다크모드로 */
   :root { color-scheme: dark; --point: #6f93ff; }
+  /* 포인트 컬러 : 운영진이 운영 > 방 설정에서 고르면 모든 화면에 한 번에 적용됩니다 (blue / purple / yellow) */
+  :root { --point-rgb:111,147,255; --point-soft:var(--point-soft); --on-accent:#fff; }
+  html[data-point="purple"] { --accent-blue:#7650f0; --point:#a48dff; --point-rgb:164,141,255; --point-soft:#ddd4ff; --on-accent:#fff; }
+  html[data-point="yellow"] { --accent-blue:#e2b23c; --point:#f0c862; --point-rgb:240,200,98; --point-soft:#f7e3b0; --on-accent:#17171a; }
   input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--text); caret-color: var(--text);
     -webkit-box-shadow: 0 0 0 1000px #0c0c0d inset; transition: background-color 9999s;
@@ -57,7 +61,7 @@
   #globalError .err-icon { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
                  border-radius:50%; background:#4a90ff; color:#0b0b0d; font-size:13px; font-weight:800; flex-shrink:0; font-style:normal; }
 
-  .btn { background: var(--accent-blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:16px; cursor:pointer; font-weight:600; }
+  .btn { background: var(--accent-blue); color: var(--on-accent); border:none; border-radius:8px; padding:8px 16px; font-size:16px; cursor:pointer; font-weight:600; }
 
   /* ---------- 상단바 ---------- */
   .topbar { display:flex; align-items:center; gap:18px; padding:16px 24px; margin-bottom:14px; font-size:16px; flex-wrap:wrap; }
@@ -327,7 +331,7 @@
   .shop-actions { display:flex; align-items:center; gap:6px; flex:none; }
   .shop-actions select, .shop-actions input { padding:5px 8px; font-size:13px; }
   .shop-actions input { width:140px; background:#0c0c0d; border:1px solid var(--card-border); color: var(--text); border-radius:6px; }
-  .shop-btn { background: var(--accent-blue); color:#fff; border:none; border-radius:7px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  .shop-btn { background: var(--accent-blue); color: var(--on-accent); border:none; border-radius:7px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
   .shop-btn:disabled { background:#2a2a30; color: var(--muted); cursor:default; }
   .shop-btn.ghost { background:transparent; border:1px solid var(--card-border); color: var(--text); font-weight:500; }
   .shop-btn.danger { background:transparent; border:1px solid rgba(255,90,90,.5); color:#ff7a7a; font-weight:500; }
@@ -414,7 +418,7 @@
   .notice-toolbar { display:flex; flex-wrap:wrap; gap:4px; align-items:center; padding:6px; border:1px solid var(--card-border); border-radius:8px; background:#0c0c0d; }
   .notice-toolbar button { min-width:30px; height:30px; padding:0 8px; border-radius:6px; border:1px solid transparent; background:transparent; color: var(--text); cursor:pointer; font-size:14px; }
   .notice-toolbar button:hover { background:rgba(255,255,255,.08); }
-  .notice-toolbar button.on { background:rgba(91,140,255,.22); border-color:rgba(91,140,255,.5); }
+  .notice-toolbar button.on { background:rgba(var(--point-rgb),.22); border-color:rgba(var(--point-rgb),.5); }
   .notice-toolbar select { height:30px; padding:0 8px; font-size:13px; }
   .notice-toolbar .sep { width:1px; height:20px; background: var(--card-border); margin:0 4px; }
   .notice-toolbar input[type="color"] { width:30px; height:30px; padding:0; border:1px solid var(--card-border); border-radius:6px; background:none; cursor:pointer; }
@@ -523,7 +527,7 @@
   #uiDialog { z-index:400; }
   .modal-box.ui-dialog { width:380px; max-width:calc(100vw - 32px); padding:22px 22px 18px; }
   .ui-dialog-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;
-    background:rgba(91,140,255,.14); color:#8fb0ff; font-size:18px; margin-bottom:12px; }
+    background:rgba(var(--point-rgb),.14); color:#8fb0ff; font-size:18px; margin-bottom:12px; }
   .ui-dialog.danger .ui-dialog-icon { background:rgba(255,90,90,.14); color:#ff8a8a; }
   .ui-dialog-title { font-size:17px; font-weight:700; margin-bottom:6px; }
   .ui-dialog-msg { font-size:14.5px; line-height:1.55; color: var(--muted); white-space:pre-line; word-break:keep-all; }
@@ -532,7 +536,7 @@
   .ui-dialog-actions button { min-width:84px; height:38px; border-radius:9px; font-size:14px; font-weight:700; cursor:pointer; border:1px solid var(--card-border); }
   .ui-dialog-actions .cancel { background:transparent; color: var(--text); font-weight:500; }
   .ui-dialog-actions .cancel:hover { background:rgba(255,255,255,.06); }
-  .ui-dialog-actions .ok { background: var(--accent-blue); border-color: var(--accent-blue); color:#fff; }
+  .ui-dialog-actions .ok { background: var(--accent-blue); border-color: var(--accent-blue); color: var(--on-accent); }
   .ui-dialog.danger .ui-dialog-actions .ok { background:#c43c3c; border-color:#c43c3c; }
   /* ================================================================
      라운드 트랙 (PVP) : 라운드별 선공/후공 진행을 보여주는 블럭. 아래 손잡이를 끌어서 높이를 바꿀 수 있고
@@ -560,11 +564,11 @@
   .rt-line::after { right:auto; width:calc((100% - 8px) * var(--rt-fill)); background:rgba(255,255,255,.32); }
   .rt-node { position:relative; z-index:1; width:8px; height:8px; border-radius:50%; background:#2a2a30; box-shadow:0 0 0 3px var(--panel); }
   .rt-node.past { background:#cfcfd4; }
-  .rt-node.now { width:12px; height:12px; background: var(--point); box-shadow:0 0 0 3px var(--panel), 0 0 0 6px rgba(92,134,255,.22); }
+  .rt-node.now { width:12px; height:12px; background: var(--point); box-shadow:0 0 0 3px var(--panel), 0 0 0 6px rgba(var(--point-rgb),.22); }
   .rt-node .r { position:absolute; top:calc(100% + 7px); left:50%; transform:translateX(-50%); font-size:10.5px; color: var(--muted); font-variant-numeric: tabular-nums; opacity:.7; }
   .rt-node.now .r { color: var(--text); font-weight:700; opacity:1; }
   .rt-phase { flex:none; display:flex; align-items:center; gap:8px; font-size:13px; color: var(--muted); white-space:nowrap; }
-  .rt-phase .chip { padding:3px 9px; border-radius:999px; background:rgba(92,134,255,.14); color:#c9d6ff; font-weight:600; font-size:12px; }
+  .rt-phase .chip { padding:3px 9px; border-radius:999px; background:rgba(var(--point-rgb),.14); color:var(--point-soft); font-weight:600; font-size:12px; }
   .rt-phase b { color: var(--text); font-weight:600; }
   .round-track.compact .rt-node .r { display:none; }
   /* 공간이 모자라면 라운드 패널은 숨깁니다 (라운드·단계는 상단 헤더에도 있으니까요) */
@@ -637,14 +641,14 @@
     border-radius:999px; }
   .bgm-eq { display:flex; align-items:flex-end; gap:2px; width:18px; height:16px; flex:none; }
   .bgm-eq span { flex:1; height:30%; background: var(--muted); border-radius:1px; transition: background .2s; }
-  .bgm-player.playing .bgm-eq span { background: #6f93ff; animation: bgmEq 1s ease-in-out infinite; }
+  .bgm-player.playing .bgm-eq span { background: var(--point); animation: bgmEq 1s ease-in-out infinite; }
   .bgm-player.playing .bgm-eq span:nth-child(2) { animation-delay: -.4s; }
   .bgm-player.playing .bgm-eq span:nth-child(3) { animation-delay: -.7s; }
   .bgm-player.playing .bgm-eq span:nth-child(4) { animation-delay: -.2s; }
   @keyframes bgmEq { 0%,100% { height:25%; } 50% { height:100%; } }
   .bgm-info { display:flex; flex-direction:column; min-width:0; line-height:1.15; }
   .bgm-kicker { font-size:9px; letter-spacing:.12em; color: var(--muted); font-weight:700; }
-  .bgm-player.playing .bgm-kicker { color:#6f93ff; }
+  .bgm-player.playing .bgm-kicker { color:var(--point); }
   .bgm-title { font-size:13px; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
   .bgm-player:not(.playing) .bgm-title { color: var(--muted); }
   .bgm-mute { flex:none; width:26px; height:26px; border-radius:50%; border:none; background:rgba(255,255,255,.06);
@@ -654,12 +658,12 @@
 
   /* 공용 슬라이더 : 얇은 트랙 + 채워진 부분 + 동그란 손잡이 (--fill 값은 JS가 갱신) */
   input[type="range"].nice-range { -webkit-appearance:none; appearance:none; width:84px; height:4px; border-radius:999px; cursor:pointer;
-    background: linear-gradient(to right, #6f93ff 0%, #6f93ff var(--fill, 70%), rgba(255,255,255,.14) var(--fill, 70%), rgba(255,255,255,.14) 100%);
+    background: linear-gradient(to right, var(--point) 0%, var(--point) var(--fill, 70%), rgba(255,255,255,.14) var(--fill, 70%), rgba(255,255,255,.14) 100%);
     outline:none; margin:0; }
   input[type="range"].nice-range::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%;
-    background:#fff; box-shadow:0 0 0 3px rgba(91,140,255,.35); transition: transform .12s; }
+    background:#fff; box-shadow:0 0 0 3px rgba(var(--point-rgb),.35); transition: transform .12s; }
   input[type="range"].nice-range:hover::-webkit-slider-thumb { transform:scale(1.2); }
-  input[type="range"].nice-range::-moz-range-thumb { width:12px; height:12px; border:none; border-radius:50%; background:#fff; box-shadow:0 0 0 3px rgba(91,140,255,.35); }
+  input[type="range"].nice-range::-moz-range-thumb { width:12px; height:12px; border:none; border-radius:50%; background:#fff; box-shadow:0 0 0 3px rgba(var(--point-rgb),.35); }
   input[type="range"].nice-range::-moz-range-track { background:transparent; }
   input[type="range"].nice-range:disabled { opacity:.4; cursor:default; }
 
@@ -684,7 +688,7 @@
 
   .sort-row { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
   .sort-btn { background:#0c0c0d; border:1px solid var(--card-border); color: var(--muted); border-radius:8px; padding:6px 12px; font-size:14px; cursor:pointer; }
-  .sort-btn.active { color:#fff; border-color: var(--accent-blue); background:#132038; }
+  .sort-btn.active { color:#fff; border-color: var(--accent-blue); background: rgba(var(--point-rgb),.14); }
 
   /* 거점 상태 헤더 카드 (공성전 전용) */
   .site-card { border:1px solid var(--card-border); border-radius:14px; padding:14px 16px; margin-bottom:14px; }
@@ -844,7 +848,7 @@
   }
   .btn-plain { background:#232327; color: var(--text); border:1px solid var(--card-border); border-radius:8px; padding:8px 14px; font-size:15px; cursor:pointer; }
   .btn-plain:disabled { opacity:.4; cursor:not-allowed; }
-  .btn-primary { background: var(--accent-blue); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:15px; cursor:pointer; font-weight:600; }
+  .btn-primary { background: var(--accent-blue); color: var(--on-accent); border:none; border-radius:8px; padding:8px 16px; font-size:15px; cursor:pointer; font-weight:600; }
 
   /* ---------- 액션 팝업 (커맨드 전송 버튼 위로 뜨는 말풍선형 플로팅) ---------- */
   #actionPopup { display:none; position:absolute; z-index:40; width: 340px; background:#0c0c0d; border:1px solid var(--card-border);
@@ -877,9 +881,9 @@
   .gm-bar-ctrl button { height:40px; padding:0 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; color: var(--text); font-size:13px; font-weight:500; cursor:pointer; white-space:nowrap; }
   .gm-bar-ctrl button i { color: var(--muted); font-size:13px; }
   .gm-bar-ctrl button:hover i { color: var(--text); }
-  .gm-bar-ctrl button.on { background: rgba(92,134,255,.16); border-color: rgba(92,134,255,.45); }
+  .gm-bar-ctrl button.on { background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); }
   .gm-bar-ctrl button.on i { color: var(--point); }
-  .gm-bar-ctrl .cnt:not(:empty) { font-size:11px; font-weight:700; padding:1px 6px; border-radius:999px; background: rgba(92,134,255,.18); color:#c9d6ff; font-variant-numeric: tabular-nums; }
+  .gm-bar-ctrl .cnt:not(:empty) { font-size:11px; font-weight:700; padding:1px 6px; border-radius:999px; background: rgba(var(--point-rgb),.18); color:var(--point-soft); font-variant-numeric: tabular-nums; }
   .gm-bar-status { font-size:12px; color: var(--muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .gm-bar-status:empty { display:none; }
   /* 폭이 모자라면 버튼 글자는 숨기고 아이콘만 (마우스를 올리면 이름이 보여요) */
@@ -942,7 +946,7 @@
   .boss-img-name { flex:1; font-size:14px; }
   .boss-img-name small { display:block; color: var(--muted); font-size:12px; }
   .mapbg-seg button { background:transparent; border:1px solid var(--card-border); color: var(--muted); border-radius:7px; padding:5px 10px; font-size:13px; cursor:pointer; }
-  .mapbg-seg button.on { background: var(--accent-blue); border-color: var(--accent-blue); color:#fff; }
+  .mapbg-seg button.on { background: var(--accent-blue); border-color: var(--accent-blue); color: var(--on-accent); }
   .gmap .gcell { position:relative; box-sizing:border-box; display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .gmap .gcell.ally { background:rgba(120,120,126,.55); }
   .gmap .gcell.enemy { background:rgba(150,60,60,.45); }
@@ -1434,7 +1438,7 @@
   .sidebar { background:#0b0b0d; border-right:1px solid var(--line); }
   .sidebar .sidebar-icon { border-radius: var(--ui-r); }
   .sidebar .sidebar-icon:hover { background: rgba(255,255,255,.05); }
-  .sidebar .sidebar-icon.active { color: var(--point); background: rgba(92,134,255,.12); }
+  .sidebar .sidebar-icon.active { color: var(--point); background: rgba(var(--point-rgb),.12); }
   .sidebar .sidebar-icon.active::before { background: var(--point); }
   /* 입력 · 선택 */
   .action-bar-bottom select, .gm-bar-fields select, .input-row input, .modal-box input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
@@ -1480,7 +1484,7 @@
   .scene-seg button { display:inline-flex; align-items:center; gap:6px; background: rgba(255,255,255,.05); border:1px solid transparent; color: var(--muted);
     border-radius:10px; padding:7px 12px; font-size:13px; cursor:pointer; }
   .scene-seg button:hover { color: var(--text); background: rgba(255,255,255,.08); }
-  .scene-seg button.on { color:#fff; background: rgba(92,134,255,.18); border-color: rgba(92,134,255,.45); }
+  .scene-seg button.on { color:#fff; background: rgba(var(--point-rgb),.18); border-color: rgba(var(--point-rgb),.45); }
   .scene-mine { display:flex; align-items:center; gap:8px; font-size:12.5px; color: var(--muted); margin-top:14px; }
 
   /* ================================================================
@@ -1495,7 +1499,7 @@
   .mail-item:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.14); }
   .mail-ic { width:38px; height:38px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center;
     background: rgba(255,255,255,.05); color: var(--muted); font-size:14px; }
-  .mail-item.unread .mail-ic { background: rgba(92,134,255,.16); color: var(--point); }
+  .mail-item.unread .mail-ic { background: rgba(var(--point-rgb),.16); color: var(--point); }
   .mail-main { flex:1; min-width:0; }
   .mail-top { display:flex; align-items:center; gap:8px; }
   .mail-who { font-weight:700; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1529,11 +1533,11 @@
   .mail-seg button { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; background: rgba(255,255,255,.05); border:1px solid transparent;
     color: var(--muted); border-radius:10px; padding:10px 12px; font-size:14px; cursor:pointer; }
   .mail-seg button:hover { color: var(--text); background: rgba(255,255,255,.08); }
-  .mail-seg button.on { color:#fff; background: rgba(92,134,255,.16); border-color: rgba(92,134,255,.45); }
+  .mail-seg button.on { color:#fff; background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); }
   .mail-names { display:flex; flex-wrap:wrap; gap:6px; max-height:132px; overflow-y:auto; margin-top:8px; }
   .mail-name { background: rgba(255,255,255,.05); border:1px solid transparent; color:#cfcfd4; border-radius:999px; padding:5px 12px; font-size:13px; cursor:pointer; }
   .mail-picked { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; min-height:26px; }
-  .mail-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 6px 3px 10px; border-radius:999px; background: rgba(92,134,255,.18); color:#dbe4ff; font-size:12.5px; font-weight:600; }
+  .mail-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 6px 3px 10px; border-radius:999px; background: rgba(var(--point-rgb),.18); color:#dbe4ff; font-size:12.5px; font-weight:600; }
   .mail-chip button { width:18px; height:18px; border:none; border-radius:50%; background:none; color:#aebcff; cursor:pointer; font-size:10px; }
   .mail-chip button:hover { background: rgba(255,255,255,.12); color:#fff; }
   .mail-name i { font-size:10px; }
@@ -1555,6 +1559,77 @@
   /* ================================================================
      기숙사(마이룸)
      ================================================================ */
+  /* ================================================================
+     마이페이지 v2 : 전투 화면과 같은 카드 언어(옅은 선 · 둥근 모서리 · 포인트 컬러)로 정리
+     ================================================================ */
+  :root { --nation-arcadia:#e9c05b; --nation-nova:#6f93ff; }
+  .modal-box.mypage.v2 { width:1040px; padding:26px 30px 30px; }
+  .mypage.v2 .idc-head { align-items:center; margin-bottom:18px; }
+  .mypage.v2 .mp-card { background: rgba(255,255,255,.025); border:1px solid var(--line); border-radius:14px; padding:16px 18px; min-width:0; }
+  .mypage.v2 .mp-k { font-size:12.5px; color: var(--muted); font-weight:500; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
+  .mypage.v2 .mp-card-h { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; margin-bottom:14px; }
+  .mypage.v2 .mp-card-h > i { color: var(--muted); font-size:13px; }
+  /* 프로필 */
+  .mypage.v2 .mp-hero { display:grid; grid-template-columns:112px minmax(0,1fr) auto; gap:22px; align-items:center; margin-bottom:14px; padding:18px 20px; }
+  .mypage.v2 .mypage-portrait { width:112px; height:112px; border-radius:14px; }
+  .mypage.v2 .mypage-name { font-size:26px; font-weight:800; margin:0 0 12px; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mypage.v2 .mp-tags { display:flex; flex-direction:column; gap:8px; }
+  .mypage.v2 .mp-tagrow { display:flex; align-items:center; gap:12px; }
+  .mypage.v2 .mp-tagrow .mp-k { width:40px; }
+  .mypage.v2 .mypage-roles, .mypage.v2 .mp-nations { display:flex; flex-wrap:wrap; gap:6px; margin-left:0; }
+  .mypage.v2 .mypage-roles button, .mypage.v2 .mp-nations button { height:28px; padding:0 12px; border-radius:999px; border:1px solid var(--line); background:none;
+    color: var(--muted); font-size:13px; font-weight:600; opacity:1; cursor:pointer; }
+  .mypage.v2 .mypage-roles button.on { color: var(--role-color); border-color: var(--role-color); background: rgba(255,255,255,.04); font-weight:700; }
+  .mypage.v2 .mp-nations button { --nc: var(--muted); display:inline-flex; align-items:center; gap:6px; }
+  .mypage.v2 .mp-nations button::before { content:""; width:7px; height:7px; border-radius:50%; background: var(--nc); opacity:.5; }
+  .mypage.v2 .mp-nations button.on { color: var(--nc); border-color: var(--nc); background: rgba(255,255,255,.04); font-weight:700; }
+  .mypage.v2 .mp-nations button.on::before { opacity:1; }
+  .mypage.v2 .mypage-roles button:disabled, .mypage.v2 .mp-nations button:disabled { cursor:default; }
+  .mypage.v2 .mypage-roles button:not(.on):hover:not(:disabled), .mypage.v2 .mp-nations button:not(.on):hover:not(:disabled) { color: var(--text); }
+  .mypage.v2 .mp-nations .none { font-size:13px; color: var(--muted); }
+  .mypage.v2 .mp-hero-side { min-width:190px; align-self:stretch; display:flex; flex-direction:column; justify-content:center; gap:4px; padding-left:20px; border-left:1px solid var(--line); }
+  .mypage.v2 .idc-kv { font-size:14px; padding:4px 0; }
+  /* 본문 두 열 */
+  .mypage.v2 .mypage-cols { gap:14px; }
+  .mypage.v2 .mypage-col { display:flex; flex-direction:column; gap:14px; }
+  .mypage.v2 .mypage-col + .mypage-col { border-left:none; padding-left:0; padding-top:0; }
+  .mypage.v2 .mypage-hp-row { padding:0; }
+  .mypage.v2 .mypage-hp-num { font-size:24px; font-weight:800; margin-top:4px; }
+  .mypage.v2 .idc-hpbar { height:8px; margin:14px 0 0; background: rgba(255,255,255,.08); }
+  .mypage.v2 .idc-hpbar > div { background: var(--point); }
+  .mypage.v2 .mp-tiles { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .mypage.v2 .mp-tile { display:flex; flex-direction:column; gap:10px; }
+  .mypage.v2 .mp-big { font-size:22px; font-weight:800; font-variant-numeric: tabular-nums; }
+  .mypage.v2 .mp-tile input.idc-inline { width:100%; text-align:left; font-size:20px; padding:4px 8px; margin:0; }
+  .mypage.v2 .mp-items { font-size:14px; line-height:1.5; color: var(--text); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .mypage.v2 .mp-click { cursor:pointer; transition: background-color .15s, border-color .15s; }
+  .mypage.v2 .mp-click:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.14); }
+  .mypage.v2 .mp-go { font-size:10px; opacity:.6; }
+  .mypage.v2 .idc-room { border-top:1px solid var(--line); padding:14px 18px; }
+  /* 스킬 로그 */
+  .mypage.v2 .mp-skill { flex:1; display:flex; flex-direction:column; }
+  .mypage.v2 .mp-skill .seg-toggle { margin:0; }
+  .modal-box.mypage.v2 input.idc-field { background:#0c0c0d; border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:0; }
+  .modal-box.mypage.v2 input.idc-field:focus { outline:none; border-color: rgba(var(--point-rgb),.55); }
+  .mypage.v2 .idc-editor { background:#0c0c0d; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .mypage.v2 .idc-editor .rich-mini-bar { border-bottom-color: var(--line); padding:8px 10px; }
+  .mypage.v2 .idc-editor .rich-mini-bar button { background: rgba(255,255,255,.05); border-radius:7px; }
+  .mypage.v2 .idc-editor .rich { min-height:150px; padding:14px; }
+  .mypage.v2 .mypage-fx-image { border-radius:10px; background:#0c0c0d; border-color: var(--line); }
+  .mypage.v2 .mp-preview-btn { margin-top:12px; height:38px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.04); color:#dcdce2;
+    font-size:13.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+  .mypage.v2 .mp-preview-btn:hover { background: rgba(255,255,255,.08); color:#fff; }
+  @media (max-width:1180px) { .modal-box.mypage.v2 .mp-hero { width:100%; max-width:960px; margin-left:auto; margin-right:auto; } }
+  @media (max-width:900px) {
+    .modal-box.mypage.v2 .mp-hero { max-width:520px; }
+    .modal-box.mypage.v2 { padding:calc(18px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+    .mypage.v2 .mp-hero { grid-template-columns:84px minmax(0,1fr); gap:16px; padding:16px; }
+    .mypage.v2 .mypage-portrait { width:84px; height:84px; }
+    .mypage.v2 .mypage-name { font-size:22px; margin-bottom:10px; }
+    .mypage.v2 .mp-hero-side { grid-column:1 / -1; border-left:none; padding-left:0; border-top:1px solid var(--line); padding-top:10px; }
+    .mypage.v2 .mypage-col + .mypage-col { padding-top:14px; }
+  }
+
   /* ================================================================
      운영 페이지 (GM 전용) : 전투 준비 · 캐릭터 · 음악 · 방 설정. 예전 운영진 화면 기능을 러너 화면으로 옮겼습니다.
      수식·운영진 로그·스탯은 서버가 GM 인증 소켓에만 보내므로, 이 화면 코드가 있어도 러너에게는 데이터가 가지 않습니다.
@@ -1580,13 +1655,13 @@
   .ops-row + .ops-row, .ops-field + .ops-field { margin-top:10px; }
   .ops-field > .lb { display:block; font-size:12.5px; color: var(--muted); margin-bottom:6px; }
   .ops-in { width:100%; min-width:0; height:38px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:#0c0c0d; color: var(--text); font-size:14px; }
-  .ops-in:focus { outline:none; border-color: rgba(111,147,255,.6); }
+  .ops-in:focus { outline:none; border-color: rgba(var(--point-rgb),.6); }
   textarea.ops-in { height:auto; min-height:150px; padding:10px 12px; line-height:1.6; resize:vertical; font-family:inherit; }
   .ops-in.num { width:68px; text-align:center; flex:none; }
   .ops-btn { flex:none; display:inline-flex; align-items:center; justify-content:center; gap:7px; height:38px; padding:0 14px; border-radius:10px;
     border:1px solid var(--line); background: rgba(255,255,255,.05); color:#dcdce2; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
   .ops-btn:hover { background: rgba(255,255,255,.09); color:#fff; }
-  .ops-btn.primary { background: var(--accent-blue); border-color: transparent; color:#fff; }
+  .ops-btn.primary { background: var(--accent-blue); border-color: transparent; color: var(--on-accent); }
   .ops-btn.primary:hover { filter:brightness(1.08); }
   .ops-btn.danger:hover { color:#ff8a8a; border-color: rgba(255,120,120,.4); }
   .ops-btn.icon { width:32px; height:32px; padding:0; border-color:transparent; background:none; color: var(--muted); }
@@ -1594,7 +1669,7 @@
   .ops-btn.big { height:46px; padding:0 22px; font-size:15px; }
   .ops-seg { display:inline-flex; padding:3px; gap:3px; border-radius:10px; background: rgba(255,255,255,.04); border:1px solid var(--line); }
   .ops-seg button { height:30px; padding:0 12px; border:none; border-radius:8px; background:none; color: var(--muted); font-size:13px; font-weight:600; cursor:pointer; }
-  .ops-seg button.on { background: rgba(111,147,255,.16); color:#fff; }
+  .ops-seg button.on { background: rgba(var(--point-rgb),.16); color:#fff; }
   /* 전투 준비 */
   .ops-teams { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .ops-team { border:1px solid var(--line); border-radius:12px; padding:12px; min-height:140px; background: rgba(255,255,255,.015); }
@@ -1616,11 +1691,11 @@
   .ops-prow .sp { flex:1; }
   .ops-pick { width:34px; height:28px; border-radius:8px; border:1px solid var(--line); background:none; color: var(--muted); font-size:12.5px; font-weight:700; cursor:pointer; }
   .ops-pick:hover { color:#fff; background: rgba(255,255,255,.06); }
-  .ops-pick.on { background: rgba(111,147,255,.18); border-color: rgba(111,147,255,.55); color:#fff; }
+  .ops-pick.on { background: rgba(var(--point-rgb),.18); border-color: rgba(var(--point-rgb),.55); color:#fff; }
   .ops-start { display:flex; align-items:center; flex-wrap:wrap; gap:10px 12px; margin-top:16px; }
   .ops-start .ops-hint { flex:1 1 180px; }
-  .ops-live { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; background: rgba(111,147,255,.08); border:1px solid rgba(111,147,255,.25);
-    font-size:13px; color:#c9d6ff; }
+  .ops-live { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; background: rgba(var(--point-rgb),.08); border:1px solid rgba(var(--point-rgb),.25);
+    font-size:13px; color:var(--point-soft); }
   /* 캐릭터 */
   .ops-steppers { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; margin-top:12px; }
   .ops-step { display:flex; align-items:center; gap:6px; height:38px; padding:0 6px 0 12px; border-radius:10px; border:1px solid var(--line); }
@@ -1634,12 +1709,19 @@
   .ops-rgroup + .ops-rgroup { margin-top:14px; }
   .ops-rgroup-h { font-size:12.5px; font-weight:700; margin:0 2px 4px; }
   .ops-rgroup-h span { color: var(--muted); font-weight:500; margin-left:4px; }
-  .ops-edit { margin-top:10px; padding:14px; border-radius:12px; border:1px solid rgba(111,147,255,.35); background: rgba(111,147,255,.05); }
+  .ops-edit { margin-top:10px; padding:14px; border-radius:12px; border:1px solid rgba(var(--point-rgb),.35); background: rgba(var(--point-rgb),.05); }
   .ops-stat-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:8px; margin-top:10px; }
   .ops-stat-grid label { display:flex; flex-direction:column; gap:4px; font-size:12px; color: var(--muted); }
   .ops-result { margin-top:10px; font-size:13px; line-height:1.6; }
   .ops-result .ok { color:#8fd4a6; }
   .ops-result .bad { color:#ff9a9a; }
+  .ops-swatches { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+  .ops-swatch { display:flex; align-items:center; gap:10px; height:48px; padding:0 14px; border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.02);
+    color:#dcdce2; font-size:14px; font-weight:600; cursor:pointer; }
+  .ops-swatch .sw { width:18px; height:18px; border-radius:50%; background: var(--sw); }
+  .ops-swatch i { margin-left:auto; color: var(--sw); }
+  .ops-swatch:hover { background: rgba(255,255,255,.05); }
+  .ops-swatch.on { border-color: var(--sw); color:#fff; }
   .ops-music-now { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; background: rgba(255,255,255,.03); border:1px solid var(--line); margin-bottom:14px; }
   .ops-music-now .t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
   .ops-music-now i { color: var(--muted); }
@@ -1663,7 +1745,7 @@
   .dorm-hbtn { display:inline-flex; align-items:center; gap:6px; background: rgba(255,255,255,.05); border:1px solid transparent; color:#cfcfd4;
     border-radius:10px; padding:7px 12px; font-size:13px; cursor:pointer; }
   .dorm-hbtn:hover { background: rgba(255,255,255,.09); color:#fff; }
-  .dorm-hbtn.on { background: rgba(92,134,255,.16); border-color: rgba(92,134,255,.45); color:#fff; }
+  .dorm-hbtn.on { background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); color:#fff; }
   .dorm-hbtn.gm-only { display:none; }
   .dorm-modal.is-gm .dorm-hbtn.gm-only { display:inline-flex; }
   .dorm-top { display:flex; align-items:center; gap:10px; margin:4px 0 14px; }
@@ -1682,8 +1764,8 @@
   .dorm-door .cap { display:flex; align-items:center; gap:8px; padding:10px 12px; border-top:1px solid rgba(255,255,255,.05); min-width:0; }
   .dorm-door .no { font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; flex:none; }
   .dorm-door .nm { font-size:14px; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .dorm-door .me { margin-left:auto; flex:none; font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; background: rgba(92,134,255,.18); color:#c9d6ff; }
-  .dorm-door.mine { border-color: rgba(92,134,255,.5); }
+  .dorm-door .me { margin-left:auto; flex:none; font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; background: rgba(var(--point-rgb),.18); color:var(--point-soft); }
+  .dorm-door.mine { border-color: rgba(var(--point-rgb),.5); }
   .dorm-door.empty { cursor:default; background:transparent; border-style:dashed; border-color: rgba(255,255,255,.08); }
   .dorm-door.empty:hover { transform:none; border-color: rgba(255,255,255,.08); }
   .dorm-door.empty .thumb { background:none; color:#3a3a42; font-size:26px; }
@@ -1691,14 +1773,14 @@
   .dorm-door.empty .cap { border-top-color: transparent; }
   /* 내 방 바로가기 카드 */
   .dorm-mine { display:flex; align-items:center; gap:18px; padding:14px 22px 14px 14px; margin:2px 0 26px; border-radius:16px; cursor:pointer;
-    background: linear-gradient(90deg, rgba(92,134,255,.14), rgba(92,134,255,.03)); border:1px solid rgba(92,134,255,.28); transition: border-color .15s; }
-  .dorm-mine:hover { border-color: rgba(92,134,255,.55); }
+    background: linear-gradient(90deg, rgba(var(--point-rgb),.14), rgba(var(--point-rgb),.03)); border:1px solid rgba(var(--point-rgb),.28); transition: border-color .15s; }
+  .dorm-mine:hover { border-color: rgba(var(--point-rgb),.55); }
   .dorm-mine .thumb { width:auto; padding:6px 10px; height:120px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:12px; background: rgba(0,0,0,.25); }
   .dorm-mine .info { display:flex; flex-direction:column; gap:3px; min-width:0; }
   .dorm-mine .k { font-size:12px; color:#9fb4ff; font-weight:700; letter-spacing:.02em; }
   .dorm-mine b { font-size:20px; font-weight:800; }
   .dorm-mine .sub { font-size:13px; color: var(--muted); }
-  .dorm-mine .go { margin-left:auto; flex:none; font-size:13px; color:#c9d6ff; font-weight:600; display:inline-flex; align-items:center; gap:6px; }
+  .dorm-mine .go { margin-left:auto; flex:none; font-size:13px; color:var(--point-soft); font-weight:600; display:inline-flex; align-items:center; gap:6px; }
   @media (max-width:560px) { .dorm-mine .thumb { display:none; } .dorm-mine { padding:14px 18px; } .dorm-mine .go { display:inline-flex; } .dorm-doors { grid-template-columns: repeat(2, minmax(0,1fr)); } }
   .dorm-empty { color: var(--muted); text-align:center; padding:56px 0; font-size:14px; line-height:1.8; }
   .dorm-empty i { display:block; font-size:28px; margin-bottom:12px; opacity:.5; }
@@ -1715,7 +1797,7 @@
   .dorm-item { position:absolute; background-size:100% 100%; background-repeat:no-repeat; image-rendering: pixelated; }
   .dorm-item.dflip { transform: scaleX(-1); }
   .dorm-stage.editing .dorm-item { cursor:grab; }
-  .dorm-stage.editing .dorm-item.sel { outline:1px dashed var(--point); outline-offset:2px; filter: drop-shadow(0 0 3px rgba(92,134,255,.9)); }
+  .dorm-stage.editing .dorm-item.sel { outline:1px dashed var(--point); outline-offset:2px; filter: drop-shadow(0 0 3px rgba(var(--point-rgb),.9)); }
   .dorm-grid { position:absolute; inset:0; pointer-events:none; display:none;
     background-image: linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px); }
   .dorm-stage.editing .dorm-grid { display:block; }
@@ -1725,7 +1807,7 @@
   .dorm-palette { width:280px; flex:none; border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:12px; background: rgba(255,255,255,.02); }
   .dorm-ptabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
   .dorm-ptabs button { background: rgba(255,255,255,.05); border:none; color: var(--muted); border-radius:8px; padding:5px 9px; font-size:12px; cursor:pointer; }
-  .dorm-ptabs button.on { background: rgba(92,134,255,.18); color:#fff; }
+  .dorm-ptabs button.on { background: rgba(var(--point-rgb),.18); color:#fff; }
   .dorm-assets { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; max-height:46vh; overflow-y:auto; }
   .dorm-pfilter { display:flex; gap:6px; margin-bottom:8px; }
   .modal-box.dorm-modal .dorm-pfilter select, .modal-box.dorm-modal .dorm-pfilter input { height:32px; font-size:12.5px; padding:0 8px; min-width:0; }
@@ -1757,7 +1839,7 @@
   .dorm-gb-form .btn { align-self:flex-end; padding:7px 16px; font-size:13px; }
   .dorm-gb-list { display:flex; flex-direction:column; gap:8px; overflow-y:auto; min-height:0; padding-right:2px; }
   .dorm-gb-item { padding:10px 12px; border-radius:12px; background: rgba(255,255,255,.035); }
-  .dorm-gb-item.mine { background: rgba(92,134,255,.10); }
+  .dorm-gb-item.mine { background: rgba(var(--point-rgb),.10); }
   .dorm-gb-item .top { display:flex; align-items:center; gap:8px; }
   .dorm-gb-item .top b { font-size:13px; }
   .dorm-gb-item .t { font-size:11.5px; color: var(--muted); }
@@ -1776,7 +1858,7 @@
   .dorm-music { display:flex; align-items:center; gap:10px; min-width:0; }
   .dorm-music .t { flex:1; min-width:0; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .dorm-music .muted, .dorm-line-edit .muted { color: var(--muted); }
-  .dorm-music .bgm-eq.playing span { background:#6f93ff; animation: bgmEq 1s ease-in-out infinite; }
+  .dorm-music .bgm-eq.playing span { background:var(--point); animation: bgmEq 1s ease-in-out infinite; }
   .dorm-music .bgm-eq.playing span:nth-child(2) { animation-delay:-.4s; } .dorm-music .bgm-eq.playing span:nth-child(3) { animation-delay:-.7s; } .dorm-music .bgm-eq.playing span:nth-child(4) { animation-delay:-.2s; }
   .dorm-ibtn { width:30px; height:30px; flex:none; border-radius:8px; border:none; background: rgba(255,255,255,.06); color: var(--text); cursor:pointer; font-size:12px; }
   .dorm-ibtn:hover { background: rgba(255,255,255,.12); }
@@ -1794,7 +1876,7 @@
   .dorm-gb-list { display:flex; flex-direction:column; gap:10px; }
   .dorm-note { position:relative; padding:14px 16px 12px; border-radius:12px; background: rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.05);
     border-top:2px solid var(--nc); }
-  .dorm-note.mine { background: rgba(92,134,255,.07); }
+  .dorm-note.mine { background: rgba(var(--point-rgb),.07); }
   .dorm-note .no { font-size:11.5px; font-weight:700; color: var(--muted); letter-spacing:.06em; font-variant-numeric: tabular-nums; }
   .dorm-note p { margin:6px 0 10px; font-size:14.5px; line-height:1.7; color:#e6e6ea; white-space:pre-wrap; word-break:break-word; }
   .dorm-note footer { display:flex; align-items:center; gap:6px; justify-content:flex-end; font-size:12px; color: var(--muted); }
@@ -1874,11 +1956,11 @@
   .dorm-tbtn { height:38px; display:inline-flex; align-items:center; gap:7px; padding:0 14px; border-radius: var(--ui-r); border:1px solid var(--line);
     background: rgba(255,255,255,.05); color: var(--text); font-size:14px; font-weight:600; cursor:pointer; }
   .dorm-tbtn:hover { background: rgba(255,255,255,.09); }
-  .dorm-tbtn.primary { background: var(--accent-blue); border-color: transparent; color:#fff; }
+  .dorm-tbtn.primary { background: var(--accent-blue); border-color: transparent; color: var(--on-accent); }
   .dorm-tbtn.primary:hover { filter: brightness(1.12); }
   .dorm-tbtn.icon { width:38px; padding:0; justify-content:center; color: var(--muted); }
   .dorm-tbtn.icon:hover, .dorm-tbtn.icon.on { color: var(--text); }
-  .dorm-tbtn.icon.on { background: rgba(92,134,255,.16); border-color: rgba(92,134,255,.45); }
+  .dorm-tbtn.icon.on { background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); }
   .dorm-main { flex:1; min-height:0; overflow-y:auto; }
   .dorm-modal[data-view="room"] .dorm-main { overflow:hidden; }
   /* 관 목록 */
@@ -1935,15 +2017,15 @@
   .dorm-items .dorm-assets { grid-template-columns: repeat(4, 1fr); gap:8px; max-height:none; overflow:visible; }
   button.dorm-asset { border:1px solid rgba(255,255,255,.06); background-color:#141418; border-radius:10px; padding:7px; cursor:pointer; transition: border-color .12s, background-color .12s; }
   button.dorm-asset:hover { background-color:#1c1c22; border-color: rgba(255,255,255,.18); }
-  button.dorm-asset.on { border-color: var(--point); background-color: rgba(92,134,255,.12); box-shadow:none; }
+  button.dorm-asset.on { border-color: var(--point); background-color: rgba(var(--point-rgb),.12); box-shadow:none; }
   .dorm-palette-foot { padding:10px 16px 12px; border-top:1px solid var(--line); font-size:12px; color: var(--muted); line-height:1.5; }
-  .map-frame.dorm-frame.editing { box-shadow: inset 0 0 0 1px rgba(92,134,255,.25); }
+  .map-frame.dorm-frame.editing { box-shadow: inset 0 0 0 1px rgba(var(--point-rgb),.25); }
   .dorm-edit-bar { position:absolute; left:50%; bottom:16px; transform:translateX(-50%); z-index:6; display:flex; align-items:center; gap:6px;
     max-width:calc(100% - 32px); padding:7px 8px 7px 12px; border-radius:14px; background: rgba(14,14,17,.88); border:1px solid rgba(255,255,255,.1);
     -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 10px 30px rgba(0,0,0,.45); white-space:nowrap; font-size:13px; color: var(--muted); }
   .dorm-edit-bar > i { font-size:12px; margin-right:2px; }
   .dorm-edit-bar.on { color: var(--text); }
-  .dorm-edit-bar.placing { border-color: rgba(92,134,255,.45); }
+  .dorm-edit-bar.placing { border-color: rgba(var(--point-rgb),.45); }
   .dorm-edit-bar .th { width:30px; height:30px; flex:none; border-radius:7px; background:#0e0e11 center/contain no-repeat; image-rendering: pixelated; }
   .dorm-edit-bar .nm { font-weight:700; max-width:160px; overflow:hidden; text-overflow:ellipsis; margin-right:4px; }
   .dorm-edit-bar .hint { color: var(--muted); margin-right:4px; }
@@ -2334,27 +2416,33 @@
   </div>
 </div>
 <div id="myPageModal" class="modal-overlay">
-  <div class="modal-box mypage panel">
+  <div class="modal-box mypage panel v2">
     <div class="idc-head">
       <div class="idc-title">ID card</div>
       <button class="idc-logout" onclick="closeMyPage(); onAvatarDotClick()"><i class="fa-solid fa-power-off"></i> 로그아웃</button>
       <button class="idc-close" onclick="closeMyPage()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="mypage-cols">
-    <div class="mypage-col">
-    <div class="mypage-head">
+
+    <!-- 프로필 : 초상화 · 이름 · 포지션 · 국가 / 오른쪽에 표기 설정 -->
+    <div class="mp-card mp-hero">
       <div class="mypage-portrait" id="myPagePortrait" data-tip="프로필 이미지 (정사각형 png/webp/gif)" onclick="document.getElementById('myAvatarFileInput').click()">
-        <span class="mypage-portrait-icon" id="myPagePortraitIcon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+        <span class="mypage-portrait-icon" id="myPagePortraitIcon"><i class="fa-solid fa-user"></i></span>
       </div>
-      <div class="mypage-head-info">
+      <div class="mp-hero-main">
         <div class="mypage-name" id="myPageName">-</div>
+        <div class="mp-tags">
+          <div class="mp-tagrow"><span class="mp-k">포지션</span><div class="mypage-roles" id="myPageRoles"></div></div>
+          <div class="mp-tagrow"><span class="mp-k">국가</span><div class="mp-nations" id="myPageNation"></div></div>
+        </div>
+      </div>
+      <div class="mp-hero-side">
         <div class="idc-kv">
-          <span class="mypage-label">마스 이름 표기</span>
+          <span class="mypage-label">마스 표기</span>
           <input type="text" id="myPageRaidNameInput" class="idc-inline" maxlength="3" placeholder="-" autocomplete="off" name="raid-short-name"
             onchange="commitRaidName()" onkeydown="if(event.key==='Enter') this.blur()">
         </div>
         <div class="idc-kv">
-          <span class="mypage-label">표시컬러</span>
+          <span class="mypage-label">표시 컬러</span>
           <span class="idc-color" id="myPageColorBtn" onclick="if(canEditMyPage()) document.getElementById('myColorInput').click()">
             <span class="idc-color-dot" id="myPageColorDot"></span>
           </span>
@@ -2363,50 +2451,48 @@
     </div>
     <input type="file" id="myAvatarFileInput" accept="image/png,image/webp,image/gif" style="display:none;" onchange="onMyAvatarFileChosen(event)">
 
-    <div class="idc-sec idc-row">
-      <span class="idc-label">포지션</span>
-      <div class="mypage-roles" id="myPageRoles"></div>
-    </div>
-
-    <div class="idc-sec">
-      <div class="mypage-hp-row">
-        <div class="mypage-hp-col">
-          <span class="idc-label">현재 체력</span>
-          <div class="mypage-hp-num" id="myPageCurrentHpView">000</div>
-          <input type="number" id="myPageCurrentHpInput" style="display:none;" onchange="onMyPageGmFieldChange()">
+    <div class="mypage-cols">
+    <div class="mypage-col">
+      <div class="mp-card">
+        <div class="mp-card-h"><i class="fa-solid fa-heart-pulse"></i> 체력</div>
+        <div class="mypage-hp-row">
+          <div class="mypage-hp-col">
+            <span class="mp-k">현재</span>
+            <div class="mypage-hp-num" id="myPageCurrentHpView">000</div>
+            <input type="number" id="myPageCurrentHpInput" style="display:none;" onchange="onMyPageGmFieldChange()">
+          </div>
+          <div class="mypage-hp-col right">
+            <span class="mp-k">최대</span>
+            <div class="mypage-hp-num" id="myPageMaxHp">000</div>
+          </div>
         </div>
-        <div class="mypage-hp-col right">
-          <span class="idc-label">최대 체력</span>
-          <div class="mypage-hp-num" id="myPageMaxHp">000</div>
+        <div class="idc-hpbar"><div id="myPageHpBar" style="width:0%;"></div></div>
+      </div>
+      <div class="mp-tiles">
+        <div class="mp-card mp-tile">
+          <span class="mp-k"><i class="fa-solid fa-coins"></i> 재화</span>
+          <span class="mp-big" id="myPagePointsView">0P</span>
+          <input type="number" id="myPagePointsInput" class="idc-inline" min="0" style="display:none;" onchange="onMyPagePointsChange()">
+        </div>
+        <div class="mp-card mp-tile mp-click" onclick="openShopFromMyPage()">
+          <span class="mp-k"><i class="fa-solid fa-briefcase"></i> 소지품 <i class="fa-solid fa-chevron-right mp-go"></i></span>
+          <span class="mp-items" id="myPageItemsView">-</span>
         </div>
       </div>
-      <div class="idc-hpbar"><div id="myPageHpBar" style="width:0%;"></div></div>
-    </div>
-
-    <div class="idc-sec idc-row">
-      <span class="idc-label">재화</span>
-      <span class="idc-value" id="myPagePointsView">0P</span>
-      <input type="number" id="myPagePointsInput" class="idc-inline" min="0" style="display:none; width:110px;" onchange="onMyPagePointsChange()">
-    </div>
-    <div class="idc-sec idc-row last">
-      <span class="idc-label">소지품</span>
-      <span class="idc-value idc-link" id="myPageItemsView" onclick="openShopFromMyPage()">-</span>
-    </div>
-    <div class="idc-sec idc-room" id="myPageRoomBox" style="display:none;">
-      <div class="idc-room-head"><span class="idc-label">마이룸</span><span class="idc-room-sub" id="myPageRoomSub"></span></div>
-      <div class="idc-room-prev" id="myPageRoomPrev" title="눌러서 방으로 가기"></div>
-    </div>
+      <div class="mp-card idc-room" id="myPageRoomBox" style="display:none;">
+        <div class="idc-room-head"><span class="mp-k"><i class="fa-solid fa-house"></i> 마이룸</span><span class="idc-room-sub" id="myPageRoomSub"></span></div>
+        <div class="idc-room-prev" id="myPageRoomPrev" title="눌러서 방으로 가기"></div>
+      </div>
     </div>
 
     <div class="mypage-col">
-    <div class="idc-row" style="padding-top:0;">
-      <span class="idc-label">스킬 로그 타입</span>
+    <div class="mp-card mp-skill">
+    <div class="mp-card-h"><i class="fa-solid fa-wand-magic-sparkles"></i> 스킬 로그
+      <span style="flex:1"></span>
       <div class="seg-toggle" id="myPageSkillLogType">
         <button data-v="text" onclick="setSkillLogType('text')"><i class="fa-solid fa-font"></i> 글</button>
         <button data-v="image" onclick="setSkillLogType('image')"><i class="fa-solid fa-image"></i> 이미지</button>
       </div>
-      <span style="flex:1"></span>
-      <button class="idc-textbtn" onclick="previewSkillCutin()"><i class="fa-solid fa-eye"></i> 컷인 미리 보기</button>
     </div>
     <div id="myPageSkillText">
       <input type="text" id="myPageSkillLogTitle" class="idc-field" maxlength="30" placeholder="스킬명" onchange="saveSkillLogText()">
@@ -2428,8 +2514,10 @@
       </div>
       <input type="file" id="mySkillImageInput" accept="image/png,image/apng,image/gif,image/webp,.apng" style="display:none;" onchange="onSkillImageChosen(event)">
     </div>
+    <button class="mp-preview-btn" onclick="previewSkillCutin()"><i class="fa-solid fa-eye"></i> 컷인 미리 보기</button>
+    </div>
 
-    <!-- 마이페이지 효과음 : 쓰지 않아 숨김 (스크립트가 참조하므로 요소는 남겨 둠) -->
+<!-- 마이페이지 효과음 : 쓰지 않아 숨김 (스크립트가 참조하므로 요소는 남겨 둠) -->
     <div id="myPageSoundSection" style="display:none;">
     <div class="idc-sec idc-row" style="margin-top:18px;">
       <span class="idc-label">효과음</span>
@@ -2969,7 +3057,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.2";
+const EXPECTED_SERVER_BUILD = "2026-10-13.4";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -4896,7 +4984,7 @@ function renderUserInfoList() {
   const gmHint = document.getElementById('userInfoGmHint');
   if (gmHint) gmHint.style.display = isGm ? '' : 'none';
   // 가나다순(한국어 정렬, 숫자는 크기순 - 예: NOVA 2구역 < NOVA 10구역)
-  // 탭(이름순/포지션순/국가순)마다 섹션 제목으로 나누고, 섹션 안에서는 접속 중인 사람이 위, 그다음 가나다순
+  // 탭(이름순/포지션순/국가순)마다 섹션 제목으로 나누고, 섹션 안에서는 가나다순
   const visible = isGm ? lastRoster : lastRoster.filter(n => !lastUserInfoHidden.has(n));
   const q = ((document.getElementById('userInfoSearch') || {}).value || '').trim().toLowerCase();
   const names = visible.filter(n => !q || n.toLowerCase().includes(q));
@@ -4922,15 +5010,21 @@ function renderUserInfoList() {
   names.forEach(n => { (groups[keyOf(n)] = groups[keyOf(n)] || []).push(n); });
   const keys = Object.keys(groups).sort((a, b) => {
     if (userInfoFilter === 'role') return (ROLE_ORDER.indexOf(a) + 1 || 99) - (ROLE_ORDER.indexOf(b) + 1 || 99);
+    if (userInfoFilter === 'nation') {
+      const NO = ['아르카디아', '노바'], ia = NO.indexOf(a), ib = NO.indexOf(b);
+      if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    }
     const last = userInfoFilter === 'nation' ? '국가 없음' : '#';
     if (a === last) return 1; if (b === last) return -1;
     return a.localeCompare(b, 'ko');
   });
-  const byOnlineThenName = (a, b) => (onlineSet.has(b) - onlineSet.has(a)) || a.localeCompare(b, 'ko', { numeric: true });
+  // 섹션 안은 접속 여부와 관계없이 가나다순(접속 중인 사람은 초록 점으로만 표시)
+  const byOnlineThenName = (a, b) => a.localeCompare(b, 'ko', { numeric: true });
   listEl.innerHTML = keys.map(k => {
     const list = groups[k].sort(byOnlineThenName);
     const on = list.filter(n => onlineSet.has(n)).length;
-    const color = userInfoFilter === 'role' && ROLE_ORDER.includes(k) ? ` style="color:${roleColorVar(k)}"` : '';
+    const color = userInfoFilter === 'role' && ROLE_ORDER.includes(k) ? ` style="color:${roleColorVar(k)}"`
+      : userInfoFilter === 'nation' && nationColor(k) ? ` style="color:${nationColor(k)}"` : '';
     return `<div class="ui-sec"><span${color}>${esc(k)}</span><em>${on ? `${on} / ` : ''}${list.length}</em></div>` + list.map(name => {
       const online = onlineSet.has(name);
       const hidden = lastUserInfoHidden.has(name);
@@ -5011,6 +5105,19 @@ function closeMyPage() {
   document.getElementById('myPageModal').style.display = 'none';
 }
 
+// 국가 : 아르카디아(노랑) / 노바(파랑). 운영진만 바꿀 수 있고, 다른 사람에게는 정해진 국가만 보입니다.
+const NATIONS = [['아르카디아', 'var(--nation-arcadia)'], ['노바', 'var(--nation-nova)']];
+function nationColor(n) { const f = NATIONS.find(x => x[0] === n); return f ? f[1] : null; }
+function renderMyPageNation(c) {
+  const el = document.getElementById('myPageNation'); if (!el) return;
+  if (!c) { el.innerHTML = ''; return; }
+  const isGm = myControlInfo(lastBattleForPanel).scope === 'all';
+  const cur = ((lastRosterMypage || {})[c.name] || {}).nation || c.nation || '';
+  if (!isGm) { el.innerHTML = cur ? `<button class="on" disabled style="--nc:${nationColor(cur) || 'var(--muted)'}">${mailEsc(cur)}</button>` : '<span class="none">없음</span>'; return; }
+  el.innerHTML = NATIONS.map(([n, col]) => `<button class="${n === cur ? 'on' : ''}" style="--nc:${col}" onclick='setMyPageNation(${JSON.stringify(c.name)}, ${JSON.stringify(n === cur ? '' : n)})'>${n}</button>`).join('');
+}
+function setMyPageNation(name, nation) { socket.emit('set_mypage_gm_fields', { name, nation }); }
+
 function renderMyPage() {
   if (document.getElementById('myPageModal').style.display !== 'flex') return;
   const control = myControlInfo(lastBattleForPanel);
@@ -5031,6 +5138,7 @@ function renderMyPage() {
     document.getElementById('myPageRaidNameInput').value = '';
     document.getElementById('myPageRaidNameInput').disabled = true;
     document.getElementById('myPageRoles').innerHTML = '';
+    renderMyPageNation(null);
     document.getElementById('myPageCurrentHpView').textContent = '000';
     document.getElementById('myPageMaxHp').textContent = '000';
     document.getElementById('myPageHpBar').style.width = '0%';
@@ -5057,6 +5165,7 @@ function renderMyPage() {
   raidInput.disabled = !canEdit;
   if (document.activeElement !== raidInput) raidInput.value = c.raid_display_name || '';
   renderMyPageRoles(c, canEdit);
+  renderMyPageNation(c);
 
   const hasHp = c.max_hp != null;
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
@@ -7896,7 +8005,7 @@ function opsCharsHtml() {
       <div class="ops-field"><span class="lb">포지션</span><div class="ops-roles" id="opsQRoles"></div></div>
       <div class="ops-row" style="margin-top:10px;">
         <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsQSkill"></select></div>
-        <div class="ops-field" style="flex:1; margin:0;"><span class="lb">국가</span><input class="ops-in" id="opsQNation" maxlength="20" placeholder="(선택)" autocomplete="off"></div>
+        <div class="ops-field" style="flex:1; margin:0;"><span class="lb">국가</span><select class="ops-in" id="opsQNation"><option value="">(없음)</option>${NATIONS.map(n => `<option>${n[0]}</option>`).join('')}</select></div>
       </div>
       <div class="ops-steppers" id="opsQStats"></div>
       <div class="ops-start"><span class="ops-hint">합계 <b id="opsQTotal" style="color:var(--text)">0</b></span>
@@ -7984,7 +8093,7 @@ function opsEditHtml(c) {
     <div class="ops-row"><div class="ops-field" style="flex:1; margin:0;"><span class="lb">역할</span>
       <select class="ops-in" id="opsERole" onchange="opsEditRole()">${OPS_ROLES.map(r => `<option ${r === c.role ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
       <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsESkill"><option value="">(없음)</option>${skills.map(k => `<option ${k === c.skill ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
-    <div class="ops-field" style="margin-top:10px;"><span class="lb">국가</span><input class="ops-in" id="opsENation" maxlength="20" value="${mailEsc(c.nation || '')}" placeholder="(없음)" autocomplete="off"></div>
+    <div class="ops-field" style="margin-top:10px;"><span class="lb">국가</span><select class="ops-in" id="opsENation"><option value="">(없음)</option>${[...NATIONS.map(n => n[0]), ...(c.nation && !nationColor(c.nation) ? [c.nation] : [])].map(n => `<option ${n === c.nation ? 'selected' : ''}>${mailEsc(n)}</option>`).join('')}</select></div>
     <div class="ops-stat-grid">${STAT_KEYS.map(k => `<label>${k}<input class="ops-in" type="number" id="opsEStat_${k}" value="${(c.stats || {})[k] ?? 0}" oninput="opsEditTotal()"></label>`).join('')}</div>
     <div class="ops-start"><span class="ops-hint">합계 <b id="opsETotal" style="color:var(--text)">${STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0)}</b></span>
       <button class="ops-btn" onclick="opsEditName=null; opsRenderRoster()">취소</button>
@@ -8062,15 +8171,29 @@ function opsRoomHtml() {
         <div class="ops-row"><input class="ops-in" id="opsGuestLink" readonly onclick="this.select()">
         <button class="ops-btn" onclick="opsCopyLink()"><i class="fa-regular fa-copy"></i> 복사</button></div></div>
     </div>
+    <div>
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-palette"></i> 포인트 컬러<span class="sub">모든 방·모든 화면에 바로 적용</span></h3>
+      <div class="ops-swatches" id="opsSwatches"></div>
+    </div>
     <div class="ops-card">
       <h3><i class="fa-solid fa-lock"></i> 운영진 전용</h3>
       <div class="ops-hint" style="margin-bottom:12px;">전투 수식과 운영진 로그는 GM으로 로그인한 화면에만 서버가 보내요. 러너 화면에는 데이터가 가지 않아요.</div>
       <div class="ops-row"><button class="ops-btn" onclick="toggleFormulaPanel()"><i class="fa-solid fa-square-root-variable"></i> 전투 수식</button>
         <button class="ops-btn" onclick="socket.emit('export_log', {})"><i class="fa-solid fa-download"></i> 로그 내려받기 (운영진 로그 포함)</button></div>
     </div>
+    </div>
   </div>`;
 }
+const OPS_POINTS = [['purple', '보라', '#a48dff'], ['blue', '파랑', '#6f93ff'], ['yellow', '노랑', '#f0c862']];
+function opsRenderSwatches() {
+  const el = document.getElementById('opsSwatches'); if (!el) return;
+  const cur = (opsLastPublic && opsLastPublic.point_theme) || 'blue';
+  el.innerHTML = OPS_POINTS.map(([k, t, c]) => `<button class="ops-swatch ${k === cur ? 'on' : ''}" style="--sw:${c}" onclick="socket.emit('set_point_theme', {theme:'${k}'})">
+    <span class="sw"></span>${t}${k === cur ? '<i class="fa-solid fa-check"></i>' : ''}</button>`).join('');
+}
 function opsRenderRoomInfo() {
+  opsRenderSwatches();
   const n = document.getElementById('opsRoomName');
   if (n && document.activeElement !== n) n.value = (opsLastPublic && opsLastPublic.room_name) || ROOM_ID;
   const l = document.getElementById('opsGuestLink');
@@ -8084,7 +8207,11 @@ function opsCopyLink() {
 }
 
 // 상태 갱신 연결
-socket.on('public_state', (state) => { opsLastPublic = state; syncOpsBtn(); renderOpsData(); });
+socket.on('public_state', (state) => {
+  opsLastPublic = state;
+  if (state.point_theme && document.documentElement.dataset.point !== state.point_theme) document.documentElement.dataset.point = state.point_theme;
+  syncOpsBtn(); renderOpsData();
+});
 socket.on('gm_state', (state) => {
   renderOpsData();
   const btn = document.getElementById('pendingRevealBtn');
