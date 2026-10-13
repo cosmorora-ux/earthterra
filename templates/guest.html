@@ -2930,6 +2930,23 @@
   .skill-cutin.show.m-shutter .skill-cutin-band > * { animation-name: ciShutterIn; }
   @keyframes ciShutterIn { 0%, 10% { opacity:0; letter-spacing:.3em; } 24% { opacity:1; letter-spacing:normal; } 82% { opacity:1; } 92%, 100% { opacity:0; } }
   @media (prefers-reduced-motion: reduce) { .ci-fx { display:none; } }
+
+  /* 격자 대상 고르기 : 대상 칸이 포인트 테두리 + 빛이 훑고 지나가며 반짝 */
+  .gmap .gsel.tgt { z-index:9; box-shadow: inset 0 0 0 2px var(--point);
+    background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%) no-repeat; background-size:260% 100%;
+    animation: gTgtShine 1.8s ease-in-out infinite; }
+  @keyframes gTgtShine { 0% { background-position:160% 0; box-shadow: inset 0 0 0 2px var(--point), inset 0 0 8px rgba(var(--point-rgb), .4); }
+    50% { box-shadow: inset 0 0 0 2px #fff, inset 0 0 14px rgba(var(--point-rgb), .9); }
+    100% { background-position:-60% 0; box-shadow: inset 0 0 0 2px var(--point), inset 0 0 8px rgba(var(--point-rgb), .4); } }
+  /* 대상이 정해지면 아래 커맨드 블록이 켜짐 : 포인트 테두리 · 빛무리 + 한 번 훑는 빛, 보내기/실행 버튼은 숨 쉬듯 반짝 */
+  .action-bar-bottom.armed { border-color: rgba(var(--point-rgb), .6) !important;
+    box-shadow: 0 0 0 1px rgba(var(--point-rgb), .3), 0 0 28px rgba(var(--point-rgb), .22) !important;
+    background-image: linear-gradient(115deg, transparent 40%, rgba(var(--point-rgb), .2) 50%, transparent 60%) !important;
+    background-repeat:no-repeat !important; background-size:260% 100% !important; animation: armSweep 1.1s ease-out 1 both; }
+  @keyframes armSweep { from { background-position:160% 0; } to { background-position:-60% 0; } }
+  .action-bar-bottom.armed select { border-color: rgba(var(--point-rgb), .45) !important; }
+  .action-bar-bottom.armed .send-btn:not(:disabled), .action-bar-bottom.armed .gm-run { animation: armPulse 1.6s ease-in-out infinite; }
+  @keyframes armPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--point-rgb), .55); } 50% { box-shadow: 0 0 0 6px rgba(var(--point-rgb), 0), 0 0 20px rgba(var(--point-rgb), .6); } }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -4722,13 +4739,45 @@ function computeHighlightCells(character, showActionRange) {
 function onGridActorClick(name) {
   selectedGridChar = name;
   selectedGridTargetName = null;
+  disarmGridCommand();
   renderGrid(lastBattleForPanel, lastAllForCards);
 }
 
+// 격자에서 대상을 누르면 : 내 칸의 포인트 테두리가 대상으로 옮겨 가 반짝이고,
+// 아래 커맨드 블록(러너 = 행동/대상/보내기, 운영진 = 캐릭터/행동/대상/실행)이 그 대상으로 맞춰져 켜집니다.
+let gridArmGm = false;
 function onGridTargetClick(actorName, targetName) {
   selectedGridChar = actorName;
   selectedGridTargetName = targetName;
   renderGrid(lastBattleForPanel, lastAllForCards);
+  armCommandFromGrid(actorName, targetName);
+}
+function flashArm(el) { if (!el) return; el.classList.remove('armed'); void el.offsetWidth; el.classList.add('armed'); }
+function armCommandFromGrid(actorName, targetName) {
+  const control = myControlInfo(lastBattleForPanel);
+  const actor = lastAllForCards.find(c => c.name === actorName), target = lastAllForCards.find(c => c.name === targetName);
+  if (!actor || !target) return;
+  const labels = actionLabelsForTarget(actor, target);
+  if (control.scope === 'all') {
+    gridArmGm = true;
+    refreshGmActPanelVisibility();
+    const a = document.getElementById('gmActActor'); if (!a) return;
+    a.value = actorName; refreshGmActTypeOptions();
+    const t = document.getElementById('gmActType');
+    if (!labels.includes(t.value) && labels.length && [...t.options].some(o => o.value === labels[0])) t.value = labels[0];
+    refreshGmActTargetOptions();
+    const tg = document.getElementById('gmActTarget');
+    if ([...tg.options].some(o => o.value === targetName)) tg.value = targetName;
+    flashArm(document.getElementById('gmActPanel'));
+  } else if (control.scope === 'character' && control.character.name === actorName) {
+    selectedTargetName = targetName;
+    syncCmdPanelFromCardClick();
+    flashArm(document.getElementById('commandSendBar'));
+  }
+}
+function disarmGridCommand() {
+  ['commandSendBar', 'gmActPanel'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('armed'); });
+  if (gridArmGm) { gridArmGm = false; refreshGmActPanelVisibility(); }
 }
 
 function onGridMoveClick(x, y) {
@@ -4736,6 +4785,7 @@ function onGridMoveClick(x, y) {
   const name = selectedGridChar;
   selectedGridChar = null;
   selectedGridTargetName = null;
+  disarmGridCommand();
   doAction('move', { name, x, y });
 }
 
@@ -4772,6 +4822,9 @@ function renderGrid(battle, all) {
     }
   }
 
+  // 고른 대상(2x2 보스면 부위 4칸 모두) : 그 칸들이 포인트 테두리로 반짝입니다.
+  const gridTargetChar = selChar && selectedGridTargetName ? all.find(c => c.name === selectedGridTargetName) : null;
+  const isGridTarget = (c) => !!(gridTargetChar && c && (c.name === gridTargetChar.name || (gridTargetChar.boss_group && c.boss_group === gridTargetChar.boss_group)));
   // 칸 크기는 가운데 영역 폭에 맞춰 최대한 크게(정사각형) 잡습니다.
   const frame = section.querySelector('.map-frame') || section;
   const fcs = getComputedStyle(frame);
@@ -4836,7 +4889,8 @@ function renderGrid(battle, all) {
       let tdStyle = '';
       {
         const rngCol = highlightCells.size ? (highlightIsAction ? ACTION_RANGE_COLOR : (ROLE_MOVE_COLOR[selChar && selChar.role] || '#4ad0ff')) : null;
-        const selfKey = selChar && selChar.grid_pos ? `${selChar.grid_pos[0]},${selChar.grid_pos[1]}` : null;
+        // 대상을 골랐으면 내 칸의 포인트 테두리는 대상으로 옮겨 갑니다(대상 칸이 반짝임).
+        const selfKey = selChar && selChar.grid_pos && !gridTargetChar ? `${selChar.grid_pos[0]},${selChar.grid_pos[1]}` : null;
         const edge = (dx, dy) => {
           const nk = `${x + dx},${y + dy}`;
           if (selfKey && (key === selfKey || nk === selfKey)) return 'var(--point)';
@@ -4866,7 +4920,7 @@ function renderGrid(battle, all) {
           + `<div class="ghp"><div class="${hpCls}" style="width:${ratio * 100}%;"></div></div>`;
       }
       html += `<td ${onclick} data-tip="${title}" style="cursor:${cursor}; ${tdStyle}">`
-        + `<div class="gcell ${cellCls}" style="width:${cellPx}px; height:${cellPx}px; ${cellStyle} ${glow}">${inner}<div class="gsel" style="${selBorder}"></div></div></td>`;
+        + `<div class="gcell ${cellCls}" style="width:${cellPx}px; height:${cellPx}px; ${cellStyle} ${glow}">${inner}<div class="gsel ${isGridTarget(c) ? 'tgt' : ''}" style="${isGridTarget(c) ? '' : selBorder}"></div></div></td>`;
     }
     html += '</tr>';
   }
@@ -4920,6 +4974,8 @@ window.addEventListener('resize', () => {
 function renderGridActionPopup(battle, all) {
   const popup = document.getElementById('gridActionPopup');
   if (!popup) return;
+  // 예전 파란 팝업은 쓰지 않습니다 : 대상을 고르면 아래 커맨드 블록이 대신 맞춰져 켜집니다(armCommandFromGrid).
+  popup.style.display = 'none'; return;
   if (!battle || !selectedGridChar || !selectedGridTargetName) { popup.style.display = 'none'; return; }
   const control = myControlInfo(battle);
   const canAct = control.scope === 'all' || (control.scope === 'character' && control.character.name === selectedGridChar);
@@ -4952,6 +5008,7 @@ function renderGridActionPopup(battle, all) {
 function closeGridSelection() {
   selectedGridChar = null;
   selectedGridTargetName = null;
+  disarmGridCommand();
   renderGrid(lastBattleForPanel, lastAllForCards);
 }
 
@@ -5631,6 +5688,8 @@ function sendChat() {
 
 function doAction(type, payload) {
   socket.emit('battle_action', { type, payload });
+  // 행동을 보냈으면 격자에서 고른 대상 표시와 켜진 커맨드 블록을 정리합니다(이동은 onGridMoveClick이 따로 정리).
+  if (type !== 'move' && selectedGridTargetName) closeGridSelection();
 }
 
 function myControlInfo(battle) {
@@ -5771,7 +5830,7 @@ function refreshGmActPanelVisibility() {
   if (!panel) return;
   const control = myControlInfo(lastBattleForPanel);
   const isGm = !!lastBattleForPanel && control.scope === 'all';
-  const fields = isGm && (BATTLE_TYPE === 'pvp' || BATTLE_TYPE === 'siege');
+  const fields = isGm && (BATTLE_TYPE === 'pvp' || BATTLE_TYPE === 'siege' || gridArmGm);
   // GM은 러너용 커맨드 바 대신 이 한 블록(캐릭터·행동·대상·실행 + 진행 버튼)만 씁니다.
   panel.style.display = isGm ? '' : 'none';
   document.getElementById('gmActFields').style.display = fields ? '' : 'none';
