@@ -4791,13 +4791,12 @@ let telegraphRevealedCells = new Set();
 
 // 격자 칸 툴팁 : 이름 · 포지션 · 팀 / 체력 · 위치 / 이번 라운드 상태 / 걸린 효과 / 전조 · 범위
 function gridCellTip(c, x, y, key, telKeys, rangeCells, rangeIsAction) {
-  // 칸 툴팁(HTML) : 이름 · 역할 · 칸 / HP / 효과 / 전조 · 범위 알림. 행동 완료 여부는 지도 샤인으로만 구분합니다.
+  // 칸 툴팁(HTML) : 이름 · 역할(러너/몹 구분은 넣지 않음) · 칸 / HP / 효과 / 전조 · 범위 알림. 행동 완료 여부는 지도 샤인으로만 구분합니다.
   const e = shopEsc;
   const pos = cellLabel(x, y);
   let h = '';
   if (c) {
-    const team = c.teamLabel === 'A' ? (BATTLE_TYPE === 'pvp' ? '1팀' : '러너') : (BATTLE_TYPE === 'siege' ? '거점' : (BATTLE_TYPE === 'pvp' ? '2팀' : '보스'));
-    h += `<div class="tt-head"><b>${e(displayNameOf(c))}</b><span>${e([c.role, team].filter(Boolean).join(' · '))}</span><span class="tt-pos">${pos}</span></div>`;
+    h += `<div class="tt-head"><b>${e(displayNameOf(c))}</b>${c.role ? `<span>${e(c.role)}</span>` : ''}<span class="tt-pos">${pos}</span></div>`;
     const ratio = c.max_hp > 0 ? Math.max(0, Math.min(1, c.current_hp / c.max_hp)) : 0;
     const cls = ratio <= 0.3 ? 'low' : (ratio <= 0.6 ? 'mid' : '');
     h += `<div class="tt-hp"><div class="bar"><i class="${cls}" style="width:${ratio * 100}%"></i></div>`
@@ -5221,7 +5220,7 @@ setInterval(tickTimer, 200);
 const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round', 'wait']);
 // 로그 아이콘 : 이모지 대신 한 벌의 단색 아이콘(Font Awesome)으로 통일
 const LOG_TAG_ICON = {
-  action: 'fa-solid fa-angle-right', damage: 'fa-solid fa-burst', defend: 'fa-solid fa-shield-halved', defend_value: 'fa-solid fa-shield-halved',
+  action: 'fa-solid fa-bolt', damage: 'fa-solid fa-burst', defend: 'fa-solid fa-shield-halved', defend_value: 'fa-solid fa-shield-halved',
   taunt: 'fa-solid fa-crosshairs', heal: 'fa-solid fa-plus', crit: 'fa-solid fa-star', wait: 'fa-solid fa-pause', hp: 'fa-solid fa-heart',
   system: 'fa-solid fa-circle-info', summary: 'fa-solid fa-list', formula: '',
 };
