@@ -4902,6 +4902,12 @@ function renderGrid(battle, all) {
         if (key === selfKey) tdStyle += 'background-color:color-mix(in srgb, var(--point) 18%, transparent);';
         else if (rngCol && highlightCells.has(key)) tdStyle += `background-color:color-mix(in srgb, ${rngCol} 12%, transparent);`;
       }
+      // 운영진 전조 선택 중 : 모든 칸을 눌러 고르고(Shift+클릭 가로 한 줄, Shift+우클릭 세로 한 줄), 고른 칸은 붉게 표시
+      if (typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all') {
+        cursor = 'crosshair';
+        onclick = `onclick="onTelegraphCellClick(${x},${y},event)" oncontextmenu="return onTelegraphCellRightClick(${x},${y},event)"`;
+        if (telegraphSelectedCells.has(key)) { selBorder = 'box-shadow: inset 0 0 0 2px #ff6b6b;'; tdStyle += 'background-color:rgba(255,80,80,.32);'; }
+      }
       const glow = telegraphRevealedCells.has(key) ? 'background-color:rgba(255,80,80,.28); box-shadow: inset 0 0 12px 3px rgba(255,120,120,0.55);' : '';
       const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
       const telegraphText = telegraphRevealedCells.has(key) ? ' · 전조(곧 피해)' : '';
