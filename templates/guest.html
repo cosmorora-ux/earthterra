@@ -2432,6 +2432,9 @@
   .idc-logout { align-items:center; gap:6px; margin-left:auto; margin-right:6px; height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--line);
     background: rgba(255,255,255,.05); color:#cfcfd4; font-size:13px; cursor:pointer; }
   .idc-logout:hover { background: rgba(255,255,255,.1); color:#fff; }
+  .mp-logout-bottom { display:none; align-items:center; justify-content:center; gap:8px; width:100%; max-width:640px; height:46px; margin:28px auto 0;
+    border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--muted); font-size:15px; font-weight:600; cursor:pointer; flex:none; }
+  .mp-logout-bottom:hover { color:#ff7a7a; border-color: rgba(255,122,122,.4); }
   .news-sheet { position:absolute; left:12px; right:12px; bottom:calc(76px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; padding:6px;
     border-radius:16px; background:#17171a; border:1px solid var(--line); box-shadow: 0 18px 50px rgba(0,0,0,.55); }
   .news-sheet button { position:relative; display:flex; align-items:center; gap:12px; height:52px; padding:0 14px; border:none; border-radius:12px; background:none;
@@ -2445,7 +2448,18 @@
     #sidebarNoticeBtn, #sidebarMailBtn, .sidebar .m-chat-btn, .sidebar #sidebarUserListBtn { display:none !important; }
     .sidebar .m-news-btn { display:flex; }
     #sidebarLoginBtn { display:none !important; }
-    .idc-logout { display:inline-flex; }
+    .idc-logout { display:none !important; }
+    /* 하단 탭으로 여는 전체 화면 메뉴(마이페이지 · 상점 · 공지 · 우체통 · 유저 리스트) : 모서리 없이 같은 여백 · 같은 폭 · 같은 제목 크기, X 버튼 없음(하단 탭으로 이동) */
+    .modal-box.panel.mypage, .modal-box.panel.shop-modal, .modal-box.panel.notice-modal, .modal-box.panel.mail-modal, .modal-box.panel.userinfo-modal {
+      border-radius:0 !important; border:none !important; box-shadow:none !important;
+      padding:calc(20px + env(safe-area-inset-top)) 20px 20px !important; }
+    .modal-box.mypage > *, .modal-box.shop-modal > *, .modal-box.notice-modal > *, .modal-box.mail-modal > *, .modal-box.userinfo-modal > *,
+    .modal-box.mypage.v2 .mp-hero, .modal-box.mypage .idc-head, .modal-box.mypage .mypage-cols {
+      width:100%; max-width:640px !important; margin-left:auto; margin-right:auto; box-sizing:border-box; }
+    .modal-box.mypage .idc-title, .modal-box .modal-title.page-title { font-size:28px; }
+    .modal-box.mypage .idc-head, .notice-head, .modal-box.shop-modal .shop-head, .modal-box.mail-modal .shop-head, .modal-box.userinfo-modal .ui-head { min-height:34px; margin-bottom:16px; }
+    .modal-box.mypage .idc-close, .modal-box.shop-modal .shop-close, .modal-box.notice-modal .shop-close, .modal-box.mail-modal .shop-close, .modal-box.userinfo-modal .ui-close { display:none !important; }
+    .mp-logout-bottom { display:flex; }
     .idc-head { display:flex; align-items:center; }
     /* 전투 헤더 오른쪽 위 : 유저 리스트 · 채팅 */
     .topbar.v2 { grid-template-areas:"room sep fmt . tools" "round round round round timer" !important; }
@@ -2960,6 +2974,7 @@
     </div>
     </div>
     </div>
+    <button class="mp-logout-bottom" onclick="closeMyPage(); onAvatarDotClick()"><i class="fa-solid fa-power-off"></i>로그아웃</button>
   </div>
 </div>
 <div id="skillCutin" class="skill-cutin" onclick="hideSkillCutin()">
