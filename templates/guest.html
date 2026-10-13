@@ -2630,6 +2630,43 @@
     .modal-box.mypage .idc-head, .notice-head, .modal-box.shop-modal .shop-head, .modal-box.mail-modal .shop-head, .modal-box.userinfo-modal .ui-head {
       min-height:40px; margin:0 0 18px !important; padding:0 !important; align-items:center; }
   }
+
+  /* ================================================================
+     로그인 화면과 같은 분위기 : 라운드 패널 · 맵 지도 영역
+     (유리 느낌 바탕 + 포인트 색 빛 + 옅은 점 격자 + 천천히 도는 궤도 선 + 윗변 포인트 빛줄)
+     ================================================================ */
+  .gx-orbit { position:absolute; border-radius:50%; pointer-events:none; z-index:-1; border:1px solid rgba(var(--point-rgb), .26);
+    transform:translate(-50%,-50%); animation: gateSpin 60s linear infinite; }
+  .gx-orbit.o2 { border-style:dashed; border-color: rgba(255,255,255,.06); animation-duration:120s; animation-direction:reverse; }
+  .gx-orbit::after { content:""; position:absolute; top:-3px; left:50%; width:6px; height:6px; border-radius:50%;
+    background: var(--point); box-shadow:0 0 12px 2px rgba(var(--point-rgb), .6); }
+  .gx-orbit.o2::after { background:#fff; opacity:.5; box-shadow:none; width:4px; height:4px; top:-2px; }
+  /* 라운드 패널 */
+  .round-track { background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.012)), rgba(16,16,19,.82);
+    border-color: rgba(255,255,255,.08); }
+  .round-track::before { content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background: radial-gradient(55% 140% at 84% 50%, rgba(var(--point-rgb), .22), transparent 70%),
+                radial-gradient(rgba(255,255,255,.07) 1px, transparent 1.2px) 0 0 / 22px 22px;
+    -webkit-mask-image: radial-gradient(70% 140% at 80% 50%, #000 25%, transparent 80%); mask-image: radial-gradient(70% 140% at 80% 50%, #000 25%, transparent 80%); }
+  .round-track::after { content:""; position:absolute; left:24px; right:24px; top:0; height:1px; pointer-events:none; z-index:2;
+    background: linear-gradient(90deg, transparent, var(--point), transparent); opacity:.85; }
+  .round-track .gx-orbit { left:84%; top:50%; }
+  .round-track .gx-orbit.o1 { width:340px; height:340px; }
+  .round-track .gx-orbit.o2 { width:560px; height:560px; }
+  /* 맵 지도 영역 : 겉 상자(.wm-sky)가 바탕 · 궤도를 맡고, 안쪽 무대는 그대로 가로 스크롤 */
+  .wm-sky { position:relative; overflow:hidden; border-radius:16px 16px 0 0; isolation:isolate;
+    background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)), #0d0f14; }
+  .wm-sky::before { content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background: radial-gradient(45% 70% at 50% 62%, rgba(var(--point-rgb), .12), transparent 70%),
+                radial-gradient(rgba(255,255,255,.08) 1px, transparent 1.2px) 0 0 / 22px 22px;
+    -webkit-mask-image: radial-gradient(75% 90% at 60% 50%, #000 20%, transparent 80%); mask-image: radial-gradient(75% 90% at 60% 50%, #000 20%, transparent 80%); }
+  .wm-sky::after { content:""; position:absolute; left:28px; right:28px; top:0; height:1px; pointer-events:none; z-index:3;
+    background: linear-gradient(90deg, transparent, var(--point), transparent); opacity:.85; }
+  .wm-sky .wm-stage { background:none; border-radius:0; }
+  .wm-sky .gx-orbit { left:50%; top:62%; }
+  .wm-sky .gx-orbit.o1 { width:min(560px, 130vw); height:min(560px, 130vw); }
+  .wm-sky .gx-orbit.o2 { width:min(900px, 210vw); height:min(900px, 210vw); }
+  @media (prefers-reduced-motion: reduce) { .gx-orbit { animation:none; } }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -3221,6 +3258,7 @@
 
 {% if not grid_size %}
 <div class="round-track" id="roundTrack">
+      <span class="gx-orbit o2" aria-hidden="true"></span><span class="gx-orbit o1" aria-hidden="true"></span>
       <div class="rt-bg" id="roundTrackBg"></div>
       <div class="rt-inner" id="roundTrackInner"></div>
       <button type="button" class="rt-bg-btn" id="roundTrackBgBtn" onclick="openTrackBgModal()" data-tip="라운드 트랙 배경 이미지 (운영진)"><i class="fa-solid fa-image"></i></button>
@@ -9329,7 +9367,7 @@ function worldMapHtml(places, sel) {
       <span class="ic" style="${!locked && p.image ? `background-image:url('${worldEsc(p.image)}')` : ''}">${locked ? '<i class="fa-solid fa-lock"></i>' : (p.image ? '' : '<i class="fa-solid fa-location-dot"></i>')}</span>
       <span class="sb">${locked ? '' : worldEsc(p.sub || '')}</span></div>`;
   }).join('');
-  return `<div class="wm-card"><div class="wm-stage"><div class="wm-row">${nodes}<span class="wm-fill"></span></div></div><div id="wmDetail">${worldDetailInner(sel)}</div></div>`;
+  return `<div class="wm-card"><div class="wm-sky"><span class="gx-orbit o2" aria-hidden="true"></span><span class="gx-orbit o1" aria-hidden="true"></span><div class="wm-stage"><div class="wm-row">${nodes}<span class="wm-fill"></span></div></div></div><div id="wmDetail">${worldDetailInner(sel)}</div></div>`;
 }
 function worldDetailInner(sel) {
   const gm = worldIsGm(), n = worldData.unlocked || 0;
