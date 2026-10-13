@@ -1555,6 +1555,106 @@
   /* ================================================================
      기숙사(마이룸)
      ================================================================ */
+  /* ================================================================
+     운영 페이지 (GM 전용) : 전투 준비 · 캐릭터 · 음악 · 방 설정. 예전 운영진 화면 기능을 러너 화면으로 옮겼습니다.
+     수식·운영진 로그·스탯은 서버가 GM 인증 소켓에만 보내므로, 이 화면 코드가 있어도 러너에게는 데이터가 가지 않습니다.
+     ================================================================ */
+  .ops-page { display:none; flex:1; min-height:0; flex-direction:column; }
+  body.view-ops .shell > *:not(.modal-overlay):not(#opsPage):not(#shopToast):not(#floatTip) { display:none !important; }
+  body.view-ops #opsPage { display:flex; }
+  .topbar.v2.ops-topbar { flex:none; display:flex !important; flex-wrap:nowrap; margin-bottom:12px; }
+  .ops-topbar .ops-brand { font-family: var(--font-title); font-weight:400; font-size:24px; letter-spacing:.02em; }
+  .ops-tabs { flex:none; gap:4px; margin-bottom:16px; overflow-x:auto; scrollbar-width:none; }
+  .ops-tabs button { flex:none; padding:10px 16px; }
+  .ops-body { flex:1; min-height:0; overflow-y:auto; padding-bottom:20px; }
+  .ops-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; }
+  .ops-grid.wide-left { grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); }
+  .ops-card { background: var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 20px; min-width:0; }
+  .ops-grid > div > .ops-card + .ops-card, #opsLive + .ops-grid { margin-top:16px; }
+  #opsLive:empty + .ops-grid { margin-top:0; }
+  .ops-card h3 { display:flex; align-items:center; gap:8px; margin:0 0 14px; font-size:15px; font-weight:700; }
+  .ops-card h3 i { color: var(--muted); font-size:14px; }
+  .ops-card h3 .sub { margin-left:auto; font-size:12.5px; font-weight:500; color: var(--muted); }
+  .ops-hint { font-size:12.5px; color: var(--muted); line-height:1.6; }
+  .ops-row { display:flex; align-items:center; gap:8px; }
+  .ops-row + .ops-row, .ops-field + .ops-field { margin-top:10px; }
+  .ops-field > .lb { display:block; font-size:12.5px; color: var(--muted); margin-bottom:6px; }
+  .ops-in { width:100%; min-width:0; height:38px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:#0c0c0d; color: var(--text); font-size:14px; }
+  .ops-in:focus { outline:none; border-color: rgba(111,147,255,.6); }
+  textarea.ops-in { height:auto; min-height:150px; padding:10px 12px; line-height:1.6; resize:vertical; font-family:inherit; }
+  .ops-in.num { width:68px; text-align:center; flex:none; }
+  .ops-btn { flex:none; display:inline-flex; align-items:center; justify-content:center; gap:7px; height:38px; padding:0 14px; border-radius:10px;
+    border:1px solid var(--line); background: rgba(255,255,255,.05); color:#dcdce2; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .ops-btn:hover { background: rgba(255,255,255,.09); color:#fff; }
+  .ops-btn.primary { background: var(--accent-blue); border-color: transparent; color:#fff; }
+  .ops-btn.primary:hover { filter:brightness(1.08); }
+  .ops-btn.danger:hover { color:#ff8a8a; border-color: rgba(255,120,120,.4); }
+  .ops-btn.icon { width:32px; height:32px; padding:0; border-color:transparent; background:none; color: var(--muted); }
+  .ops-btn.icon:hover { background: rgba(255,255,255,.06); color:#fff; }
+  .ops-btn.big { height:46px; padding:0 22px; font-size:15px; }
+  .ops-seg { display:inline-flex; padding:3px; gap:3px; border-radius:10px; background: rgba(255,255,255,.04); border:1px solid var(--line); }
+  .ops-seg button { height:30px; padding:0 12px; border:none; border-radius:8px; background:none; color: var(--muted); font-size:13px; font-weight:600; cursor:pointer; }
+  .ops-seg button.on { background: rgba(111,147,255,.16); color:#fff; }
+  /* 전투 준비 */
+  .ops-teams { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .ops-team { border:1px solid var(--line); border-radius:12px; padding:12px; min-height:140px; background: rgba(255,255,255,.015); }
+  .ops-team-h { display:flex; align-items:baseline; gap:8px; margin-bottom:10px; }
+  .ops-team-h .en { font-family: var(--font-title); font-size:18px; }
+  .ops-team-h .cnt { margin-left:auto; font-size:12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ops-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .ops-chip { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 6px 0 10px; border-radius:999px; background: rgba(255,255,255,.06);
+    font-size:13px; font-weight:600; }
+  .ops-chip .dot { width:7px; height:7px; border-radius:50%; background: var(--rc, #888); }
+  .ops-chip button { width:22px; height:22px; border:none; border-radius:50%; background:none; color: var(--muted); cursor:pointer; font-size:11px; }
+  .ops-chip button:hover { background: rgba(255,255,255,.1); color:#fff; }
+  .ops-empty { font-size:13px; color: var(--muted); padding:8px 2px; }
+  .ops-pool { max-height:420px; overflow-y:auto; margin-top:10px; border-top:1px solid var(--line); }
+  .ops-prow { display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid rgba(255,255,255,.04); }
+  .ops-prow .nm { font-weight:600; font-size:14px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ops-prow .rl { font-size:12.5px; flex:none; }
+  .ops-prow .sk { font-size:12px; color: var(--muted); flex:none; }
+  .ops-prow .sp { flex:1; }
+  .ops-pick { width:34px; height:28px; border-radius:8px; border:1px solid var(--line); background:none; color: var(--muted); font-size:12.5px; font-weight:700; cursor:pointer; }
+  .ops-pick:hover { color:#fff; background: rgba(255,255,255,.06); }
+  .ops-pick.on { background: rgba(111,147,255,.18); border-color: rgba(111,147,255,.55); color:#fff; }
+  .ops-start { display:flex; align-items:center; flex-wrap:wrap; gap:10px 12px; margin-top:16px; }
+  .ops-start .ops-hint { flex:1 1 180px; }
+  .ops-live { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; background: rgba(111,147,255,.08); border:1px solid rgba(111,147,255,.25);
+    font-size:13px; color:#c9d6ff; }
+  /* 캐릭터 */
+  .ops-steppers { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; margin-top:12px; }
+  .ops-step { display:flex; align-items:center; gap:6px; height:38px; padding:0 6px 0 12px; border-radius:10px; border:1px solid var(--line); }
+  .ops-step .k { flex:1; font-size:13px; color: var(--muted); }
+  .ops-step .v { width:22px; text-align:center; font-weight:700; font-variant-numeric: tabular-nums; }
+  .ops-step button { width:26px; height:26px; border:none; border-radius:7px; background: rgba(255,255,255,.05); color:#cfcfd4; cursor:pointer; font-size:11px; }
+  .ops-step button:disabled { opacity:.3; cursor:default; }
+  .ops-roles { display:flex; gap:6px; }
+  .ops-roles button { flex:1; height:36px; border-radius:10px; border:1px solid var(--line); background:none; color: var(--muted); font-size:13.5px; font-weight:700; cursor:pointer; }
+  .ops-roles button.on { color: var(--rc); border-color: var(--rc); background: rgba(255,255,255,.04); }
+  .ops-rgroup + .ops-rgroup { margin-top:14px; }
+  .ops-rgroup-h { font-size:12.5px; font-weight:700; margin:0 2px 4px; }
+  .ops-rgroup-h span { color: var(--muted); font-weight:500; margin-left:4px; }
+  .ops-edit { margin-top:10px; padding:14px; border-radius:12px; border:1px solid rgba(111,147,255,.35); background: rgba(111,147,255,.05); }
+  .ops-stat-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:8px; margin-top:10px; }
+  .ops-stat-grid label { display:flex; flex-direction:column; gap:4px; font-size:12px; color: var(--muted); }
+  .ops-result { margin-top:10px; font-size:13px; line-height:1.6; }
+  .ops-result .ok { color:#8fd4a6; }
+  .ops-result .bad { color:#ff9a9a; }
+  .ops-music-now { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px; background: rgba(255,255,255,.03); border:1px solid var(--line); margin-bottom:14px; }
+  .ops-music-now .t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+  .ops-music-now i { color: var(--muted); }
+  @media (max-width:900px) {
+    .ops-grid, .ops-grid.wide-left { grid-template-columns:minmax(0,1fr); }
+    .ops-card { padding:16px; }
+    .topbar.v2.ops-topbar { display:flex !important; }
+  }
+  @media (max-width:560px) {
+    .ops-teams { grid-template-columns:1fr; }
+    .ops-team { min-height:0; }
+    .ops-row.wrap { flex-wrap:wrap; }
+    .ops-start .ops-btn.primary { flex:1; }
+  }
+
   /* 기숙사 페이지 : 전투 화면 자리를 그대로 씁니다 */
   .dorm-page { display:none; flex:1; min-height:0; flex-direction:column; }
   body.view-dorm .shell > *:not(.modal-overlay):not(.dorm-page):not(#shopToast):not(#floatTip) { display:none !important; }
@@ -1911,8 +2011,9 @@
   <div class="sidebar-gap" id="sidebarAlign"></div>
   <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
   <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
-  <button class="sidebar-icon" id="sidebarDormBtn" onclick="openDorm()" data-tip="기숙사"><i class="fa-solid fa-house"></i></button>
-  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
+  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeOps(); openDorm()" data-tip="기숙사"><i class="fa-solid fa-house"></i></button>
+  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
+  <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps()" data-tip="운영" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsSheet()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
@@ -2132,6 +2233,11 @@
     <div class="topbar v2 panel dorm-topbar" id="dormTop"></div>
     <div class="dorm-main" id="dormBody"></div>
   </div>
+</div>
+<div id="opsPage" class="ops-page">
+  <div class="topbar v2 panel ops-topbar"><div class="seg ops-brand">Admin</div><span class="sep">▶</span><div class="seg" id="opsTopSeg">전투 준비</div></div>
+  <div class="member-toptabs ops-tabs" id="opsTabs"></div>
+  <div class="ops-body" id="opsBody"></div>
 </div>
 <div id="dormCreditModal" class="modal-overlay" onclick="if(event.target===this) this.style.display='none'">
   <div class="modal-box dorm-credit-modal panel">
@@ -2453,6 +2559,7 @@
     <button onclick="doAction('timeout_unacted_runners', {})" data-tip="시간 초과"><i class="fa-solid fa-hourglass-end"></i><span class="t">시간 초과</span></button>
     {% if battle_type == 'siege' %}
     <button onclick="rollSiteDice()" id="siteDiceBtn" data-tip="다이스"><i class="fa-solid fa-dice"></i><span class="t">다이스</span><span class="cnt" id="siteDiceStatusGm"></span></button>
+    <button onclick="socket.emit('reveal_pending_action', {})" id="pendingRevealBtn" style="display:none;" data-tip="적 행동 공개 (운영진 로그에서 결과 확인 후)"><i class="fa-solid fa-bullhorn"></i><span class="t">행동 공개</span></button>
     {% endif %}
     {% if battle_type == 'mass_raid' %}
     <button onclick="toggleTelegraphMode()" id="telegraphModeBtn" data-tip="전조 출력"><i class="fa-solid fa-eye"></i><span class="t">전조 출력</span></button>
@@ -2823,6 +2930,7 @@ function myCharacterAvatarUrl(battle) {
 }
 
 function updateAvatarDots(battle) {
+  if (typeof syncOpsBtn === 'function') setTimeout(syncOpsBtn, 0);
   const url = myCharacterAvatarUrl(battle);
   const el = document.getElementById('inputAvatarDot');
   if (el) el.style.backgroundImage = url ? `url('${url}')` : 'none';
@@ -2861,7 +2969,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-12.11";
+const EXPECTED_SERVER_BUILD = "2026-10-13.1";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -6866,7 +6974,7 @@ function dormBH(b) { return b.h * (b.s || 1); }
 function setMainView(dorm) {
   document.body.classList.toggle('view-dorm', dorm);
   document.getElementById('sidebarDormBtn').classList.toggle('active', dorm);
-  document.getElementById('sidebarBattleBtn').classList.toggle('active', !dorm);
+  document.getElementById('sidebarBattleBtn').classList.toggle('active', !dorm && !document.body.classList.contains('view-ops'));
   if (!dorm && typeof drawAttackLines === 'function') setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 30);
 }
 function openDorm() {
@@ -7616,6 +7724,372 @@ document.addEventListener('pointerdown', (e) => {
   document.body.appendChild(r);
   setTimeout(() => r.remove(), 600);
 }, true);
+
+// ==================================================================
+// 운영 페이지 (GM 전용) : 예전 운영진 화면의 전투 준비 · 캐릭터 등록 · 음악 · 방 설정
+// - 보이는지 여부는 화면 편의일 뿐이고, 실제 권한은 서버가 GM 인증 소켓인지로 검사합니다.
+// - 스탯·수식·운영진 로그는 gm_state(GM 채널)로만 오므로 러너에게는 데이터 자체가 없습니다.
+// ==================================================================
+const OPS_DEFAULT_A = {{ default_team_a }}, OPS_DEFAULT_B = {{ default_team_b }};
+const OPS_SKILLS = { "가디언": ["차폐", "편광"], "스트라이커": ["붕괴", "방출"], "메딕": ["환류", "복원"] };
+const OPS_ROLES = ['가디언', '스트라이커', '메딕'];
+const OPS_TABS = [['battle', '전투 준비'], ['chars', '캐릭터'], ['music', '음악'], ['room', '방 설정']];
+let opsTab = 'battle';
+let opsTeamA = [], opsTeamB = [];
+let opsLastPublic = null;
+let opsQuick = { role: '스트라이커', stats: {} };
+let opsRegMode = 'quick';
+let opsEditName = null;
+let opsResultHtml = '';
+function opsIsGm() { return myControlInfo(lastBattleForPanel).scope === 'all'; }
+function opsOpen() { return document.body.classList.contains('view-ops'); }
+function opsTeamLabels() { return BATTLE_TYPE === 'pvp' ? ['Team 1', 'Team 2'] : ['Runner', 'Enemy']; }
+function opsRosterDetail() { return (lastRosterDetail || []).slice(); }
+
+function syncOpsBtn() {
+  const btn = document.getElementById('sidebarOpsBtn');
+  if (!btn) return;
+  const gm = opsIsGm();
+  btn.style.display = gm ? '' : 'none';
+  if (!gm && opsOpen()) closeOps();
+}
+function openOps() {
+  if (!opsIsGm()) return;
+  if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
+  if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
+  document.body.classList.add('view-ops');
+  document.getElementById('sidebarOpsBtn').classList.add('active');
+  document.getElementById('sidebarBattleBtn').classList.remove('active');
+  renderOps();
+}
+function closeOps() {
+  if (!opsOpen()) return;
+  document.body.classList.remove('view-ops');
+  document.getElementById('sidebarOpsBtn').classList.remove('active');
+  document.getElementById('sidebarBattleBtn').classList.toggle('active', !document.body.classList.contains('view-dorm'));
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
+}
+function setOpsTab(t) { opsTab = t; opsEditName = null; renderOps(); }
+
+function renderOps() {
+  document.getElementById('opsTabs').innerHTML = OPS_TABS.map(([k, t]) =>
+    `<button class="${k === opsTab ? 'active' : ''}" onclick="setOpsTab('${k}')">${t}</button>`).join('');
+  document.getElementById('opsTopSeg').textContent = (OPS_TABS.find(t => t[0] === opsTab) || [])[1] || '';
+  const body = document.getElementById('opsBody');
+  if (opsTab === 'battle') body.innerHTML = opsBattleHtml();
+  else if (opsTab === 'chars') body.innerHTML = opsCharsHtml();
+  else if (opsTab === 'music') body.innerHTML = opsMusicHtml();
+  else body.innerHTML = opsRoomHtml();
+  renderOpsData();
+}
+// 서버 상태가 바뀔 때는 입력칸을 건드리지 않고 목록 부분만 다시 그립니다(입력 중 포커스가 날아가지 않게).
+function renderOpsData() {
+  if (!opsOpen()) return;
+  if (opsTab === 'battle') { opsRenderTeams(); opsRenderPool(); opsRenderLive(); }
+  else if (opsTab === 'chars') { opsRenderRoster(); opsQuickRefresh(); }
+  else if (opsTab === 'music') opsRenderMusicNow();
+  else if (opsTab === 'room') opsRenderRoomInfo();
+}
+
+// ---------- 전투 준비 ----------
+function opsBattleHtml() {
+  const [la, lb] = opsTeamLabels();
+  return `<div id="opsLive"></div>
+  <div class="ops-grid wide-left">
+    <div>
+      <div class="ops-card">
+        <h3><i class="fa-solid fa-users"></i> 팀 편성<span class="sub">{{ battle_type_label }}</span></h3>
+        <div class="ops-teams" id="opsTeams"></div>
+        <div class="ops-start">
+          <span class="ops-hint">편성을 바꾸면 러너 화면에 미리보기 카드로 바로 보여요.</span>
+          <button class="ops-btn" onclick="opsClearTeams()"><i class="fa-solid fa-eraser"></i> 비우기</button>
+          <button class="ops-btn primary big" onclick="opsStartBattle()"><i class="fa-solid fa-flag"></i> 전투 시작</button>
+        </div>
+      </div>
+      <div class="ops-card">
+        <h3><i class="fa-solid fa-shuffle"></i> 무작위 배치</h3>
+        <div class="ops-row wrap">
+          <span class="ops-hint">${la}</span><input class="ops-in num" id="opsCountA" type="number" min="1" max="30" value="${OPS_DEFAULT_A}">
+          <span class="ops-hint" style="margin-left:8px;">${lb}</span><input class="ops-in num" id="opsCountB" type="number" min="1" max="30" value="${OPS_DEFAULT_B}">
+          <span style="flex:1"></span>
+          <button class="ops-btn" onclick="opsRandomAssign()"><i class="fa-solid fa-shuffle"></i> 섞어서 배치</button>
+        </div>
+      </div>
+    </div>
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-id-card"></i> 명단<span class="sub" id="opsPoolCount"></span></h3>
+      <input class="ops-in" id="opsPoolQ" placeholder="이름 검색" autocomplete="off" oninput="opsRenderPool()">
+      <div class="ops-pool" id="opsPool"></div>
+    </div>
+  </div>`;
+}
+function opsRoleColor(role) { return roleColorVar(role); }
+function opsRoleOf(name) { const c = opsRosterDetail().find(r => r.name === name); return c ? c.role : ''; }
+function opsChip(name, team) {
+  return `<span class="ops-chip" style="--rc:${opsRoleColor(opsRoleOf(name))}"><span class="dot"></span>${mailEsc(name)}
+    <button onclick='opsSetTeam(${JSON.stringify(name)}, null)' data-tip="빼기"><i class="fa-solid fa-xmark"></i></button></span>`;
+}
+function opsRenderTeams() {
+  const el = document.getElementById('opsTeams'); if (!el) return;
+  const known = new Set(opsRosterDetail().map(c => c.name));
+  opsTeamA = opsTeamA.filter(n => known.has(n)); opsTeamB = opsTeamB.filter(n => known.has(n));
+  const [la, lb] = opsTeamLabels();
+  const col = (label, list) => `<div class="ops-team"><div class="ops-team-h"><span class="en">${label}</span><span class="cnt">${list.length}명</span></div>
+    <div class="ops-chips">${list.length ? list.map(n => opsChip(n)).join('') : '<div class="ops-empty">명단에서 1 · 2를 눌러 골라 주세요.</div>'}</div></div>`;
+  el.innerHTML = col(la, opsTeamA) + col(lb, opsTeamB);
+}
+function opsRenderPool() {
+  const el = document.getElementById('opsPool'); if (!el) return;
+  const list = opsRosterDetail();
+  const q = ((document.getElementById('opsPoolQ') || {}).value || '').trim().toLowerCase();
+  const shown = list.filter(c => !q || c.name.toLowerCase().includes(q))
+    .sort((a, b) => (OPS_ROLES.indexOf(a.role) - OPS_ROLES.indexOf(b.role)) || a.name.localeCompare(b.name, 'ko'));
+  document.getElementById('opsPoolCount').textContent = `${list.length}명`;
+  if (!shown.length) { el.innerHTML = `<div class="ops-empty">${list.length ? '검색 결과가 없어요.' : '등록된 캐릭터가 없어요. 캐릭터 탭에서 등록해 주세요.'}</div>`; return; }
+  el.innerHTML = shown.map(c => {
+    const n = JSON.stringify(c.name);
+    const inA = opsTeamA.includes(c.name), inB = opsTeamB.includes(c.name);
+    return `<div class="ops-prow"><span class="nm">${mailEsc(c.name)}</span><span class="rl" style="color:${opsRoleColor(c.role)}">${mailEsc(c.role || '')}</span>
+      ${c.skill ? `<span class="sk">${mailEsc(c.skill)}</span>` : ''}<span class="sp"></span>
+      <button class="ops-pick ${inA ? 'on' : ''}" onclick='opsSetTeam(${n}, ${inA ? 'null' : '"a"'})' data-tip="${opsTeamLabels()[0]}">1</button>
+      <button class="ops-pick ${inB ? 'on' : ''}" onclick='opsSetTeam(${n}, ${inB ? 'null' : '"b"'})' data-tip="${opsTeamLabels()[1]}">2</button></div>`;
+  }).join('');
+}
+function opsRenderLive() {
+  const el = document.getElementById('opsLive'); if (!el) return;
+  const b = lastBattleForPanel;
+  el.innerHTML = b && !b.finished ? `<div class="ops-live"><i class="fa-solid fa-circle-play"></i>지금 전투가 진행 중이에요 (Round ${b.round_no || '-'}). 새로 시작하면 진행 중인 전투는 끝나요.</div>` : '';
+}
+function opsSetTeam(name, team) {
+  opsTeamA = opsTeamA.filter(n => n !== name); opsTeamB = opsTeamB.filter(n => n !== name);
+  if (team === 'a') opsTeamA.push(name); else if (team === 'b') opsTeamB.push(name);
+  opsSendPreview(); opsRenderTeams(); opsRenderPool();
+}
+function opsClearTeams() { opsTeamA = []; opsTeamB = []; opsSendPreview(); opsRenderTeams(); opsRenderPool(); }
+function opsSendPreview() { socket.emit('preview_teams', { team_a: opsTeamA, team_b: opsTeamB }); }
+function opsRandomAssign() {
+  const na = parseInt(document.getElementById('opsCountA').value, 10) || 1;
+  const nb = parseInt(document.getElementById('opsCountB').value, 10) || 1;
+  const names = opsRosterDetail().map(c => c.name);
+  if (names.length < na + nb) { showError(`등록된 캐릭터가 부족해요 (필요 ${na + nb}명, 지금 ${names.length}명)`); return; }
+  for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [names[i], names[j]] = [names[j], names[i]]; }
+  opsTeamA = names.slice(0, na); opsTeamB = names.slice(na, na + nb);
+  opsSendPreview(); opsRenderTeams(); opsRenderPool();
+}
+function opsStartBattle() {
+  if (!opsTeamA.length || !opsTeamB.length) { showError('양쪽 팀에 한 명 이상 있어야 해요.'); return; }
+  const live = lastBattleForPanel && !lastBattleForPanel.finished;
+  const go = () => { socket.emit('start_battle', { team_a: opsTeamA, team_b: opsTeamB }); closeOps(); };
+  if (live) uiConfirm('진행 중인 전투를 끝내고 새 전투를 시작할까요?', { title: '전투 시작', okText: '새로 시작', danger: true }).then(ok => ok && go());
+  else go();
+}
+
+// ---------- 캐릭터 ----------
+function opsCharsHtml() {
+  return `<div class="ops-grid">
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-user-plus"></i> 캐릭터 등록
+        <span class="sub"><span class="ops-seg"><button class="${opsRegMode === 'quick' ? 'on' : ''}" onclick="opsSetReg('quick')">간편</button><button class="${opsRegMode === 'paste' ? 'on' : ''}" onclick="opsSetReg('paste')">붙여넣기</button></span></span></h3>
+      ${opsRegMode === 'quick' ? `
+      <div class="ops-field"><span class="lb">이름</span><input class="ops-in" id="opsQName" maxlength="20" placeholder="캐릭터 이름" autocomplete="off" oninput="opsQuickRefresh()">
+        <div class="ops-hint" id="opsQWarn" style="display:none; margin-top:6px;">이미 있는 이름이에요. 등록하면 기존 정보를 덮어써요.</div></div>
+      <div class="ops-field"><span class="lb">포지션</span><div class="ops-roles" id="opsQRoles"></div></div>
+      <div class="ops-row" style="margin-top:10px;">
+        <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsQSkill"></select></div>
+        <div class="ops-field" style="flex:1; margin:0;"><span class="lb">국가</span><input class="ops-in" id="opsQNation" maxlength="20" placeholder="(선택)" autocomplete="off"></div>
+      </div>
+      <div class="ops-steppers" id="opsQStats"></div>
+      <div class="ops-start"><span class="ops-hint">합계 <b id="opsQTotal" style="color:var(--text)">0</b></span>
+        <button class="ops-btn" onclick="opsQuickReset()">초기화</button>
+        <button class="ops-btn primary" onclick="opsQuickSubmit()"><i class="fa-solid fa-plus"></i> 등록</button></div>`
+      : `
+      <textarea class="ops-in" id="opsRegText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴&#10;국가 (선택)"></textarea>
+      <div class="ops-start"><span class="ops-hint">여러 명은 빈 줄로 나눠 한 번에 붙여 넣어요.</span>
+        <button class="ops-btn primary" onclick="opsPasteSubmit()">일괄 등록</button></div>
+      <div class="ops-row" style="margin-top:14px;"><span class="ops-hint" style="flex:1;">테스트용 더미 캐릭터</span>
+        <input class="ops-in num" id="opsDummyN" type="number" min="1" max="100" value="6"><button class="ops-btn" onclick="opsDummies()">더미 생성</button></div>`}
+      <div class="ops-result" id="opsRegResult">${opsResultHtml}</div>
+    </div>
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-address-book"></i> 등록된 캐릭터<span class="sub" id="opsRosterCount"></span></h3>
+      <input class="ops-in" id="opsRosterQ" placeholder="이름 검색" autocomplete="off" oninput="opsRenderRoster()">
+      <div id="opsRoster" style="margin-top:12px;"></div>
+    </div>
+  </div>`;
+}
+function opsSetReg(m) { opsRegMode = m; renderOps(); }
+function opsQuickRefresh() {
+  const roles = document.getElementById('opsQRoles'); if (!roles) return;
+  roles.innerHTML = OPS_ROLES.map(r => `<button class="${r === opsQuick.role ? 'on' : ''}" style="--rc:${opsRoleColor(r)}" onclick="opsQuickRole('${r}')">${r}</button>`).join('');
+  const sel = document.getElementById('opsQSkill');
+  const keep = sel.value;
+  sel.innerHTML = '<option value="">(없음)</option>' + (OPS_SKILLS[opsQuick.role] || []).map(k => `<option value="${k}">${k}</option>`).join('');
+  if ((OPS_SKILLS[opsQuick.role] || []).includes(keep)) sel.value = keep;
+  document.getElementById('opsQStats').innerHTML = STAT_KEYS.map(k => { const v = opsQuick.stats[k] || 0; return `<div class="ops-step"><span class="k">${k}</span>
+    <button onclick="opsQuickStep('${k}', -1)" ${v <= 0 ? 'disabled' : ''}><i class="fa-solid fa-minus"></i></button><span class="v">${v}</span>
+    <button onclick="opsQuickStep('${k}', 1)"><i class="fa-solid fa-plus"></i></button></div>`; }).join('');
+  document.getElementById('opsQTotal').textContent = STAT_KEYS.reduce((a, k) => a + (opsQuick.stats[k] || 0), 0);
+  const name = document.getElementById('opsQName').value.trim();
+  document.getElementById('opsQWarn').style.display = name && opsRosterDetail().some(c => c.name === name) ? '' : 'none';
+}
+function opsQuickRole(r) { opsQuick.role = r; opsQuickRefresh(); }
+function opsQuickStep(k, d) { opsQuick.stats[k] = Math.max(0, (opsQuick.stats[k] || 0) + d); opsQuickRefresh(); }
+function opsQuickReset() { opsQuick.stats = {}; document.getElementById('opsQName').value = ''; document.getElementById('opsQNation').value = ''; opsQuickRefresh(); }
+function opsQuickSubmit() {
+  const name = document.getElementById('opsQName').value.trim();
+  if (!name) { showError('이름을 입력해 주세요.'); return; }
+  if (/^(체력|공격|방어|이능|정신|민첩|행운|역할|스킬|색상|국가)/.test(name)) { showError('이름이 스탯/역할 이름으로 시작하면 등록할 수 없어요.'); return; }
+  const lines = [name, ...STAT_KEYS.map(k => `${k} ${opsQuick.stats[k] || 0}`), `역할 ${opsQuick.role}`];
+  const skill = document.getElementById('opsQSkill').value; if (skill) lines.push(`스킬 ${skill}`);
+  const nation = document.getElementById('opsQNation').value.trim(); if (nation) lines.push(`국가 ${nation}`);
+  socket.emit('register_characters', { text: lines.join('\n') });
+  document.getElementById('opsQName').value = '';
+  opsQuickRefresh();
+}
+function opsPasteSubmit() {
+  const t = document.getElementById('opsRegText').value;
+  if (!t.trim()) { showError('등록할 내용을 붙여 넣어 주세요.'); return; }
+  socket.emit('register_characters', { text: t });
+}
+function opsDummies() { socket.emit('generate_dummies', { count: parseInt(document.getElementById('opsDummyN').value, 10) || 6 }); }
+socket.on('register_result', (d) => {
+  const ok = (d.registered || []), bad = (d.errors || []);
+  opsResultHtml = (ok.length ? `<div class="ok"><i class="fa-solid fa-check"></i> ${ok.length}명 등록 : ${ok.map(mailEsc).join(', ')}</div>` : '')
+    + bad.map(e => `<div class="bad"><i class="fa-solid fa-triangle-exclamation"></i> ${mailEsc(e)}</div>`).join('');
+  const el = document.getElementById('opsRegResult'); if (el) el.innerHTML = opsResultHtml;
+  if (ok.length && opsRegMode === 'paste') { const ta = document.getElementById('opsRegText'); if (ta && !bad.length) ta.value = ''; }
+});
+function opsRenderRoster() {
+  const el = document.getElementById('opsRoster'); if (!el) return;
+  const list = opsRosterDetail();
+  document.getElementById('opsRosterCount').textContent = `${list.length}명`;
+  const q = ((document.getElementById('opsRosterQ') || {}).value || '').trim().toLowerCase();
+  const shown = list.filter(c => !q || c.name.toLowerCase().includes(q));
+  if (!shown.length) { el.innerHTML = `<div class="ops-empty">${list.length ? '검색 결과가 없어요.' : '등록된 캐릭터가 없어요.'}</div>`; return; }
+  const roles = [...OPS_ROLES, ...[...new Set(shown.map(c => c.role))].filter(r => !OPS_ROLES.includes(r))];
+  el.innerHTML = roles.map(role => {
+    const g = shown.filter(c => c.role === role).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    if (!g.length) return '';
+    return `<div class="ops-rgroup"><div class="ops-rgroup-h" style="color:${opsRoleColor(role)}">${mailEsc(role)}<span>${g.length}</span></div>
+      ${g.map(c => { const n = JSON.stringify(c.name); return `<div class="ops-prow"><span class="nm">${mailEsc(c.name)}</span>
+        ${c.skill ? `<span class="sk">${mailEsc(c.skill)}</span>` : ''}${c.nation ? `<span class="sk">${mailEsc(c.nation)}</span>` : ''}<span class="sp"></span>
+        <button class="ops-btn icon" onclick='opsEdit(${n})' data-tip="수정"><i class="fa-solid fa-pen"></i></button>
+        <button class="ops-btn icon" onclick='opsDelete(${n})' data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>
+        ${opsEditName === c.name ? opsEditHtml(c) : ''}`; }).join('')}</div>`;
+  }).join('');
+}
+function opsEditHtml(c) {
+  const skills = OPS_SKILLS[c.role] || [];
+  return `<div class="ops-edit">
+    <div class="ops-row"><div class="ops-field" style="flex:1; margin:0;"><span class="lb">역할</span>
+      <select class="ops-in" id="opsERole" onchange="opsEditRole()">${OPS_ROLES.map(r => `<option ${r === c.role ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+      <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsESkill"><option value="">(없음)</option>${skills.map(k => `<option ${k === c.skill ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
+    <div class="ops-field" style="margin-top:10px;"><span class="lb">국가</span><input class="ops-in" id="opsENation" maxlength="20" value="${mailEsc(c.nation || '')}" placeholder="(없음)" autocomplete="off"></div>
+    <div class="ops-stat-grid">${STAT_KEYS.map(k => `<label>${k}<input class="ops-in" type="number" id="opsEStat_${k}" value="${(c.stats || {})[k] ?? 0}" oninput="opsEditTotal()"></label>`).join('')}</div>
+    <div class="ops-start"><span class="ops-hint">합계 <b id="opsETotal" style="color:var(--text)">${STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0)}</b></span>
+      <button class="ops-btn" onclick="opsEditName=null; opsRenderRoster()">취소</button>
+      <button class="ops-btn primary" onclick="opsEditSave()">저장</button></div></div>`;
+}
+function opsEdit(name) { opsEditName = opsEditName === name ? null : name; opsRenderRoster(); }
+function opsEditRole() {
+  const role = document.getElementById('opsERole').value;
+  document.getElementById('opsESkill').innerHTML = '<option value="">(없음)</option>' + (OPS_SKILLS[role] || []).map(k => `<option>${k}</option>`).join('');
+}
+function opsEditTotal() { document.getElementById('opsETotal').textContent = STAT_KEYS.reduce((a, k) => a + (parseInt(document.getElementById('opsEStat_' + k).value, 10) || 0), 0); }
+function opsEditSave() {
+  if (!opsEditName) return;
+  const stats = {}; STAT_KEYS.forEach(k => { stats[k] = document.getElementById('opsEStat_' + k).value; });
+  socket.emit('update_character', { name: opsEditName, role: document.getElementById('opsERole').value, stats,
+    skill: document.getElementById('opsESkill').value || null, nation: document.getElementById('opsENation').value });
+  opsEditName = null;
+}
+function opsDelete(name) {
+  uiConfirm(`${name} 캐릭터를 삭제할까요?`, { title: '캐릭터 삭제', okText: '삭제', danger: true }).then(ok => {
+    if (!ok) return;
+    if (opsEditName === name) opsEditName = null;
+    socket.emit('delete_character', { name });
+  });
+}
+
+// ---------- 음악 ----------
+function opsMusicHtml() {
+  return `<div class="ops-grid"><div class="ops-card">
+    <h3><i class="fa-solid fa-music"></i> 배경음악<span class="sub">모두에게 같은 위치로 재생</span></h3>
+    <div class="ops-music-now"><i class="fa-solid fa-compact-disc"></i><span class="t" id="opsMusicNow">재생 없음</span>
+      <button class="ops-btn" onclick="socket.emit('stop_music', {})"><i class="fa-solid fa-stop"></i> 정지</button></div>
+    <div class="ops-field"><span class="lb">표시 이름 (비우면 '배경음악')</span>
+      <div class="ops-row"><input class="ops-in" id="opsMusicTitle" maxlength="40" placeholder="러너 화면에 보일 곡 이름">
+      <button class="ops-btn" onclick="socket.emit('set_music_title', { title: opsMusicTitle() })" data-tip="재생 위치는 그대로">이름만 변경</button></div></div>
+    <div class="ops-field"><span class="lb">유튜브</span>
+      <div class="ops-row"><input class="ops-in" id="opsMusicYt" placeholder="https://www.youtube.com/watch?v=...">
+      <button class="ops-btn primary" onclick="opsPlayYoutube()"><i class="fa-solid fa-play"></i> 재생</button></div></div>
+    <div class="ops-field"><span class="lb">mp3 파일</span>
+      <div class="ops-row"><input class="ops-in" id="opsMusicFile" type="file" accept=".mp3" style="padding-top:7px;">
+      <button class="ops-btn primary" onclick="opsPlayMp3()"><i class="fa-solid fa-upload"></i> 올려서 재생</button></div></div>
+  </div></div>`;
+}
+function opsMusicTitle() { return ((document.getElementById('opsMusicTitle') || {}).value || '').trim(); }
+function opsRenderMusicNow() {
+  const el = document.getElementById('opsMusicNow'); if (!el) return;
+  const m = opsLastPublic && opsLastPublic.music;
+  el.textContent = m && m.src ? `${m.title || '배경음악'} · ${m.type === 'youtube' ? '유튜브' : 'mp3'}` : '재생 없음';
+}
+function opsPlayYoutube() {
+  const url = document.getElementById('opsMusicYt').value.trim();
+  if (!url) { showError('유튜브 링크를 입력해 주세요.'); return; }
+  socket.emit('set_music', { type: 'youtube', src: url, title: opsMusicTitle() });
+}
+function opsPlayMp3() {
+  const file = document.getElementById('opsMusicFile').files[0];
+  if (!file) { showError('mp3 파일을 골라 주세요.'); return; }
+  const fd = new FormData();
+  fd.append('room_id', ROOM_ID); fd.append('key', KEY); fd.append('sid', socket.id); fd.append('file', file);
+  fetch('/upload_music', { method: 'POST', body: fd }).then(r => r.json()).then(d => {
+    if (d.error) { showError(d.error); return; }
+    socket.emit('set_music', { type: 'mp3', src: d.url, title: opsMusicTitle() });
+  }).catch(() => showError('업로드에 실패했어요.'));
+}
+
+// ---------- 방 설정 ----------
+function opsRoomHtml() {
+  return `<div class="ops-grid">
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-door-open"></i> 방</h3>
+      <div class="ops-field"><span class="lb">방 이름</span>
+        <div class="ops-row"><input class="ops-in" id="opsRoomName" maxlength="40" autocomplete="off" onkeydown="if(event.key==='Enter') opsSaveRoomName()">
+        <button class="ops-btn primary" onclick="opsSaveRoomName()">저장</button></div></div>
+      <div class="ops-field"><span class="lb">참가자 링크</span>
+        <div class="ops-row"><input class="ops-in" id="opsGuestLink" readonly onclick="this.select()">
+        <button class="ops-btn" onclick="opsCopyLink()"><i class="fa-regular fa-copy"></i> 복사</button></div></div>
+    </div>
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-lock"></i> 운영진 전용</h3>
+      <div class="ops-hint" style="margin-bottom:12px;">전투 수식과 운영진 로그는 GM으로 로그인한 화면에만 서버가 보내요. 러너 화면에는 데이터가 가지 않아요.</div>
+      <div class="ops-row"><button class="ops-btn" onclick="toggleFormulaPanel()"><i class="fa-solid fa-square-root-variable"></i> 전투 수식</button>
+        <button class="ops-btn" onclick="socket.emit('export_log', {})"><i class="fa-solid fa-download"></i> 로그 내려받기 (운영진 로그 포함)</button></div>
+    </div>
+  </div>`;
+}
+function opsRenderRoomInfo() {
+  const n = document.getElementById('opsRoomName');
+  if (n && document.activeElement !== n) n.value = (opsLastPublic && opsLastPublic.room_name) || ROOM_ID;
+  const l = document.getElementById('opsGuestLink');
+  if (l) l.value = `${location.origin}${location.pathname}?key=${encodeURIComponent(KEY)}`;
+}
+function opsSaveRoomName() { socket.emit('set_room_name', { name: document.getElementById('opsRoomName').value }); showShopToast('방 이름을 저장했어요.'); }
+function opsCopyLink() {
+  const l = document.getElementById('opsGuestLink');
+  (navigator.clipboard ? navigator.clipboard.writeText(l.value) : Promise.reject()).then(() => showShopToast('참가자 링크를 복사했어요.'))
+    .catch(() => { l.select(); document.execCommand('copy'); showShopToast('참가자 링크를 복사했어요.'); });
+}
+
+// 상태 갱신 연결
+socket.on('public_state', (state) => { opsLastPublic = state; syncOpsBtn(); renderOpsData(); });
+socket.on('gm_state', (state) => {
+  renderOpsData();
+  const btn = document.getElementById('pendingRevealBtn');
+  if (btn) btn.style.display = state.pending_reveal ? '' : 'none';
+});
 
 // PC 사이드바 : 전체 화면 버튼은 맨 위, 나머지 메뉴는 "Team 1" 제목 높이부터 나열
 function alignSidebar() {

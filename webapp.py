@@ -34,7 +34,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-12.11"
+SERVER_BUILD = "2026-10-13.1"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -71,7 +71,20 @@ CONNECTIONS = {}
 # 참가자(guest) 링크에서 닉네임을 "GM"으로 입력해 전체 조작 권한("all")을 얻으려면
 # 이 비밀번호가 필요합니다. 운영진(gm) 링크 자체는 gm_key만으로 이미 전체 권한을 가지므로
 # 영향받지 않습니다.
-GM_GUEST_PASSWORD = "Nexus**0010"
+# 저장소가 공개되어 있으므로 실제 비밀번호는 git에 올라가지 않는 gm_password.txt(첫 줄)에 둡니다.
+# 파일이 없을 때만 예전 비밀번호를 그대로 씁니다(이 값은 이미 공개되어 있으니 파일을 꼭 만들어 바꾸세요).
+def _load_gm_password():
+    try:
+        with open(os.path.join(_THIS_DIR, "gm_password.txt"), "r", encoding="utf-8") as f:
+            pw = f.readline().strip()
+            if pw:
+                return pw
+    except OSError:
+        pass
+    return "Nexus**0010"
+
+
+GM_GUEST_PASSWORD = _load_gm_password()
 
 # 전투 로그(public_log/operator_log)는 방 하나가 몇 시간씩 이어지면 수천 줄까지 쌓일 수
 # 있습니다 - 매 행동마다 상태를 통째로 재전송하는 구조라, 로그를 자르지 않으면 세션이
@@ -207,11 +220,13 @@ def guest_page(room_id):
     key = request.args.get("key", "")
     if key != room.guest_key:
         abort(403)
+    default_team_a, default_team_b = BATTLE_TYPE_DEFAULTS.get(room.battle_type, (3, 3))
     return render_template(
         "guest.html", room_id=room_id, key=key,
         battle_type=room.battle_type,
         battle_type_label=BATTLE_TYPE_LABELS.get(room.battle_type, "PVP"),
         grid_size=GRID_SIZES.get(room.battle_type, 0),
+        default_team_a=default_team_a, default_team_b=default_team_b,
     )
 
 
@@ -236,7 +251,9 @@ def upload_music():
     room_id = request.form.get("room_id", "")
     key = request.form.get("key", "")
     room = get_room(room_id)
-    if room is None or key != room.gm_key:
+    # 운영진 링크(gm_key) 또는, 러너 링크로 GM 인증(비밀번호)까지 마친 소켓(sid)만 올릴 수 있습니다.
+    sid_room = _require_gm_or_guest_gm(request.form.get("sid", ""))
+    if room is None or not (key == room.gm_key or (sid_room is not None and sid_room.id == room.id)):
         return jsonify({"error": "권한이 없습니다."}), 403
 
     f = request.files.get("file")
@@ -1380,7 +1397,7 @@ sound_effect_volume=existing.get("sound_effect_volume"),
 # ----------------------------------------------------------------------
 @socketio.on("register_characters")
 def on_register_characters(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("register_result", {"registered": [], "errors": ["방에 아직 입장하지 않았습니다. 먼저 입장해주세요."]})
         return
@@ -1397,7 +1414,7 @@ def on_register_characters(data):
 
 @socketio.on("generate_dummies")
 def on_generate_dummies(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("register_result", {"registered": [], "errors": ["방에 아직 입장하지 않았습니다. 먼저 입장해주세요."]})
         return
@@ -1413,7 +1430,7 @@ def on_generate_dummies(data):
 
 @socketio.on("update_character")
 def on_update_character(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -1458,7 +1475,7 @@ sound_effect_volume=existing.get("sound_effect_volume"),
 
 @socketio.on("delete_character")
 def on_delete_character(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -1590,7 +1607,7 @@ def assign_mass_raid_positions(battle, width, height):
 def on_preview_teams(data):
     """전투 시작 전 "무작위 배치"를 누르면, 실제로 전투를 시작하지 않고도 배정된 팀을
     참가자 화면에 카드로 미리 보여줍니다."""
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -1603,7 +1620,7 @@ def on_preview_teams(data):
 
 @socketio.on("start_battle")
 def on_start_battle(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -1775,7 +1792,7 @@ def on_telegraph_clear(data):
 
 @socketio.on("set_room_name")
 def on_set_room_name(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -1787,7 +1804,7 @@ def on_set_room_name(data):
 
 @socketio.on("set_music")
 def on_set_music(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -1813,7 +1830,7 @@ def on_set_music(data):
 @socketio.on("set_music_title")
 def on_set_music_title(data):
     """운영진 : 지금 재생 중인 곡의 '러너 화면 표시 이름'만 바꿉니다(재생 위치는 그대로)."""
-    room = _require_gm(request.sid) or _require_gm_or_guest_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -1826,7 +1843,7 @@ def on_set_music_title(data):
 
 @socketio.on("stop_music")
 def on_stop_music(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
@@ -2121,7 +2138,7 @@ def on_battle_action(data):
 
 @socketio.on("reveal_pending_action")
 def on_reveal_pending_action(data):
-    room = _require_gm(request.sid)
+    room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
