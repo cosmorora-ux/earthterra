@@ -2763,7 +2763,7 @@
   }
 
   /* ================================================================
-     메뉴 탭 그래픽 : 떠 있는 둥근 캡슐 패널 + 고른 메뉴는 포인트 색 빛이 번지는 알약 + 옆에 빛나는 표시줄
+     메뉴 탭 그래픽 : 떠 있는 패널(다른 패널과 같은 16px 모서리) + 고른 메뉴는 포인트 색 빛이 번지는 알약 + 옆에 빛나는 표시줄
      ================================================================ */
   .sidebar { --sb-bg: linear-gradient(180deg, #1c1c21 0%, #131316 100%); }
   .sidebar .sidebar-icon { border:1px solid transparent; color:#8b8b94; transition: background .2s, color .2s, border-color .2s, box-shadow .2s; }
@@ -2775,9 +2775,9 @@
   .sidebar .sidebar-icon.active::before { background: var(--point); box-shadow: 0 0 10px 1px rgba(var(--point-rgb), .8); }
   @media (min-width:901px) {
     .sidebar { width:64px !important; margin:14px 0 14px 14px; height:auto; align-self:stretch; box-sizing:border-box; padding:14px 0 !important; gap:10px;
-      border-radius:32px; border:1px solid rgba(255,255,255,.08) !important; background: var(--sb-bg);
+      border-radius:16px; border:1px solid rgba(255,255,255,.08) !important; background: var(--sb-bg);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 24px 60px rgba(0,0,0,.55); }
-    .sidebar .sidebar-icon { width:44px; height:44px; border-radius:15px; font-size:17px; }
+    .sidebar .sidebar-icon { width:44px; height:44px; border-radius:10px; font-size:17px; }
     .sidebar .sidebar-icon.active::before { left:-11px; top:50%; transform:translateY(-50%); width:3px; height:20px; border-radius:0 3px 3px 0; }
     /* 구역 나눔 선 */
     .sidebar .sidebar-gap { min-height:18px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent) center / 30px 1px no-repeat; }
@@ -2786,9 +2786,9 @@
   @media (max-width:900px) {
     :root { --mbar-h: calc(76px + env(safe-area-inset-bottom)); }
     .sidebar { left:12px !important; right:12px !important; bottom:calc(10px + env(safe-area-inset-bottom)) !important; width:auto !important;
-      padding:6px !important; border-radius:24px; border:1px solid rgba(255,255,255,.08) !important; background: var(--sb-bg);
+      padding:6px !important; border-radius:16px; border:1px solid rgba(255,255,255,.08) !important; background: var(--sb-bg);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 16px 40px rgba(0,0,0,.6); }
-    .sidebar .sidebar-icon { height:48px; max-width:72px; border-radius:17px; font-size:18px; }
+    .sidebar .sidebar-icon { height:48px; max-width:72px; border-radius:10px; font-size:18px; }
     .sidebar .sidebar-icon:hover, .sidebar .sidebar-icon:focus { color:#8b8b94; }
     /* 켜진 탭 : 위에서 빛이 번지는 알약 + 캡슐 윗변의 빛나는 표시줄 */
     .sidebar .sidebar-icon.active,
