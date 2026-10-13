@@ -34,7 +34,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.6"
+SERVER_BUILD = "2026-10-13.7"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2970,11 +2970,17 @@ def on_dorm_halls_save(data):
 
 @socketio.on("dorm_asset_upload")
 def on_dorm_asset_upload(data):
+    """도트·그림 자료 올리기 : 운영진은 모든 종류(모두가 씀), 참가자는 가구 · 캐릭터 SD만(자기 방에서 씀)."""
     data = data or {}
     me, is_gm, room = _mail_identity(request.sid)
+    category = data.get("category")
     if not is_gm:
-        emit("dorm_result", {"ok": False, "message": "운영진만 도트 자료를 올릴 수 있어요."})
-        return
+        if not me:
+            emit("dorm_result", {"ok": False, "message": "캐릭터로 로그인한 뒤에 올릴 수 있어요."})
+            return
+        if category not in dorm_mod.USER_CATEGORIES:
+            emit("dorm_result", {"ok": False, "message": "가구나 캐릭터만 올릴 수 있어요."})
+            return
     blob = data.get("data")
     ext = os.path.splitext((data.get("filename") or "").lower())[1]
     if ext not in (".png", ".gif", ".webp") or not isinstance(blob, (bytes, bytearray)):
@@ -2984,40 +2990,46 @@ def on_dorm_asset_upload(data):
         emit("dorm_result", {"ok": False, "message": "이미지가 너무 커요 (최대 2MB)."})
         return
     filename = f"{uuid.uuid4().hex}{ext}"
-    with open(os.path.join(DORM_ASSET_DIR, filename), "wb") as f:
-        f.write(blob)
     try:
-        dorm_mod.shared_dorms().add_asset(data.get("name"), data.get("category"), f"/static/dorm_assets/{filename}",
-                                          data.get("w"), data.get("h"), data.get("credit"))
+        asset = dorm_mod.shared_dorms().add_asset(
+            data.get("name"), category, f"/static/dorm_assets/{filename}", data.get("w"), data.get("h"),
+            data.get("credit"), owner=None if is_gm else me, lines=data.get("lines"),
+            scale=data.get("scale"), px=data.get("px", True) is not False)
     except dorm_mod.DormError as e:
         emit("dorm_result", {"ok": False, "message": str(e)})
         return
-    emit("dorm_result", {"ok": True, "message": "도트 자료를 올렸어요."})
+    with open(os.path.join(DORM_ASSET_DIR, filename), "wb") as f:
+        f.write(blob)
+    emit("dorm_result", {"ok": True, "message": "자료를 올렸어요.", "asset_id": asset["id"]})
     _dorm_broadcast()
 
 
 @socketio.on("dorm_asset_update")
 def on_dorm_asset_update(data):
+    """자료 이름 · 캐릭터 대사 고치기 : 운영진은 모든 자료, 참가자는 자기가 올린 자료만."""
     data = data or {}
     me, is_gm, room = _mail_identity(request.sid)
-    if not is_gm:
+    if not is_gm and not me:
         return
-    fields = {k: data[k] for k in ("name", "category", "w", "h", "credit") if k in data}
+    keys = ("name", "category", "w", "h", "credit", "lines") if is_gm else ("name", "lines")
+    fields = {k: data[k] for k in keys if k in data}
     try:
-        dorm_mod.shared_dorms().update_asset(data.get("id"), **fields)
+        dorm_mod.shared_dorms().update_asset(data.get("id"), by=me, is_gm=is_gm, **fields)
     except dorm_mod.DormError as e:
         emit("dorm_result", {"ok": False, "message": str(e)})
         return
+    emit("dorm_result", {"ok": True, "message": "저장했어요."})
     _dorm_broadcast()
 
 
 @socketio.on("dorm_asset_delete")
 def on_dorm_asset_delete(data):
     me, is_gm, room = _mail_identity(request.sid)
-    if not is_gm:
+    if not is_gm and not me:
         return
-    dorm_mod.shared_dorms().delete_asset((data or {}).get("id"))
-    _dorm_broadcast()
+    if dorm_mod.shared_dorms().delete_asset((data or {}).get("id"), by=me, is_gm=is_gm):
+        emit("dorm_result", {"ok": True, "message": "자료를 지웠어요."})
+        _dorm_broadcast()
 
 
 @socketio.on("dorm_credits_save")

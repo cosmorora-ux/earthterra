@@ -22,7 +22,22 @@ import uuid
 DORMS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dorms.json")
 HALL_SIZE = 6
 MAX_ITEMS = 150
-CATEGORIES = ("room", "surface", "furniture", "deco", "wall")
+CATEGORIES = ("room", "surface", "furniture", "deco", "wall", "chara")
+# 참가자가 직접 올릴 수 있는 종류(가구 · 캐릭터 SD)와 한 사람당 개수, 캐릭터 대사 제한
+USER_CATEGORIES = ("furniture", "chara")
+USER_ASSET_MAX = 40
+LINES_MAX, LINE_LEN = 20, 80
+
+
+def _clean_lines(lines):
+    if isinstance(lines, str):
+        lines = lines.split("\n")
+    out = []
+    for ln in (lines or [])[:LINES_MAX]:
+        ln = " ".join(str(ln or "").split())[:LINE_LEN]
+        if ln:
+            out.append(ln)
+    return out
 
 # 기본 자료 : static/dorm_default/manifest.json (받은 도트 묶음에서 뽑은 방·벽지·가구·소품과 출처)
 _MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "dorm_default", "manifest.json")
@@ -199,21 +214,39 @@ class Dorms:
     def _credit_ok(self, cid):
         return cid if any(c["id"] == cid for c in self.all_credits()) else None
 
-    def add_asset(self, name, category, url, w, h, credit_id):
+    def add_asset(self, name, category, url, w, h, credit_id, owner=None, lines=None, scale=None, px=True):
         if category not in CATEGORIES:
             raise DormError("종류가 올바르지 않습니다.")
         asset = {"id": uuid.uuid4().hex[:10], "name": (name or "").strip()[:30] or "이름 없음", "category": category,
                  "url": url, "w": _clamp(w, 1, 2000, 16), "h": _clamp(h, 1, 2000, 16), "px": True,
                  "credit": self._credit_ok(credit_id)}
+        # 참가자가 올린 자료 : 올린 사람(owner) 표시, 매끈한 그림은 도트처럼 각지게 그리지 않음(smooth), 기본 배율(s)
+        if owner:
+            asset["owner"] = owner
+        if not px:
+            asset["smooth"] = True
+        if scale:
+            try:
+                asset["s"] = max(0.25, min(4.0, round(float(scale) * 4) / 4))
+            except (TypeError, ValueError):
+                pass
+        if category == "chara":
+            asset["lines"] = _clean_lines(lines)
         with self.lock:
+            if owner and sum(1 for a in self.assets if a.get("owner") == owner) >= USER_ASSET_MAX:
+                raise DormError(f"한 사람당 {USER_ASSET_MAX}개까지 올릴 수 있어요.")
             self.assets.append(asset)
             self.save()
         return asset
 
-    def update_asset(self, asset_id, **fields):
+    def update_asset(self, asset_id, by=None, is_gm=True, **fields):
         with self.lock:
             for a in self.assets:
                 if a["id"] == asset_id:
+                    if not is_gm and a.get("owner") != by:
+                        raise DormError("자기가 올린 자료만 고칠 수 있어요.")
+                    if "lines" in fields and a.get("category") == "chara":
+                        a["lines"] = _clean_lines(fields["lines"])
                     if "name" in fields:
                         a["name"] = (fields["name"] or "").strip()[:30] or a["name"]
                     if fields.get("category") in CATEGORIES:
@@ -224,14 +257,18 @@ class Dorms:
                     return a
         raise DormError("기본 자료는 바꿀 수 없어요.")
 
-    def delete_asset(self, asset_id):
+    def delete_asset(self, asset_id, by=None, is_gm=True):
         with self.lock:
+            target = next((a for a in self.assets if a["id"] == asset_id), None)
+            if target is None or (not is_gm and target.get("owner") != by):
+                return False
             self.assets = [a for a in self.assets if a["id"] != asset_id]
             for r in self.rooms.values():
                 r["items"] = [i for i in r.get("items", []) if i.get("a") != asset_id]
                 if r.get("base") == asset_id:
                     r["base"] = None
             self.save()
+        return True
 
     def set_credits(self, credits):
         clean = []
