@@ -2536,6 +2536,15 @@
     .modal-overlay > .modal-box.mypage, .modal-overlay > .modal-box.shop-modal, .modal-overlay > .modal-box.notice-modal,
     .modal-overlay > .modal-box.mail-modal, .modal-overlay > .modal-box.userinfo-modal { animation: mPageIn .22s ease-out; }
     .shell > *:not(.modal-overlay) { animation: mPageIn .22s ease-out; }
+    /* 전투 · 기숙사 · 맵 화면도 다른 탭 페이지와 같은 여백(좌우 20px) · 같은 제목 자리 : 위쪽 바는 상자 없이 제목 줄로 */
+    .shell { padding:calc(22px + env(safe-area-inset-top)) 20px 12px !important; }
+    .shell > .topbar.v2.panel { background:none !important; border:none !important; box-shadow:none !important; border-radius:0 !important;
+      -webkit-backdrop-filter:none; backdrop-filter:none; padding:0 !important; margin-bottom:16px !important; min-height:34px; }
+    .shell > .topbar.v2.panel::before, .shell > .topbar.v2.panel::after { display:none !important; }
+    .topbar.v2.panel.dorm-topbar, .topbar.v2.panel.world-topbar { background:none !important; border:none !important; box-shadow:none !important; border-radius:0 !important;
+      padding:0 !important; margin-bottom:16px !important; min-height:34px; }
+    .topbar.v2.panel.dorm-topbar::before, .topbar.v2.panel.dorm-topbar::after, .topbar.v2.panel.world-topbar::before, .topbar.v2.panel.world-topbar::after { display:none !important; }
+    .dorm-topbar .dorm-brand, .world-topbar .world-brand { font-size:28px !important; }
     body.m-chat-open .member-col .member-panel { animation: mPageIn .22s ease-out !important; }
     .idc-head { display:flex; align-items:center; }
     /* 전투 헤더 오른쪽 위 : 유저 리스트 · 채팅 */
