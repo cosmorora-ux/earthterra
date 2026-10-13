@@ -2982,26 +2982,27 @@
   .lg-hp em { font-style:normal; font-weight:700; margin-left:5px; }
   .lg-hp em.up { color: var(--muted); } .lg-hp em.down { color:#d7d8de; }
   .logsep { height:1px; margin:6px 26px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent); }
-  /* 채팅창 스킬 사용 기록 : 일반 채팅 줄 + 작은 빛 알약 카드 */
-  .skill-rec { position:relative; display:inline-flex; align-items:center; gap:10px; max-width:100%; margin-top:4px; padding:7px 8px 7px 10px;
-    border-radius:10px; color: var(--text); cursor:pointer; text-align:left;
-    border:1px solid rgba(var(--point-rgb), .45);
-    background: radial-gradient(130% 160% at 0% 50%, rgba(var(--point-rgb), .3) 0%, rgba(var(--point-rgb), .07) 60%, rgba(255,255,255,.02) 100%);
-    box-shadow: 0 0 16px rgba(var(--point-rgb), .14), inset 0 1px 0 rgba(255,255,255,.08); transition: box-shadow .15s, border-color .15s; }
-  .skill-rec:hover { border-color: rgba(var(--point-rgb), .7); box-shadow: 0 0 22px rgba(var(--point-rgb), .28), inset 0 1px 0 rgba(255,255,255,.1); }
+  /* 채팅창 스킬 사용 기록 : 일반 채팅 줄 아래 작은 카드(아이콘 칸 + 스킬 이름 + 다시 보기). 빛 번짐 없이 패널 톤 그대로 */
+  .skill-rec { display:flex; align-items:center; gap:10px; width:min(100%, 260px); margin-top:5px; padding:8px 10px 8px 8px;
+    border-radius:10px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); color: var(--text);
+    cursor:pointer; text-align:left; font:inherit; transition: background .15s, border-color .15s; }
+  .skill-rec:hover { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.16); }
   .skill-rec.nofx { cursor:default; }
-  .sr-k { flex:none; font-size:9.5px; font-weight:800; letter-spacing:.3em; padding:2px 5px 2px calc(5px + .3em); border-radius:4px; color: var(--on-accent); background: var(--point); }
-  .sr-name { min-width:0; font-size:17px; font-weight:800; letter-spacing:-0.01em; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .sr-play { flex:none; display:inline-flex; align-items:center; gap:5px; margin-left:4px; height:24px; padding:0 9px; border-radius:6px; font-size:11.5px; font-weight:700;
-    color:#fff; background: rgba(255,255,255,.08); }
-  .sr-play i { font-size:9px; color: var(--point); }
-  .skill-rec:hover .sr-play { background: rgba(var(--point-rgb), .3); }
+  .skill-rec.nofx:hover { background:rgba(255,255,255,.03); border-color:rgba(255,255,255,.08); }
+  .sr-ic { flex:none; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    background: rgba(var(--point-rgb), .14); color: var(--point); font-size:13px; }
+  .sr-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+  .sr-k { font-size:10.5px; font-weight:600; letter-spacing:.14em; color: var(--muted); }
+  .sr-name { font-size:15px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sr-play { flex:none; display:inline-flex; align-items:center; gap:5px; font-size:12px; color: var(--muted); transition: color .15s; }
+  .sr-play i { font-size:9px; }
+  .skill-rec:hover .sr-play { color:#fff; }
 
   /* 격자 : 내 팀 차례 + 행동 전 = 샤인(빛이 천천히 훑고 지나감), 행동을 마치면 꺼짐. 이동 완료(행동 대기) = 모서리 작은 삼각형 */
   .gmap .gcell.ready::before { content:""; position:absolute; inset:0; z-index:7; pointer-events:none;
     background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.32) 50%, transparent 62%) no-repeat; background-size:260% 100%;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); animation: gReadyShine 2.6s ease-in-out infinite; }
-  @keyframes gReadyShine { 0% { background-position:160% 0; } 55%, 100% { background-position:-60% 0; } }
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); animation: gReadyShine 5.5s ease-in-out infinite; }
+  @keyframes gReadyShine { 0% { background-position:160% 0; } 50%, 100% { background-position:-60% 0; } }
   @media (prefers-reduced-motion: reduce) { .gmap .gcell.ready::before { animation:none; background:none; } }
   .gmap .gcell.moved::after { content:""; position:absolute; top:0; right:0; z-index:9; width:0; height:0;
     border-style:solid; border-width:0 7px 7px 0; border-color:transparent var(--point) transparent transparent; }
@@ -5159,6 +5160,19 @@ function closeGridSelection() {
   renderGrid(lastBattleForPanel, lastAllForCards);
 }
 
+// 캐릭터를 눌러 이동/사거리를 띄운 상태에서 다른 곳을 누르면 선택을 끕니다.
+// 지도에서 누를 수 있는 칸(캐릭터 · 이동 칸), 아래 커맨드 블록, 확대/축소 버튼, 팝업 안은 그대로 둡니다. Esc로도 끕니다.
+document.addEventListener('click', (e) => {
+  if (!selectedGridChar || !e.target || !e.target.closest) return;
+  if (e.target.closest('td[onclick], .action-bar-bottom, #gridZoomCtl, .modal-overlay, #floatTip')) return;
+  closeGridSelection();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape' || !selectedGridChar) return;
+  if (document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  closeGridSelection();
+});
+
 function tickTimer() {
   const el = document.getElementById('roundTimer');
   if (roundDeadlineAt == null) {
@@ -5831,6 +5845,8 @@ function formatChatTime(timeStr) {
   return `${period} ${h12}:${m}`;
 }
 
+// 채팅 스킬 카드 아이콘 : 상태 배지와 같은 그림을 씁니다(편광 = 반쪽 원, 환류 = 물방울 …).
+const SKILL_REC_ICONS = { '붕괴': 'fa-solid fa-burst', '방출': 'fa-solid fa-sun', '차폐': 'fa-solid fa-shield', '편광': 'fa-solid fa-circle-half-stroke', '환류': 'fa-solid fa-droplet', '복원': 'fa-solid fa-hand-holding-medical' };
 function fmtChat(entry) {
   entry = { ...entry, text: siteLabelize(stripLegacyEmoji(entry.text)), nickname: stripLegacyEmoji(entry.nickname) };
   // 전투 진행 안내(✶ Round N / ▶ 선공 단계 등)는 아바타 없이 포인트 컬러로 한 줄 표시합니다.
@@ -5849,8 +5865,9 @@ function fmtChat(entry) {
     return `<div class="chat-line is-skill"${idAttr}>${av}
       <div class="chat-body"><div class="chat-meta"><b${prof.color ? ` style="color:${prof.color};"` : ''}>${shopEsc(who || '')}</b><span class="time">${formatChatTime(entry.time)}</span></div>
         <button type="button" class="skill-rec ${can ? '' : 'nofx'}" ${can ? `onclick="replaySkillCutin('${entry.id}')"` : ''}>
-          <span class="sr-k">SKILL</span><span class="sr-name">${shopEsc(entry.skill || entry.text || '')}</span>
-          ${can ? '<span class="sr-play"><i class="fa-solid fa-play"></i>컷인</span>' : ''}
+          <span class="sr-ic"><i class="${SKILL_REC_ICONS[entry.skill] || 'fa-solid fa-wand-magic-sparkles'}"></i></span>
+          <span class="sr-txt"><span class="sr-k">SKILL</span><span class="sr-name">${shopEsc(entry.skill || entry.text || '')}</span></span>
+          ${can ? '<span class="sr-play"><i class="fa-solid fa-play"></i>다시 보기</span>' : ''}
         </button></div>${delBtn}</div>`;
   }
   if (entry.category === 'round') {
