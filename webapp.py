@@ -35,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.9"
+SERVER_BUILD = "2026-10-13.10"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -89,9 +89,9 @@ GM_GUEST_PASSWORD = _load_gm_password()
 # 국가 (마이페이지에서 운영진이 배치)
 NATIONS = ("아르카디아", "노바")
 
-# 스킬 컷인 : 캐치프레이즈 길이, 등장 모션 5종(마이페이지에서 고름)
+# 스킬 컷인 : 캐치프레이즈 길이, 등장 모션 7종(마이페이지에서 고름)
 CATCHPHRASE_MAX = 60
-CUTIN_MOTIONS = ("slash", "impact", "rise", "glitch", "fade")
+CUTIN_MOTIONS = ("slash", "impact", "rise", "glitch", "fade", "burst", "shutter")
 
 # 포인트 컬러 : 운영진이 고르면 모든 방·모든 화면에 함께 적용됩니다(site_settings.json, git 밖).
 POINT_THEMES = ("blue", "purple", "yellow")

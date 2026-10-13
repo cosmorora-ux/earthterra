@@ -36,7 +36,7 @@
   /* 브라우저 기본 UI(자동완성 목록, 색상 선택기, 숫자 칸 등)도 다크모드로 */
   :root { color-scheme: dark; --point: #6f93ff; }
   /* 포인트 컬러 : 운영진이 운영 > 방 설정에서 고르면 모든 화면에 한 번에 적용됩니다 (blue / purple / yellow) */
-  :root { --point-rgb:111,147,255; --point-soft:var(--point-soft); --on-accent:#fff; }
+  :root { --point-rgb:111,147,255; --point-soft:#cdd9ff; --on-accent:#fff; }
   html[data-point="purple"] { --accent-blue:#7650f0; --point:#a48dff; --point-rgb:164,141,255; --point-soft:#ddd4ff; --on-accent:#fff; }
   html[data-point="yellow"] { --accent-blue:#e2b23c; --point:#f0c862; --point-rgb:240,200,98; --point-soft:#f7e3b0; --on-accent:#17171a; }
   input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
@@ -249,7 +249,7 @@
   /* 1. 슬래시 : 비스듬히 베고 들어와서 반대쪽으로 빠짐 + 빛줄기 한 번 */
   .skill-cutin.show.m-slash .skill-cutin-band > * { animation-name: ciSlash; }
   @keyframes ciSlash { 0% { opacity:0; transform:translateX(-140px) skewX(-20deg); filter:blur(8px); } 14% { opacity:1; transform:translateX(0) skewX(0); filter:blur(0); }
-    84% { opacity:1; transform:translateX(10px); } 100% { opacity:0; transform:translateX(140px) skewX(16deg); filter:blur(6px); } }
+    84% { opacity:1; transform:translateX(10px); filter:blur(0); } 100% { opacity:0; transform:translateX(140px) skewX(16deg); filter:blur(6px); } }
   .skill-cutin.show.m-slash::after { content:""; position:absolute; left:-30%; top:50%; width:160%; height:2px; pointer-events:none;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.9), rgba(var(--point-rgb),.9), transparent); transform:rotate(-8deg) scaleX(0); transform-origin:left;
     animation: ciSlashLine 3s cubic-bezier(.2,.8,.2,1) forwards; box-shadow:0 0 20px rgba(var(--point-rgb),.8); }
@@ -257,7 +257,7 @@
   /* 2. 임팩트 : 크게 박히면서 화면이 한 번 흔들림 */
   .skill-cutin.show.m-impact .skill-cutin-band > * { animation-name: ciImpact; }
   @keyframes ciImpact { 0% { opacity:0; transform:scale(1.9); filter:blur(14px); } 10% { opacity:1; transform:scale(.96); filter:blur(0); } 13% { transform:scale(1.03) translate(-6px, 3px); }
-    16% { transform:scale(1) translate(5px, -2px); } 19% { transform:translate(-2px, 1px); } 22% { transform:none; } 84% { opacity:1; transform:scale(1.02); } 100% { opacity:0; transform:scale(.9); filter:blur(6px); } }
+    16% { transform:scale(1) translate(5px, -2px); } 19% { transform:translate(-2px, 1px); } 22% { transform:none; } 84% { opacity:1; transform:scale(1.02); filter:blur(0); } 100% { opacity:0; transform:scale(.9); filter:blur(6px); } }
   /* 3. 라이즈 : 아래에서 떠오르며 글자 간격이 모임 */
   .skill-cutin.show.m-rise .skill-cutin-band > * { animation-name: ciRise; }
   @keyframes ciRise { 0% { opacity:0; transform:translateY(70px); letter-spacing:.25em; } 18% { opacity:1; transform:translateY(0); letter-spacing:normal; }
@@ -267,11 +267,11 @@
   @keyframes ciGlitch { 0% { opacity:0; transform:translateX(-12px); filter:drop-shadow(6px 0 rgba(255,0,90,.9)) drop-shadow(-6px 0 rgba(0,230,255,.9)); }
     4% { opacity:1; transform:translateX(10px) skewX(12deg); } 7% { transform:translateX(-6px); clip-path:inset(20% 0 40% 0); } 10% { transform:translateX(4px) skewX(-6deg); clip-path:inset(60% 0 5% 0); }
     13% { transform:none; clip-path:inset(0 0 0 0); filter:drop-shadow(2px 0 rgba(255,0,90,.6)) drop-shadow(-2px 0 rgba(0,230,255,.6)); } 18% { filter:none; }
-    84% { opacity:1; transform:none; filter:none; } 88% { transform:translateX(8px); clip-path:inset(30% 0 30% 0); filter:drop-shadow(4px 0 rgba(255,0,90,.8)) drop-shadow(-4px 0 rgba(0,230,255,.8)); }
+    18% { clip-path:inset(0 0 0 0); } 84% { opacity:1; transform:none; filter:none; clip-path:inset(0 0 0 0); } 88% { transform:translateX(8px); clip-path:inset(30% 0 30% 0); filter:drop-shadow(4px 0 rgba(255,0,90,.8)) drop-shadow(-4px 0 rgba(0,230,255,.8)); }
     92% { transform:translateX(-8px); clip-path:inset(0 0 0 0); } 100% { opacity:0; transform:translateX(16px); } }
   /* 5. 페이드 : 흐림에서 천천히 선명하게, 조용하고 우아하게 */
   .skill-cutin.show.m-fade .skill-cutin-band > * { animation-name: ciFade; animation-timing-function:ease; }
-  @keyframes ciFade { 0% { opacity:0; filter:blur(12px); transform:scale(1.04); } 22% { opacity:1; filter:blur(0); transform:scale(1); } 80% { opacity:1; transform:scale(.99); } 100% { opacity:0; filter:blur(8px); } }
+  @keyframes ciFade { 0% { opacity:0; filter:blur(12px); transform:scale(1.04); } 22% { opacity:1; filter:blur(0); transform:scale(1); } 80% { opacity:1; transform:scale(.99); filter:blur(0); } 100% { opacity:0; filter:blur(8px); } }
   /* 마이페이지 : 캐치프레이즈 · 등장 모션 */
   .mypage.v2 .mp-cutin-opts { display:grid; grid-template-columns:auto 1fr; align-items:center; gap:10px 12px; margin-bottom:14px; }
   .mypage.v2 .mp-cutin-opts .idc-field { padding:10px 12px; }
@@ -1715,7 +1715,7 @@
     .mypage.v2 .mp-cutin-opts .mp-k { font-size:12.5px; margin:0 0 7px 2px; }
     .mypage.v2 .mp-cutin-opts .mp-k + .mp-motions, .mypage.v2 .mp-cutin-opts .idc-field { width:100%; box-sizing:border-box; }
     .mypage.v2 .mp-cutin-opts .idc-field { margin-bottom:14px; height:44px; }
-    .mypage.v2 .mp-motions { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px; }
+    .mypage.v2 .mp-motions { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; }
     .mypage.v2 .mp-motions button { height:36px; padding:0 2px; border-radius:10px; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .mypage.v2 #myPageSkillText .idc-field { height:44px; margin-bottom:10px; width:100%; box-sizing:border-box; }
     .mypage.v2 .idc-editor .rich { min-height:130px; }
@@ -2820,6 +2820,116 @@
     background: var(--point); box-shadow: 0 0 10px 1px rgba(var(--point-rgb), .8); }
   /* 기숙사 꾸미기 소품 칸 : 그림 위라 바탕은 그대로 두고 빛무리만 */
   .dorm-asset.on { box-shadow: 0 0 0 1px var(--point), 0 0 18px rgba(var(--point-rgb), .3) !important; }
+
+  /* ================================================================
+     스킬 컷인 2 : 레이어드 타이포 · HUD 프레임 · 모션별 배경 효과(7종)
+     ================================================================ */
+  .ci-fx { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .skill-cutin:not(.show) .ci-fx { display:none; }
+  .skill-cutin-band { z-index:2; }
+  /* 크게 흐르는 윤곽선 워터마크 */
+  .ci-wm { position:absolute; left:0; top:50%; transform:translateY(-50%); white-space:nowrap; pointer-events:none;
+    font-family: var(--font-title); font-weight:400; font-size:clamp(90px, 24vh, 260px); line-height:1; letter-spacing:.02em;
+    color:transparent; -webkit-text-stroke:1px rgba(255,255,255,.08); animation: ciMarquee 3s linear both; }
+  @keyframes ciMarquee { 0% { transform:translate(0, -50%); opacity:0; } 12% { opacity:1; } 86% { opacity:1; } 100% { transform:translate(-22%, -50%); opacity:0; } }
+
+  /* 이름 : 그라데이션 글자 + 윤곽선 잔상 두 겹(포인트 색 · 흰색)이 바깥으로 퍼졌다 모임 */
+  .ci-name { position:relative; isolation:isolate; text-shadow:none !important; }
+  .ci-name > span { position:relative; z-index:2; display:inline-block;
+    background: linear-gradient(180deg, #ffffff 0%, #ffffff 45%, var(--point-soft) 100%); -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter: drop-shadow(0 6px 30px rgba(0,0,0,.7)); }
+  .ci-name::before, .ci-name::after { content: attr(data-t); position:absolute; inset:0; z-index:1; pointer-events:none; color:transparent; }
+  .ci-name::before { -webkit-text-stroke:1.5px rgba(var(--point-rgb), .85); animation: ciEchoA 3s cubic-bezier(.2,.8,.2,1) both; }
+  .ci-name::after { -webkit-text-stroke:1px rgba(255,255,255,.35); animation: ciEchoB 3s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes ciEchoA { 0% { transform:translate(0,0); opacity:0; } 10% { opacity:1; } 22% { transform:translate(-.09em, .07em); } 80% { transform:translate(-.06em, .05em); opacity:.9; } 100% { transform:translate(-.2em, .1em); opacity:0; } }
+  @keyframes ciEchoB { 0% { transform:translate(0,0); opacity:0; } 14% { opacity:1; } 26% { transform:translate(.08em, -.06em); } 80% { transform:translate(.05em, -.04em); opacity:.8; } 100% { transform:translate(.2em, -.1em); opacity:0; } }
+  /* 스킬명 : 작은 SKILL 표찰 */
+  .ci-title { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .ci-title em { font-style:normal; font-family:"42dot Sans", sans-serif; font-weight:800; font-size:11px; letter-spacing:.42em; padding:3px 8px 3px calc(8px + .42em);
+    color: var(--on-accent); background: var(--point); border-radius:3px; box-shadow:0 0 18px rgba(var(--point-rgb), .6); }
+  .ci-skill::before { display:none; }
+
+  /* 그림 : HUD 프레임 */
+  .ci-frame { position:relative; display:inline-block; padding:14px; }
+  .ci-frame .ci-img { position:relative; z-index:1; }
+  .ci-frame::before, .ci-frame::after { content:""; position:absolute; pointer-events:none; }
+  .ci-frame::before { inset:0; border:1px solid rgba(255,255,255,.22); animation: ciFrameIn 3s cubic-bezier(.2,.8,.2,1) both; }
+  .ci-frame::after { inset:-9px; border:1px dashed rgba(var(--point-rgb), .35); animation: ciFrameIn 3s cubic-bezier(.2,.8,.2,1) .08s both; }
+  @keyframes ciFrameIn { 0% { clip-path:inset(50% 50% 50% 50%); opacity:0; } 16% { clip-path:inset(0 0 0 0); opacity:1; } 86% { opacity:1; } 100% { opacity:0; } }
+  .ci-frame .ck { position:absolute; width:30px; height:30px; z-index:2; border:0 solid var(--point); filter: drop-shadow(0 0 6px rgba(var(--point-rgb), .9));
+    animation: ciCorner 3s cubic-bezier(.2,.8,.2,1) both; }
+  .ci-frame .ck.tl { left:-4px; top:-4px; border-width:3px 0 0 3px; --cx:18px; --cy:18px; }
+  .ci-frame .ck.tr { right:-4px; top:-4px; border-width:3px 3px 0 0; --cx:-18px; --cy:18px; }
+  .ci-frame .ck.bl { left:-4px; bottom:-4px; border-width:0 0 3px 3px; --cx:18px; --cy:-18px; }
+  .ci-frame .ck.br { right:-4px; bottom:-4px; border-width:0 3px 3px 0; --cx:-18px; --cy:-18px; }
+  @keyframes ciCorner { 0% { transform:translate(var(--cx), var(--cy)); opacity:0; } 14% { transform:none; opacity:1; } 86% { opacity:1; } 100% { transform:translate(calc(var(--cx) * -.6), calc(var(--cy) * -.6)); opacity:0; } }
+  .ci-frame .tk { position:absolute; z-index:2; background: rgba(255,255,255,.7); animation: ciFadeMid 3s ease both; }
+  .ci-frame .tk.t, .ci-frame .tk.b { left:50%; width:22px; height:2px; margin-left:-11px; }
+  .ci-frame .tk.t { top:-1px; } .ci-frame .tk.b { bottom:-1px; }
+  .ci-frame .tk.l, .ci-frame .tk.r { top:50%; width:2px; height:22px; margin-top:-11px; }
+  .ci-frame .tk.l { left:-1px; } .ci-frame .tk.r { right:-1px; }
+  @keyframes ciFadeMid { 0%, 12% { opacity:0; } 22% { opacity:1; } 86% { opacity:1; } 100% { opacity:0; } }
+  .ci-frame .ci-scan { position:absolute; left:14px; right:14px; top:14px; height:28%; z-index:2; pointer-events:none;
+    background: linear-gradient(180deg, transparent, rgba(var(--point-rgb), .16) 70%, rgba(255,255,255,.55) 98%, transparent);
+    mix-blend-mode:screen; animation: ciScanDown 3s cubic-bezier(.4,0,.2,1) both; }
+  @keyframes ciScanDown { 0% { transform:translateY(-100%); opacity:0; } 8% { opacity:1; } 34% { transform:translateY(260%); opacity:0; } 100% { opacity:0; transform:translateY(260%); } }
+  .ci-frame .ci-tag { position:absolute; left:14px; bottom:-14px; z-index:3; display:inline-flex; align-items:center; gap:10px; padding:5px 12px;
+    font-family:"42dot Sans", sans-serif; font-weight:800; font-size:11px; letter-spacing:.38em; color: var(--on-accent); background: var(--point);
+    clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); animation: ciTagIn 3s cubic-bezier(.2,.8,.2,1) both; }
+  .ci-frame .ci-tag b { font-family:"42dot Sans", sans-serif; letter-spacing:0; font-size:13px; font-weight:800; }
+  .ci-frame .ci-tag b:empty { display:none; }
+  @keyframes ciTagIn { 0%, 10% { transform:translateX(-24px); opacity:0; } 22% { transform:none; opacity:1; } 86% { opacity:1; } 100% { opacity:0; } }
+
+  /* ---------- 모션별 배경 효과 ---------- */
+  .skill-cutin.show .ci-fx::before, .skill-cutin.show .ci-fx::after { content:""; position:absolute; inset:0; pointer-events:none; }
+  /* 슬래시 : 비스듬히 흐르는 속도선 */
+  .skill-cutin.show.m-slash .ci-fx::before { inset:-20%; transform:rotate(-8deg);
+    background: repeating-linear-gradient(180deg, transparent 0 22px, rgba(255,255,255,.05) 22px 23px, transparent 23px 61px, rgba(var(--point-rgb),.09) 61px 62px);
+    animation: ciSpeed 3s linear both; }
+  @keyframes ciSpeed { 0% { transform:rotate(-8deg) translateX(30%); opacity:0; } 10% { opacity:1; } 86% { opacity:1; } 100% { transform:rotate(-8deg) translateX(-30%); opacity:0; } }
+  /* 임팩트 : 흰 섬광 + 퍼지는 충격파 고리 */
+  .skill-cutin.show.m-impact .ci-fx::before { left:50%; top:50%; right:auto; bottom:auto; width:40vmin; height:40vmin; margin:-20vmin 0 0 -20vmin; border-radius:50%;
+    border:2px solid rgba(var(--point-rgb), .9); box-shadow:0 0 40px rgba(var(--point-rgb), .7), inset 0 0 30px rgba(var(--point-rgb), .5); animation: ciShock 3s cubic-bezier(.1,.7,.2,1) both; }
+  @keyframes ciShock { 0% { transform:scale(.1); opacity:0; } 8% { opacity:1; } 30% { transform:scale(3.4); opacity:0; } 100% { transform:scale(3.4); opacity:0; } }
+  .skill-cutin.show.m-impact .ci-fx::after { background:#fff; animation: ciFlash 3s ease-out both; }
+  @keyframes ciFlash { 0% { opacity:0; } 6% { opacity:.55; } 16% { opacity:0; } 100% { opacity:0; } }
+  /* 라이즈 : 아래에서 피어오르는 불티 + 빛기둥 */
+  .skill-cutin.show.m-rise .ci-fx::before {
+    background-image: radial-gradient(2px 2px at 20% 30%, rgba(var(--point-rgb), .9), transparent), radial-gradient(1.5px 1.5px at 70% 60%, #fff, transparent),
+      radial-gradient(2px 2px at 45% 80%, rgba(var(--point-rgb), .8), transparent), radial-gradient(1.5px 1.5px at 85% 15%, rgba(255,255,255,.8), transparent);
+    background-size:180px 220px; animation: ciEmber 3s linear both; }
+  @keyframes ciEmber { 0% { background-position:0 0; opacity:0; } 12% { opacity:1; } 86% { opacity:1; } 100% { background-position:20px -260px; opacity:0; } }
+  .skill-cutin.show.m-rise .ci-fx::after { background: radial-gradient(40% 70% at 50% 100%, rgba(var(--point-rgb), .28), transparent 70%); animation: ciGlow 3s ease both; }
+  /* 글리치 : 주사선 + 갈라지는 색 띠 */
+  .skill-cutin.show.m-glitch .ci-fx::before { background: repeating-linear-gradient(0deg, rgba(0,0,0,.25) 0 1px, transparent 1px 3px); animation: ciGlow 3s ease both; }
+  .skill-cutin.show.m-glitch .ci-fx::after { mix-blend-mode:screen;
+    background: linear-gradient(180deg, transparent 18%, rgba(255,0,90,.18) 18% 21%, transparent 21% 57%, rgba(0,230,255,.18) 57% 59%, transparent 59% 78%, rgba(255,255,255,.1) 78% 79%, transparent 79%);
+    animation: ciBands 3s steps(1) both; }
+  @keyframes ciBands { 0% { opacity:0; } 3% { opacity:1; transform:translateY(0); } 7% { transform:translateY(-12%); } 11% { transform:translateY(9%); } 15% { opacity:0; }
+    86% { opacity:0; } 88% { opacity:1; transform:translateY(14%); } 92% { transform:translateY(-6%); } 96%, 100% { opacity:0; } }
+  /* 페이드 : 천천히 떠도는 빛망울 */
+  .skill-cutin.show.m-fade .ci-fx::before { filter:blur(30px);
+    background: radial-gradient(14vmin 14vmin at 22% 34%, rgba(var(--point-rgb), .35), transparent 70%), radial-gradient(10vmin 10vmin at 76% 62%, rgba(255,255,255,.16), transparent 70%),
+      radial-gradient(18vmin 18vmin at 62% 22%, rgba(var(--point-rgb), .22), transparent 70%), radial-gradient(12vmin 12vmin at 30% 78%, rgba(255,255,255,.1), transparent 70%);
+    animation: ciBokeh 3s ease-in-out both; }
+  @keyframes ciBokeh { 0% { opacity:0; transform:scale(1.15); } 25% { opacity:1; } 80% { opacity:1; } 100% { opacity:0; transform:scale(1) translateY(-3%); } }
+  /* 집중선 : 만화 집중선이 가운데로 몰리며 글자가 튀어나옴 */
+  .skill-cutin.show.m-burst .ci-fx::before { inset:-30%;
+    background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.07) 0deg .6deg, transparent .6deg 4.5deg, rgba(var(--point-rgb),.1) 4.5deg 5deg, transparent 5deg 10deg);
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0 30%, #000 62%); mask-image: radial-gradient(circle at 50% 50%, transparent 0 30%, #000 62%);
+    animation: ciBurstLines 3s steps(12) both; }
+  @keyframes ciBurstLines { 0% { transform:scale(1.4) rotate(0deg); opacity:0; } 6% { opacity:1; } 86% { opacity:1; transform:scale(1) rotate(6deg); } 100% { opacity:0; transform:scale(.9) rotate(7deg); } }
+  .skill-cutin.show.m-burst .skill-cutin-band > * { animation-name: ciBurst; }
+  @keyframes ciBurst { 0% { opacity:0; transform:scale(.4) rotate(-4deg); } 8% { opacity:1; transform:scale(1.12) rotate(1deg); } 13% { transform:scale(.97); } 18% { transform:none; }
+    84% { opacity:1; transform:scale(1.03); filter:blur(0); } 100% { opacity:0; transform:scale(1.25); filter:blur(6px); } }
+  /* 셔터 : 위아래 검은 막이 열리고(가장자리에 포인트 선) 닫히며 끝남 */
+  .skill-cutin.show.m-shutter .ci-fx::before, .skill-cutin.show.m-shutter .ci-fx::after { z-index:3; background:#050506; }
+  .skill-cutin.show.m-shutter .ci-fx::before { bottom:50%; transform-origin:top; box-shadow: inset 0 -2px 0 var(--point), 0 0 24px rgba(var(--point-rgb), .5); animation: ciShutter 3s cubic-bezier(.7,0,.2,1) both; }
+  .skill-cutin.show.m-shutter .ci-fx::after { top:50%; transform-origin:bottom; box-shadow: inset 0 2px 0 var(--point), 0 0 24px rgba(var(--point-rgb), .5); animation: ciShutter 3s cubic-bezier(.7,0,.2,1) both; }
+  @keyframes ciShutter { 0% { transform:scaleY(1); } 18% { transform:scaleY(.12); } 82% { transform:scaleY(.12); } 96%, 100% { transform:scaleY(1); } }
+  .skill-cutin.show.m-shutter .skill-cutin-band > * { animation-name: ciShutterIn; }
+  @keyframes ciShutterIn { 0%, 10% { opacity:0; letter-spacing:.3em; } 24% { opacity:1; letter-spacing:normal; } 82% { opacity:1; } 92%, 100% { opacity:0; } }
+  @media (prefers-reduced-motion: reduce) { .ci-fx { display:none; } }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -3342,6 +3452,7 @@
   </div>
 </div>
 <div id="skillCutin" class="skill-cutin" onclick="hideSkillCutin()">
+  <div class="ci-fx" id="skillCutinFx"></div>
   <div class="skill-cutin-band" id="skillCutinBand"></div>
 </div>
 <input type="color" id="myColorInput" value="#4a90ff" style="position:fixed; opacity:0; pointer-events:none; width:0; height:0;" onchange="onMyColorChange(this.value)">
@@ -3921,7 +4032,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.9";
+const EXPECTED_SERVER_BUILD = "2026-10-13.10";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -6159,7 +6270,7 @@ function myPageSkillData(c) {
     motion: d.cutin_motion || 'slash',
   };
 }
-const CUTIN_MOTIONS = [['slash', '슬래시'], ['impact', '임팩트'], ['rise', '라이즈'], ['glitch', '글리치'], ['fade', '페이드']];
+const CUTIN_MOTIONS = [['slash', '슬래시'], ['impact', '임팩트'], ['rise', '라이즈'], ['glitch', '글리치'], ['fade', '페이드'], ['burst', '집중선'], ['shutter', '셔터']];
 function saveCatchphrase() {
   if (!canEditMyPage()) return;
   socket.emit('set_my_skill_log', { name: myPageEditName(), catchphrase: document.getElementById('myPageCatchphrase').value.trim() });
@@ -6254,16 +6365,24 @@ function showSkillCutin(fx) {
   const esc = t => String(t || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   const motion = CUTIN_MOTIONS.some(m => m[0] === fx.motion) ? fx.motion : 'slash';
   // 이름 + 캐치프레이즈(공통), 그 아래 글(스킬명 · 본문) 또는 이미지
-  const head = `<div class="ci-name" data-t="${esc(fx.actor)}">${esc(fx.actor)}</div>`
+  // 이름 : 글자 뒤로 윤곽선 잔상 두 겹이 퍼지는 레이어드 타이포 (data-t를 ::before/::after가 그대로 씁니다)
+  const head = `<div class="ci-name" data-t="${esc(fx.actor)}"><span>${esc(fx.actor)}</span></div>`
     + (fx.catchphrase ? `<div class="ci-phrase">${esc(fx.catchphrase)}</div>` : '');
   let main = '';
   if (fx.type === 'image') {
     const u = esc(fx.image).replace(/'/g, '%27');
-    main = `<img class="ci-img" src="${u}" alt="">`;
+    // 그림 : HUD 프레임(모서리 꺾쇠 · 이중 테두리 · 눈금 · 훑는 빛 · 이름표)이 그려지며 열립니다
+    main = `<div class="ci-frame"><img class="ci-img" src="${u}" alt=""><i class="ci-scan"></i>
+      <i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>
+      <i class="tk t"></i><i class="tk b"></i><i class="tk l"></i><i class="tk r"></i>
+      <span class="ci-tag">SKILL<b>${esc(fx.title || '')}</b></span></div>`;
   } else if (fx.title || (fx.body || '').replace(/<[^>]*>/g, '').trim()) {
     // 본문은 서버에서 굵게/기울임만 남기고 정리된 HTML입니다(미리 보기는 내 화면에서만 표시).
-    main = `<div class="ci-skill">${fx.title ? `<div class="ci-title">${esc(fx.title)}</div>` : ''}${fx.body ? `<div class="ci-body">${fx.body}</div>` : ''}</div>`;
+    main = `<div class="ci-skill">${fx.title ? `<div class="ci-title"><em>SKILL</em>${esc(fx.title)}</div>` : ''}${fx.body ? `<div class="ci-body">${fx.body}</div>` : ''}</div>`;
   }
+  // 배경 효과 층 : 크게 흐르는 윤곽선 워터마크 + 모션별 효과(::before/::after)
+  const wm = esc(fx.title || fx.actor || '');
+  document.getElementById('skillCutinFx').innerHTML = wm ? `<div class="ci-wm"><span>${wm}&nbsp;&nbsp;·&nbsp;&nbsp;${wm}&nbsp;&nbsp;·&nbsp;&nbsp;${wm}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div>` : '';
   band.innerHTML = fx.type === 'image' ? `${main}<div class="ci-head">${head}</div>` : `<div class="ci-head">${head}</div>${main}`;
   el.className = 'skill-cutin';
   void el.offsetWidth;  // 애니메이션을 처음부터 다시 재생
