@@ -4129,7 +4129,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.12";
+const EXPECTED_SERVER_BUILD = "2026-10-13.13";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5288,7 +5288,7 @@ function logLineParts(text, tag) {
   return { html, tone };
 }
 function decorateLogText(text, tag) { return logLineParts(text, tag).html; }
-function formatLogLineHtml(l, noIcon) {
+function formatLogLineHtml(l, noIcon, asHead) {
   l = { ...l, text: stripLegacyEmoji(l.text) };
   if (l.tag !== 'hp') l.text = siteLabelize(l.text);
   if (l.tag === 'round') {
@@ -5296,7 +5296,8 @@ function formatLogLineHtml(l, noIcon) {
     return `<div class="logline tag-round${main ? ' is-round-main' : ''}">${roundHeadHtml(l.text)}</div>`;
   }
   if (l.tag === 'arrow') return '<div class="logsep"></div>';
-  const head = LOG_GROUP_START_TAGS.has(l.tag);
+  // 블록 첫 줄(누가 무엇을)만 굵게 : 블록을 그리는 쪽이 알려주면(asHead) 그 값을, 아니면 태그로 판단합니다.
+  const head = asHead !== undefined ? asHead : LOG_GROUP_START_TAGS.has(l.tag);
   const { html, tone } = logLineParts(l.text, l.tag);
   const ic = tone === 'note' ? 'fa-solid fa-turn-up fa-rotate-90' : tone === 'warn' ? 'fa-solid fa-triangle-exclamation' : (LOG_TAG_ICON[l.tag] || '');
   // 직군 색은 블록 왼쪽 선이 맡고, 글줄은 모두 같은 색으로 둡니다(아이콘 칸 + 글 칸 두 칸 정렬).
@@ -5307,6 +5308,7 @@ function formatLogLineHtml(l, noIcon) {
 // 무채색(기본 테두리색) 그대로 둡니다.
 function logActionClass(head) {
   if (head.tag === 'defend') return 'def';
+  if (head.tag === 'heal') return 'heal';
   if (head.tag !== 'action') return '';
   const t = head.text;
   if (t.startsWith('[')) return '';
@@ -5397,8 +5399,19 @@ function formatMoveGroupHtml(g) {
   return `<div class="logblock moves"><div class="logline group-start tag-action"><span class="li"><i class="fa-solid fa-shoe-prints"></i></span>`
     + `<span class="lt">이동 <span class="lg-lab">${g.moves.length}명</span></span></div>${rows}</div>`;
 }
+// "이름 【스킬】 …" 로 시작하는 줄이면 {who, skill}, 아니면 null
+const LOG_SKILL_HEAD_RX = /^(\S+) 【([^】]{1,20})】/;
+function logSkillHead(l) {
+  const m = l && typeof l.text === 'string' && l.text.match(LOG_SKILL_HEAD_RX);
+  return m ? { who: m[1], skill: m[2] } : null;
+}
+// 마스 레이드는 러너 팀이 항상 선공이라, 선공 결정(민첩 비교 · 규칙 안내) 줄을 로그창에 띄우지 않습니다.
+const LOG_FIRST_TEAM_RX = /^(\[선공 결정\]|→ 민첩 합산이 더 높은|민첩 합산 동점|→ 주사위 결과|\[규칙\] .*항상 선공)/;
+function dropFirstTeamLines(lines) {
+  return BATTLE_TYPE === 'mass_raid' ? lines.filter(l => !(l.tag === 'system' && LOG_FIRST_TEAM_RX.test(l.text || ''))) : lines;
+}
 function formatLogHtml(lines) {
-  return splitLogIntoSections(groupPhaseMoves(mergeLogRuns(lines || []))).map(section => {
+  return splitLogIntoSections(groupPhaseMoves(mergeLogRuns(dropFirstTeamLines(lines || [])))).map(section => {
     const head = section[0];
     if (head.tag === 'movegroup') return formatMoveGroupHtml(head);
     if (head.tag === 'round' && /최종 결과/.test(head.text || '')) return formatRoundSummaryHtml(section);
@@ -5415,11 +5428,11 @@ function formatLogHtml(lines) {
       flush();
       return out;
     }
-    const isGroup = LOG_GROUP_START_TAGS.has(head.tag);
+    const isGroup = LOG_GROUP_START_TAGS.has(head.tag) || !!logSkillHead(head);
     const actionCls = isGroup ? logActionClass(head) : '';
     const cls = `logblock${isGroup ? '' : ' cont'}${actionCls ? ' ' + actionCls : ''}`;
     // 블록 첫 줄(⚔ NOVA 공격 → E)과 바로 아래 줄(⚔ 공격 수치)의 아이콘이 겹치므로, 아래 줄이 있으면 첫 줄 아이콘은 뺍니다.
-    return `<div class="${cls}">${section.map((l, i) => formatLogLineHtml(l, i === 0 && isGroup && section.length > 1)).join('')}</div>`;
+    return `<div class="${cls}">${section.map((l, i) => formatLogLineHtml(l, i === 0 && isGroup && section.length > 1, i === 0 && isGroup)).join('')}</div>`;
   }).join('');
 }
 
@@ -5440,11 +5453,14 @@ let logRevealBusy = { public: false, operator: false };
 let logInitialized = { public: false, operator: false };
 
 function splitLogIntoSections(lines) {
-  // group-start 태그(action/defend/taunt/round)가 나오면 새 섹션의 시작으로 봅니다.
+  // group-start 태그(action/defend/taunt/round)나 "이름 【스킬】 …" 줄이 나오면 새 섹션의 시작으로 봅니다.
+  // 같은 사람의 같은 스킬 줄이 이어지면(환류 : 본인 회복 → 흡수 버프 부여) 한 블록으로 둡니다.
   const sections = [];
   let current = [];
   lines.forEach(line => {
-    if ((LOG_GROUP_START_TAGS.has(line.tag) || line.tag === 'movegroup') && current.length) {
+    const sk = logSkillHead(line), hk = current.length ? logSkillHead(current[0]) : null;
+    const sameSkill = !!(sk && hk && sk.who === hk.who && sk.skill === hk.skill);
+    if ((LOG_GROUP_START_TAGS.has(line.tag) || line.tag === 'movegroup' || sk) && !sameSkill && current.length) {
       sections.push(current);
       current = [];
     }

@@ -36,7 +36,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.12"
+SERVER_BUILD = "2026-10-13.13"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -1759,7 +1759,8 @@ def on_start_battle(data):
     if room.battle_type == "lounge":
         emit("action_error", {"message": "일반 룸에서는 전투를 할 수 없어요."})
         return
-    forced_first_team = Battle.TEAM_A if room.battle_type == "siege" else None
+    # 공성전 · 마스 레이드는 러너 팀(1팀)이 항상 선공입니다(마스 레이드 전조 피해도 이 순서를 전제로 합니다).
+    forced_first_team = Battle.TEAM_A if room.battle_type in ("siege", "mass_raid") else None
     formula_overrides = config.load_profile_overrides(room.battle_type)
     site_auto_defense = room.battle_type in ("siege", "mass_raid")
     grid_size = GRID_SIZES.get(room.battle_type)
