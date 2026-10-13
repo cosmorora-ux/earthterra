@@ -1288,6 +1288,7 @@
      ================================================================ */
   .app-shell { height:100dvh; }
   .sidebar .m-chat-btn { display:none; }
+  .member-header .m-userlist-btn { display:none; }
   .member-header .m-chat-close { display:none; align-items:center; justify-content:center; width:32px; height:32px; margin-left:4px;
     background:none; border:none; color: var(--muted); font-size:18px; cursor:pointer; border-radius:8px; }
   .member-header .m-chat-close:hover { color: var(--text); background: var(--card); }
@@ -2464,7 +2465,12 @@
     /* 전투 헤더 오른쪽 위 : 유저 리스트 · 채팅 */
     .topbar.v2 { grid-template-areas:"room sep fmt . tools" "round round round round timer" !important; }
     .topbar.v2 #liveClock { display:none; }
-    .topbar .m-battle-tools { grid-area:tools; display:flex; gap:6px; justify-self:end; }
+    .topbar .m-battle-tools { display:none !important; }
+    /* 전투 룸 : 하단 탭에 채팅, 유저 리스트는 채팅창 위쪽 도구에서 엽니다. 채팅은 채팅 탭을 다시 누르면 닫힙니다(X 없음). */
+    body.is-battle .sidebar #sidebarChatBtn { display:flex !important; }
+    body.m-chat-open .sidebar #sidebarChatBtn { color: var(--point); }
+    body.is-battle .member-header .m-userlist-btn { display:inline-flex; }
+    .member-header .m-chat-close { display:none !important; }
     .m-battle-tools button { position:relative; width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.05);
       color:#d6d6db; font-size:14px; cursor:pointer; }
     .m-battle-tools .notice-dot { top:5px; right:5px; }
@@ -3125,6 +3131,7 @@
           <button onclick="closeGmMenu(); downloadLogs()"><i class="fa-solid fa-download"></i> 로그 내려받기</button>
         </div>
       </span>
+      <button class="chat-search-btn m-userlist-btn" onclick="toggleUserInfoPanel()" data-tip="유저 리스트"><i class="fa-solid fa-list-ul"></i></button>
       <button class="m-chat-close" onclick="toggleMobileChat(false)" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </span>
   </div>
@@ -3499,10 +3506,17 @@ document.querySelector('.sidebar').addEventListener('click', (e) => {
     e.stopPropagation(); closeNotices(); return;
   }
   const closers = { myPageModal: closeMyPage, noticeModal: closeNotices };
+  let closed = 0;
   document.querySelectorAll('.modal-overlay').forEach(m => {
     if (m.id === 'uiDialog' || getComputedStyle(m).display === 'none') return;
     if (closers[m.id]) closers[m.id](); else m.style.display = 'none';
+    closed++;
   });
+  // 채팅 탭 : 채팅 위에 유저 리스트 등이 떠 있으면 그것만 닫고 채팅으로 돌아오고, 아니면 채팅을 열고 닫습니다.
+  if (e.target.closest('#sidebarChatBtn')) {
+    if (closed && document.body.classList.contains('m-chat-open')) e.stopPropagation();
+    return;
+  }
   document.body.classList.remove('m-chat-open');
 }, true);
 
