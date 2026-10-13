@@ -1857,7 +1857,7 @@ def on_telegraph_reveal(data):
             cells.append([x, y])
     room.telegraph_cells = cells
     room.telegraph_round_no = battle.round_no
-    text = f"전조 공개 : {len(cells)}칸에 곧 피해가 발생합니다."
+    text = f"전조 공개 : {len(cells)}칸에 곧 피해가 발생합니다." if cells else "전조 공개 : 이번 라운드는 피해 구역이 없습니다."
     battle.log_event(text, tag="system")
     post_system_chat(room, text, nickname="전조")
     broadcast_state(room)

@@ -2957,34 +2957,28 @@
   .lg-skill { display:inline; padding:1px 6px; margin:0 1px; border-radius:4px; font-weight:700; color:#fff; background: rgba(var(--point-rgb), .22); }
   .lg-lab { display:inline; padding:1px 6px; margin-right:6px; border-radius:4px; font-size:.8em; font-weight:700; color: var(--muted); background: rgba(255,255,255,.06); }
   .logline.tag-heal .lg-lab { color: var(--role-메딕); background: rgba(255,224,102,.08); }
-  .lg-plus { font-weight:800; color:#7ee2a0; font-variant-numeric: tabular-nums; }
+  .lg-plus { font-weight:700; color:#e6e6ea; font-variant-numeric: tabular-nums; }
+  .lg-it { white-space:nowrap; }
   .lg-hp { margin-left:6px; font-size:.88em; color: var(--muted); font-variant-numeric: tabular-nums; white-space:nowrap; }
   .lg-hp > span { opacity:.8; }
   .lg-hp i { font-size:.7em; margin:0 3px; opacity:.55; }
   .lg-hp b { color:#c8cad0; font-weight:700; }
   .lg-hp em { font-style:normal; font-weight:700; margin-left:4px; }
-  .lg-hp em.up { color:#7ee2a0; } .lg-hp em.down { color:#ff7a7a; }
-  /* 채팅창 스킬 사용 기록 */
-  .chat-line.is-skill { display:flex; align-items:stretch; gap:6px; margin:10px 0; }
-  .skill-rec { position:relative; flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; cursor:pointer;
-    padding:10px 44px 10px 14px; border-radius:12px; overflow:hidden; color: var(--text);
-    background: radial-gradient(120% 160% at 0% 50%, rgba(var(--point-rgb), .3) 0%, rgba(var(--point-rgb), .06) 55%, rgba(255,255,255,.02) 100%);
-    border:1px solid rgba(var(--point-rgb), .45); box-shadow: 0 0 22px rgba(var(--point-rgb), .15), inset 0 1px 0 rgba(255,255,255,.08); transition: transform .15s, box-shadow .15s; }
-  .skill-rec::before { content:""; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:0 3px 3px 0; background: var(--sc); box-shadow:0 0 10px var(--sc); }
-  .skill-rec::after { content:""; position:absolute; inset:0; pointer-events:none;
-    background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.18) 50%, transparent 60%) no-repeat; background-size:260% 100%; animation: armSweep 1.2s ease-out 1 both; }
-  .skill-rec:hover { transform:translateY(-1px); box-shadow: 0 0 28px rgba(var(--point-rgb), .3), inset 0 1px 0 rgba(255,255,255,.1); }
+  .lg-hp em.up { color: var(--muted); } .lg-hp em.down { color:#e08a8a; }
+  /* 채팅창 스킬 사용 기록 : 일반 채팅 줄 + 작은 빛 알약 카드 */
+  .skill-rec { position:relative; display:inline-flex; align-items:center; gap:10px; max-width:100%; margin-top:4px; padding:7px 8px 7px 10px;
+    border-radius:10px; color: var(--text); cursor:pointer; text-align:left;
+    border:1px solid rgba(var(--point-rgb), .45);
+    background: radial-gradient(130% 160% at 0% 50%, rgba(var(--point-rgb), .3) 0%, rgba(var(--point-rgb), .07) 60%, rgba(255,255,255,.02) 100%);
+    box-shadow: 0 0 16px rgba(var(--point-rgb), .14), inset 0 1px 0 rgba(255,255,255,.08); transition: box-shadow .15s, border-color .15s; }
+  .skill-rec:hover { border-color: rgba(var(--point-rgb), .7); box-shadow: 0 0 22px rgba(var(--point-rgb), .28), inset 0 1px 0 rgba(255,255,255,.1); }
   .skill-rec.nofx { cursor:default; }
-  .skill-rec.nofx:hover { transform:none; }
-  .sr-top { display:flex; align-items:center; gap:8px; font-size:12px; color: var(--muted); }
-  .sr-k { font-size:10px; font-weight:800; letter-spacing:.32em; padding:1px 6px 1px calc(6px + .32em); border-radius:3px; color: var(--on-accent); background: var(--point); }
-  .sr-who { color: var(--sc); font-weight:800; font-size:13px; }
-  .sr-top .time { font-size:11px; }
-  .sr-name { font-size:24px; line-height:1.15; font-weight:900; font-style:italic; letter-spacing:-0.01em; transform:skewX(-6deg); transform-origin:left;
-    background: linear-gradient(180deg, #fff 0%, #fff 50%, var(--point-soft) 100%); -webkit-background-clip:text; background-clip:text; color:transparent;
-    filter: drop-shadow(0 2px 10px rgba(var(--point-rgb), .45)); }
-  .sr-play { position:absolute; right:14px; top:50%; transform:translateY(-50%); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    font-size:11px; color: var(--on-accent); background: var(--point); box-shadow:0 0 14px rgba(var(--point-rgb), .6); }
+  .sr-k { flex:none; font-size:9.5px; font-weight:800; letter-spacing:.3em; padding:2px 5px 2px calc(5px + .3em); border-radius:4px; color: var(--on-accent); background: var(--point); }
+  .sr-name { min-width:0; font-size:17px; font-weight:800; letter-spacing:-0.01em; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sr-play { flex:none; display:inline-flex; align-items:center; gap:5px; margin-left:4px; height:24px; padding:0 9px; border-radius:6px; font-size:11.5px; font-weight:700;
+    color:#fff; background: rgba(255,255,255,.08); }
+  .sr-play i { font-size:9px; color: var(--point); }
+  .skill-rec:hover .sr-play { background: rgba(var(--point-rgb), .3); }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -5147,11 +5141,17 @@ function decorateLogText(text, tag) {
   return text.split(/(<[^>]+>)/).map((seg, i) => {
     if (i % 2) return seg;
     let t = seg;
+    // 아이콘 칸이 따로 있으므로 글 앞의 이모지는 뺍니다.
+    t = t.replace(/^\s*(?:🛡|🩸|⚔|✚|❤)\uFE0F?\s*/u, '');
+    // "이름 HP 200 → 168" 줄은 다른 줄과 같은 체력 표시로
+    t = t.replace(/^(.+?) HP (\d+)\s*→\s*(\d+)\s*$/, (m, n, a, b) => `${n} (${a}→${b})`);
     t = t.replace(/^\s*\[([^\]]{1,30})\]\s*/, (m, lab) => `<span class="lg-lab">${lab.replace(/\s*-\s*/g, ' · ')}</span>`);
     t = t.replace(/【([^】]{1,20})】/g, '<span class="lg-skill">$1</span>');
-    t = t.replace(/\((\d+)\s*→\s*(\d+)\)/g, (m, a, b) => {
+    // 체력 변화 : 바뀌지 않았으면(이미 가득 찬 상태 등) 표시하지 않습니다.
+    t = t.replace(/\s*\((\d+)\s*→\s*(\d+)\)/g, (m, a, b) => {
       const d = (+b) - (+a);
-      return `<span class="lg-hp"><span>${a}</span><i class="fa-solid fa-arrow-right"></i><b>${b}</b>${d ? `<em class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${d}</em>` : ''}</span>`;
+      if (!d) return '';
+      return ` <span class="lg-hp"><span>${a}</span><i class="fa-solid fa-arrow-right"></i><b>${b}</b><em class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${d}</em></span>`;
     });
     if (tag === 'heal') t = t.replace(/(^|\s)\+(\d+)(?=\s|$)/g, '$1<span class="lg-plus">+$2</span>');
     t = t.replace(/(본인 회복|회복)\s+(\d+)(?=\s|<|$)/g, '$1 <span class="lg-plus">+$2</span>');
@@ -5218,8 +5218,26 @@ function formatRoundSummaryHtml(section) {
       </div>`
     + rest.map(l => formatLogLineHtml(l, false)).join('');
 }
+// 같은 [분류]로 시작하는 회복 줄이 연달아 나오면("[환류 - 메딕 회복] AG +18 (240→240)" 여러 줄)
+// 한 줄로 묶습니다 : [환류 · 메딕 회복] AG +18 · F +24 · C +36 …
+function mergeLogRuns(lines) {
+  const out = [];
+  const RX = /^\s*\[([^\]]{1,30})\]\s*(\S+)\s+\+(\d+)(.*)$/;
+  lines.forEach(l => {
+    const m = l.tag === 'heal' && typeof l.text === 'string' && l.text.match(RX);
+    const prev = out[out.length - 1];
+    if (m && prev && prev._merge && prev._merge.label === m[1]) { prev._merge.items.push({ name: m[2], amt: m[3], rest: m[4] }); return; }
+    out.push(m ? { ...l, _merge: { label: m[1], items: [{ name: m[2], amt: m[3], rest: m[4] }] } } : l);
+  });
+  return out.map(l => {
+    if (!l._merge || l._merge.items.length < 2) return l._merge ? { tag: l.tag, role: l.role, text: l.text } : l;
+    const items = l._merge.items.map(it => `<span class="lg-it">${it.name} +${it.amt}${/정산 후/.test(it.rest) ? '*' : ''}</span>`).join(' · ');
+    const note = l._merge.items.some(it => /정산 후/.test(it.rest)) ? ' (*피해 정산 후 적용)' : '';
+    return { tag: l.tag, role: l.role, text: `[${l._merge.label}] ${items}${note}` };
+  });
+}
 function formatLogHtml(lines) {
-  return splitLogIntoSections(lines || []).map(section => {
+  return splitLogIntoSections(mergeLogRuns(lines || [])).map(section => {
     const head = section[0];
     if (head.tag === 'round' && /최종 결과/.test(head.text || '')) return formatRoundSummaryHtml(section);
     if (head.tag === 'round') {
@@ -5708,17 +5726,20 @@ function fmtChat(entry) {
   const delBtn = canDel ? `<button class="chat-del" onclick="deleteChatMessage('${entry.id}')"><i class="fa-solid fa-trash-can"></i></button>` : '';
   const idAttr = entry.id ? ` data-chat-id="${entry.id}"` : '';
   if (entry.category === 'skill') {
-    // 스킬 사용 기록 : 굵은 기울임 그라데이션 글자 카드, 누르면 그때의 컷인을 다시 봅니다.
+    // 스킬 사용 기록 : 다른 채팅 줄과 같은 자리(프로필 · 이름 · 시간) 아래에 작은 스킬 카드, 누르면 컷인 다시 보기
     const c = typeof sfxCharacter === 'function' ? sfxCharacter(entry.nickname) : null;
     const who = c ? displayNameOf(c) : entry.nickname;
-    const col = chatProfileOf(entry.nickname).color || 'var(--point)';
+    const prof = chatProfileOf(entry.nickname);
+    const ini = shopEsc([...(who || '?').trim()][0] || '?');
+    const av = prof.avatar_url ? `<div class="chat-avatar" style="background-image:url('${prof.avatar_url}');"></div>`
+      : `<div class="chat-avatar initial" style="--ac:${prof.color || '#5a5a62'}">${ini}</div>`;
     const can = !!entry.fx;
-    return `<div class="chat-line is-skill"${idAttr}>
-      <button type="button" class="skill-rec ${can ? '' : 'nofx'}" ${can ? `onclick="replaySkillCutin('${entry.id}')" data-tip="컷인 다시 보기"` : ''} style="--sc:${col}">
-        <span class="sr-top"><span class="sr-k">SKILL</span><b class="sr-who">${shopEsc(who || '')}</b><span class="time">${formatChatTime(entry.time)}</span></span>
-        <span class="sr-name">${shopEsc(entry.skill || entry.text || '')}</span>
-        ${can ? '<i class="fa-solid fa-play sr-play"></i>' : ''}
-      </button>${delBtn}</div>`;
+    return `<div class="chat-line is-skill"${idAttr}>${av}
+      <div class="chat-body"><div class="chat-meta"><b${prof.color ? ` style="color:${prof.color};"` : ''}>${shopEsc(who || '')}</b><span class="time">${formatChatTime(entry.time)}</span></div>
+        <button type="button" class="skill-rec ${can ? '' : 'nofx'}" ${can ? `onclick="replaySkillCutin('${entry.id}')"` : ''}>
+          <span class="sr-k">SKILL</span><span class="sr-name">${shopEsc(entry.skill || entry.text || '')}</span>
+          ${can ? '<span class="sr-play"><i class="fa-solid fa-play"></i>컷인</span>' : ''}
+        </button></div>${delBtn}</div>`;
   }
   if (entry.category === 'round') {
     const main = /^round\s*\d+/i.test((entry.text || '').trim());
