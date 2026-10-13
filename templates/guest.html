@@ -215,27 +215,70 @@
   .idc-level .st.ok { color: var(--text); }
 
   /* ---------- 스킬 이펙트 컷인 (딤 + 화면 중앙) ---------- */
-  .skill-cutin { position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0); pointer-events:none; }
-  .skill-cutin.show { display:flex; pointer-events:auto; animation: cutinDim 2.8s ease forwards; }
-  .skill-cutin-band { position:relative; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:34px 24px; text-align:center; }
-  .skill-cutin.text .skill-cutin-band { background:linear-gradient(90deg, transparent, rgba(12,12,14,.85) 18%, rgba(12,12,14,.85) 82%, transparent); border-top:1px solid rgba(255,255,255,.14); border-bottom:1px solid rgba(255,255,255,.14); }
-  .skill-cutin.show .skill-cutin-band { animation: cutinBand 2.8s cubic-bezier(.2,.8,.2,1) forwards; }
-  .skill-cutin-title { font-size:clamp(28px, 4.2vw, 52px); font-weight:800; letter-spacing:.04em; color:#fff; }
-  .skill-cutin-body { margin-top:10px; font-size:clamp(15px, 1.6vw, 20px); color:#d6d6da; line-height:1.6; max-width:760px; white-space:pre-wrap; }
-  .skill-cutin-actor { margin-top:14px; font-size:13px; letter-spacing:.2em; color: var(--muted); }
-  .skill-cutin.show .skill-cutin-title { animation: cutinText 2.8s cubic-bezier(.2,.8,.2,1) forwards; }
-  .skill-cutin.show .skill-cutin-body, .skill-cutin.show .skill-cutin-actor { animation: cutinText 2.8s cubic-bezier(.2,.8,.2,1) .08s both; }
-  /* 이미지 컷인 : 화면 가로 띠(높이 최소 260px ~ 최대 620px, 화면 높이의 52%)를 원본 크기와 상관없이 꽉 채웁니다.
-     앞 이미지는 비율을 지킨 채 띠 안에서 가장 크게(작은 이미지는 키워서), 남는 양옆은 같은 이미지를 흐리게 깔아 채웁니다. */
-  .skill-cutin.image .skill-cutin-band { height:clamp(260px, 52vh, 620px); padding:0; overflow:hidden; background:#000;
-    border-top:1px solid rgba(255,255,255,.16); border-bottom:1px solid rgba(255,255,255,.16); }
-  .skill-cutin-bgimg { position:absolute; inset:-40px; background:center / cover no-repeat; filter:blur(30px) brightness(.42) saturate(1.25); }
-  .skill-cutin-img { position:relative; width:100%; height:100%; max-width:min(94vw, 1500px); object-fit:contain; }
-  .skill-cutin.show .skill-cutin-img { animation: cutinImg 2.8s cubic-bezier(.2,.8,.2,1) forwards; }
-  .skill-cutin.show .skill-cutin-bgimg { animation: cutinImgBg 2.8s ease-out forwards; }
-  @keyframes cutinImg { 0% { opacity:0; transform:scale(1.08); } 14% { opacity:1; transform:scale(1); } 85% { opacity:1; transform:scale(1.015); } 100% { opacity:0; transform:scale(1.03); } }
-  @keyframes cutinImgBg { 0% { transform:scale(1.15); } 100% { transform:scale(1); } }
-  @media (max-width:560px) { .skill-cutin.image .skill-cutin-band { height:clamp(200px, 42vh, 420px); } }
+  /* ================================================================
+     스킬 컷인 : 화면을 어둡게 깔고 [캐릭터 이름 · 캐치프레이즈] + [스킬명·본문 또는 이미지]를 크게 띄웁니다.
+     띠(배경 줄) 없이 글자/이미지만. 등장 모션 5종(슬래시 · 임팩트 · 라이즈 · 글리치 · 페이드)은 마이페이지에서 고릅니다.
+     ================================================================ */
+  .skill-cutin { position:fixed; inset:0; z-index:9000; display:none; align-items:center; justify-content:center; pointer-events:none; }
+  .skill-cutin.show { display:flex; pointer-events:auto; animation: ciDim 3s ease forwards; }
+  .skill-cutin.show::before { content:""; position:absolute; inset:0; pointer-events:none;
+    background: radial-gradient(ellipse at center, rgba(var(--point-rgb),.16) 0%, transparent 55%); animation: ciGlow 3s ease forwards; }
+  @keyframes ciDim { 0% { background:rgba(0,0,0,0); } 10% { background:rgba(0,0,0,.78); } 86% { background:rgba(0,0,0,.78); } 100% { background:rgba(0,0,0,0); } }
+  @keyframes ciGlow { 0% { opacity:0; } 14% { opacity:1; } 86% { opacity:1; } 100% { opacity:0; } }
+  .skill-cutin-band { position:relative; display:flex; flex-direction:column; align-items:center; text-align:center; padding:24px; max-width:min(92vw, 1200px); }
+  .ci-head { display:flex; flex-direction:column; align-items:center; }
+  .ci-name { font-size:clamp(42px, 7.2vw, 104px); font-weight:900; line-height:1.04; letter-spacing:-0.03em; color:#fff;
+    text-shadow:0 6px 40px rgba(0,0,0,.75); word-break:keep-all; }
+  .ci-phrase { margin-top:14px; font-size:clamp(17px, 2.3vw, 30px); font-weight:600; letter-spacing:.01em; color: var(--point-soft);
+    text-shadow:0 2px 18px rgba(0,0,0,.85); word-break:keep-all; }
+  .ci-phrase::before { content:"“"; margin-right:.15em; opacity:.7; }
+  .ci-phrase::after { content:"”"; margin-left:.15em; opacity:.7; }
+  .ci-skill { margin-top:26px; display:flex; flex-direction:column; align-items:center; }
+  .ci-skill::before { content:""; width:64px; height:3px; border-radius:2px; background: var(--point); margin-bottom:18px; box-shadow:0 0 18px rgba(var(--point-rgb),.7); }
+  .ci-title { font-size:clamp(22px, 3vw, 40px); font-weight:800; color:#fff; letter-spacing:-0.01em; text-shadow:0 3px 20px rgba(0,0,0,.8); }
+  .ci-body { margin-top:10px; font-size:clamp(15px, 1.7vw, 21px); line-height:1.65; color:#e6e6ea; max-width:780px; white-space:pre-wrap; text-shadow:0 2px 14px rgba(0,0,0,.85); }
+  /* 이미지 : 원본 크기와 상관없이 높이 220~600px(화면의 52%) 안에서 가장 크게, 너비는 화면의 88%까지 */
+  .ci-img { display:block; height:clamp(220px, 52vh, 600px); width:auto; max-width:min(88vw, 1300px); object-fit:contain; filter:drop-shadow(0 24px 60px rgba(0,0,0,.65)); }
+  .skill-cutin.image .ci-head { margin-top:18px; }
+  .skill-cutin.image .ci-name { font-size:clamp(30px, 4.6vw, 64px); }
+  @media (max-width:560px) { .ci-img { height:clamp(180px, 40vh, 380px); } }
+
+  /* 모션 : 머리(이름·캐치프레이즈)가 먼저, 본문/이미지가 0.12초 뒤에 따라옵니다. 전체 3초 */
+  .skill-cutin.show .skill-cutin-band > * { animation-duration:3s; animation-fill-mode:both; animation-timing-function:cubic-bezier(.2,.8,.2,1); }
+  .skill-cutin.show .skill-cutin-band > * + * { animation-delay:.12s; }
+  /* 1. 슬래시 : 비스듬히 베고 들어와서 반대쪽으로 빠짐 + 빛줄기 한 번 */
+  .skill-cutin.show.m-slash .skill-cutin-band > * { animation-name: ciSlash; }
+  @keyframes ciSlash { 0% { opacity:0; transform:translateX(-140px) skewX(-20deg); filter:blur(8px); } 14% { opacity:1; transform:translateX(0) skewX(0); filter:blur(0); }
+    84% { opacity:1; transform:translateX(10px); } 100% { opacity:0; transform:translateX(140px) skewX(16deg); filter:blur(6px); } }
+  .skill-cutin.show.m-slash::after { content:""; position:absolute; left:-30%; top:50%; width:160%; height:2px; pointer-events:none;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.9), rgba(var(--point-rgb),.9), transparent); transform:rotate(-8deg) scaleX(0); transform-origin:left;
+    animation: ciSlashLine 3s cubic-bezier(.2,.8,.2,1) forwards; box-shadow:0 0 20px rgba(var(--point-rgb),.8); }
+  @keyframes ciSlashLine { 0% { transform:rotate(-8deg) scaleX(0); opacity:1; } 12% { transform:rotate(-8deg) scaleX(1); opacity:1; } 22% { opacity:0; } 100% { opacity:0; transform:rotate(-8deg) scaleX(1); } }
+  /* 2. 임팩트 : 크게 박히면서 화면이 한 번 흔들림 */
+  .skill-cutin.show.m-impact .skill-cutin-band > * { animation-name: ciImpact; }
+  @keyframes ciImpact { 0% { opacity:0; transform:scale(1.9); filter:blur(14px); } 10% { opacity:1; transform:scale(.96); filter:blur(0); } 13% { transform:scale(1.03) translate(-6px, 3px); }
+    16% { transform:scale(1) translate(5px, -2px); } 19% { transform:translate(-2px, 1px); } 22% { transform:none; } 84% { opacity:1; transform:scale(1.02); } 100% { opacity:0; transform:scale(.9); filter:blur(6px); } }
+  /* 3. 라이즈 : 아래에서 떠오르며 글자 간격이 모임 */
+  .skill-cutin.show.m-rise .skill-cutin-band > * { animation-name: ciRise; }
+  @keyframes ciRise { 0% { opacity:0; transform:translateY(70px); letter-spacing:.25em; } 18% { opacity:1; transform:translateY(0); letter-spacing:normal; }
+    84% { opacity:1; transform:translateY(-6px); } 100% { opacity:0; transform:translateY(-40px); } }
+  /* 4. 글리치 : 색이 갈라지며 지직거리다 선명해짐 */
+  .skill-cutin.show.m-glitch .skill-cutin-band > * { animation-name: ciGlitch; }
+  @keyframes ciGlitch { 0% { opacity:0; transform:translateX(-12px); filter:drop-shadow(6px 0 rgba(255,0,90,.9)) drop-shadow(-6px 0 rgba(0,230,255,.9)); }
+    4% { opacity:1; transform:translateX(10px) skewX(12deg); } 7% { transform:translateX(-6px); clip-path:inset(20% 0 40% 0); } 10% { transform:translateX(4px) skewX(-6deg); clip-path:inset(60% 0 5% 0); }
+    13% { transform:none; clip-path:inset(0 0 0 0); filter:drop-shadow(2px 0 rgba(255,0,90,.6)) drop-shadow(-2px 0 rgba(0,230,255,.6)); } 18% { filter:none; }
+    84% { opacity:1; transform:none; filter:none; } 88% { transform:translateX(8px); clip-path:inset(30% 0 30% 0); filter:drop-shadow(4px 0 rgba(255,0,90,.8)) drop-shadow(-4px 0 rgba(0,230,255,.8)); }
+    92% { transform:translateX(-8px); clip-path:inset(0 0 0 0); } 100% { opacity:0; transform:translateX(16px); } }
+  /* 5. 페이드 : 흐림에서 천천히 선명하게, 조용하고 우아하게 */
+  .skill-cutin.show.m-fade .skill-cutin-band > * { animation-name: ciFade; animation-timing-function:ease; }
+  @keyframes ciFade { 0% { opacity:0; filter:blur(12px); transform:scale(1.04); } 22% { opacity:1; filter:blur(0); transform:scale(1); } 80% { opacity:1; transform:scale(.99); } 100% { opacity:0; filter:blur(8px); } }
+  /* 마이페이지 : 캐치프레이즈 · 등장 모션 */
+  .mypage.v2 .mp-cutin-opts { display:grid; grid-template-columns:auto 1fr; align-items:center; gap:10px 12px; margin-bottom:14px; }
+  .mypage.v2 .mp-cutin-opts .idc-field { padding:10px 12px; }
+  .mypage.v2 .mp-motions { display:flex; flex-wrap:wrap; gap:6px; }
+  .mypage.v2 .mp-motions button { height:30px; padding:0 12px; border-radius:999px; border:1px solid var(--line); background:none; color: var(--muted); font-size:13px; font-weight:600; cursor:pointer; }
+  .mypage.v2 .mp-motions button.on { color: var(--point); border-color: var(--point); background: rgba(var(--point-rgb),.1); }
+  .mypage.v2 .mp-motions button:disabled { cursor:default; }
   @keyframes cutinDim { 0% { background:rgba(0,0,0,0); } 10% { background:rgba(0,0,0,.62); } 85% { background:rgba(0,0,0,.62); } 100% { background:rgba(0,0,0,0); } }
   @keyframes cutinBand { 0% { opacity:0; transform:scaleY(.2); } 12% { opacity:1; transform:scaleY(1); } 85% { opacity:1; transform:scaleY(1); } 100% { opacity:0; transform:scaleY(.6); } }
   @keyframes cutinText { 0% { opacity:0; transform:translateX(-60px); filter:blur(6px); } 16% { opacity:1; transform:translateX(0); filter:blur(0); } 82% { opacity:1; transform:translateX(8px); } 100% { opacity:0; transform:translateX(60px); filter:blur(4px); } }
@@ -1224,8 +1267,6 @@
   /* 라운드/단계 안내(제목 폰트) */
   .chat-line.is-round { margin:0 0 8px; }
   .chat-line.is-round.is-round-main { margin:16px 0 2px; }
-  .skill-cutin-title { line-height:1.15; letter-spacing:-0.025em; }
-  .skill-cutin-body { letter-spacing:-0.01em; }
 
   /* 마우스 클릭 물결(Ripple) : 누른 자리에서 옅은 원이 퍼지며 사라집니다 */
   .click-ripple { position:fixed; left:0; top:0; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%;
@@ -2530,6 +2571,12 @@
         <button data-v="image" onclick="setSkillLogType('image')"><i class="fa-solid fa-image"></i> 이미지</button>
       </div>
     </div>
+    <div class="mp-cutin-opts">
+      <label class="mp-k" for="myPageCatchphrase">캐치프레이즈</label>
+      <input type="text" id="myPageCatchphrase" class="idc-field" maxlength="60" placeholder="컷인에 이름과 함께 나오는 한 줄" autocomplete="off" onchange="saveCatchphrase()">
+      <span class="mp-k">등장 모션</span>
+      <div class="mp-motions" id="myPageCutinMotion"></div>
+    </div>
     <div id="myPageSkillText">
       <input type="text" id="myPageSkillLogTitle" class="idc-field" maxlength="30" placeholder="스킬명" onchange="saveSkillLogText()">
       <div class="idc-editor">
@@ -3091,7 +3138,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.4";
+const EXPECTED_SERVER_BUILD = "2026-10-13.5";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5283,8 +5330,22 @@ function myPageSkillData(c) {
     title: d.skill_log_title || '',
     body: d.skill_log_text != null ? d.skill_log_text : (c.skill_log_text || ''),
     image: d.skill_log_image || null,
+    catchphrase: d.catchphrase || '',
+    motion: d.cutin_motion || 'slash',
   };
 }
+const CUTIN_MOTIONS = [['slash', '슬래시'], ['impact', '임팩트'], ['rise', '라이즈'], ['glitch', '글리치'], ['fade', '페이드']];
+function saveCatchphrase() {
+  if (!canEditMyPage()) return;
+  socket.emit('set_my_skill_log', { name: myPageEditName(), catchphrase: document.getElementById('myPageCatchphrase').value.trim() });
+}
+function setCutinMotion(m) {
+  if (!canEditMyPage()) return;
+  cutinMotionLocal = m;
+  socket.emit('set_my_skill_log', { name: myPageEditName(), cutin_motion: m });
+  renderMyPage();
+}
+let cutinMotionLocal = null;
 function renderMyPageSkillLog(c, canEdit) {
   const fx = myPageSkillData(c);
   document.querySelectorAll('#myPageSkillLogType button').forEach(b => {
@@ -5305,6 +5366,12 @@ function renderMyPageSkillLog(c, canEdit) {
   document.getElementById('myPageSkillImageEmpty').style.display = fx.image ? 'none' : '';
   document.getElementById('myPageSkillImageClear').disabled = !canEdit || !fx.image;
   document.getElementById('myPageSkillImageBox').style.cursor = canEdit ? 'pointer' : 'default';
+  const cp = document.getElementById('myPageCatchphrase');
+  cp.disabled = !canEdit;
+  if (document.activeElement !== cp) cp.value = fx.catchphrase;
+  const motion = cutinMotionLocal || fx.motion;
+  document.getElementById('myPageCutinMotion').innerHTML = CUTIN_MOTIONS.map(([k, t]) =>
+    `<button class="${k === motion ? 'on' : ''}" ${canEdit ? '' : 'disabled'} onclick="setCutinMotion('${k}')">${t}</button>`).join('');
 }
 function setSkillLogType(type) {
   if (!canEditMyPage()) return;
@@ -5347,32 +5414,37 @@ function previewSkillCutin() {
     fx.title = document.getElementById('myPageSkillLogTitle').value.trim();
     fx.body = document.getElementById('myPageSkillLogText').innerHTML;
   }
-  if (fx.type === 'image' ? !fx.image : !(fx.title || fx.body.replace(/<[^>]*>/g, '').trim())) {
-    showError(fx.type === 'image' ? '먼저 이미지를 올려 주세요.' : '먼저 제목이나 본문을 써 주세요.');
+  fx.catchphrase = document.getElementById('myPageCatchphrase').value.trim();
+  fx.motion = cutinMotionLocal || fx.motion;
+  if (fx.type === 'image' ? !fx.image : !(fx.catchphrase || fx.title || fx.body.replace(/<[^>]*>/g, '').trim())) {
+    showError(fx.type === 'image' ? '먼저 이미지를 올려 주세요.' : '먼저 캐치프레이즈나 스킬명을 써 주세요.');
     return;
   }
-  showSkillCutin({ ...fx, actor: displayNameOf(c) });
+  showSkillCutin({ ...fx, actor: displayNameOf(c), color: c.color });
 }
 let skillCutinTimer = null;
 function showSkillCutin(fx) {
   const el = document.getElementById('skillCutin');
   const band = document.getElementById('skillCutinBand');
   const esc = t => String(t || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const motion = CUTIN_MOTIONS.some(m => m[0] === fx.motion) ? fx.motion : 'slash';
+  // 이름 + 캐치프레이즈(공통), 그 아래 글(스킬명 · 본문) 또는 이미지
+  const head = `<div class="ci-name" data-t="${esc(fx.actor)}">${esc(fx.actor)}</div>`
+    + (fx.catchphrase ? `<div class="ci-phrase">${esc(fx.catchphrase)}</div>` : '');
+  let main = '';
   if (fx.type === 'image') {
-    // 원본 크기와 상관없이 화면 가로 띠를 꽉 채웁니다 : 뒤에는 같은 이미지를 흐리게 깔고, 앞에는 잘리지 않게 최대 크기로.
     const u = esc(fx.image).replace(/'/g, '%27');
-    band.innerHTML = `<div class="skill-cutin-bgimg" style="background-image:url('${u}')"></div><img class="skill-cutin-img" src="${u}" alt="">`;
-  } else {
+    main = `<img class="ci-img" src="${u}" alt="">`;
+  } else if (fx.title || (fx.body || '').replace(/<[^>]*>/g, '').trim()) {
     // 본문은 서버에서 굵게/기울임만 남기고 정리된 HTML입니다(미리 보기는 내 화면에서만 표시).
-    band.innerHTML = (fx.title ? `<div class="skill-cutin-title">${esc(fx.title)}</div>` : '')
-      + (fx.body ? `<div class="skill-cutin-body">${fx.body}</div>` : '')
-      + (fx.actor ? `<div class="skill-cutin-actor">${esc(fx.actor)}</div>` : '');
+    main = `<div class="ci-skill">${fx.title ? `<div class="ci-title">${esc(fx.title)}</div>` : ''}${fx.body ? `<div class="ci-body">${fx.body}</div>` : ''}</div>`;
   }
+  band.innerHTML = fx.type === 'image' ? `${main}<div class="ci-head">${head}</div>` : `<div class="ci-head">${head}</div>${main}`;
   el.className = 'skill-cutin';
   void el.offsetWidth;  // 애니메이션을 처음부터 다시 재생
-  el.className = 'skill-cutin show ' + (fx.type === 'image' ? 'image' : 'text');
+  el.className = `skill-cutin show m-${motion} ${fx.type === 'image' ? 'image' : 'text'}`;
   clearTimeout(skillCutinTimer);
-  skillCutinTimer = setTimeout(hideSkillCutin, 2800);
+  skillCutinTimer = setTimeout(hideSkillCutin, 3000);
 }
 function hideSkillCutin() {
   clearTimeout(skillCutinTimer);

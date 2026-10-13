@@ -34,7 +34,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.4"
+SERVER_BUILD = "2026-10-13.5"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -87,6 +87,10 @@ GM_GUEST_PASSWORD = _load_gm_password()
 
 # 국가 (마이페이지에서 운영진이 배치)
 NATIONS = ("아르카디아", "노바")
+
+# 스킬 컷인 : 캐치프레이즈 길이, 등장 모션 5종(마이페이지에서 고름)
+CATCHPHRASE_MAX = 60
+CUTIN_MOTIONS = ("slash", "impact", "rise", "glitch", "fade")
 
 # 포인트 컬러 : 운영진이 고르면 모든 방·모든 화면에 함께 적용됩니다(site_settings.json, git 밖).
 POINT_THEMES = ("blue", "purple", "yellow")
@@ -443,6 +447,8 @@ def build_preview_character(room, name):
         "skill_log_text": data.get("skill_log_text") or "",
         "skill_log_title": data.get("skill_log_title") or "",
         "skill_log_image": data.get("skill_log_image"),
+        "catchphrase": data.get("catchphrase") or "",
+        "cutin_motion": data.get("cutin_motion") or "slash",
         "avatar_url": data.get("avatar_url"),
         "sound_effect": data.get("sound_effect"),
         "sound_effect_volume": data.get("sound_effect_volume"),
@@ -762,12 +768,14 @@ def skill_cutin_payload(entry):
     """캐릭터 등록 정보에서 스킬 이펙트(컷인) 내용을 뽑습니다. 아무것도 설정하지 않았으면 None."""
     if not entry:
         return None
+    common = {"catchphrase": entry.get("catchphrase") or "",
+              "motion": entry.get("cutin_motion") if entry.get("cutin_motion") in CUTIN_MOTIONS else "slash"}
     if entry.get("skill_log_type") == "image":
-        return {"type": "image", "image": entry["skill_log_image"]} if entry.get("skill_log_image") else None
+        return dict(common, type="image", image=entry["skill_log_image"]) if entry.get("skill_log_image") else None
     title, body = entry.get("skill_log_title") or "", entry.get("skill_log_text") or ""
-    if not title and not body:
+    if not title and not body and not common["catchphrase"]:
         return None
-    return {"type": "text", "title": title, "body": body}
+    return dict(common, type="text", title=title, body=body)
 
 
 def _archive_battle_logs(room):
@@ -1280,6 +1288,14 @@ def on_set_my_skill_log(data):
             entry["skill_log_text"] = body
         else:
             entry.pop("skill_log_text", None)
+    if "catchphrase" in data:
+        phrase = " ".join((data.get("catchphrase") or "").split())[:CATCHPHRASE_MAX]
+        if phrase:
+            entry["catchphrase"] = phrase
+        else:
+            entry.pop("catchphrase", None)
+    if data.get("cutin_motion") in CUTIN_MOTIONS:
+        entry["cutin_motion"] = data["cutin_motion"]
     if data.get("clear_image"):
         entry.pop("skill_log_image", None)
     blob = data.get("image_data")
