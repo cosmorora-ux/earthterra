@@ -234,7 +234,7 @@ class Dorms:
             asset["lines"] = _clean_lines(lines)
         with self.lock:
             if owner and sum(1 for a in self.assets if a.get("owner") == owner) >= USER_ASSET_MAX:
-                raise DormError(f"한 사람당 {USER_ASSET_MAX}개까지 올릴 수 있어요.")
+                raise DormError(f"아이템은 1인당 최대 {USER_ASSET_MAX}개까지 등록할 수 있습니다.")
             self.assets.append(asset)
             self.save()
         return asset
@@ -244,7 +244,7 @@ class Dorms:
             for a in self.assets:
                 if a["id"] == asset_id:
                     if not is_gm and a.get("owner") != by:
-                        raise DormError("자기가 올린 자료만 고칠 수 있어요.")
+                        raise DormError("본인이 등록한 아이템만 수정할 수 있습니다.")
                     if "lines" in fields and a.get("category") == "chara":
                         a["lines"] = _clean_lines(fields["lines"])
                     if "name" in fields:

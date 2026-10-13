@@ -1965,6 +1965,8 @@
   .dorm-add-drop.locked { cursor:default; }
   .dorm-add-drop img { max-width:90%; max-height:90%; object-fit:contain; }
   .dorm-add-drop i { font-size:18px; }
+  .dorm-add-title { font-family: var(--font-title); font-weight:400; font-size:28px; letter-spacing:.02em; margin:0 0 18px; }
+  .dorm-add-help { margin:-6px 0 14px; font-size:12.5px; line-height:1.6; color: var(--muted); }
   .dorm-add-lb { display:block; font-size:12.5px; color: var(--muted); margin:0 0 6px; }
   .dorm-add-lb span { opacity:.75; margin-left:4px; }
   .modal-box .dorm-add-in { width:100%; box-sizing:border-box; background:#0c0c0d; border:1px solid var(--line); border-radius:10px; color: var(--text); padding:10px 12px; font-size:14px; margin-bottom:14px; font-family:inherit; }
@@ -2095,9 +2097,9 @@
   /* 관 목록 */
   .dorm-halls { display:flex; flex-direction:column; gap:22px; padding:2px 0 12px; }
   .dorm-hall-title { display:flex; align-items:center; gap:12px; margin:0 0 10px 2px; height:34px; }
-  .dorm-hall-title .en { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; }
-  .dorm-hall-title .ko { font-size:15px; font-weight:700; color:#cfcfd4; }
-  .dorm-hall-title .cnt { margin-left:auto; font-size:13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .dorm-hall-title .en { flex:none; white-space:nowrap; font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; }
+  .dorm-hall-title .ko { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:15px; font-weight:700; color:#cfcfd4; }
+  .dorm-hall-title .cnt { flex:none; white-space:nowrap; margin-left:auto; font-size:13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .dorm-cards { display:grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap:14px; }
   .char-card.dorm-card { display:flex; flex-direction:column; gap:10px; padding:14px; min-width:0; }
   .dorm-card .row1 { display:flex; align-items:baseline; justify-content:space-between; gap:6px; min-width:0; }
@@ -2133,7 +2135,17 @@
     .dorm-side-body { max-height:50vh; }
     .dorm-topbar .dorm-brand { font-size:20px; }
   }
-  @media (max-width:560px) { .dorm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dorm-portrait { height:96px; } }
+  @media (max-width:560px) {
+    .dorm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dorm-portrait { height:96px; }
+    /* 맨 윗줄 : 가운데 관 이름은 빼고(Dorm ▶ 방 주인), 이름은 길면 말줄임, 버튼은 아이콘만 */
+    .topbar.v2.dorm-topbar { gap:8px; padding:10px 12px; }
+    .dorm-topbar .mid { display:none !important; }
+    .dorm-topbar .seg { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+    .dorm-topbar .dorm-brand { flex:none; font-size:18px; }
+    .dorm-topbar .dorm-tools-r { flex:none; gap:6px; }
+    .dorm-topbar .dorm-tbtn { height:34px; padding:0 10px; }
+    .dorm-topbar .dorm-tbtn .t { display:none; }
+  }
   /* 꾸미기 : 오른쪽 Items 패널 (탭 / 세트·검색 / 자료 / 안내) + 방 아래 떠 있는 편집 막대 */
   .dorm-items .member-toptabs.dorm-cattabs { border-bottom:1px solid var(--line); }
   .dorm-cattabs button { padding:11px 0; font-size:13.5px; }
@@ -2459,26 +2471,29 @@
 </div>
 <div id="dormAddModal" class="modal-overlay" onclick="if(event.target===this) closeDormAddModal()">
   <div class="modal-box dorm-add panel">
-    <div class="modal-title" id="dormAddTitle">아이템 추가</div>
+    <div class="dorm-add-title" id="dormAddTitle">Add item</div>
     <div class="dorm-add-seg" id="dormAddType">
       <button data-v="furniture" onclick="dormAddSetType('furniture')"><i class="fa-solid fa-couch"></i> 가구</button>
       <button data-v="chara" onclick="dormAddSetType('chara')"><i class="fa-solid fa-user"></i> 캐릭터 SD</button>
     </div>
     <div class="dorm-add-drop" id="dormAddDrop" onclick="document.getElementById('dormAddFile').click()">
-      <img id="dormAddPreview" alt="" style="display:none;"><span id="dormAddEmpty"><i class="fa-solid fa-upload"></i><br>눌러서 이미지 고르기<br><small>png · gif · webp / 2MB까지 · 배경이 투명한 그림이 좋아요</small></span>
+      <img id="dormAddPreview" alt="" style="display:none;"><span id="dormAddEmpty"><i class="fa-solid fa-image"></i><br>클릭해서 이미지 삽입<br><small>PNG · GIF · WEBP / 최대 2MB</small></span>
     </div>
     <input type="file" id="dormAddFile" accept="image/png,image/gif,image/webp" style="display:none" onchange="onDormAddFile(event)">
-    <label class="dorm-add-lb">이름</label>
-    <input type="text" id="dormAddName" class="dorm-add-in" maxlength="30" placeholder="예) 내 책상, 세레나 SD" autocomplete="off">
+    <div id="dormAddNameBox">
+      <label class="dorm-add-lb" for="dormAddName">아이템 이름</label>
+      <input type="text" id="dormAddName" class="dorm-add-in" maxlength="30" placeholder="아이템 이름을 입력해 주세요." autocomplete="off">
+    </div>
     <div id="dormAddLinesBox">
-      <label class="dorm-add-lb">대사 <span>한 줄에 하나씩 · 방에서 누를 때마다 무작위로 말해요 (최대 20개)</span></label>
-      <textarea id="dormAddLines" class="dorm-add-in" rows="5" placeholder="안녕! 놀러 왔구나.&#10;오늘도 별이 예쁘네.&#10;조용히 해 줄래? 책 읽는 중이야."></textarea>
+      <label class="dorm-add-lb" for="dormAddLines">대사</label>
+      <textarea id="dormAddLines" class="dorm-add-in" rows="5" placeholder="대사 1&#10;대사 2&#10;대사 3"></textarea>
+      <div class="dorm-add-help">한 줄에 한 대사를 입력해 주세요. 캐릭터를 클릭할 때마다 대사가 랜덤 출력됩니다. (최대 20개)</div>
     </div>
     <div class="dorm-add-foot">
-      <button class="btn-plain danger" id="dormAddDel" onclick="deleteDormAddAsset()" style="display:none;"><i class="fa-solid fa-trash-can"></i> 자료 삭제</button>
+      <button class="btn-plain danger" id="dormAddDel" onclick="deleteDormAddAsset()" style="display:none;"><i class="fa-solid fa-trash-can"></i> 삭제</button>
       <span style="flex:1"></span>
       <button class="btn-plain" onclick="closeDormAddModal()">취소</button>
-      <button class="btn" id="dormAddOk" onclick="submitDormAdd()">올리기</button>
+      <button class="btn" id="dormAddOk" onclick="submitDormAdd()">등록</button>
     </div>
   </div>
 </div>
@@ -7387,17 +7402,17 @@ function renderDormTop() {
   let right = '';
   if (dormView === 'room' && dormRoom) {
     const hall = dormData && dormHallOf(dormRoom.owner);
-    segs.push(`<span class="sep">▶</span><div class="seg dorm-link" onclick="dormLeaveRoom()">${hall ? mailEsc(hall.name) : '기숙사'}</div>`);
+    segs.push(`<span class="sep mid">▶</span><div class="seg dorm-link mid" onclick="dormLeaveRoom()">${hall ? mailEsc(hall.name) : '기숙사'}</div>`);
     segs.push(`<span class="sep">▶</span><div class="seg">${mailEsc(dormRoom.owner)}</div>`);
     const can = dormCanEdit(dormRoom.owner) && hall && !dormRoom.loading;
-    if (dormEdit) right = `<button class="dorm-tbtn" onclick="dormEdit=null; dormSel=-1; dormPick=null; renderDorm()">취소</button>
-      <button class="dorm-tbtn primary" onclick="saveDormRoom()"><i class="fa-solid fa-floppy-disk"></i> 저장</button>`;
-    else if (can) right = `<button class="dorm-tbtn primary" onclick="startDormEdit()"><i class="fa-solid fa-paintbrush"></i> 꾸미기</button>`;
+    if (dormEdit) right = `<button class="dorm-tbtn" onclick="dormEdit=null; dormSel=-1; dormPick=null; renderDorm()" data-tip="취소"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
+      <button class="dorm-tbtn primary" onclick="saveDormRoom()" data-tip="저장"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`;
+    else if (can) right = `<button class="dorm-tbtn primary" onclick="startDormEdit()" data-tip="꾸미기"><i class="fa-solid fa-paintbrush"></i><span class="t">꾸미기</span></button>`;
   } else if (dormView === 'manage') {
     segs.push('<span class="sep">▶</span><div class="seg">관리</div>');
   } else if (dormData) {
     segs.push(`<span class="sep">▶</span><div class="seg">관 ${(dormData.halls || []).length}개</div>`);
-    if (mine) right = `<button class="dorm-tbtn primary" onclick="openDormRoom(${mailEsc(JSON.stringify(me))})"><i class="fa-solid fa-door-open"></i> 내 방</button>`;
+    if (mine) right = `<button class="dorm-tbtn primary" onclick="openDormRoom(${mailEsc(JSON.stringify(me))})" data-tip="내 방"><i class="fa-solid fa-door-open"></i><span class="t">내 방</span></button>`;
   }
   const tools = `<button class="dorm-tbtn icon" onclick="openDormCredits()" data-tip="도트 자료 출처"><i class="fa-solid fa-circle-info"></i></button>`
     + (dormIsGm() ? `<button class="dorm-tbtn icon ${dormView === 'manage' ? 'on' : ''}" onclick="setDormView(dormView === 'manage' ? 'halls' : 'manage')" data-tip="기숙사 관리"><i class="fa-solid fa-sliders"></i></button>` : '');
@@ -7658,7 +7673,7 @@ function renderDormPalette() {
     `<button class="${dormCat === k ? 'active' : ''}" onclick="dormCat='${k}'; dormPick=null; dormSet=''; renderDormPalette(); dormUpdateGhost()"><span>${t}</span></button>`).join('');
   document.getElementById('dormFilter').innerHTML = `<select onchange="dormSet=this.value; renderDormGrid()"><option value="">전체 세트 · ${all.length}</option>${sets.map(t => `<option ${t === dormSet ? 'selected' : ''}>${mailEsc(t)}</option>`).join('')}</select>
     <div class="dorm-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="이름 검색" value="${mailEsc(dormQ)}" oninput="dormQ=this.value; renderDormGrid()"></div>`;
-  document.getElementById('dormHint').textContent = dormCat === 'mine' ? '직접 올린 가구 · 캐릭터예요. 캐릭터를 방에 놓으면 누를 때마다 대사를 말해요.'
+  document.getElementById('dormHint').textContent = dormCat === 'mine' ? '직접 등록한 가구와 캐릭터 SD입니다. 캐릭터는 클릭 시 등록된 대사가 랜덤 출력됩니다.'
     : dormCat === 'room' ? '고르면 방 바탕이 바뀌어요.'
     : dormCat === 'surface' ? '벽지·바닥은 고르면 방에 딱 맞춰 깔려요. 다시 누르면 걷어내요.'
     : '고른 뒤 방을 눌러 놓아요. Esc 고르기 취소';
@@ -7669,10 +7684,10 @@ function renderDormPalette() {
 const DORM_ADD_BOX = { furniture: 220, chara: 160 };
 let dormAdd = null;
 function openDormAddModal(editId) {
-  if (!dormIsGm() && !dormMe()) { showShopToast('캐릭터로 로그인한 뒤에 올릴 수 있어요.'); return; }
+  if (!dormIsGm() && !dormMe()) { showShopToast('캐릭터로 로그인 후 이용할 수 있습니다.'); return; }
   const a = editId ? dormAsset(editId) : null;
   dormAdd = a ? { id: a.id, type: a.category === 'chara' ? 'chara' : 'furniture' } : { type: dormAdd && !dormAdd.id ? dormAdd.type : 'furniture' };
-  document.getElementById('dormAddTitle').textContent = a ? '아이템 고치기' : '아이템 추가';
+  document.getElementById('dormAddTitle').textContent = a ? 'Edit item' : 'Add item';
   document.getElementById('dormAddName').value = a ? a.name : '';
   document.getElementById('dormAddLines').value = a ? (a.lines || []).join('\n') : '';
   const pv = document.getElementById('dormAddPreview');
@@ -7680,7 +7695,7 @@ function openDormAddModal(editId) {
   document.getElementById('dormAddEmpty').style.display = a ? 'none' : '';
   document.getElementById('dormAddDrop').classList.toggle('locked', !!a);
   document.getElementById('dormAddDel').style.display = a ? '' : 'none';
-  document.getElementById('dormAddOk').textContent = a ? '저장' : '올리기';
+  document.getElementById('dormAddOk').textContent = a ? '저장' : '등록';
   dormAddSetType(dormAdd.type);
   document.getElementById('dormAddModal').style.display = 'flex';
 }
@@ -7690,11 +7705,13 @@ function dormAddSetType(t) {
   dormAdd.type = t;
   document.querySelectorAll('#dormAddType button').forEach(b => { b.classList.toggle('on', b.dataset.v === t); b.disabled = !!dormAdd.id; });
   document.getElementById('dormAddLinesBox').style.display = t === 'chara' ? '' : 'none';
+  // 캐릭터 SD는 이름이 필요 없습니다(목록에는 '캐릭터 SD'로 표시).
+  document.getElementById('dormAddNameBox').style.display = t === 'chara' ? 'none' : '';
 }
 function onDormAddFile(ev) {
   const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
   if (!f || !dormAdd || dormAdd.id) return;
-  if (f.size > 2 * 1024 * 1024) { showShopToast('이미지가 너무 커요 (최대 2MB).'); return; }
+  if (f.size > 2 * 1024 * 1024) { showShopToast('2MB 이하의 이미지만 등록할 수 있습니다.'); return; }
   if (dormAdd.url) URL.revokeObjectURL(dormAdd.url);
   dormAdd.url = URL.createObjectURL(f); dormAdd.file = f;
   if (!document.getElementById('dormAddName').value.trim()) document.getElementById('dormAddName').value = f.name.replace(/\.[^.]+$/, '').slice(0, 30);
@@ -7716,13 +7733,14 @@ async function dormAddPrepare() {
 }
 async function submitDormAdd() {
   if (!dormAdd) return;
-  const name = document.getElementById('dormAddName').value.trim();
+  const name = dormAdd.type === 'chara' ? (dormAdd.id ? (dormAsset(dormAdd.id) || {}).name : '캐릭터 SD') : document.getElementById('dormAddName').value.trim();
   const lines = document.getElementById('dormAddLines').value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 20);
   if (dormAdd.id) {
     socket.emit('dorm_asset_update', { id: dormAdd.id, name, lines });
     closeDormAddModal(); return;
   }
-  if (!dormAdd.img) { showShopToast('먼저 이미지를 골라 주세요.'); return; }
+  if (!dormAdd.img) { showShopToast('이미지를 먼저 삽입해 주세요.'); return; }
+  if (dormAdd.type !== 'chara' && !name) { showShopToast('아이템 이름을 입력해 주세요.'); return; }
   const prep = await dormAddPrepare();
   socket.emit('dorm_asset_upload', { ...prep, name, category: dormAdd.type, lines });
   dormCat = 'mine'; closeDormAddModal();
@@ -7730,7 +7748,7 @@ async function submitDormAdd() {
 function deleteDormAddAsset() {
   if (!dormAdd || !dormAdd.id) return;
   const id = dormAdd.id;
-  uiConfirm('이 자료를 지울까요? 방에 놓아 둔 것도 함께 사라져요.', { title: '자료 삭제', okText: '삭제', danger: true }).then(ok => {
+  uiConfirm('이 아이템을 삭제할까요? 방에 배치된 아이템도 함께 삭제됩니다.', { title: '아이템 삭제', okText: '삭제', danger: true }).then(ok => {
     if (!ok) return;
     if (dormEdit) dormEdit.items = dormEdit.items.filter(it => it.a !== id);
     socket.emit('dorm_asset_delete', { id }); closeDormAddModal();
@@ -7744,7 +7762,7 @@ function renderDormGrid() {
   const canManage = (a) => a.owner ? (dormIsGm() || a.owner === dormMe()) : dormIsGm();
   const tiles = list.map(a => `<div class="dorm-asset-wrap"><button class="dorm-asset ${isOn(a) ? 'on' : ''} ${a.smooth ? 'smooth' : ''}" data-tip="${mailEsc(a.name)}${a.set ? ' · ' + mailEsc(a.set) : ''}"
       style="background-image:url('${a.url}')" onclick="pickDormAsset('${a.id}')"></button>${a.category === 'chara' ? '<span class="dorm-asset-tag"><i class="fa-solid fa-comment-dots"></i></span>' : ''}
-      ${mine && canManage(a) ? `<button class="dorm-asset-edit" onclick="openDormAddModal('${a.id}')" data-tip="이름 · 대사 고치기"><i class="fa-solid fa-pen"></i></button>` : ''}</div>`).join('');
+      ${mine && canManage(a) ? `<button class="dorm-asset-edit" onclick="openDormAddModal('${a.id}')" data-tip="수정"><i class="fa-solid fa-pen"></i></button>` : ''}</div>`).join('');
   const addTile = mine ? `<button class="dorm-asset dorm-asset-add" onclick="openDormAddModal()"><i class="fa-solid fa-plus"></i><span>아이템 추가</span></button>` : '';
   el.innerHTML = (list.length || mine) ? `<div class="dorm-assets">${addTile}${tiles}</div>`
     : `<div class="dorm-gb-empty"><i class="fa-solid fa-box-open"></i>${all.length ? '찾는 자료가 없어요.' : '이 종류의 도트 자료가 아직 없어요.'}</div>`;

@@ -2976,10 +2976,10 @@ def on_dorm_asset_upload(data):
     category = data.get("category")
     if not is_gm:
         if not me:
-            emit("dorm_result", {"ok": False, "message": "캐릭터로 로그인한 뒤에 올릴 수 있어요."})
+            emit("dorm_result", {"ok": False, "message": "캐릭터로 로그인 후 이용할 수 있습니다."})
             return
         if category not in dorm_mod.USER_CATEGORIES:
-            emit("dorm_result", {"ok": False, "message": "가구나 캐릭터만 올릴 수 있어요."})
+            emit("dorm_result", {"ok": False, "message": "가구와 캐릭터 SD만 등록할 수 있습니다."})
             return
     blob = data.get("data")
     ext = os.path.splitext((data.get("filename") or "").lower())[1]
@@ -3000,7 +3000,7 @@ def on_dorm_asset_upload(data):
         return
     with open(os.path.join(DORM_ASSET_DIR, filename), "wb") as f:
         f.write(blob)
-    emit("dorm_result", {"ok": True, "message": "자료를 올렸어요.", "asset_id": asset["id"]})
+    emit("dorm_result", {"ok": True, "message": "아이템이 등록되었습니다.", "asset_id": asset["id"]})
     _dorm_broadcast()
 
 
@@ -3018,7 +3018,7 @@ def on_dorm_asset_update(data):
     except dorm_mod.DormError as e:
         emit("dorm_result", {"ok": False, "message": str(e)})
         return
-    emit("dorm_result", {"ok": True, "message": "저장했어요."})
+    emit("dorm_result", {"ok": True, "message": "저장되었습니다."})
     _dorm_broadcast()
 
 
@@ -3028,7 +3028,7 @@ def on_dorm_asset_delete(data):
     if not is_gm and not me:
         return
     if dorm_mod.shared_dorms().delete_asset((data or {}).get("id"), by=me, is_gm=is_gm):
-        emit("dorm_result", {"ok": True, "message": "자료를 지웠어요."})
+        emit("dorm_result", {"ok": True, "message": "아이템이 삭제되었습니다."})
         _dorm_broadcast()
 
 
