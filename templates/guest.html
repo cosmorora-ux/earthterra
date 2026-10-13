@@ -4797,14 +4797,9 @@ function gridCellTip(c, x, y, key, telKeys, rangeCells, rangeIsAction) {
     }
     const badges = charStatusBadges(c, true);
     if (badges.length) h += `<div class="tt-sec"><div class="k">효과</div><div class="tt-tags">${badges.join('')}</div></div>`;
-  } else {
-    h += `<div class="tt-head"><b>${pos}</b><span>빈 칸</span></div>`;
   }
   if (telKeys.has(key)) {
     h += `<div class="tt-note warn"><i class="fa-solid fa-triangle-exclamation"></i>${telegraphRevealedCells.has(key) ? '전조 구역 · 곧 피해가 발생합니다' : '전조로 고른 칸'}</div>`;
-  }
-  if (rangeCells.has(key)) {
-    h += `<div class="tt-note"><i class="fa-solid ${rangeIsAction ? 'fa-crosshairs' : 'fa-shoe-prints'}"></i>${rangeIsAction ? '사거리 안' : '이동 가능한 칸'}</div>`;
   }
   return h;
 }
@@ -5037,7 +5032,8 @@ function renderGrid(battle, all) {
 
       }
       const glow = '';
-      const title = shopEsc(gridCellTip(c, x, y, key, telKeys, highlightCells, highlightIsAction));
+      // 빈 칸은 칸 번호만 짧게, 캐릭터 칸은 정리된 툴팁(HTML)
+      const tipAttr = c ? `data-tip-html="${shopEsc(gridCellTip(c, x, y, key, telKeys, highlightCells, highlightIsAction))}"` : `data-tip="${cellLabel(x, y)}"`;
       let inner = '';
       if (c) {
         // BOSS 부위는 칸이 4개라 이름 앞 두 글자만(예: NOVA → NO) 씁니다. 본인이 정한 표기 이름이 있으면 그걸 우선합니다.
@@ -5051,7 +5047,7 @@ function renderGrid(battle, all) {
         inner = `<span class="gname" style="font-size:${Math.max(window.innerWidth <= 900 ? 7 : 9, fitPx)}px;">${label}</span>`
           + `<div class="ghp"><div class="${hpCls}" style="width:${ratio * 100}%;"></div></div>`;
       }
-      html += `<td ${onclick} data-tip-html="${title}" style="cursor:${cursor}; ${tdStyle}">`
+      html += `<td ${onclick} ${tipAttr} style="cursor:${cursor}; ${tdStyle}">`
         + `<div class="gcell ${cellCls}" style="width:${cellPx}px; height:${cellPx}px; ${cellStyle} ${glow}">${inner}<div class="gsel ${isGridTarget(c) ? 'tgt' : ''}" style="${isGridTarget(c) ? '' : selBorder}"></div></div></td>`;
     }
     html += '</tr>';
