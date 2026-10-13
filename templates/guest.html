@@ -3022,7 +3022,8 @@
   .tt-sec { border-top:1px solid rgba(255,255,255,.07); padding:8px 12px; }
   .tt-sec .k { font-size:11px; font-weight:700; letter-spacing:.08em; color: var(--muted); margin-bottom:5px; }
   .tt-tags { display:flex; flex-wrap:wrap; gap:4px; }
-  .tt-tags span { padding:2px 7px; border-radius:6px; background:rgba(255,255,255,.07); color:#e6e7ea; font-size:12px; white-space:nowrap; }
+  .tt-tags .stag { padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.06); color:#c9c9ce; font-size:12px; line-height:18px; }
+  .tt-tags .stag .st-l { display:inline; } .tt-tags .stag .st-only { display:none; }
   .tt-note { display:flex; align-items:center; gap:7px; border-top:1px solid rgba(255,255,255,.07); padding:7px 12px; font-size:12.5px; color:#d7d8de; }
   .tt-note i { width:12px; text-align:center; font-size:11px; color: var(--muted); }
   .tt-note.warn { color:#ffc861; background:rgba(255,176,32,.08); } .tt-note.warn i { color:#ffb020; }
@@ -4479,14 +4480,11 @@ function isTurnPending(c) {
   return c.teamLabel === turnTeamLabel;
 }
 
-function renderCardHtml(c) {
-  const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
-  const isAlly = lastMyTeam !== null && c.team === lastMyTeam;
-  const isTarget = selectedTargetName === c.name;
-  const isMine = myControlInfo(lastBattleForPanel).scope === 'character' && myControlInfo(lastBattleForPanel).character.name === c.name;
-  const statusTag = statusTagFor(c);
-  const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
+// 캐릭터 상태 배지(지휘 · 방어 · 보호막 · 피해 보류 · 회복 예정 …) : PVP 카드와 격자 칸 툴팁이 같은 모양을 씁니다.
+// 카드는 회피를 이름 옆 상태 표시로 따로 보여 주므로, 회피 배지는 툴팁(withDodge)에서만 붙입니다.
+function charStatusBadges(c, withDodge) {
   const badges = [];
+  if (withDodge && c.dodging_this_round) badges.push(makeStatusTag('dodge', '회피'));
   if (lastForcedTargetNames.has(c.name)) badges.push(makeStatusTag('command', '지휘'));
   if (c.self_defense_count) badges.push(makeStatusTag('selfdef', '직접 방어'));
   if (c.defense_count - (c.self_defense_count || 0) > 0) badges.push(makeStatusTag('guard', `수호${c.defense_count - (c.self_defense_count || 0) > 1 ? ' ' + (c.defense_count - (c.self_defense_count || 0)) : ''}`));
@@ -4497,6 +4495,17 @@ function renderCardHtml(c) {
   if (c.pending_heals) badges.push(makeStatusTag('heal', `회복 +${c.pending_heals}`));
   if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`, c.interceptors.length));
   if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`, 1));
+  return badges;
+}
+
+function renderCardHtml(c) {
+  const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
+  const isAlly = lastMyTeam !== null && c.team === lastMyTeam;
+  const isTarget = selectedTargetName === c.name;
+  const isMine = myControlInfo(lastBattleForPanel).scope === 'character' && myControlInfo(lastBattleForPanel).character.name === c.name;
+  const statusTag = statusTagFor(c);
+  const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
+  const badges = charStatusBadges(c);
 
   return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">
     <div class="row1">
@@ -4791,23 +4800,13 @@ function gridCellTip(c, x, y, key, telKeys, rangeCells, rangeIsAction) {
     const ratio = c.max_hp > 0 ? Math.max(0, Math.min(1, c.current_hp / c.max_hp)) : 0;
     const cls = ratio <= 0.3 ? 'low' : (ratio <= 0.6 ? 'mid' : '');
     h += `<div class="tt-hp"><div class="bar"><i class="${cls}" style="width:${ratio * 100}%"></i></div>`
-      + `<div class="num"><span>HP <b>${c.current_hp}</b> / ${c.max_hp}</span>${c.shield_hp ? `<span>보호막 <b>${c.shield_hp}</b></span>` : ''}</div></div>`;
+      + `<div class="num"><span>HP <b>${c.current_hp}</b> / ${c.max_hp}</span></div></div>`;
     if (isDefeatedStatus(c) || c.status === 'downed') {
       const st = c.status === 'downed' ? '기절' : statusTagFor(c).replace(/^\s*\*/, '');
       h += `<div class="tt-note bad"><i class="fa-solid fa-skull"></i>${e(st)}</div>`;
     }
-    const fx = [];
-    if (c.dodging_this_round) fx.push('회피 태세');
-    if (c.self_defense_count) fx.push('직접 방어');
-    const guard = (c.defense_count || 0) - (c.self_defense_count || 0);
-    if (guard > 0) fx.push(`수호${guard > 1 ? ' ×' + guard : ''}`);
-    if (c.polarize_active) fx.push('편광');
-    if (c.has_leech_buff) fx.push('흡수');
-    if (c.pending_attacks) fx.push(`피해 보류 ${c.pending_attacks}`);
-    if (c.pending_heals) fx.push(`회복 예정 +${c.pending_heals}`);
-    if (c.interceptors && c.interceptors.length) fx.push(`대리 방어 · ${c.interceptors.join(', ')}`);
-    if (c.commanded_by) fx.push(`지휘 · ${c.commanded_by}`);
-    if (fx.length) h += `<div class="tt-sec"><div class="k">효과</div><div class="tt-tags">${fx.map(f => `<span>${e(f)}</span>`).join('')}</div></div>`;
+    const badges = charStatusBadges(c, true);
+    if (badges.length) h += `<div class="tt-sec"><div class="k">효과</div><div class="tt-tags">${badges.join('')}</div></div>`;
   } else {
     h += `<div class="tt-head"><b>${pos}</b><span>빈 칸</span></div>`;
   }
@@ -7510,6 +7509,7 @@ const STATUS_TAG_ICONS = {
   leech:     { cls: 'fa-sharp fa-solid fa-droplet-plus',   fallback: 'fa-solid fa-droplet' },
   shield:    { cls: 'fa-solid fa-shield',                  fallback: 'fa-solid fa-shield' },
   polarize:  { cls: 'fa-solid fa-circle-half-stroke',      fallback: 'fa-solid fa-circle-half-stroke' },
+  dodge:     { cls: 'fa-solid fa-person-running',          fallback: 'fa-solid fa-person-running' },
 };
 const statusIconOk = {};
 function detectStatusIcons() {
