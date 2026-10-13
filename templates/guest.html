@@ -3027,6 +3027,8 @@
   .logblock.moves .logline.tag-move { padding:1px 0; }
   .logblock.moves .mv-name { display:inline-block; min-width:4.5em; margin-right:10px; color:#d7d8de; font-weight:600; }
   .logblock.moves .mv-cells { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .lg-crit { display:inline-flex; align-items:center; gap:4px; margin-left:8px; font-size:.84em; font-weight:700; color:#ffd27a; white-space:nowrap; }
+  .lg-crit i { font-size:.85em; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -5298,7 +5300,9 @@ function formatLogLineHtml(l, noIcon, asHead) {
   if (l.tag === 'arrow') return '<div class="logsep"></div>';
   // 블록 첫 줄(누가 무엇을)만 굵게 : 블록을 그리는 쪽이 알려주면(asHead) 그 값을, 아니면 태그로 판단합니다.
   const head = asHead !== undefined ? asHead : LOG_GROUP_START_TAGS.has(l.tag);
-  const { html, tone } = logLineParts(l.text, l.tag);
+  let { html, tone } = logLineParts(l.text, l.tag);
+  // 크리티컬은 따로 한 줄을 쓰지 않고, 그 타격(회복) 줄 끝에 작은 표시로 붙입니다.
+  if (l._crit) html += '<span class="lg-crit"><i class="fa-solid fa-star"></i>크리티컬</span>';
   const ic = tone === 'note' ? 'fa-solid fa-turn-up fa-rotate-90' : tone === 'warn' ? 'fa-solid fa-triangle-exclamation' : (LOG_TAG_ICON[l.tag] || '');
   // 직군 색은 블록 왼쪽 선이 맡고, 글줄은 모두 같은 색으로 둡니다(아이콘 칸 + 글 칸 두 칸 정렬).
   return `<div class="logline${head ? ' group-start' : ''} tag-${l.tag}${tone ? ' tone-' + tone : ''}"><span class="li">${ic ? `<i class="${ic}"></i>` : ''}</span><span class="lt">${html}</span></div>`;
@@ -5410,8 +5414,45 @@ const LOG_FIRST_TEAM_RX = /^(\[선공 결정\]|→ 민첩 합산이 더 높은|�
 function dropFirstTeamLines(lines) {
   return BATTLE_TYPE === 'mass_raid' ? lines.filter(l => !(l.tag === 'system' && LOG_FIRST_TEAM_RX.test(l.text || ''))) : lines;
 }
+// "크리티컬!" 줄 + 바로 다음 타격(회복) 줄 → 그 줄 하나에 크리티컬 표시. "(강제 크리티컬 적용)" 문구도 같은 표시로 바꿉니다.
+function mergeCritLines(lines) {
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i], n = lines[i + 1];
+    if (l.tag === 'crit' && /^\s*크리티컬!?\s*$/.test(l.text || '') && n && (n.tag === 'damage' || n.tag === 'heal')) {
+      out.push({ ...n, _crit: true }); i++; continue;
+    }
+    if (typeof l.text === 'string' && /\s*\(강제 크리티컬 적용\)/.test(l.text)) {
+      out.push({ ...l, text: l.text.replace(/\s*\(강제 크리티컬 적용\)/, ''), _crit: true }); continue;
+    }
+    out.push(l);
+  }
+  return out;
+}
+// 스킬 블록 정리 : 첫 줄은 "C 환류"처럼 누가 · 어떤 스킬만, 내용은 아래 줄로 내리고,
+// 아래 줄마다 반복되는 "C 【환류】" · "[환류 - …]" · "[붕괴 1/2]"의 스킬 이름은 뺍니다.
+function tidySkillSection(section) {
+  const hk = logSkillHead(section[0]);
+  if (!hk) return section;
+  const pre = `${hk.who} 【${hk.skill}】`;
+  const labRx = new RegExp('^\\s*\\[' + hk.skill + '(?:\\s*[-·]\\s*|\\s*→\\s*|\\s+)?([^\\]]*)\\]\\s*');
+  const out = [];
+  section.forEach((l, i) => {
+    const t = typeof l.text === 'string' ? l.text : '';
+    const own = t.startsWith(pre + ' ');
+    const rest = own ? t.slice(pre.length + 1) : t;
+    if (i === 0) {
+      if (own && !/^[→:]/.test(rest)) { out.push({ ...l, text: pre }); out.push({ ...l, text: rest }); }
+      else out.push(l);
+      return;
+    }
+    out.push({ ...l, text: rest.replace(labRx, (m, r) => r.trim() ? `[${r.trim()}] ` : '') });
+  });
+  return out;
+}
 function formatLogHtml(lines) {
-  return splitLogIntoSections(groupPhaseMoves(mergeLogRuns(dropFirstTeamLines(lines || [])))).map(section => {
+  return splitLogIntoSections(groupPhaseMoves(mergeLogRuns(mergeCritLines(dropFirstTeamLines(lines || []))))).map(section => {
+    if (logSkillHead(section[0]) && section.length > 1) section = tidySkillSection(section);
     const head = section[0];
     if (head.tag === 'movegroup') return formatMoveGroupHtml(head);
     if (head.tag === 'round' && /최종 결과/.test(head.text || '')) return formatRoundSummaryHtml(section);
