@@ -2498,7 +2498,7 @@
   .idc-logout { align-items:center; gap:6px; margin-left:auto; margin-right:6px; height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--line);
     background: rgba(255,255,255,.05); color:#cfcfd4; font-size:13px; cursor:pointer; }
   .idc-logout:hover { background: rgba(255,255,255,.1); color:#fff; }
-  .mp-logout-bottom { display:none; align-items:center; justify-content:center; gap:8px; width:100%; max-width:640px; height:46px; margin:28px auto 0;
+  .mp-logout-bottom { display:none; align-items:center; justify-content:center; gap:8px; width:100%; max-width:none; height:46px; margin:28px auto 0;
     border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--muted); font-size:15px; font-weight:600; cursor:pointer; flex:none; }
   .mp-logout-bottom:hover { color:#ff7a7a; border-color: rgba(255,122,122,.4); }
   .news-sheet { position:absolute; left:12px; right:12px; bottom:calc(76px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; padding:6px;
@@ -2521,7 +2521,7 @@
       padding:calc(20px + env(safe-area-inset-top)) 20px 20px !important; }
     .modal-box.mypage > *, .modal-box.shop-modal > *, .modal-box.notice-modal > *, .modal-box.mail-modal > *, .modal-box.userinfo-modal > *,
     .modal-box.mypage.v2 .mp-hero, .modal-box.mypage .idc-head, .modal-box.mypage .mypage-cols {
-      width:100%; max-width:640px !important; margin-left:auto; margin-right:auto; box-sizing:border-box; }
+      width:100%; max-width:none !important; margin-left:auto; margin-right:auto; box-sizing:border-box; }
     .modal-box.mypage .idc-title, .modal-box .modal-title.page-title { font-size:28px; }
     .modal-box.mypage .idc-head, .notice-head, .modal-box.shop-modal .shop-head, .modal-box.mail-modal .shop-head, .modal-box.userinfo-modal .ui-head { min-height:34px; margin-bottom:16px; }
     .modal-box.mypage .idc-close, .modal-box.shop-modal .shop-close, .modal-box.notice-modal .shop-close, .modal-box.mail-modal .shop-close, .modal-box.userinfo-modal .ui-close { display:none !important; }
@@ -2546,6 +2546,11 @@
     .topbar.v2.panel.dorm-topbar::before, .topbar.v2.panel.dorm-topbar::after, .topbar.v2.panel.world-topbar::before, .topbar.v2.panel.world-topbar::after { display:none !important; }
     .dorm-topbar .dorm-brand, .world-topbar .world-brand { font-size:28px !important; }
     body.m-chat-open .member-col .member-panel { animation: mPageIn .22s ease-out !important; }
+    /* 채팅도 다른 페이지와 같은 제목 자리(왼쪽 20px · 위 22px) · 같은 제목 글꼴 */
+    body.m-chat-open .member-col .member-panel { padding-top:0 !important; }
+    body.m-chat-open .member-panel .member-header { padding:calc(20px + env(safe-area-inset-top)) 20px 14px; align-items:center; min-height:34px; box-sizing:content-box; }
+    body.m-chat-open .member-panel .input-row { padding-left:20px !important; padding-right:20px !important; }
+    body.m-chat-open .member-panel #memberTitle { font-family: var(--font-title); font-weight:400; font-size:28px; line-height:1.1; letter-spacing:0; }
     .idc-head { display:flex; align-items:center; }
     /* 전투 헤더 오른쪽 위 : 유저 리스트 · 채팅 */
     .topbar.v2 { grid-template-areas:"room sep fmt . tools" "round round round round timer" !important; }
