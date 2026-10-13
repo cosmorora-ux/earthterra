@@ -2131,6 +2131,13 @@
   .dorm-edit-bar button.del:hover { color: var(--accent-red); }
   .dorm-edit-bar .val { min-width:44px; text-align:center; font-weight:700; color: var(--text); font-variant-numeric: tabular-nums; }
   @media (max-width:900px) { .dorm-edit-bar { bottom:8px; } .dorm-edit-bar .nm { max-width:80px; } .dorm-edit-bar button.txt { display:none; } }
+  /* 휴대폰 : 버튼이 많아서 두 줄로 나눠 칸 안에 들어가게 */
+  @media (max-width:560px) {
+    .dorm-edit-bar.on { flex-wrap:wrap; justify-content:center; width:calc(100% - 16px); row-gap:6px; padding:6px; }
+    .dorm-edit-bar.on .nm, .dorm-edit-bar.on .sep { display:none; }
+    .dorm-edit-bar button { height:30px; min-width:30px; padding:0 6px; }
+    .dorm-edit-bar .val { min-width:30px; }
+  }
 
   /* ================================================================
      세로 태블릿·휴대폰 : 왼쪽 메뉴를 화면 아래 탭 바로
@@ -7490,10 +7497,35 @@ function dormLeaveRoom() {
   if (!dormEdit) { setDormView('halls'); return; }
   uiConfirm('저장하지 않은 꾸미기가 있어요. 나갈까요?', { title: '방 나가기', okText: '나가기' }).then(ok => { if (ok) { dormEdit = null; setDormView('halls'); } });
 }
+// 그리는 순서(뒤 → 앞) : 깔개(surface)가 맨 뒤, 그다음 겹침 순서(o, 앞/뒤로 보내기로 정함), 같으면 바닥 쪽(아래)일수록 앞
+function dormDrawOrder(items) {
+  return items.map((it, i) => ({ it, i, a: dormAsset(it.a) })).filter(o => o.a)
+    .sort((p, q) => ((q.a.category === 'surface') - (p.a.category === 'surface')) || ((p.it.o || 0) - (q.it.o || 0))
+      || (p.a.category === 'surface' ? p.i - q.i : (p.it.y + p.a.h * dormZ(p.it, p.a)) - (q.it.y + q.a.h * dormZ(q.it, q.a))))
+    .map(o => o.i);
+}
+// 선택한 소품 겹침 순서 : top 최상단 · up 한 칸 앞 · down 한 칸 뒤 · bottom 최하단 (깔개끼리, 소품끼리 따로)
+function dormLayerSel(kind) {
+  if (!dormEdit || dormSel < 0) return;
+  const items = dormEdit.items, sel = items[dormSel], sa = dormAsset(sel.a); if (!sa) return;
+  const group = dormDrawOrder(items).filter(i => { const a = dormAsset(items[i].a); return a && (a.category === 'surface') === (sa.category === 'surface'); });
+  const pos = group.indexOf(dormSel);
+  if (kind === 'top' || kind === 'bottom') {
+    const os = group.filter(i => i !== dormSel).map(i => items[i].o || 0);
+    if (!os.length) return;
+    sel.o = kind === 'top' ? Math.max(...os) + 1 : Math.min(...os) - 1;
+  } else {
+    const to = kind === 'up' ? pos + 1 : pos - 1;
+    if (to < 0 || to >= group.length) { showShopToast(kind === 'up' ? '이미 맨 앞이에요.' : '이미 맨 뒤예요.'); return; }
+    // 지금 보이는 순서를 그대로 번호로 고정한 뒤 이웃과 자리만 바꿉니다.
+    group.forEach((i, k) => { items[i].o = k; });
+    items[group[to]].o = pos; sel.o = to;
+  }
+  renderDorm();
+}
 function dormStageHtml(r, base, s, editing, mini) {
   const W = dormBW(base) * s, H = dormBH(base) * s;
-  const items = (r.items || []).map((it, i) => ({ it, i, a: dormAsset(it.a) })).filter(o => o.a)
-    .sort((p, q) => ((q.a.category === 'surface') - (p.a.category === 'surface')) || (p.a.category === 'surface' ? p.i - q.i : (p.it.y + p.a.h * dormZ(p.it, p.a)) - (q.it.y + q.a.h * dormZ(q.it, q.a))));
+  const items = dormDrawOrder(r.items || []).map(i => ({ it: r.items[i], i, a: dormAsset(r.items[i].a) }));
   const fit = base.fit || {}, fitted = [['wall', r.wall], ['floor', r.floor]].map(([k, id]) => {
     const a = dormAsset(id), f = fit[k]; if (!a || !f) return '';
     const sc = f[2] / a.w;
@@ -7562,6 +7594,10 @@ function renderDormEditBar() {
       <button onclick="dormResizeSel(-1)" data-tip="작게 ( - )"><i class="fa-solid fa-minus"></i></button><span class="val">×${dormZ(sel, a)}</span>
       <button onclick="dormResizeSel(1)" data-tip="크게 ( + )"><i class="fa-solid fa-plus"></i></button>
       <button class="txt" onclick="dormResizeSel(0)">원래 크기</button><span class="sep"></span>
+      <button onclick="dormLayerSel('top')" data-tip="최상단으로"><i class="fa-solid fa-angles-up"></i></button>
+      <button onclick="dormLayerSel('up')" data-tip="한 칸 앞으로"><i class="fa-solid fa-angle-up"></i></button>
+      <button onclick="dormLayerSel('down')" data-tip="한 칸 뒤로"><i class="fa-solid fa-angle-down"></i></button>
+      <button onclick="dormLayerSel('bottom')" data-tip="최하단으로"><i class="fa-solid fa-angles-down"></i></button><span class="sep"></span>
       <button onclick="dormFlipSel()" data-tip="좌우 반전"><i class="fa-solid fa-left-right"></i></button>
       <button class="del" onclick="dormDeleteSel()" data-tip="치우기 ( Delete )"><i class="fa-solid fa-trash-can"></i></button>
       <button onclick="dormSel=-1; renderDorm()" data-tip="선택 해제"><i class="fa-solid fa-xmark"></i></button>`;
@@ -7634,11 +7670,22 @@ function bindDormStage(s) {
     if (a) {
       if (!dormGhostPos) { dormGhostPos = Object.assign(ptAt(e), { s }); dormUpdateGhost(); }
       if (dormEdit.items.length >= 150) { showShopToast('소품은 150개까지 놓을 수 있어요.'); return; }
-      dormEdit.items.push({ a: a.id, x: dormGhostPos.x, y: dormGhostPos.y, f: false, z: a.s || 1 }); renderDorm();
+      const nit = { a: a.id, x: dormGhostPos.x, y: dormGhostPos.y, f: false, z: a.s || 1 };
+      const os = dormEdit.items.filter(x => x.o != null).map(x => x.o);
+      if (os.length) nit.o = Math.max(...os) + 1;  // 순서를 정해 둔 방이면 새 소품은 맨 앞에
+      dormEdit.items.push(nit); renderDorm();
     } else { dormSel = -1; st.querySelectorAll('.dorm-item.sel').forEach(x => x.classList.remove('sel')); renderDormEditBar(); }
   });
   st.addEventListener('pointerup', () => { if (drag && drag.moved) renderDorm(); drag = null; });
 }
+// 꾸미기 중 소품 밖(빈 곳 · 옆 패널 · 화면 다른 곳)을 누르면 선택이 풀립니다. 편집 바 · 확대 버튼 · 확인 창은 예외.
+document.addEventListener('pointerdown', (e) => {
+  if (!dormEdit || dormSel < 0) return;
+  if (e.target.closest && e.target.closest('#dormStage .dorm-item, #dormEditBar, #dormZoom, .ui-dialog, .modal-overlay:not(#dormModal)')) return;
+  dormSel = -1;
+  document.querySelectorAll('#dormStage .dorm-item.sel').forEach(x => x.classList.remove('sel'));
+  renderDormEditBar();
+});
 document.addEventListener('keydown', (e) => {
   if (!dormEdit || document.getElementById('dormModal').style.display !== 'flex') return;
   if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;

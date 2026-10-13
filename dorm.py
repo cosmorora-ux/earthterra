@@ -270,7 +270,14 @@ class Dorms:
             w, h = a["w"] * z, a["h"] * z
             x = _clamp(it.get("x"), -w // 2, bw - w // 2, 0)
             y = _clamp(it.get("y"), -h // 2, bh - h // 2, 0)
-            items.append({"a": a["id"], "x": x, "y": y, "f": bool(it.get("f")), "z": z})
+            rec = {"a": a["id"], "x": x, "y": y, "f": bool(it.get("f")), "z": z}
+            # 겹침 순서(앞/뒤로 보내기) : 정해 준 소품만 o 값을 가집니다. 없으면 바닥 쪽(아래)일수록 앞에 그립니다.
+            if it.get("o") is not None:
+                try:
+                    rec["o"] = max(-10000, min(10000, int(it.get("o"))))
+                except (TypeError, ValueError):
+                    pass
+            items.append(rec)
         # 벽지·바닥(방에 딱 맞춰 까는 것) : 자리(slot)가 맞는 자료만 받습니다.
         def slot_asset(key, slot):
             a = self.asset(data.get(key))
