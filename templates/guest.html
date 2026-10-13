@@ -2516,10 +2516,16 @@
     body.is-lounge .sidebar #sidebarOpsBtn { order:6; }
     /* 하단 탭 : 눌린 회색 배경 없이, 채팅이 열려 있으면 채팅만 켜진 탭으로 표시 */
     .sidebar .sidebar-icon:hover, .sidebar .sidebar-icon:focus { background:none !important; }
-    body.m-chat-open .sidebar .sidebar-icon.active { color: var(--muted); }
-    body.m-chat-open .sidebar .sidebar-icon.active::before { display:none; }
-    body.m-chat-open .sidebar #sidebarChatBtn { color: var(--point); }
-    body.m-chat-open .sidebar #sidebarChatBtn::before { content:""; position:absolute; left:50%; top:-6px; transform:translateX(-50%);
+    .sidebar .sidebar-icon:hover { color: var(--muted); }
+    .sidebar .sidebar-icon.active, .sidebar .sidebar-icon.active:hover { color: var(--point); }
+    /* 채팅 · 마이페이지 · 상점 · 공지/우체통이 열려 있으면 그 탭만 켜진 것으로 표시 (body[data-mtab]) */
+    body[data-mtab] .sidebar .sidebar-icon.active { color: var(--muted); }
+    body[data-mtab] .sidebar .sidebar-icon.active::before { display:none; }
+    body[data-mtab="chat"] .sidebar #sidebarChatBtn, body[data-mtab="my"] .sidebar #sidebarMyPageBtn,
+    body[data-mtab="shop"] .sidebar #sidebarShopBtn, body[data-mtab="news"] .sidebar #sidebarNewsBtn { color: var(--point); }
+    body[data-mtab="chat"] .sidebar #sidebarChatBtn::before, body[data-mtab="my"] .sidebar #sidebarMyPageBtn::before,
+    body[data-mtab="shop"] .sidebar #sidebarShopBtn::before, body[data-mtab="news"] .sidebar #sidebarNewsBtn::before {
+      content:""; position:absolute; left:50%; top:-6px; transform:translateX(-50%);
       width:22px; height:3px; border-radius:0 0 3px 3px; background: var(--point); }
     body.is-battle .member-header .m-userlist-btn { display:inline-flex; }
     .member-header .m-chat-close { display:none !important; }
@@ -3555,6 +3561,24 @@ function updateAvatarDots(battle) {
 socket.on('connect', () => {
   autoRejoinOrSilentJoin();
 });
+
+// 세로 태블릿·휴대폰 : 지금 열린 창에 맞춰 하단 탭의 켜진 표시를 옮깁니다.
+function syncMobileTab() {
+  const open = id => { const m = document.getElementById(id); return !!m && m.style.display === 'flex'; };
+  let t = '';
+  if (document.body.classList.contains('m-chat-open')) t = 'chat';
+  else if (open('myPageModal')) t = 'my';
+  else if (open('shopModal')) t = 'shop';
+  else if (open('noticeModal') || open('mailModal') || open('newsSheet')) t = 'news';
+  if (t) document.body.dataset.mtab = t; else delete document.body.dataset.mtab;
+}
+{
+  const mo = new MutationObserver(syncMobileTab);
+  ['myPageModal', 'shopModal', 'noticeModal', 'mailModal', 'newsSheet'].forEach(id => {
+    const m = document.getElementById(id); if (m) mo.observe(m, { attributes:true, attributeFilter:['style'] });
+  });
+  mo.observe(document.body, { attributes:true, attributeFilter:['class'] });
+}
 
 // 세로 태블릿·휴대폰 : 하단 탭을 누르면 열려 있던 창 · 채팅을 닫고 그 탭으로 이동합니다.
 document.querySelector('.sidebar').addEventListener('click', (e) => {
