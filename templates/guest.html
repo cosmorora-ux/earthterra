@@ -2592,6 +2592,44 @@
     .m-battle-tools .notice-dot { top:5px; right:5px; }
     @media (max-width:560px) { .topbar.v2 { grid-template-areas:"room sep fmt . tools" "round round round round timer" !important; } }
   }
+
+  /* ================================================================
+     탭 디자인 통일 : 채팅창 탭(채팅창 · 로그창 …)처럼 같은 폭 글자 탭 + 포인트 색 밑줄
+     (상점 · 우체통 탭, 유저 리스트 정렬, 스킬 로그 글/이미지, 공지/우체통 전환)
+     ================================================================ */
+  .shop-tabs, .seg-toggle, .news-switch { display:flex; gap:0; padding:0; background:none; border:none; border-radius:0;
+    border-bottom:1px solid var(--line); }
+  .shop-tab, .seg-toggle button, .news-switch button { position:relative; flex:1 1 0; min-width:max-content; justify-content:center;
+    display:inline-flex; align-items:center; gap:6px; height:auto; padding:12px 14px; margin:0 0 -1px; background:none !important; border:none; border-radius:0;
+    border-bottom:2px solid transparent; color: var(--muted); font-size:15px; font-weight:600; cursor:pointer; }
+  .shop-tab i, .seg-toggle button i { display:none; }
+  .shop-tab:hover, .seg-toggle button:hover, .news-switch button:hover { color: var(--text); }
+  .shop-tab.active, .seg-toggle button.on, .news-switch button.on { color:#fff; font-weight:600; border-bottom-color: var(--point); }
+  .shop-tab-sep { flex:none; }
+  .news-switch { display:none; }
+  .news-switch .notice-dot { top:8px; right:4px; }
+  /* 작은 자리(스킬 로그 카드 머리, 유저 리스트 검색 옆)에서는 조금 작게 */
+  .mypage.v2 .mp-skill .seg-toggle { margin:0; }
+  .mypage.v2 .mp-skill .seg-toggle button, #userInfoFilter button { font-size:14px; padding:9px 12px; }
+
+  /* ================================================================
+     PC : 하단 탭 대신 왼쪽 메뉴로 여는 페이지(마이페이지 · 상점 · 공지 · 우체통 · 유저 리스트)를
+     같은 크기 · 같은 여백 · 같은 제목 자리의 창으로
+     ================================================================ */
+  @media (min-width:901px) {
+    .modal-overlay > .modal-box.panel.mypage, .modal-overlay > .modal-box.panel.shop-modal, .modal-overlay > .modal-box.panel.notice-modal,
+    .modal-overlay > .modal-box.panel.mail-modal, .modal-overlay > .modal-box.panel.userinfo-modal {
+      width:min(1040px, calc(100vw - 48px)) !important; max-width:none !important;
+      height:min(860px, calc(100vh - 48px)) !important; max-height:none !important;
+      padding:28px 32px !important; border-radius:20px !important; border:1px solid var(--line) !important;
+      display:flex !important; flex-direction:column; overflow:hidden; box-sizing:border-box; }
+    .modal-overlay > .modal-box.panel.mypage { display:block !important; overflow-y:auto; }
+    .modal-box.mypage > *, .modal-box.shop-modal > *, .modal-box.notice-modal > *, .modal-box.mail-modal > *, .modal-box.userinfo-modal > *,
+    .modal-box.mypage.v2 .mp-hero, .modal-box.mypage .idc-head, .modal-box.mypage .mypage-cols { max-width:none !important; width:auto; margin-left:0; margin-right:0; }
+    .modal-box.mypage .idc-title, .modal-box .modal-title.page-title { font-size:32px !important; line-height:1.1; }
+    .modal-box.mypage .idc-head, .notice-head, .modal-box.shop-modal .shop-head, .modal-box.mail-modal .shop-head, .modal-box.userinfo-modal .ui-head {
+      min-height:40px; margin:0 0 18px !important; padding:0 !important; align-items:center; }
+  }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
