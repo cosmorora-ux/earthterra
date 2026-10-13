@@ -1690,6 +1690,19 @@
     .mypage.v2 .mypage-name { font-size:22px; margin-bottom:10px; }
     .mypage.v2 .mp-hero-side { grid-column:1 / -1; border-left:none; padding-left:0; border-top:1px solid var(--line); padding-top:10px; }
     .mypage.v2 .mypage-col + .mypage-col { padding-top:14px; }
+    /* 휴대폰 · 태블릿 프로필 : 위에 사진 + 이름 한 줄, 아래는 '항목 이름 ··· 값' 줄 목록으로 단순하게 */
+    .mypage.v2 .mp-hero { display:grid; grid-template-columns:64px minmax(0,1fr); gap:0 14px; align-items:center; padding:16px 16px 4px; }
+    .mypage.v2 .mypage-portrait { width:64px; height:64px; border-radius:12px; }
+    .mypage.v2 .mp-hero-main { display:contents; }
+    .mypage.v2 .mypage-name { margin:0; font-size:22px; }
+    .mypage.v2 .mp-tags, .mypage.v2 .mp-hero-side { grid-column:1 / -1; display:flex; flex-direction:column; gap:0; min-width:0;
+      border:none; padding:0; margin:0; }
+    .mypage.v2 .mp-tags { margin-top:14px; }
+    .mypage.v2 .mp-tagrow, .mypage.v2 .mp-hero-side .idc-kv { display:flex; align-items:center; justify-content:space-between; gap:12px;
+      min-height:46px; padding:6px 0; border-top:1px solid var(--line); box-sizing:border-box; }
+    .mypage.v2 .mp-tagrow .mp-k, .mypage.v2 .mp-hero-side .mypage-label { width:auto; flex:none; font-size:13px; color: var(--muted); font-weight:500; }
+    .mypage.v2 .mypage-roles, .mypage.v2 .mp-nations { flex-wrap:nowrap; justify-content:flex-end; gap:5px; min-width:0; }
+    .mypage.v2 .mypage-roles button, .mypage.v2 .mp-nations button { height:28px; padding:0 10px; font-size:12.5px; white-space:nowrap; flex:none; }
   }
 
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
@@ -2552,7 +2565,6 @@
           <input id="joinPasswordInput" type="password" placeholder="운영진 비밀번호" aria-label="운영진 비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitJoinModal()"></div>
         <div id="joinModalError" class="err"></div>
         <button class="btn-primary gate-go" id="gateGoBtn" onclick="submitJoinModal()">입장<i class="fa-solid fa-arrow-right"></i></button>
-        <div class="gate-hint">등록된 캐릭터 이름으로 입장합니다.<br>운영진은 GM으로 입장해 주세요.</div>
       </div>
     </div>
     <a class="gate-x" href="https://x.com/EarthTerrA__" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-x-twitter"></i>@EarthTerrA__</a>
