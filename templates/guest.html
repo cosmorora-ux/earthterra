@@ -2980,6 +2980,15 @@
     color:#fff; background: rgba(255,255,255,.08); }
   .sr-play i { font-size:9px; color: var(--point); }
   .skill-rec:hover .sr-play { background: rgba(var(--point-rgb), .3); }
+
+  /* 격자 : 행동 완료 = 흐리게 + 모서리 ✓, 이동 완료(행동 대기) = 모서리 작은 삼각형 */
+  .gmap .gcell.acted { filter: grayscale(.6) brightness(.7); }
+  .gmap .gcell.acted::after { content:"✓"; position:absolute; top:1px; right:2px; z-index:9; font-size:10px; line-height:1; font-weight:800; color:#fff; opacity:.9; text-shadow:0 1px 2px rgba(0,0,0,.8); }
+  .gmap .gcell.moved::after { content:""; position:absolute; top:0; right:0; z-index:9; width:0; height:0;
+    border-style:solid; border-width:0 7px 7px 0; border-color:transparent var(--point) transparent transparent; }
+  /* 전조 칸 위에 캐릭터가 있어도 줄무늬가 보이게 */
+  .gmap td[style*="background-image"] .gcell .gsel:not(.tgt) { background: repeating-linear-gradient(135deg, rgba(255,176,32,.32) 0 3px, transparent 3px 9px); }
+  #floatTip { white-space:pre-line; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -4732,6 +4741,38 @@ const GRID_CELL_PX = 36;
 // GM이 '전조 출력'으로 공개한 격자 칸. 곧 그 칸에 무조건 피해가 발생한다는 시각적 경고입니다.
 let telegraphRevealedCells = new Set();
 
+// 격자 칸 툴팁 : 이름 · 포지션 · 팀 / 체력 · 위치 / 이번 라운드 상태 / 걸린 효과 / 전조 · 범위
+function gridCellTip(c, x, y, key, telKeys, rangeCells, rangeIsAction) {
+  const pos = cellLabel(x, y);
+  const lines = [];
+  if (c) {
+    const team = c.teamLabel === 'A' ? (BATTLE_TYPE === 'pvp' ? '1팀' : '러너') : (BATTLE_TYPE === 'siege' ? '거점' : (BATTLE_TYPE === 'pvp' ? '2팀' : '보스'));
+    lines.push(`${displayNameOf(c)} · ${c.role || '-'} · ${team}`);
+    lines.push(`HP ${c.current_hp} / ${c.max_hp}${c.shield_hp ? ` (+보호막 ${c.shield_hp})` : ''} · ${pos}`);
+    const st = isDefeatedStatus(c) ? statusTagFor(c).replace(/^\s*\*/, '')
+      : c.status === 'downed' ? '기절'
+      : c.has_acted ? '이번 라운드 행동 완료'
+      : c.moved_this_round ? '이동 완료 · 행동 대기' : '이동 전';
+    lines.push(st + (c.dodging_this_round ? ' · 회피 태세' : ''));
+    const fx = [];
+    if (c.self_defense_count) fx.push('직접 방어');
+    const guard = (c.defense_count || 0) - (c.self_defense_count || 0);
+    if (guard > 0) fx.push(`수호${guard > 1 ? ' ×' + guard : ''}`);
+    if (c.polarize_active) fx.push('편광');
+    if (c.has_leech_buff) fx.push('흡수');
+    if (c.pending_attacks) fx.push(`피해 보류 ${c.pending_attacks}`);
+    if (c.pending_heals) fx.push(`회복 예정 +${c.pending_heals}`);
+    if (c.interceptors && c.interceptors.length) fx.push(`대리 방어 ${c.interceptors.join(', ')}`);
+    if (c.commanded_by) fx.push(`지휘 ${c.commanded_by}`);
+    if (fx.length) lines.push('효과 : ' + fx.join(', '));
+  } else {
+    lines.push(pos);
+  }
+  if (telKeys.has(key)) lines.push(telegraphRevealedCells.has(key) ? '⚠ 전조 구역 — 곧 피해' : '⚠ 전조로 고른 칸');
+  if (rangeCells.has(key)) lines.push(rangeIsAction ? '사거리 안' : '이동 가능');
+  return lines.join('\n');
+}
+
 function cellLabel(x, y) {
   let col = '';
   let n = x;
@@ -4883,6 +4924,8 @@ function renderGrid(battle, all) {
   // 전조 구역 : 운영진이 고르는 중이면 고른 칸, 아니면 공개된 칸
   const telSelecting = typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all';
   const telKeys = telSelecting ? new Set([...telegraphSelectedCells, ...telegraphRevealedCells]) : telegraphRevealedCells;
+  const TEL_EDGE = '#ffb020';
+  const TEL_STRIPES = 'repeating-linear-gradient(135deg, rgba(255,176,32,.38) 0 3px, rgba(255,176,32,.06) 3px 9px)';
   let html = '<table class="gmap">';
   for (let y = 0; y < gridHeight; y++) {
     html += '<tr>';
@@ -4901,8 +4944,7 @@ function renderGrid(battle, all) {
         const inRangeOrExempt = highlightCells.has(key) || (actorIgnoresRange && c.teamLabel === selChar.teamLabel);
         const isTargetable = canTargetNow && !isSelectedActor && inRangeOrExempt;
         const isSelfTargetable = canTargetNow && isSelectedActor;
-        if (c.has_acted) selBorder = 'box-shadow: inset 0 0 0 2px rgba(255,255,255,.9);';
-        else if (c.moved_this_round) selBorder = 'box-shadow: inset 0 -3px 0 0 #fff;';
+        // 행동 완료 = 흐리게 + 모서리 ✓ / 이동 완료(행동 대기) = 모서리 작은 삼각형 (테두리는 쓰지 않음)
         cursor = 'pointer';
         onclick = (isSelfTargetable || isTargetable)
           ? `onclick="onGridTargetClick('${selectedGridChar}','${c.name}')"`
@@ -4916,6 +4958,8 @@ function renderGrid(battle, all) {
         } else {
           cellCls = c.teamLabel === 'A' ? 'ally' : 'enemy';
         }
+        if (c.has_acted) cellCls += ' acted';
+        else if (c.moved_this_round) cellCls += ' moved';
       } else if (highlightCells.has(key) && !highlightIsAction) {
         cursor = 'pointer';
         onclick = `onclick="onGridMoveClick(${x},${y})"`;
@@ -4932,15 +4976,16 @@ function renderGrid(battle, all) {
           if (selfKey && (key === selfKey || nk === selfKey)) return 'var(--point)';
           if (rngCol && highlightCells.has(key) !== highlightCells.has(nk)) return rngCol;
           // 전조 구역(운영진이 고르는 중이거나 공개된 칸)도 같은 방식 : 구역 바깥 격자 선만 붉게
-          if (telKeys.has(key) !== telKeys.has(nk)) return '#ff6b6b';
+          if (telKeys.has(key) !== telKeys.has(nk)) return TEL_EDGE;
           return null;
         };
         [['top', 0, -1], ['right', 1, 0], ['bottom', 0, 1], ['left', -1, 0]].forEach(([side, dx, dy]) => {
           const col = edge(dx, dy); if (col) tdStyle += `border-${side}-color:${col};`;
         });
+        // 바탕 : 내 칸/범위는 옅은 색, 전조는 호박색 사선 줄무늬(겹쳐도 둘 다 보이게 색 + 무늬를 따로 깝니다)
         if (key === selfKey) tdStyle += 'background-color:color-mix(in srgb, var(--point) 18%, transparent);';
-        else if (telKeys.has(key)) tdStyle += 'background-color:rgba(255,80,80,.24);';
-        else if (rngCol && highlightCells.has(key)) tdStyle += `background-color:color-mix(in srgb, ${rngCol} 12%, transparent);`;
+        else if (rngCol && highlightCells.has(key)) tdStyle += `background-color:color-mix(in srgb, ${rngCol} 14%, transparent);`;
+        if (telKeys.has(key)) tdStyle += `background-image:${TEL_STRIPES};`;
       }
       // 운영진 전조 선택 중 : 모든 칸을 눌러 고르고(Shift+클릭 가로 한 줄, Shift+우클릭 세로 한 줄), 고른 칸은 붉게 표시
       if (typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all') {
@@ -4949,9 +4994,7 @@ function renderGrid(battle, all) {
 
       }
       const glow = '';
-      const stateText = c ? (c.moved_this_round ? ' · 이동 완료(준비)' : ' · 이동 전') : '';
-      const telegraphText = telegraphRevealedCells.has(key) ? ' · 전조(곧 피해)' : '';
-      const title = c ? `${displayNameOf(c)} (${c.role}) HP ${c.current_hp}/${c.max_hp}${stateText}${telegraphText}` : (telegraphText ? telegraphText.replace(/^\s*·\s*/, '') : '');
+      const title = shopEsc(gridCellTip(c, x, y, key, telKeys, highlightCells, highlightIsAction)).replace(/\n/g, '&#10;');
       let inner = '';
       if (c) {
         // BOSS 부위는 칸이 4개라 이름 앞 두 글자만(예: NOVA → NO) 씁니다. 본인이 정한 표기 이름이 있으면 그걸 우선합니다.
