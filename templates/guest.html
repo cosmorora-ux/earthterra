@@ -2952,20 +2952,18 @@
   .action-bar-bottom.gm-bar.wrap-fields .gm-bar-fields { flex:1 1 100%; }
   .action-bar-bottom.gm-bar.wrap-fields .gm-bar-ctrl { border-left:none; padding-left:0; }
 
-  /* 로그창 꾸밈 */
-  .lg-skill { display:inline-block; padding:1px 8px; margin:0 2px; border-radius:6px; font-weight:800; font-size:.92em; color:#fff;
-    background: radial-gradient(130% 140% at 0% 50%, rgba(var(--point-rgb), .5), rgba(var(--point-rgb), .14) 60%); border:1px solid rgba(var(--point-rgb), .5); }
-  .lg-lab { display:inline-block; padding:0 7px; margin-right:6px; border-radius:5px; font-size:.82em; font-weight:700; color: var(--muted);
-    background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); vertical-align:1px; }
-  .logline.tag-heal .lg-lab { color:#8fe3a8; background: rgba(80,200,120,.1); border-color: rgba(80,200,120,.25); }
-  .lg-plus { display:inline-block; padding:0 6px; border-radius:5px; font-weight:800; color:#7ee2a0; background: rgba(80,200,120,.12); font-variant-numeric: tabular-nums; }
-  .lg-hp { display:inline-flex; align-items:center; gap:5px; padding:0 7px; margin-left:4px; border-radius:5px; font-size:.88em; color: var(--muted);
-    background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); font-variant-numeric: tabular-nums; vertical-align:1px; }
-  .lg-hp i { font-size:.75em; opacity:.6; }
-  .lg-hp b { color: var(--text); font-weight:700; }
-  .lg-hp em { font-style:normal; font-weight:700; font-size:.92em; }
+  /* 로그창 꾸밈 : 글줄 높이를 넘지 않는 낮은 표시만(배경 상자 최소화) */
+  .logline.tag-round + .logblock.cont { margin-top:8px; }
+  .lg-skill { display:inline; padding:1px 6px; margin:0 1px; border-radius:4px; font-weight:700; color:#fff; background: rgba(var(--point-rgb), .22); }
+  .lg-lab { display:inline; padding:1px 6px; margin-right:6px; border-radius:4px; font-size:.8em; font-weight:700; color: var(--muted); background: rgba(255,255,255,.06); }
+  .logline.tag-heal .lg-lab { color: var(--role-메딕); background: rgba(255,224,102,.08); }
+  .lg-plus { font-weight:800; color:#7ee2a0; font-variant-numeric: tabular-nums; }
+  .lg-hp { margin-left:6px; font-size:.88em; color: var(--muted); font-variant-numeric: tabular-nums; white-space:nowrap; }
+  .lg-hp > span { opacity:.8; }
+  .lg-hp i { font-size:.7em; margin:0 3px; opacity:.55; }
+  .lg-hp b { color:#c8cad0; font-weight:700; }
+  .lg-hp em { font-style:normal; font-weight:700; margin-left:4px; }
   .lg-hp em.up { color:#7ee2a0; } .lg-hp em.down { color:#ff7a7a; }
-
   /* 채팅창 스킬 사용 기록 */
   .chat-line.is-skill { display:flex; align-items:stretch; gap:6px; margin:10px 0; }
   .skill-rec { position:relative; flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; cursor:pointer;
@@ -5198,7 +5196,7 @@ function formatRoundSummaryHtml(section) {
     if (m) rows.push({ name: m[1].trim(), start: +m[2], end: +m[3], state: m[4] || '' });
     else if (l.tag !== 'system' || !/시작 체력/.test(l.text || '')) rest.push(l);
   });
-  if (!rows.length) return section.map(formatLogLineHtml).join('');
+  if (!rows.length) return section.map(l => formatLogLineHtml(l, false)).join('');
   const chars = lastAllForCards || [];
   const info = n => chars.find(c => c.name === n) || {};
   const rowHtml = r => {
@@ -5218,13 +5216,25 @@ function formatRoundSummaryHtml(section) {
     + `<div class="round-summary">
         ${block(BATTLE_TYPE === 'pvp' ? 'Team 1' : '러너', teamA)}${block(BATTLE_TYPE === 'pvp' ? 'Team 2' : (BATTLE_TYPE === 'siege' ? '거점' : '보스'), teamB)}
       </div>`
-    + rest.map(formatLogLineHtml).join('');
+    + rest.map(l => formatLogLineHtml(l, false)).join('');
 }
 function formatLogHtml(lines) {
   return splitLogIntoSections(lines || []).map(section => {
     const head = section[0];
     if (head.tag === 'round' && /최종 결과/.test(head.text || '')) return formatRoundSummaryHtml(section);
-    if (head.tag === 'round') return section.map(formatLogLineHtml).join('');
+    if (head.tag === 'round') {
+      // 라운드 안내 줄 다음에 바로 붙은 결과 줄(회복 · 안내 등)도 떠 보이지 않게 일반 블록으로 묶습니다.
+      let out = '', run = [];
+      const flush = () => {
+        if (!run.length) return;
+        const kind = run.some(l => l.tag === 'heal') ? ' heal' : '';
+        out += `<div class="logblock cont${kind}">${run.map(l => formatLogLineHtml(l, false)).join('')}</div>`;
+        run = [];
+      };
+      section.forEach(l => { if (l.tag === 'round') { flush(); out += formatLogLineHtml(l, false); } else run.push(l); });
+      flush();
+      return out;
+    }
     const isGroup = LOG_GROUP_START_TAGS.has(head.tag);
     const actionCls = isGroup ? logActionClass(head) : '';
     const cls = `logblock${isGroup ? '' : ' cont'}${actionCls ? ' ' + actionCls : ''}`;
