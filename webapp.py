@@ -29,12 +29,12 @@ import dorm as dorm_mod
 from battle import Battle, BattleError
 from rooms import (
     create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
-    ROOMS, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES,
+    ROOMS, BATTLE_TYPE_LABELS, BATTLE_TYPE_DEFAULTS, GRID_SIZES, ensure_lounge,
 )
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.5"
+SERVER_BUILD = "2026-10-13.6"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -204,6 +204,8 @@ def yacht_page():
 @app.route("/create_room", methods=["POST"])
 def create_room_route():
     battle_type = request.form.get("battle_type", "pvp")
+    if battle_type == "lounge":
+        battle_type = "pvp"
     room_name = request.form.get("room_name", "")
     room = create_room(battle_type, name=room_name)
     return redirect(url_for("guest_page", room_id=room.id, key=room.guest_key))
@@ -1663,6 +1665,9 @@ def on_preview_teams(data):
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
+    if room.battle_type == "lounge":
+        emit("action_error", {"message": "일반 룸에서는 전투를 할 수 없어요."})
+        return
     room.preview_teams = {
         "team_a": data.get("team_a", []),
         "team_b": data.get("team_b", []),
@@ -1675,6 +1680,9 @@ def on_start_battle(data):
     room = _require_gm_or_guest_gm(request.sid)
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
+        return
+    if room.battle_type == "lounge":
+        emit("action_error", {"message": "일반 룸에서는 전투를 할 수 없어요."})
         return
     forced_first_team = Battle.TEAM_A if room.battle_type == "siege" else None
     formula_overrides = config.load_profile_overrides(room.battle_type)
@@ -3094,6 +3102,7 @@ def _runtime_save_loop():
 
 if __name__ == "__main__":
     load_rooms()
+    ensure_lounge()
     load_runtime()
     socketio.start_background_task(_round_reminder_loop)
     socketio.start_background_task(_runtime_save_loop)

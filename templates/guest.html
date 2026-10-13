@@ -1681,6 +1681,10 @@
     .mypage.v2 .mypage-col + .mypage-col { padding-top:14px; }
   }
 
+  /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
+  body.is-lounge #sidebarBattleBtn, body.is-lounge #sidebarUserListBtn, body.is-lounge .m-battle-tools { display:none !important; }
+  body.is-battle #sidebarDormBtn, body.is-battle #sidebarMailBtn, body.is-battle #newsMailRow, body.is-battle #myPageRoomBox { display:none !important; }
+
   /* ================================================================
      운영 페이지 (GM 전용) : 전투 준비 · 캐릭터 · 음악 · 방 설정. 예전 운영진 화면 기능을 러너 화면으로 옮겼습니다.
      수식·운영진 로그·스탯은 서버가 GM 인증 소켓에만 보내므로, 이 화면 코드가 있어도 러너에게는 데이터가 가지 않습니다.
@@ -2161,7 +2165,7 @@
   }
 </style>
 </head>
-<body>
+<body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
 <div id="sceneBg"></div>
 <canvas id="weatherCanvas"></canvas>
 <div class="app-shell">
@@ -3138,7 +3142,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.5";
+const EXPECTED_SERVER_BUILD = "2026-10-13.6";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -7950,8 +7954,10 @@ document.addEventListener('pointerdown', (e) => {
 const OPS_DEFAULT_A = {{ default_team_a }}, OPS_DEFAULT_B = {{ default_team_b }};
 const OPS_SKILLS = { "가디언": ["차폐", "편광"], "스트라이커": ["붕괴", "방출"], "메딕": ["환류", "복원"] };
 const OPS_ROLES = ['가디언', '스트라이커', '메딕'];
-const OPS_TABS = [['battle', '전투 준비'], ['chars', '캐릭터'], ['music', '음악'], ['room', '방 설정']];
-let opsTab = 'battle';
+const IS_LOUNGE = BATTLE_TYPE === 'lounge';
+// 일반 룸은 전투가 없으므로 전투 준비 탭을 뺍니다.
+const OPS_TABS = [['battle', '전투 준비'], ['chars', '캐릭터'], ['music', '음악'], ['room', '방 설정']].filter(t => !(IS_LOUNGE && t[0] === 'battle'));
+let opsTab = OPS_TABS[0][0];
 let opsTeamA = [], opsTeamB = [];
 let opsLastPublic = null;
 let opsQuick = { role: '스트라이커', stats: {} };
@@ -7981,11 +7987,14 @@ function openOps() {
 }
 function closeOps() {
   if (!opsOpen()) return;
+  if (IS_LOUNGE) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); openDorm(); return; }
   document.body.classList.remove('view-ops');
   document.getElementById('sidebarOpsBtn').classList.remove('active');
   document.getElementById('sidebarBattleBtn').classList.toggle('active', !document.body.classList.contains('view-dorm'));
   setTimeout(() => window.dispatchEvent(new Event('resize')), 30);
 }
+// 일반 룸은 기숙사가 첫 화면입니다(전투 화면이 없음).
+if (IS_LOUNGE) document.addEventListener('DOMContentLoaded', () => openDorm());
 function setOpsTab(t) { opsTab = t; opsEditName = null; renderOps(); }
 
 function renderOps() {

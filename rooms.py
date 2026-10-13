@@ -29,12 +29,15 @@ _PERSISTED_FIELDS = [
 ]
 
 BATTLE_TYPE_LABELS = {
+    # 일반 룸 : 전투가 없는 콘텐츠 방(기숙사 · 우체통 · 상점 등). 방 목록 맨 위에 항상 하나 있고 지울 수 없습니다.
+    "lounge": "일반",
     "pvp": "PVP",
     "siege": "공성전",
     "mass_raid": "마스 레이드",
 }
 # 전투 유형별 팀 인원 기본값 : (1팀/러너팀 기본 인원, 2팀/GM팀 기본 인원)
 BATTLE_TYPE_DEFAULTS = {
+    "lounge": (0, 0),
     "pvp": (3, 3),
     "siege": (5, 1),
     "mass_raid": (30, 5),
@@ -133,7 +136,7 @@ def create_room(battle_type: str = "pvp", name: str = None) -> RoomState:
 
 
 def delete_room(room_id: str) -> bool:
-    if room_id not in ROOMS:
+    if room_id not in ROOMS or ROOMS[room_id].battle_type == "lounge":
         return False
     del ROOMS[room_id]
     save_rooms()
@@ -145,8 +148,14 @@ def get_room(room_id: str):
 
 
 def list_rooms():
-    """방 목록 화면에 표시할 순서 - 만든 순서대로."""
-    return sorted(ROOMS.values(), key=lambda r: r.created_at)
+    """방 목록 화면에 표시할 순서 - 일반 룸이 맨 위, 나머지는 만든 순서대로."""
+    return sorted(ROOMS.values(), key=lambda r: (r.battle_type != "lounge", r.created_at))
+
+
+def ensure_lounge():
+    """일반 룸이 없으면 하나 만듭니다(서버 시작 시)."""
+    if not any(r.battle_type == "lounge" for r in ROOMS.values()):
+        create_room("lounge", name="일반 룸")
 
 
 def save_rooms():

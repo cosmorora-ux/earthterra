@@ -54,6 +54,8 @@
   .field:focus { border-color:#4a4a52; }
   .types { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
   @media (max-width:640px) { .types { grid-template-columns:1fr; } .room-card { flex-wrap:wrap; } }
+  .room-card.lounge { border-color: rgba(var(--point-rgb),.35); }
+  .room-card.lounge .ico i { color: rgb(var(--point-rgb)); }
   .type-option { position:relative; display:block; border:1px solid var(--card-border); border-radius:12px; padding:16px; background: var(--card); cursor:pointer; transition: border-color .15s, background .15s; }
   .type-option:hover { border-color:#3a3a40; }
   .type-option input { position:absolute; opacity:0; pointer-events:none; }
@@ -148,15 +150,15 @@
   <div class="sec-title">방 목록 <span class="count">{{ rooms|length }}</span></div>
   {% if rooms %}
     {% for room in rooms %}
-    <div class="room-card">
-      <div class="ico"><i class="fa-solid {% if room.battle_type == 'siege' %}fa-chess-rook{% elif room.battle_type == 'mass_raid' %}fa-border-all{% else %}fa-people-arrows{% endif %}"></i></div>
+    <div class="room-card{% if room.battle_type == 'lounge' %} lounge{% endif %}">
+      <div class="ico"><i class="fa-solid {% if room.battle_type == 'lounge' %}fa-house{% elif room.battle_type == 'siege' %}fa-chess-rook{% elif room.battle_type == 'mass_raid' %}fa-border-all{% else %}fa-people-arrows{% endif %}"></i></div>
       <div class="info">
         <div class="room-name">{{ room.name }}</div>
-        <div class="room-type">{{ room.battle_type_label }}</div>
+        <div class="room-type">{% if room.battle_type == 'lounge' %}기숙사 · 우체통 · 상점{% else %}{{ room.battle_type_label }}{% endif %}</div>
       </div>
       <div class="actions">
         <a class="btn primary" href="{{ room.guest_url }}"><i class="fa-solid fa-right-to-bracket"></i> 입장</a>
-        <button type="button" class="btn icon" onclick="confirmDelete('{{ room.name }}', 'deleteForm-{{ room.id }}')"><i class="fa-solid fa-trash-can"></i></button>
+        {% if room.battle_type != 'lounge' %}<button type="button" class="btn icon" onclick="confirmDelete('{{ room.name }}', 'deleteForm-{{ room.id }}')"><i class="fa-solid fa-trash-can"></i></button>{% else %}<span class="btn icon" style="visibility:hidden"></span>{% endif %}
       </div>
       <form method="post" action="/delete_room" id="deleteForm-{{ room.id }}" style="display:none;">
         <input type="hidden" name="room_id" value="{{ room.id }}">
