@@ -1941,10 +1941,10 @@
   .dorm-item.smooth, .dorm-asset.smooth { image-rendering:auto; }
   .dorm-stage:not(.editing) .dorm-item.chara { cursor:pointer; }
   .dorm-say { position:absolute; z-index:5; transform:translate(-50%, calc(-100% - 10px)); max-width:220px; width:max-content; padding:8px 12px; border-radius:12px;
-    background:#f4f4f6; color:#17171a; font-size:13px; font-weight:600; line-height:1.45; text-align:center; image-rendering:auto; pointer-events:none;
-    box-shadow:0 8px 24px rgba(0,0,0,.4); animation: dormSay 3.5s ease forwards; }
-  .dorm-say::after { content:""; position:absolute; left:50%; bottom:-6px; margin-left:-6px; border:6px solid transparent; border-bottom:none; border-top-color:#f4f4f6; }
-  @keyframes dormSay { 0% { opacity:0; transform:translate(-50%, calc(-100% - 2px)) scale(.9); } 8% { opacity:1; transform:translate(-50%, calc(-100% - 10px)); } 88% { opacity:1; } 100% { opacity:0; } }
+    background: rgba(12,12,14,.92); color:#f2f2f4; border:1px solid rgba(255,255,255,.14); font-size:13px; font-weight:600; line-height:1.45; text-align:center;
+    image-rendering:auto; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.45); animation: dormSay 3.8s ease forwards; }
+  .dorm-say::after { content:""; position:absolute; left:50%; bottom:-6px; margin-left:-6px; border:6px solid transparent; border-bottom:none; border-top-color: rgba(12,12,14,.92); }
+  @keyframes dormSay { 0% { opacity:0; transform:translate(-50%, calc(-100% - 2px)) scale(.9); } 7% { opacity:1; transform:translate(-50%, calc(-100% - 10px)); } 90% { opacity:1; } 100% { opacity:0; } }
   .dorm-asset-wrap { position:relative; }
   .dorm-asset-wrap .dorm-asset { width:100%; }
   .dorm-asset-tag { position:absolute; left:6px; top:6px; font-size:10px; color: var(--point); pointer-events:none; }
@@ -2108,6 +2108,9 @@
   .dorm-card .crole { font-size:13px; color: var(--muted); flex:none; font-variant-numeric: tabular-nums; }
   .dorm-portrait { height:124px; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden;
     background:transparent; }
+  .dorm-card .dorm-new { flex:none; margin-left:auto; padding:2px 8px; border-radius:999px; background: var(--accent-blue); color: var(--on-accent);
+    font-size:11px; font-weight:800; letter-spacing:.02em; box-shadow:0 0 12px rgba(var(--point-rgb),.45); }
+  .dorm-card .row1 { align-items:center; }
   .char-card.dorm-card.mine { border-color: rgba(255,255,255,.42); }
   .char-card.dorm-card.empty { cursor:default; background:transparent; border-style:dashed; opacity:.55; }
   .char-card.dorm-card.empty .cname { color: var(--muted); font-weight:600; }
@@ -7276,6 +7279,20 @@ const dormUp = { buf: null, filename: '', url: '', name: '', category: 'deco', c
 const DORM_CATS = [['furniture', '가구'], ['deco', '소품'], ['wall', '벽 장식'], ['surface', '벽지·바닥'], ['room', '방']];
 let dormSet = '', dormQ = '';
 function dormIsGm() { return myControlInfo(lastBattleForPanel).scope === 'all'; }
+// 기숙사 목록 New! : 방이 바뀐 때(꾸밈·음악·대사·방명록)가 이 브라우저에서 마지막으로 그 방을 본 때보다 나중이면 표시합니다.
+// 처음 쓰는 브라우저는 지금 상태를 기준으로 잡아서 전부 New!가 뜨지 않게 합니다.
+function dormSeenMap() { try { return JSON.parse(localStorage.getItem('dormSeen') || 'null'); } catch (e) { return null; } }
+function dormSeenSave(m) { try { localStorage.setItem('dormSeen', JSON.stringify(m)); } catch (e) {} }
+function dormSyncSeenBaseline() {
+  if (!dormData || !dormData.rooms) return;
+  let m = dormSeenMap();
+  if (!m) { m = {}; Object.entries(dormData.rooms).forEach(([n, r]) => { m[n] = r.activity || 0; }); dormSeenSave(m); }
+}
+function dormIsNew(name) {
+  const r = dormData && dormData.rooms && dormData.rooms[name], m = dormSeenMap() || {};
+  return !!(r && r.activity && r.activity > (m[name] || 0) + 0.5);
+}
+function dormMarkSeen(name, activity) { const m = dormSeenMap() || {}; m[name] = Math.max(m[name] || 0, activity || 0); dormSeenSave(m); }
 function dormMe() { return myLoggedInName(); }
 function dormAsset(id) { return (dormData && dormData.assets || []).find(a => a.id === id) || null; }
 function dormHallOf(name) { return (dormData && dormData.halls || []).find(h => (h.slots || []).includes(name)) || null; }
@@ -7310,6 +7327,7 @@ function setDormView(v) { dormView = v; if (v === 'manage') { dormHallsDraft = n
 function openDormRoom(owner) { dormZoom = 1; dormPan = { x: 0, y: 0 }; dormView = 'room'; dormRoom = { owner, loading: true }; dormEdit = null; dormSel = -1; socket.emit('dorm_room_get', { name: owner }); renderDorm(); }
 socket.on('dorm_data', (d) => {
   dormData = d; if (d.roster) dormRoster = d.roster;
+  dormSyncSeenBaseline();
   if (document.getElementById('dormModal').style.display === 'flex' && !dormEdit) renderDorm();
   else if (dormEdit) renderDormPalette();  // 꾸미기 중 자료가 늘거나 줄면 아이템 목록만 새로
   renderMyPageRoom();
@@ -7330,6 +7348,7 @@ function renderMyPageRoom() {
 }
 socket.on('dorm_room', (r) => {
   if (!dormRoom || dormRoom.owner !== r.owner) return;
+  dormMarkSeen(r.owner, r.activity);  // 지금 보고 있는 방만 '봤음'으로
   if (dormEdit && !dormSaving) { dormRoom = r; return; }
   dormRoom = r; dormSaving = false; dormEdit = null; dormSel = -1; dormPick = null;
   if (document.getElementById('dormModal').style.display === 'flex') renderDorm();
@@ -7431,7 +7450,7 @@ function dormHallsHtml() {
       <span class="cnt">${n} / ${dormData.hall_size}</span></h2>
     <div class="dorm-cards holo-zone">${(h.slots || []).map((nm, i) => nm
       ? `<div class="char-card dorm-card ${nm === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(nm))})">
-          <div class="row1"><span class="cname">${mailEsc(nm)}</span></div>
+          <div class="row1"><span class="cname">${mailEsc(nm)}</span>${dormIsNew(nm) ? '<span class="dorm-new">New!</span>' : ''}</div>
           <div class="dorm-portrait">${dormMiniHtml(nm, 150, 112)}</div></div>`
       : `<div class="char-card dorm-card empty"><div class="row1"><span class="cname">빈 방</span></div>
           <div class="dorm-portrait"><i class="fa-solid fa-door-closed"></i></div></div>`).join('')}</div></section>`;
@@ -7483,24 +7502,40 @@ function dormRenderStage() {
   else bindDormSpeak();
   bindDormPan(frame);
 }
-// 방에 놓인 캐릭터(SD)를 누르면 등록한 대사 중 하나를 말풍선으로 보여줍니다.
+// 방에 놓인 캐릭터(SD)는 등록한 대사를 몇 초마다 저절로 말하고, 누르면 바로 한마디 합니다.
+let dormSpeakTimer = null;
+function dormSay(el) {
+  const st = document.getElementById('dormStage'); if (!st || !el || !dormRoom) return false;
+  const it = (dormRoom.items || [])[+el.dataset.i], a = it && dormAsset(it.a);
+  const lines = (a && a.lines || []).filter(Boolean);
+  if (!lines.length) return false;
+  let pick = lines[Math.floor(Math.random() * lines.length)];
+  if (lines.length > 1 && pick === el._lastLine) pick = lines[(lines.indexOf(pick) + 1) % lines.length];
+  el._lastLine = pick;
+  if (el._say) el._say.remove();
+  const say = document.createElement('div');
+  say.className = 'dorm-say'; say.textContent = pick;
+  say.style.left = (el.offsetLeft + el.offsetWidth / 2) + 'px'; say.style.top = el.offsetTop + 'px';
+  st.appendChild(say); el._say = say;
+  setTimeout(() => { say.remove(); if (el._say === say) el._say = null; }, 3800);
+  return true;
+}
 function bindDormSpeak() {
   const st = document.getElementById('dormStage'); if (!st) return;
-  st.addEventListener('click', (e) => {
-    const el = e.target.closest('.dorm-item.chara'); if (!el || !dormRoom) return;
-    const it = (dormRoom.items || [])[+el.dataset.i], a = it && dormAsset(it.a);
-    const lines = (a && a.lines || []).filter(Boolean);
-    st.querySelectorAll('.dorm-say').forEach(x => x.remove());
-    if (!lines.length) return;
-    let pick = lines[Math.floor(Math.random() * lines.length)];
-    if (lines.length > 1 && pick === el._lastLine) pick = lines[(lines.indexOf(pick) + 1) % lines.length];
-    el._lastLine = pick;
-    const say = document.createElement('div');
-    say.className = 'dorm-say'; say.textContent = pick;
-    say.style.left = (el.offsetLeft + el.offsetWidth / 2) + 'px'; say.style.top = el.offsetTop + 'px';
-    st.appendChild(say);
-    clearTimeout(bindDormSpeak._t); bindDormSpeak._t = setTimeout(() => say.remove(), 3500);
-  });
+  st.addEventListener('click', (e) => { const el = e.target.closest('.dorm-item.chara'); if (el) dormSay(el); });
+  clearTimeout(dormSpeakTimer);
+  const talkers = () => [...st.querySelectorAll('.dorm-item.chara')].filter(el => {
+    const it = (dormRoom.items || [])[+el.dataset.i], a = it && dormAsset(it.a); return a && (a.lines || []).length; });
+  if (!talkers().length) return;
+  const tick = (first) => {
+    dormSpeakTimer = setTimeout(() => {
+      if (!document.body.contains(st) || dormEdit) return;
+      const list = talkers().filter(el => !el._say);
+      if (list.length) dormSay(list[Math.floor(Math.random() * list.length)]);
+      tick(false);
+    }, first ? 900 : 4200 + Math.random() * 3000);
+  };
+  tick(true);
 }
 function dormApplyPan() { const st = document.getElementById('dormStage'); if (st) st.style.transform = `translate(${dormPan.x}px, ${dormPan.y}px)`; }
 function dormClampPan(frame) {

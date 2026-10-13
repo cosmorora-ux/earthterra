@@ -126,6 +126,9 @@ class Dorms:
         r = self.rooms.get(name) or {}
         return {"owner": name, "base": r.get("base") or DEFAULT_BASE, "wall": r.get("wall"), "floor": r.get("floor"),
                 "items": r.get("items", []), "updated": r.get("updated"),
+                # 마지막으로 바뀐 때(꾸밈 · 음악 · 대사 · 방명록) : 기숙사 목록의 New! 표시에 씁니다.
+                "activity": max([r.get("updated") or 0, r.get("touched") or 0]
+                                + [e.get("at", 0) for e in self.guestbooks.get(name, [])]),
                 "music": r.get("music"), "line": r.get("line") or "",
                 "guestbook": sorted(self.guestbooks.get(name, []), key=lambda e: -e.get("at", 0))}
 
@@ -156,13 +159,16 @@ class Dorms:
             r = self._room_rec(owner)
             old = r.get("music")
             r["music"] = music
+            r["touched"] = time.time()
             self.save()
         return old
 
     def set_line(self, owner, text):
         text = (text or "").strip()[:80]
         with self.lock:
-            self._room_rec(owner)["line"] = text
+            r = self._room_rec(owner)
+            r["line"] = text
+            r["touched"] = time.time()
             self.save()
 
     # ---- 방명록 ----
