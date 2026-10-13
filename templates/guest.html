@@ -1729,11 +1729,64 @@
   .wm-chrow .st.lock { color: var(--muted); background: rgba(255,255,255,.05); }
   .wm-chrow.locked .tt { color: var(--muted); font-weight:500; }
   /* 지도 무대 : 오른쪽 위로 번지는 동심원 위에 장소가 선으로 이어져 있습니다 */
-  .wm-stage { position:relative; overflow-x:auto; overflow-y:hidden; border-radius:16px 16px 0 0; scrollbar-width:thin;
+  .wm-stage { --px:0; --py:0; position:relative; overflow-x:auto; overflow-y:hidden; border-radius:16px 16px 0 0; scrollbar-width:thin; isolation:isolate;
+    background: linear-gradient(180deg, #0f1218, #0b0d12); }
+  /* 동심원 배경 : 천천히 숨 쉬듯 커졌다 작아지고, 마우스 쪽으로 살짝 따라옵니다 */
+  .wm-stage::before { content:""; position:absolute; inset:-12%; z-index:-1; pointer-events:none;
     background:
-      radial-gradient(circle at 92% 50%, rgba(var(--point-rgb),.10) 0%, transparent 32%),
-      repeating-radial-gradient(circle at 92% 50%, transparent 0 118px, rgba(255,255,255,.045) 118px 119px),
-      linear-gradient(180deg, #0f1218, #0b0d12); }
+      radial-gradient(circle at 88% 50%, rgba(var(--point-rgb),.12) 0%, transparent 30%),
+      repeating-radial-gradient(circle at 88% 50%, transparent 0 118px, rgba(255,255,255,.05) 118px 119px);
+    transform: translate(calc(var(--px) * -18px), calc(var(--py) * -12px)) scale(var(--breath, 1));
+    transition: transform .6s cubic-bezier(.2,.8,.2,1); animation: wmBreath 14s ease-in-out infinite; }
+  @keyframes wmBreath { 0%, 100% { --breath:1; opacity:.9; } 50% { --breath:1.035; opacity:1; } }
+  @property --breath { syntax:'<number>'; inherits:false; initial-value:1; }
+  /* 고른 장소까지 이어지는 포인트 선 */
+  .wm-fill { position:absolute; left:48px; top:calc(var(--top) + 28px); height:3px; width:0; border-radius:2px; z-index:0; pointer-events:none;
+    background: linear-gradient(90deg, rgba(var(--point-rgb),.05), rgba(var(--point-rgb),.9)); box-shadow:0 0 12px rgba(var(--point-rgb),.55);
+    transition: width .75s cubic-bezier(.2,.8,.2,1); }
+  /* 장소 : 처음 열 때 차례로 떠오르고, 올리면 살짝 들리고, 고르면 물결이 퍼집니다 */
+  .wm-node { animation: wmNodeIn .6s cubic-bezier(.2,.8,.2,1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+  @keyframes wmNodeIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  .wm-node .nm, .wm-node .sb { transition: color .25s; }
+  .wm-node:not(.locked):hover .ic { transform:translateY(-3px); }
+  .wm-node.sel:hover .ic { transform:scale(1.28) translateY(-2px); }
+  .wm-node:not(.locked):hover .nm { color: rgba(255,255,255,.8); }
+  .wm-node.sel .ic::before { content:""; position:absolute; inset:-9px; border-radius:50%; border:1px solid rgba(var(--point-rgb),.55); animation: wmRing 2.6s ease-out infinite; pointer-events:none; }
+  @keyframes wmRing { 0% { transform:scale(.85); opacity:.9; } 100% { transform:scale(1.55); opacity:0; } }
+  .wm-node.pulse .ic { animation: wmPop .45s cubic-bezier(.2,.8,.2,1); }
+  @keyframes wmPop { 0% { transform:scale(1); } 45% { transform:scale(1.42); } 100% { transform:scale(1.28); } }
+  /* 설명 · 구역 카드 : 장소를 바꿀 때마다 아래에서 차례로 올라옵니다 */
+  #wmDetail .wm-detail > * { animation: wmUp .5s cubic-bezier(.2,.8,.2,1) both; }
+  #wmDetail .wm-detail > *:nth-child(2) { animation-delay:.06s; }
+  @keyframes wmUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+  .wm-zone { --rx:0deg; --ry:0deg; position:relative; overflow:hidden; animation: wmUp .6s cubic-bezier(.2,.8,.2,1) backwards; animation-delay: calc(.12s + var(--i, 0) * 80ms);
+    transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .25s, box-shadow .25s; }
+  .wm-zone.tilt { transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-4px); border-color: rgba(255,255,255,.22);
+    box-shadow: 0 18px 40px rgba(0,0,0,.45); transition: transform .08s linear, border-color .25s, box-shadow .25s; }
+  .wm-zone::after { content:""; position:absolute; inset:0; pointer-events:none; opacity:0; transition: opacity .3s;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255,255,255,.09), transparent 45%); }
+  .wm-zone.tilt::after { opacity:1; }
+  /* 구역 이미지 : 가로 줄무늬가 걷히며 나타나는 신호 수신 느낌 */
+  .wm-zone .img { overflow:hidden; }
+  .wm-zone .img:not(.empty)::after { content:""; position:absolute; inset:0; pointer-events:none;
+    background: repeating-linear-gradient(180deg, #050506 0 7px, transparent 7px 14px); animation: wmScan .9s steps(6) both; animation-delay: calc(.25s + var(--i, 0) * 80ms); }
+  @keyframes wmScan { 0% { opacity:1; transform:translateX(0); } 40% { opacity:.85; transform:translateX(-14%); } 70% { opacity:.5; transform:translateX(9%); } 100% { opacity:0; transform:none; } }
+  /* No Signal : 빛살이 차례로 깜빡입니다 */
+  .wm-zone .img.empty .ns rect { animation: nsBlink 1.6s linear infinite; }
+  .wm-zone .img.empty .ns rect:nth-child(2) { animation-delay:.2s; } .wm-zone .img.empty .ns rect:nth-child(3) { animation-delay:.4s; }
+  .wm-zone .img.empty .ns rect:nth-child(4) { animation-delay:.6s; } .wm-zone .img.empty .ns rect:nth-child(5) { animation-delay:.8s; }
+  .wm-zone .img.empty .ns rect:nth-child(6) { animation-delay:1s; } .wm-zone .img.empty .ns rect:nth-child(7) { animation-delay:1.2s; }
+  .wm-zone .img.empty .ns rect:nth-child(8) { animation-delay:1.4s; }
+  @keyframes nsBlink { 0% { opacity:1; } 60% { opacity:.18; } 100% { opacity:.18; } }
+  /* 챕터 트랙 : 처음 열 때 왼쪽부터 차오르고, 지금 챕터 점은 은은하게 숨 쉽니다 */
+  .wm-track::after { transition: width 1.1s cubic-bezier(.2,.8,.2,1) .15s; }
+  .wm-cnode.now .dot { animation: wmNow 2.8s ease-in-out infinite; }
+  @keyframes wmNow { 0%, 100% { box-shadow:0 0 0 4px var(--panel), 0 0 0 7px rgba(var(--point-rgb),.25); } 50% { box-shadow:0 0 0 4px var(--panel), 0 0 0 10px rgba(var(--point-rgb),.12); } }
+  .wm-chrow { animation: wmUp .5s cubic-bezier(.2,.8,.2,1) both; }
+  @media (prefers-reduced-motion: reduce) {
+    .wm-stage::before, .wm-node, .wm-node.sel .ic::before, #wmDetail .wm-detail > *, .wm-zone, .wm-zone .img::after, .wm-zone .ns rect, .wm-cnode.now .dot, .wm-chrow { animation:none !important; }
+    .wm-fill, .wm-track::after { transition:none; }
+  }
   .wm-row { --top:250px; position:relative; display:flex; align-items:stretch; justify-content:center; gap:0; min-width:100%; width:max-content; height:410px; padding:0 48px; box-sizing:border-box; }
   .wm-row::before { content:""; position:absolute; left:48px; right:48px; top:calc(var(--top) + 29px); height:1px; background: rgba(255,255,255,.18); }
   .wm-node { position:relative; z-index:1; width:118px; flex:none; display:flex; flex-direction:column; align-items:center; padding-top:var(--top); cursor:pointer; }
@@ -1813,6 +1866,7 @@
     .wm-detail, .wm-edit { grid-template-columns:minmax(0,1fr); }
     .wm-row { --top:215px; height:365px; padding:0 30px; }
     .wm-row::before { left:30px; right:30px; }
+    .wm-fill { left:30px; }
     .wm-node { width:96px; }
     .wm-node .nm { font-size:14px; } .wm-node .nm.long { font-size:11.5px; }
     .wm-track { margin:22px 20px 8px; }
@@ -8897,7 +8951,67 @@ function renderWorld() {
   // 고른 장소가 화면 가운데 오도록 지도를 가로로 옮깁니다(좁은 화면).
   const st = body.querySelector('.wm-stage'), el = body.querySelector('.wm-node.sel');
   if (st && el && st.scrollWidth > st.clientWidth) st.scrollLeft = el.offsetLeft - st.clientWidth / 2 + el.offsetWidth / 2;
+  worldPlaceFill(true);
+  // 챕터 트랙은 처음 열 때만 왼쪽부터 차오르게
+  const tr = body.querySelector('.wm-track');
+  if (tr && !worldTrackShown) { const f = tr.style.getPropertyValue('--fill'); tr.style.setProperty('--fill', 0); requestAnimationFrame(() => requestAnimationFrame(() => tr.style.setProperty('--fill', f))); worldTrackShown = true; }
+  bindWorldFx();
 }
+let worldTrackShown = false, worldFillPrev = null;
+// 지도 선 : 왼쪽 끝에서 고른 장소까지 포인트 컬러로 이어집니다(장소를 바꾸면 따라 움직임).
+function worldPlaceFill(instant) {
+  const row = document.querySelector('.wm-row'), el = row && row.querySelector('.wm-node.sel'), fill = row && row.querySelector('.wm-fill');
+  if (!fill) return;
+  const first = row.querySelector('.wm-node');
+  const x0 = first ? first.offsetLeft + first.offsetWidth / 2 : 0;
+  fill.style.left = x0 + 'px';
+  const x = el ? el.offsetLeft + el.offsetWidth / 2 - x0 : 0;
+  if (instant && worldFillPrev != null) { fill.style.transition = 'none'; fill.style.width = worldFillPrev + 'px'; void fill.offsetWidth; fill.style.transition = ''; }
+  requestAnimationFrame(() => { fill.style.width = Math.max(0, x) + 'px'; });
+  worldFillPrev = Math.max(0, x);
+}
+// 장소 고르기 : 지도는 그대로 두고 아래 설명·구역 카드만 새로 띄웁니다.
+function worldPick(id) {
+  const places = (worldData && worldData.places) || [], sel = places.find(p => p.id === id);
+  if (!sel || worldSel === id) return;
+  worldSel = id;
+  document.querySelectorAll('.wm-node').forEach(n => n.classList.toggle('sel', n.dataset.id === id));
+  const node = document.querySelector(`.wm-node[data-id="${id}"]`);
+  if (node) { node.classList.remove('pulse'); void node.offsetWidth; node.classList.add('pulse'); }
+  document.getElementById('worldTopSeg').textContent = sel.locked ? '맵' : sel.name;
+  const box = document.getElementById('wmDetail');
+  if (box) { box.innerHTML = worldDetailInner(sel); }
+  const st = document.querySelector('.wm-stage');
+  if (st && node && st.scrollWidth > st.clientWidth) st.scrollTo({ left: node.offsetLeft - st.clientWidth / 2 + node.offsetWidth / 2, behavior: 'smooth' });
+  worldPlaceFill(false);
+}
+// 마우스 효과 : 지도 동심원이 살짝 따라 움직이고(패럴랙스), 구역 카드는 커서 쪽으로 기울며 빛이 비칩니다.
+function bindWorldFx() {
+  const body = document.getElementById('worldBody');
+  if (!body || body._fx) return; body._fx = true;
+  body.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
+    const st = e.target.closest('.wm-stage');
+    if (st) { const r = st.getBoundingClientRect(); st.style.setProperty('--px', ((e.clientX - r.left) / r.width - .5).toFixed(3)); st.style.setProperty('--py', ((e.clientY - r.top) / r.height - .5).toFixed(3)); }
+    const card = e.target.closest('.wm-zone');
+    body.querySelectorAll('.wm-zone.tilt').forEach(c => { if (c !== card) { c.classList.remove('tilt'); c.style.removeProperty('--rx'); c.style.removeProperty('--ry'); } });
+    if (card) {
+      const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      card.classList.add('tilt');
+      card.style.setProperty('--ry', ((x - .5) * 7).toFixed(2) + 'deg'); card.style.setProperty('--rx', ((.5 - y) * 6).toFixed(2) + 'deg');
+      card.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); card.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+    }
+  });
+  body.addEventListener('pointerleave', () => body.querySelectorAll('.wm-zone.tilt').forEach(c => c.classList.remove('tilt')));
+}
+// 키보드 ← → 로 장소 넘기기
+document.addEventListener('keydown', (e) => {
+  if (!worldOpen() || worldEditMode || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  const ps = (worldData && worldData.places) || [], i = ps.findIndex(p => p.id === worldSel);
+  const n = ps[i + (e.key === 'ArrowRight' ? 1 : -1)];
+  if (n) { e.preventDefault(); worldPick(n.id); }
+});
 
 function worldChaptersHtml() {
   const chs = worldData.chapters || [], n = worldData.unlocked || 0, gm = worldIsGm();
@@ -8929,14 +9043,18 @@ function setWorldUnlocked(k) {
 function worldMapHtml(places, sel) {
   const gm = worldIsGm(), n = worldData.unlocked || 0;
   if (!places.length) return `<div class="wm-card"><div class="wm-empty"><i class="fa-solid fa-map"></i>아직 등록된 장소가 없습니다.${gm ? '<br>오른쪽 위 편집에서 장소를 추가해 주세요.' : ''}</div></div>`;
-  const nodes = places.map(p => {
+  const nodes = places.map((p, idx) => {
     const locked = !!p.locked, gmlock = gm && p.chapter > n;
     const label = locked ? '???' : (p.en || p.name);
-    return `<div class="wm-node ${p.id === worldSel ? 'sel' : ''} ${locked ? 'locked' : ''} ${gmlock ? 'gmlock' : ''}" onclick="worldSel='${p.id}'; renderWorld()">
+    return `<div class="wm-node ${p.id === worldSel ? 'sel' : ''} ${locked ? 'locked' : ''} ${gmlock ? 'gmlock' : ''}" data-id="${p.id}" style="--i:${idx}" onclick="worldPick('${p.id}')">
       <span class="nm ${!locked && !p.en ? 'ko' : ''} ${label.length > 12 ? 'long' : ''}">${worldEsc(label)}</span>
       <span class="ic" style="${!locked && p.image ? `background-image:url('${worldEsc(p.image)}')` : ''}">${locked ? '<i class="fa-solid fa-lock"></i>' : (p.image ? '' : '<i class="fa-solid fa-location-dot"></i>')}</span>
       <span class="sb">${locked ? '' : worldEsc(p.sub || '')}</span></div>`;
   }).join('');
+  return `<div class="wm-card"><div class="wm-stage"><div class="wm-row">${nodes}<span class="wm-fill"></span></div></div><div id="wmDetail">${worldDetailInner(sel)}</div></div>`;
+}
+function worldDetailInner(sel) {
+  const gm = worldIsGm(), n = worldData.unlocked || 0;
   let detail = '';
   if (sel && sel.locked) {
     detail = `<div class="wm-empty"><i class="fa-solid fa-lock"></i>아직 해금되지 않은 장소입니다.${sel.chapter ? `<br>Chapter ${sel.chapter}에서 공개됩니다.` : ''}</div>`;
@@ -8949,7 +9067,7 @@ function worldMapHtml(places, sel) {
       ${info.length ? `<div class="wm-info">${info.map(i => `<div><div class="k">${worldEsc(i.k)}</div><div class="v">${worldEsc(i.v)}</div></div>`).join('')}</div>` : '<div></div>'}</div>`;
   }
   const zones = sel && !sel.locked ? worldZonesHtml(sel) : '';
-  return `<div class="wm-card"><div class="wm-stage"><div class="wm-row">${nodes}</div></div>${detail}${zones}</div>`;
+  return detail + zones;
 }
 
 // ---------- 구역 카드 (장소마다 1~4구역) : 이미지 · 구역 이름 · 설명 · 정보 칸. 이미지가 없으면 No Signal ----------
@@ -8960,7 +9078,7 @@ function worldZonesHtml(p) {
   if (!zs.length) return '';
   return `<div class="wm-zones">${zs.map((z, i) => {
     const info = (z.info || []).filter(r => r.k || r.v);
-    return `<article class="wm-zone">
+    return `<article class="wm-zone" style="--i:${i}">
       <div class="cap"><span>${i + 1}구역 — ${worldEsc(p.name)}</span></div>
       <div class="img ${z.image ? '' : 'empty'}" style="${z.image ? `background-image:url('${worldEsc(z.image)}')` : ''}">${z.image ? '' : `${WM_NOSIGNAL}<span>No Signal</span>`}</div>
       <div class="ttl"><b>${worldEsc(z.title || `${i + 1}구역`)}</b><span>${String(i + 1).padStart(2, '0')} / ${String(zs.length).padStart(2, '0')}</span></div>
