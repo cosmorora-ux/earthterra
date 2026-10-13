@@ -2996,7 +2996,7 @@
   .gmap .gcell.moved::after { content:""; position:absolute; top:0; right:0; z-index:9; width:0; height:0;
     border-style:solid; border-width:0 7px 7px 0; border-color:transparent var(--point) transparent transparent; }
   /* 전조 칸 위에 캐릭터가 있어도 줄무늬가 보이게 */
-  .gmap td.tel .gcell .gsel:not(.tgt) { background: repeating-linear-gradient(135deg, rgba(255,176,32,.18) 0 2.5px, transparent 2.5px 7.0711px);
+  .gmap td.tel .gcell .gsel:not(.tgt) { background: repeating-linear-gradient(135deg, rgba(255,176,32,.08) 0 2.5px, transparent 2.5px 7.0711px);
     animation: telDrift 2.4s linear infinite; }
   /* 전조 구역 : 옅은 줄무늬가 천천히 흘러가는 움직임 */
   .gmap td.tel { animation: telDrift 2.4s linear infinite; }
@@ -4972,9 +4972,9 @@ function renderGrid(battle, all) {
   // 전조 구역 : 운영진이 고르는 중이면 고른 칸, 아니면 공개된 칸
   const telSelecting = typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all';
   const telKeys = telSelecting ? new Set([...telegraphSelectedCells, ...telegraphRevealedCells]) : telegraphRevealedCells;
-  const TEL_EDGE = 'rgba(255,176,32,.7)';
+  const TEL_EDGE = 'rgba(255,176,32,.38)';
   // 옅은 사선 줄무늬(한 줄 간격 7.07px = 가로 10px)가 천천히 흘러가도록 CSS(td.tel)에서 움직입니다.
-  const TEL_STRIPES = 'repeating-linear-gradient(135deg, rgba(255,176,32,.2) 0 2.5px, rgba(255,176,32,.03) 2.5px 7.0711px)';
+  const TEL_STRIPES = 'repeating-linear-gradient(135deg, rgba(255,176,32,.08) 0 2.5px, rgba(255,176,32,0) 2.5px 7.0711px)';
   let html = '<table class="gmap">';
   for (let y = 0; y < gridHeight; y++) {
     html += '<tr>';
@@ -5019,7 +5019,9 @@ function renderGrid(battle, all) {
       // 표의 선은 옆 칸과 같이 쓰므로, 경계인 선은 양쪽 칸 모두에 색을 줍니다. 범위 안 칸은 옅게 물듭니다.
       let tdStyle = '';
       {
-        const rngCol = highlightCells.size ? (highlightIsAction ? ACTION_RANGE_COLOR : (ROLE_MOVE_COLOR[selChar && selChar.role] || '#4ad0ff')) : null;
+        // 사거리는 흰색, 메딕만 이동 범위처럼 노란색(회복 사거리). 이동 범위는 직군 색.
+        const isMedicSel = selChar && selChar.role === '메딕';
+        const rngCol = highlightCells.size ? (highlightIsAction ? (isMedicSel ? ROLE_MOVE_COLOR['메딕'] : ACTION_RANGE_COLOR) : (ROLE_MOVE_COLOR[selChar && selChar.role] || '#4ad0ff')) : null;
         // 대상을 골랐으면 내 칸의 포인트 테두리는 대상으로 옮겨 갑니다(대상 칸이 반짝임).
         const selfKey = selChar && selChar.grid_pos && !gridTargetChar ? `${selChar.grid_pos[0]},${selChar.grid_pos[1]}` : null;
         const edge = (dx, dy) => {
