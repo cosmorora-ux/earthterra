@@ -1885,7 +1885,10 @@
   @media (max-width:1180px) { .wm-zones { grid-template-columns:repeat(2, minmax(0,1fr)); } }
   @media (max-width:900px) {
     .wm-zones { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; padding:0 16px 18px; gap:12px; }
-    .wm-zone { flex:0 0 78%; scroll-snap-align:center; }
+    .wm-zone { flex:0 0 min(240px, 74%); scroll-snap-align:start; padding:14px 14px 16px; border-radius:18px; }
+    .wm-zones { scroll-padding:0 16px; }
+    .wm-zone .img { aspect-ratio:4 / 3; margin:12px 0 10px; }
+    .wm-zone .img.empty .ns { width:34%; }
     .wm-zedit { grid-template-columns:minmax(0,1fr); }
   }
   /* 운영진 편집 */
