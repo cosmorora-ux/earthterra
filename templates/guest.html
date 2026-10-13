@@ -1684,6 +1684,12 @@
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
   body.is-lounge #sidebarBattleBtn, body.is-lounge #sidebarUserListBtn, body.is-lounge .m-battle-tools { display:none !important; }
   body.is-battle #sidebarDormBtn, body.is-battle #sidebarMailBtn, body.is-battle #newsMailRow, body.is-battle #myPageRoomBox { display:none !important; }
+  /* 일반 룸 : 우체통은 로그인 전에도 메뉴에 바로 보입니다(누르면 로그인 안내). 휴대폰 하단 탭도 공지 · 우체통을 따로 둡니다. */
+  body.is-lounge.logged-out #sidebarMailBtn { display:flex !important; }
+  @media (max-width:900px) {
+    body.is-lounge .sidebar #sidebarMailBtn, body.is-lounge .sidebar #sidebarNoticeBtn { display:flex !important; }
+    body.is-lounge .sidebar .m-news-btn { display:none !important; }
+  }
 
   /* ================================================================
      운영 페이지 (GM 전용) : 전투 준비 · 캐릭터 · 음악 · 방 설정. 예전 운영진 화면 기능을 러너 화면으로 옮겼습니다.
@@ -1929,6 +1935,15 @@
   .dorm-gb-empty { font-size:13px; color: var(--muted); padding:18px 0; text-align:center; }
   @media (max-width:900px) { .dorm-gb { width:auto; max-height:none; } }
   .dorm-frame-wrap { flex:1; min-width:0; min-height:0; display:flex; position:relative; }
+  .map-frame.dorm-frame { overflow:hidden; cursor:grab; touch-action:none; }
+  .map-frame.dorm-frame.panning { cursor:grabbing; }
+  .map-frame.dorm-frame .dorm-stage { flex:none; will-change:transform; }
+  .dorm-zoom { position:absolute; right:12px; top:12px; z-index:6; display:flex; align-items:center; gap:2px; padding:4px; border-radius:12px;
+    background: rgba(16,16,19,.82); border:1px solid var(--line); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+  .dorm-zoom button { width:32px; height:32px; border:none; border-radius:8px; background:none; color:#cfcfd4; font-size:14px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+  .dorm-zoom button:hover { background: rgba(255,255,255,.08); color:#fff; }
+  .dorm-zoom .fit { margin-left:2px; border-left:1px solid var(--line); border-radius:0 8px 8px 0; }
+  .dorm-zoom .z { min-width:44px; text-align:center; font-size:12px; font-weight:700; color: var(--muted); font-variant-numeric: tabular-nums; }
   .dorm-frame-wrap .map-frame.dorm-frame { flex:1; }
   .dorm-line-bubble { position:absolute; left:20px; top:18px; z-index:3; max-width:min(70%, 520px); display:flex; flex-direction:column; gap:3px;
     padding:12px 16px; border-radius:14px 14px 14px 4px; background: rgba(12,12,15,.82); border:1px solid rgba(255,255,255,.1);
@@ -2034,7 +2049,7 @@
   .dorm-topbar .dorm-link:hover { color: var(--point); }
   .dorm-seg-sub { color: var(--muted); font-weight:600; font-size:.8em; margin-left:2px; }
   .dorm-tools-r { display:flex; align-items:center; gap:8px; }
-  .dorm-tbtn { height:38px; display:inline-flex; align-items:center; gap:7px; padding:0 14px; border-radius: var(--ui-r); border:1px solid var(--line);
+  .dorm-tbtn { white-space:nowrap; flex:none; height:38px; display:inline-flex; align-items:center; gap:7px; padding:0 14px; border-radius: var(--ui-r); border:1px solid var(--line);
     background: rgba(255,255,255,.05); color: var(--text); font-size:14px; font-weight:600; cursor:pointer; }
   .dorm-tbtn:hover { background: rgba(255,255,255,.09); }
   .dorm-tbtn.primary { background: var(--accent-blue); border-color: transparent; color: var(--on-accent); }
@@ -2175,12 +2190,12 @@
   <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
   <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
   <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeOps(); openDorm()" data-tip="기숙사"><i class="fa-solid fa-house"></i></button>
+  <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
   <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps()" data-tip="운영" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsSheet()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
-  <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
   <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <div class="sidebar-grow"></div>
   <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
@@ -7212,7 +7227,7 @@ function closeDorm() {
   syncDormMusic();
 }
 function setDormView(v) { dormView = v; if (v === 'manage') { dormHallsDraft = null; dormCreditsDraft = null; } renderDorm(); }
-function openDormRoom(owner) { dormView = 'room'; dormRoom = { owner, loading: true }; dormEdit = null; dormSel = -1; socket.emit('dorm_room_get', { name: owner }); renderDorm(); }
+function openDormRoom(owner) { dormZoom = 1; dormPan = { x: 0, y: 0 }; dormView = 'room'; dormRoom = { owner, loading: true }; dormEdit = null; dormSel = -1; socket.emit('dorm_room_get', { name: owner }); renderDorm(); }
 socket.on('dorm_data', (d) => {
   dormData = d; if (d.roster) dormRoster = d.roster;
   if (document.getElementById('dormModal').style.display === 'flex' && !dormEdit) renderDorm();
@@ -7356,12 +7371,64 @@ function renderDormRoom(body) {
     : dormGuestbookHtml(r);
   const isOwner = dormMe() && dormMe() === r.owner;
   const bubble = r.line ? `<div class="dorm-line-bubble"><b>${mailEsc(r.owner)}</b><span>${mailEsc(r.line)}</span></div>` : '';
-  body.innerHTML = `<div class="dorm-room-layout"><div class="dorm-frame-wrap">${dormEdit ? '' : bubble}<div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>${dormEdit ? '<div class="dorm-edit-bar" id="dormEditBar"></div>' : ''}</div>${side}</div>`;
-  const frame = document.getElementById('dormStageBox');
-  const src = dormEdit || r, base = dormBase(src);
-  const s = dormScale(frame, base);
+  body.innerHTML = `<div class="dorm-room-layout"><div class="dorm-frame-wrap">${dormEdit ? '' : bubble}<div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>
+    <div class="dorm-zoom" id="dormZoom">
+      <button onclick="dormZoomBy(1 / 1.25)" data-tip="축소"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+      <span class="z" id="dormZoomLabel">100%</span>
+      <button onclick="dormZoomBy(1.25)" data-tip="확대"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+      <button class="fit" onclick="dormZoomReset()" data-tip="원래대로 맞춤"><i class="fa-solid fa-expand"></i></button>
+    </div>${dormEdit ? '<div class="dorm-edit-bar" id="dormEditBar"></div>' : ''}</div>${side}</div>`;
+  dormRenderStage();
+  if (dormEdit) renderDormPalette();
+}
+// ---------- 방 확대/축소 · 이동 : 배율은 화면에만 적용(저장 안 함). 맞춤(100%)은 방이 칸에 꼭 맞는 크기 ----------
+let dormZoom = 1, dormPan = { x: 0, y: 0 };
+const DORM_ZOOM_MIN = 0.6, DORM_ZOOM_MAX = 4;
+function dormRenderStage() {
+  const frame = document.getElementById('dormStageBox'); if (!frame || !dormRoom) return;
+  const src = dormEdit || dormRoom, base = dormBase(src);
+  const fit = dormScale(frame, base);
+  let s = fit * dormZoom;
+  if (s >= 1) s = Math.round(s * 4) / 4;  // 도트가 뭉개지지 않게 0.25 단위로
   frame.innerHTML = dormStageHtml(src, base, s, !!dormEdit);
-  if (dormEdit) { renderDormPalette(); bindDormStage(s); }
+  dormClampPan(frame);
+  dormApplyPan();
+  const lb = document.getElementById('dormZoomLabel'); if (lb) lb.textContent = Math.round(dormZoom * 100) + '%';
+  if (dormEdit) bindDormStage(s);
+  bindDormPan(frame);
+}
+function dormApplyPan() { const st = document.getElementById('dormStage'); if (st) st.style.transform = `translate(${dormPan.x}px, ${dormPan.y}px)`; }
+function dormClampPan(frame) {
+  const st = document.getElementById('dormStage'); if (!st || !frame) return;
+  // 방이 칸보다 크면 가장자리까지만, 작으면 가운데 근처에서만 움직이게
+  const mx = Math.max(40, (st.offsetWidth - frame.clientWidth) / 2 + 40), my = Math.max(40, (st.offsetHeight - frame.clientHeight) / 2 + 40);
+  dormPan.x = Math.max(-mx, Math.min(mx, dormPan.x)); dormPan.y = Math.max(-my, Math.min(my, dormPan.y));
+}
+function dormZoomBy(f) {
+  const z = Math.max(DORM_ZOOM_MIN, Math.min(DORM_ZOOM_MAX, dormZoom * f));
+  if (Math.abs(z - 1) < 0.04) { dormZoomReset(); return; }
+  const r = z / dormZoom; dormPan.x *= r; dormPan.y *= r; dormZoom = z;
+  dormRenderStage();
+}
+function dormZoomReset() { dormZoom = 1; dormPan = { x: 0, y: 0 }; dormRenderStage(); }
+function bindDormPan(frame) {
+  if (frame._panBound) return; frame._panBound = true;
+  let pan = null;
+  frame.addEventListener('pointerdown', (e) => {
+    // 꾸미기 중에는 소품을 잡거나 놓을 때는 이동하지 않습니다(빈 곳을 끌 때만).
+    if (dormEdit && (dormPick || e.target.closest('.dorm-item'))) return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    pan = { x: e.clientX, y: e.clientY, px: dormPan.x, py: dormPan.y, id: e.pointerId };
+    frame.setPointerCapture(e.pointerId); frame.classList.add('panning');
+  });
+  frame.addEventListener('pointermove', (e) => {
+    if (!pan || e.pointerId !== pan.id) return;
+    dormPan.x = pan.px + e.clientX - pan.x; dormPan.y = pan.py + e.clientY - pan.y;
+    dormClampPan(frame); dormApplyPan();
+  });
+  const end = () => { pan = null; frame.classList.remove('panning'); };
+  frame.addEventListener('pointerup', end); frame.addEventListener('pointercancel', end);
+  frame.addEventListener('wheel', (e) => { e.preventDefault(); dormZoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12); }, { passive: false });
 }
 
 function renameDormHall(id) {
