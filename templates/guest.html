@@ -438,6 +438,15 @@
   .modal-box.notice-modal { width:760px; max-width:calc(100vw - 32px); height:82vh; display:flex; flex-direction:column; padding:18px 20px; }
   .notice-head { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
   .notice-head .modal-title { margin:0; flex:1; }
+  /* 공지 상단 링크 : X 홈 · System · Story (모두 공식 X 계정) */
+  .notice-links { display:flex; flex-wrap:wrap; gap:8px; margin:-2px 0 14px; }
+  .notice-links a { display:inline-flex; align-items:center; gap:8px; height:34px; padding:0 14px; border-radius:999px;
+    border:1px solid var(--card-border); background: rgba(255,255,255,.03); color: var(--text); font-size:13px; font-weight:600;
+    text-decoration:none; transition: border-color .15s, background .15s, color .15s; }
+  .notice-links a i { font-size:13px; color: var(--muted); transition: color .15s; }
+  .notice-links a:hover { border-color: var(--point); background: rgba(var(--point-rgb), .10); }
+  .notice-links a:hover i { color: var(--point); }
+  .notice-links a .ext { font-size:10px; opacity:.6; }
   .notice-list { flex:1 1 auto; min-height:0; overflow-y:auto; padding-right:4px; }
   .notice-card { border:1px solid var(--card-border); border-radius:12px; margin-bottom:8px; background: var(--card); transition: border-color .15s; }
   .notice-card:hover { border-color:#3a3a40; }
@@ -1298,7 +1307,7 @@
     .char-card.v2 .portrait { width:80px; height:80px; }
     /* 유저 리스트·상점·마이페이지는 팝업 대신 화면 전체를 쓰는 페이지로 */
     .modal-box.userinfo-modal, .modal-box.shop-modal, .modal-box.mypage, .modal-box.notice-modal {
-      width:100vw; max-width:none; height:100dvh; max-height:none; border-radius:0; border:none;
+      width:100vw; max-width:none; height:100%; max-height:none; border-radius:0; border:none;
       padding:calc(20px + env(safe-area-inset-top)) 24px calc(16px + env(safe-area-inset-bottom)); }
     .modal-box.mypage { overflow-y:auto; padding-bottom:calc(40px + env(safe-area-inset-bottom)); }
     .modal-box.userinfo-modal > *, .modal-box.shop-modal > *, .modal-box.notice-modal > * { width:100%; margin-left:auto; margin-right:auto; }
@@ -1602,7 +1611,7 @@
   .mail-count { margin-left:auto; font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .mail-send { display:inline-flex; align-items:center; gap:7px; }
   @media (max-width:1180px) {
-    .modal-box.mail-modal { width:100vw; max-width:none; height:100dvh; max-height:none; border-radius:0; border:none;
+    .modal-box.mail-modal { width:100vw; max-width:none; height:100%; max-height:none; border-radius:0; border:none;
       padding:calc(20px + env(safe-area-inset-top)) 24px calc(16px + env(safe-area-inset-bottom)); }
     .modal-box.mail-modal > * { width:100%; max-width:640px; margin-left:auto; margin-right:auto; }
   }
@@ -1684,12 +1693,6 @@
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
   body.is-lounge #sidebarBattleBtn, body.is-lounge #sidebarUserListBtn, body.is-lounge .m-battle-tools { display:none !important; }
   body.is-battle #sidebarDormBtn, body.is-battle #sidebarMapBtn, body.is-battle #sidebarMailBtn, body.is-battle #newsMailRow, body.is-battle #myPageRoomBox { display:none !important; }
-  /* 일반 룸 : 우체통은 로그인 전에도 메뉴에 바로 보입니다(누르면 로그인 안내). 휴대폰 하단 탭도 공지 · 우체통을 따로 둡니다. */
-  body.is-lounge.logged-out #sidebarMailBtn { display:flex !important; }
-  @media (max-width:900px) {
-    body.is-lounge .sidebar #sidebarMailBtn, body.is-lounge .sidebar #sidebarNoticeBtn { display:flex !important; }
-    body.is-lounge .sidebar .m-news-btn { display:none !important; }
-  }
 
   /* ================================================================
      맵 (일반 룸) : 장소가 선 위에 놓인 세계 지도 + 고른 장소 설명 + 스토리 챕터 해금 트랙
@@ -2261,15 +2264,30 @@
     .dorm-crow { grid-template-columns: 1fr 1fr; }
   }
 
-  /* 로그인 전 : 우체통은 숨기고, 채팅창은 그대로 두되 내용은 흐리게 가립니다. */
-  body.logged-out #sidebarMailBtn { display:none !important; }
-  .chat-lock { display:none; }
-  body.logged-out .member-body { position:relative; }
-  body.logged-out .member-body .member-tabview { visibility:hidden; }
-  body.logged-out .member-panel .input-row { opacity:.4; pointer-events:none; }
-  body.logged-out .chat-lock { display:flex; position:absolute; inset:0; z-index:4; flex-direction:column; align-items:center; justify-content:center; gap:12px;
-    color: var(--muted); font-size:14px; text-align:center; }
-  body.logged-out .chat-lock i { font-size:28px; opacity:.5; }
+  /* ================================================================
+     로그인 화면 : 방에 들어오면 먼저 캐릭터 이름(운영진은 GM + 비밀번호)으로 로그인합니다.
+     ================================================================ */
+  #loginGate { display:none; position:fixed; inset:0; z-index:950; background: var(--bg);
+    align-items:center; justify-content:center; padding:24px 16px; box-sizing:border-box; overflow-y:auto; }
+  #loginGate.on { display:flex; }
+  #loginGate::before { content:""; position:absolute; inset:0; pointer-events:none;
+    background: radial-gradient(60% 50% at 50% 38%, rgba(var(--point-rgb), .10), transparent 70%); }
+  .gate-box { position:relative; width:360px; max-width:100%; display:flex; flex-direction:column; gap:10px;
+    background: var(--panel); border:1px solid var(--card-border); border-radius:16px; padding:30px 26px 24px; box-sizing:border-box;
+    animation: fxBoxIn .3s cubic-bezier(.2,.9,.25,1); }
+  .gate-box .gate-title { font-family: var(--font-title); font-size:34px; line-height:1; letter-spacing:.02em; color: var(--text); }
+  .gate-box .gate-room { font-size:13px; color: var(--muted); margin:2px 0 14px; display:flex; align-items:center; gap:6px; }
+  .gate-box .gate-room i { color: var(--point); font-size:12px; }
+  .gate-box label { font-size:12px; color: var(--muted); font-weight:600; margin-top:4px; }
+  .gate-box input { width:100%; box-sizing:border-box; height:44px; padding:0 14px; font-size:15px; border-radius:10px;
+    background: rgba(255,255,255,.03); border:1px solid var(--card-border); color: var(--text); }
+  .gate-box input:focus { outline:none; border-color: var(--point); }
+  .gate-box .err { min-height:18px; font-size:13px; color:#ff6b6b; }
+  .gate-box .gate-go { height:46px; border-radius:10px; font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .gate-box .gate-hint { font-size:12px; color: var(--muted); line-height:1.6; text-align:center; margin-top:4px; }
+  .gate-box .gate-wait { display:none; align-items:center; justify-content:center; gap:10px; color: var(--muted); font-size:14px; padding:18px 0 8px; }
+  #loginGate.checking .gate-form { display:none; }
+  #loginGate.checking .gate-wait { display:flex; }
 
   /* ================================================================
      기숙사 페이지 : 전투 화면과 같은 구성(상단 바 + 카드 / 지도 + 오른쪽 패널)
@@ -2327,7 +2345,6 @@
   .dorm-gb-list .chat-line { position:relative; }
   .dorm-gb-empty { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color: var(--muted); font-size:13.5px; }
   .dorm-gb-empty i { font-size:24px; opacity:.5; }
-  .dorm-gb-login { padding:14px 16px; border-top:1px solid var(--line); font-size:13px; color: var(--muted); text-align:center; }
   .dorm-side .dorm-palette, .dorm-side-body#dormPalette { border:none; background:none; }
   .modal-box.dorm-modal .dorm-side .input-row input { width:auto; flex:1; height:40px; font-size:14px; padding:0 14px; }
   @media (max-width:1180px) { .dorm-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } .member-panel.dorm-side { width:320px; } }
@@ -2402,6 +2419,12 @@
     .sidebar .notice-dot { top:8px; right:calc(50% - 16px); }
     .content-area { flex:1 1 auto; min-height:0; }
     #shopToast { bottom:calc(84px + env(safe-area-inset-bottom)); }
+    /* 하단 탭 바는 항상 보이게 : 화면 아래에 고정하고, 창(모달) · 채팅은 탭 바 위까지만 덮습니다. */
+    :root { --mbar-h: calc(57px + env(safe-area-inset-bottom)); }
+    .app-shell { padding-bottom: var(--mbar-h); box-sizing:border-box; }
+    .sidebar { position:fixed; left:0; right:0; bottom:0; z-index:150; box-sizing:border-box; }
+    .modal-overlay { bottom: var(--mbar-h); }
+    body.m-chat-open .member-col .member-panel { bottom: var(--mbar-h) !important; }
   }
 
   /* 세로 태블릿·휴대폰 : 하단 탭 = 전투 · 기숙사 · 상점 · 소식(공지+우체통) · 마이페이지(로그인 전에는 로그인) */
@@ -2418,11 +2441,10 @@
   .news-sheet .go { margin-left:auto; color: var(--muted); font-size:12px; }
   .news-sheet .notice-dot { position:static; margin-left:2px; box-shadow:none; }
   #newsSheet { align-items:flex-end; }
-  body.logged-out #newsMailRow { display:none; }
   @media (max-width:900px) {
     #sidebarNoticeBtn, #sidebarMailBtn, .sidebar .m-chat-btn, .sidebar #sidebarUserListBtn { display:none !important; }
     .sidebar .m-news-btn { display:flex; }
-    body:not(.logged-out) #sidebarLoginBtn { display:none !important; }
+    #sidebarLoginBtn { display:none !important; }
     .idc-logout { display:inline-flex; }
     .idc-head { display:flex; align-items:center; }
     /* 전투 헤더 오른쪽 위 : 유저 리스트 · 채팅 */
@@ -2437,6 +2459,22 @@
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
+<div id="loginGate" class="on checking">
+  <div class="gate-box">
+    <div class="gate-title">Login</div>
+    <div class="gate-room"><i class="fa-solid fa-door-open"></i><span id="gateRoomName">{{ room_id }}</span></div>
+    <div class="gate-wait"><i class="fa-solid fa-circle-notch fa-spin"></i>접속 중입니다</div>
+    <div class="gate-form" style="display:contents">
+      <label for="joinNameInput">캐릭터 이름</label>
+      <input id="joinNameInput" placeholder="캐릭터 이름을 정확히 입력해 주세요" autocomplete="username" oninput="onJoinNameInput()" onkeydown="if(event.key==='Enter') submitJoinModal()">
+      <label for="joinPasswordInput" id="joinPasswordLabel" style="display:none;">비밀번호</label>
+      <input id="joinPasswordInput" type="password" placeholder="운영진 비밀번호" autocomplete="current-password" style="display:none;" onkeydown="if(event.key==='Enter') submitJoinModal()">
+      <div id="joinModalError" class="err"></div>
+      <button class="btn-primary gate-go" id="gateGoBtn" onclick="submitJoinModal()"><i class="fa-solid fa-right-to-bracket"></i>입장</button>
+      <div class="gate-hint">등록된 캐릭터 이름으로 입장합니다. 운영진은 GM으로 입장해 주세요.</div>
+    </div>
+  </div>
+</div>
 <div id="sceneBg"></div>
 <canvas id="weatherCanvas"></canvas>
 <div class="app-shell">
@@ -2498,6 +2536,11 @@
       <div class="modal-title page-title" id="noticeModalTitle">Notice</div>
       <button class="shop-btn" id="noticeNewBtn" onclick="startNoticeEdit(null)" style="display:none;"><i class="fa-solid fa-pen"></i> 새 공지</button>
       <button class="shop-close" onclick="closeNotices()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="notice-links">
+      <a href="https://x.com/EarthTerrA__" target="_blank" rel="noopener noreferrer" data-tip="공식 X 홈"><i class="fa-brands fa-x-twitter"></i>X Home<i class="fa-solid fa-arrow-up-right-from-square ext"></i></a>
+      <a href="https://x.com/EarthTerrA__" target="_blank" rel="noopener noreferrer" data-tip="시스템 안내"><i class="fa-solid fa-gear"></i>System<i class="fa-solid fa-arrow-up-right-from-square ext"></i></a>
+      <a href="https://x.com/EarthTerrA__" target="_blank" rel="noopener noreferrer" data-tip="스토리"><i class="fa-solid fa-book-open"></i>Story<i class="fa-solid fa-arrow-up-right-from-square ext"></i></a>
     </div>
     <div class="notice-list" id="noticeList"></div>
     <div class="notice-editor" id="noticeEditor" style="display:none;">
@@ -2739,18 +2782,6 @@
 <input type="file" id="shopIconFileInput" accept="image/png,image/webp,image/gif,image/jpeg" style="display:none;" onchange="onShopIconChosen(event)">
 <div id="globalError"><span class="err-icon">i</span><span id="globalErrorText"></span></div>
 
-<div id="joinModal" class="modal-overlay">
-  <div class="modal-box panel">
-    <div class="modal-title">캐릭터 이름으로 입장</div>
-    <input id="joinNameInput" placeholder="캐릭터 이름을 정확히 입력" oninput="onJoinNameInput()" onkeydown="if(event.key==='Enter') submitJoinModal()">
-    <input id="joinPasswordInput" type="password" placeholder="비밀번호" style="display:none; margin-top:8px;" onkeydown="if(event.key==='Enter') submitJoinModal()">
-    <div id="joinModalError" class="err"></div>
-    <div class="row">
-      <button class="btn-plain" onclick="closeJoinModal()">취소</button>
-      <button class="btn-primary" onclick="submitJoinModal()">입장</button>
-    </div>
-  </div>
-</div>
 <div id="formulaModal" class="modal-overlay">
   <div class="modal-box wide formula-modal panel">
     <div class="modal-title">전투 수식 설정</div>
@@ -3084,7 +3115,6 @@
   </div>
 
   <div class="member-body">
-    <div class="chat-lock"><i class="fa-regular fa-comments"></i><span>로그인하면 채팅을 볼 수 있어요.</span></div>
     <div class="member-tabview active" id="memberTabChat">
       <div id="chatLogMountChat"><div id="chatLog"></div></div>
     </div>
@@ -3236,12 +3266,16 @@ function autoRejoinOrSilentJoin() {
   if (saved) {
     // 저장된 이름이 "GM"이었더라도 비밀번호는 저장하지 않으므로, 새로고침 후에는
     // 다시 비밀번호를 입력해야 합니다(권한 우회 방지) - 실패하면 조용히 관전으로 전환합니다.
-    attemptCharacterJoin(saved, null, null, () => {
+    attemptCharacterJoin(saved, null, hideLoginGate, () => {
       localStorage.removeItem(SAVED_NAME_KEY);
       silentJoin();
+      openJoinModal();
     });
+  } else if (explicitlyJoined) {
+    hideLoginGate();
   } else {
     silentJoin();
+    openJoinModal();
   }
 }
 
@@ -3323,6 +3357,7 @@ function logout() {
   refreshLogViewControls();
   refreshChatTabSettingsVisibility();
   renderMyPage();
+  openJoinModal();
 }
 
 function isMatchedCharacter(battle) {
@@ -3331,23 +3366,30 @@ function isMatchedCharacter(battle) {
   return control.scope === 'character' || control.scope === 'all';
 }
 
+// 로그인 화면 : 로그인하지 않은 상태에서는 항상 이 화면이 방을 덮습니다(닫기 없음).
 function openJoinModal() {
+  const g = document.getElementById('loginGate');
   document.getElementById('joinModalError').textContent = '';
+  document.getElementById('joinPasswordInput').value = '';
+  onJoinNameInput();
+  g.classList.add('on'); g.classList.remove('checking');
+  document.getElementById('gateGoBtn').disabled = false;
+  setTimeout(() => document.getElementById('joinNameInput').focus(), 0);
+}
+function hideLoginGate() {
+  const g = document.getElementById('loginGate');
+  g.classList.remove('on', 'checking');
   document.getElementById('joinNameInput').value = '';
   document.getElementById('joinPasswordInput').value = '';
-  document.getElementById('joinPasswordInput').style.display = 'none';
-  document.getElementById('joinModal').style.display = 'flex';
-  document.getElementById('joinNameInput').focus();
 }
-
-function closeJoinModal() {
-  document.getElementById('joinModal').style.display = 'none';
-}
+const closeJoinModal = hideLoginGate;
 
 // 이름 입력칸에 "GM"을 입력하면 비밀번호 입력칸을 추가로 보여줍니다.
 function onJoinNameInput() {
-  const name = document.getElementById('joinNameInput').value.trim();
-  document.getElementById('joinPasswordInput').style.display = name.toLowerCase() === 'gm' ? '' : 'none';
+  document.getElementById('joinModalError').textContent = '';
+  const gm = document.getElementById('joinNameInput').value.trim().toLowerCase() === 'gm';
+  document.getElementById('joinPasswordInput').style.display = gm ? '' : 'none';
+  document.getElementById('joinPasswordLabel').style.display = gm ? '' : 'none';
 }
 
 function submitJoinModal() {
@@ -3362,10 +3404,14 @@ function submitJoinModal() {
     document.getElementById('joinModalError').textContent = '비밀번호를 입력해주세요.';
     return;
   }
-  attemptCharacterJoin(name, password, closeJoinModal, () => {
+  const go = document.getElementById('gateGoBtn');
+  go.disabled = true;
+  document.getElementById('joinModalError').textContent = '';
+  attemptCharacterJoin(name, password, () => { go.disabled = false; hideLoginGate(); }, () => {
+    go.disabled = false;
     document.getElementById('joinModalError').textContent = isGm
       ? '비밀번호가 올바르지 않습니다.'
-      : '캐릭터 이름이 일치하지 않습니다. 전투가 시작된 뒤 정확한 이름을 입력해주세요.';
+      : '등록된 캐릭터 이름이 아닙니다. 이름을 다시 확인해 주세요.';
   });
 }
 
@@ -3431,6 +3477,20 @@ socket.on('connect', () => {
   autoRejoinOrSilentJoin();
 });
 
+// 세로 태블릿·휴대폰 : 하단 탭을 누르면 열려 있던 창 · 채팅을 닫고 그 탭으로 이동합니다.
+document.querySelector('.sidebar').addEventListener('click', (e) => {
+  if (!window.matchMedia('(max-width:900px)').matches || !e.target.closest('.sidebar-icon')) return;
+  if (typeof noticeEditing !== 'undefined' && noticeEditing && document.getElementById('noticeModal').style.display === 'flex') {
+    e.stopPropagation(); closeNotices(); return;
+  }
+  const closers = { myPageModal: closeMyPage, noticeModal: closeNotices };
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    if (m.id === 'uiDialog' || getComputedStyle(m).display === 'none') return;
+    if (closers[m.id]) closers[m.id](); else m.style.display = 'none';
+  });
+  document.body.classList.remove('m-chat-open');
+}, true);
+
 socket.on('joined', () => {
   updateAvatarDots();
 });
@@ -3453,6 +3513,8 @@ socket.on('public_state', (state) => {
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
   const roomNameEl = document.getElementById('roomNameLabel');
   if (roomNameEl && state.room_name) roomNameEl.textContent = state.room_name;
+  const gateRoom = document.getElementById('gateRoomName');
+  if (gateRoom && state.room_name) gateRoom.textContent = state.room_name;
   lastRoster = state.roster || [];
   lastUserInfoHidden = new Set(state.userinfo_hidden || []);
   lastRosterProfiles = state.roster_profiles || {};
@@ -6128,11 +6190,11 @@ function renderShopList(target, data) {
         <div class="shop-buy"><span class="shop-price">${it.price}<small>P</small></span>
         <button class="shop-btn" ${can ? '' : 'disabled'} onclick="shopBuy('${it.id}')">구매</button></div></div>
     </div>`;
-  }).join('').replace(/^/, '<div class="shop-grid">') + '</div>' + (target ? '' : '<div class="shop-empty">캐릭터로 로그인하면 구매할 수 있어요.</div>');
+  }).join('').replace(/^/, '<div class="shop-grid">') + '</div>' + '';
 }
 
 function renderShopInventory(target, data) {
-  if (!target) return `<div class="shop-empty">${shopIsGm() ? '위에서 캐릭터를 골라주세요.' : '캐릭터로 로그인하면 소지품을 볼 수 있어요.'}</div>`;
+  if (!target) return `<div class="shop-empty">위에서 캐릭터를 골라 주세요.</div>`;
   const owned = Object.entries((data && data.items) || {}).filter(([, n]) => n > 0);
   if (!owned.length) return '<div class="shop-empty">가진 아이템이 없어요. 상점에서 구매해 보세요.</div>';
   const statKeys = lastShop.stat_keys || [];
@@ -7369,8 +7431,7 @@ function renderMail() {
   document.getElementById('mailMe').innerHTML = d.me ? `<b>${mailEsc(d.me)}</b>의 우체통` : '';
   if (!d.me) {
     tabsEl.innerHTML = '';
-    body.innerHTML = `<div class="mail-empty"><i class="fa-regular fa-envelope"></i>캐릭터로 로그인하면 편지를 주고받을 수 있어요.<br>
-      <button class="btn" onclick="closeMail(); onAvatarDotClick()">로그인</button></div>`;
+    body.innerHTML = `<div class="mail-empty"><i class="fa-solid fa-circle-notch fa-spin"></i>우체통을 불러오는 중입니다.</div>`;
     return;
   }
   const tabs = [['inbox', 'fa-solid fa-inbox', '받은 편지', d.unread], ['outbox', 'fa-solid fa-paper-plane', '보낸 편지'], ['write', 'fa-solid fa-pen', '편지 쓰기']];
@@ -7815,7 +7876,7 @@ function dormGuestbookHtml(r) {
     ${me ? `<div class="dorm-gb-write"><textarea id="dormGbText" maxlength="300" rows="3" placeholder="${mine ? '다시 쓰면 내 방명록이 고쳐져요.' : '이 방에 한마디 남겨 주세요. (한 사람당 하나)'}"
         oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
       <div class="row"><span class="n">${mine ? '내 방명록 고치기' : '방명록 쓰기'}</span><button class="dorm-tbtn primary sm" onclick="writeDormGuestbook()">${mine ? '고치기' : '남기기'}</button></div></div>`
-      : '<div class="dorm-gb-login">캐릭터로 로그인하면 방명록을 남길 수 있어요.</div>'}
+      : ''}
     <div class="dorm-side-body dorm-gb-list">${list.length ? list.map((e, i) => `<article class="dorm-note ${e.author === me ? 'mine' : ''}" style="--nc:${color(e.author)}">
         <span class="no">No.${String(list.length - i).padStart(2, '0')}</span>
         ${canDel(e) ? `<button class="dorm-note-del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}
@@ -7927,7 +7988,7 @@ function renderDormPalette() {
 const DORM_ADD_BOX = { furniture: 220, chara: 160 };
 let dormAdd = null;
 function openDormAddModal(editId) {
-  if (!dormIsGm() && !dormMe()) { showShopToast('캐릭터로 로그인 후 이용할 수 있습니다.'); return; }
+  if (!dormIsGm() && !dormMe()) return;
   const a = editId ? dormAsset(editId) : null;
   dormAdd = a ? { id: a.id, type: a.category === 'chara' ? 'chara' : 'furniture' } : { type: dormAdd && !dormAdd.id ? dormAdd.type : 'furniture' };
   document.getElementById('dormAddTitle').textContent = a ? 'Edit item' : 'Add item';
