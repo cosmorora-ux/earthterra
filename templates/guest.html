@@ -2982,11 +2982,10 @@
   .lg-hp em { font-style:normal; font-weight:700; margin-left:5px; }
   .lg-hp em.up { color: var(--muted); } .lg-hp em.down { color:#d7d8de; }
   .logsep { height:1px; margin:6px 26px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent); }
-  /* 채팅창 스킬 사용 기록 : 일반 채팅 줄 그대로 + 컷인 다시 보기 작은 재생 버튼 */
-  .sr-play { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; margin-left:4px; vertical-align:middle; position:relative; top:-2px;
-    border-radius:6px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); color: var(--muted); font-size:9px; cursor:pointer;
-    transition: color .15s, background .15s, border-color .15s; }
-  .sr-play:hover { color: var(--on-accent); background: var(--point); border-color: var(--point); }
+  /* 채팅창 스킬 사용 기록 : 일반 채팅 줄 그대로(【스킬】 + 본인이 정한 스킬 이름) + 테두리 없는 작은 재생 아이콘 */
+  .sr-play { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; margin-left:4px; padding:0; vertical-align:middle;
+    position:relative; top:-1px; border:none; background:none; color: var(--muted); font-size:10px; cursor:pointer; transition: color .15s; }
+  .sr-play:hover { color:#fff; }
 
   /* 격자 : 내 팀 차례 + 행동 전 = 샤인(빛이 쉬지 않고 천천히 훑고 지나감), 행동을 마치면 꺼짐. 이동 완료(행동 대기) = 모서리 작은 삼각형 */
   .gmap .gcell.ready::before { content:""; position:absolute; inset:0; z-index:7; pointer-events:none;
@@ -5847,7 +5846,7 @@ function fmtChat(entry) {
     const can = !!entry.fx;
     return `<div class="chat-line is-skill"${idAttr}>${av}
       <div class="chat-body"><div class="chat-meta"><b${prof.color ? ` style="color:${prof.color};"` : ''}>${shopEsc(who || '')}</b><span class="time">${formatChatTime(entry.time)}</span></div>
-        <div class="chat-text">${shopEsc(entry.text || ('【' + (entry.skill || '') + '】'))} 스킬 사용${can ? ` <button type="button" class="sr-play" onclick="replaySkillCutin('${entry.id}')" data-tip="컷인 다시 보기"><i class="fa-solid fa-play"></i></button>` : ''}</div></div>${delBtn}</div>`;
+        <div class="chat-text">${shopEsc(entry.text || ('【' + (entry.skill || '') + '】'))}${entry.fx && entry.fx.title ? ' ' + shopEsc(entry.fx.title) : ''}${can ? ` <button type="button" class="sr-play" onclick="replaySkillCutin('${entry.id}')" data-tip="컷인 다시 보기"><i class="fa-solid fa-play"></i></button>` : ''}</div></div>${delBtn}</div>`;
   }
   if (entry.category === 'round') {
     const main = /^round\s*\d+/i.test((entry.text || '').trim());
