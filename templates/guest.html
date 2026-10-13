@@ -3018,6 +3018,10 @@
   .tt-note i { width:12px; text-align:center; font-size:11px; color: var(--muted); }
   .tt-note.warn { color:#ffc861; background:rgba(255,176,32,.08); } .tt-note.warn i { color:#ffb020; }
   .tt-note.bad { color:#fff; font-weight:700; }
+  /* 로그창 이동 모음 블록 : 단계 안내 바로 아래, 이름 · 칸 이동을 한 줄씩 촘촘하게 */
+  .logblock.moves .logline.tag-move { padding:1px 0; }
+  .logblock.moves .mv-name { display:inline-block; min-width:4.5em; margin-right:10px; color:#d7d8de; font-weight:600; }
+  .logblock.moves .mv-cells { color: var(--muted); font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -5346,9 +5350,40 @@ function mergeLogRuns(lines) {
     return { tag: l.tag, role: l.role, text: `[${l._merge.label}] ${items}${note}` };
   });
 }
+// 격자 전투 이동("NAME 이동 K7 → J7")은 행동 횟수를 쓰지 않으므로, 단계(선공/후공)마다 단계 안내 바로 아래
+// 첫 행동 블록 바로 앞 한 블록으로 모아 보여줍니다(행동 블록들과 섞이지 않게). 화면 표시 순서만 바꾸고 기록은 그대로입니다.
+const LOG_MOVE_RX = /^(.+?) 이동 ([A-Z]+\d+) → ([A-Z]+\d+)$/;
+function isLogMoveLine(l) { return l && l.tag === 'action' && typeof l.text === 'string' && LOG_MOVE_RX.test(l.text); }
+function groupPhaseMoves(lines) {
+  const out = [];
+  let seg = [];
+  const flush = () => {
+    const moves = seg.filter(isLogMoveLine);
+    const rest = seg.filter(l => !isLogMoveLine(l));
+    // 단계 첫머리의 안내 줄(전조 공개 등) 다음, 첫 행동 블록 앞에 둡니다.
+    let at = rest.findIndex(l => LOG_GROUP_START_TAGS.has(l.tag));
+    if (at < 0) at = rest.length;
+    if (moves.length) rest.splice(at, 0, { tag: 'movegroup', moves });
+    out.push(...rest);
+    seg = [];
+  };
+  lines.forEach(l => { if (l.tag === 'round') { flush(); out.push(l); } else seg.push(l); });
+  flush();
+  return out;
+}
+function formatMoveGroupHtml(g) {
+  const rows = g.moves.map(l => {
+    const m = l.text.match(LOG_MOVE_RX);
+    return `<div class="logline tag-move"><span class="li"></span><span class="lt"><span class="mv-name">${shopEsc(m[1])}</span>`
+      + `<span class="mv-cells">${m[2]}<i class="lg-ar">→</i>${m[3]}</span></span></div>`;
+  }).join('');
+  return `<div class="logblock moves"><div class="logline group-start tag-action"><span class="li"><i class="fa-solid fa-shoe-prints"></i></span>`
+    + `<span class="lt">이동 <span class="lg-lab">${g.moves.length}명</span></span></div>${rows}</div>`;
+}
 function formatLogHtml(lines) {
-  return splitLogIntoSections(mergeLogRuns(lines || [])).map(section => {
+  return splitLogIntoSections(groupPhaseMoves(mergeLogRuns(lines || []))).map(section => {
     const head = section[0];
+    if (head.tag === 'movegroup') return formatMoveGroupHtml(head);
     if (head.tag === 'round' && /최종 결과/.test(head.text || '')) return formatRoundSummaryHtml(section);
     if (head.tag === 'round') {
       // 라운드 안내 줄 다음에 바로 붙은 결과 줄(회복 · 안내 등)도 떠 보이지 않게 일반 블록으로 묶습니다.
@@ -5392,7 +5427,7 @@ function splitLogIntoSections(lines) {
   const sections = [];
   let current = [];
   lines.forEach(line => {
-    if (LOG_GROUP_START_TAGS.has(line.tag) && current.length) {
+    if ((LOG_GROUP_START_TAGS.has(line.tag) || line.tag === 'movegroup') && current.length) {
       sections.push(current);
       current = [];
     }
@@ -5438,6 +5473,8 @@ function revealNewLogLines(view, fullLog, logTotal) {
   }
   if (logTotal === already) return;  // 새 줄 없음
   const newLines = fullLog.slice(already - sliceStart);
+  // 이동 줄은 단계 위쪽 이동 블록에 합쳐져야 하므로, 새 이동이 있으면 로그 전체를 다시 그립니다.
+  if (newLines.some(isLogMoveLine)) { renderCurrentLog(); return; }
   logSeenTotal[view] = logTotal;
   logRevealQueue[view].push(...splitLogIntoSections(newLines));
   processLogRevealQueue(view);
