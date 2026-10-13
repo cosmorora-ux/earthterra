@@ -37,7 +37,7 @@
     display:flex; align-items:center; justify-content:center; color: var(--muted); font-size:16px; flex-shrink:0; }
   .room-card .info { flex:1; min-width:0; }
   .room-card .room-name { font-weight:700; font-size:17px; letter-spacing:-0.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .room-card .room-type { color: var(--muted); font-size:13px; margin-top:2px; }
+  .room-card .room-type { color: var(--muted); font-size:13px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .room-card .actions { display:flex; gap:6px; align-items:center; flex-shrink:0; }
   .btn { display:inline-flex; align-items:center; gap:7px; font-size:14px; font-weight:600; padding:8px 14px; border-radius:8px;
     border:1px solid var(--card-border); background:#232327; color: var(--text); text-decoration:none; cursor:pointer; white-space:nowrap; }
@@ -138,11 +138,48 @@
 
   input, select, textarea { border-radius: var(--ui-r); }
   input:focus, select:focus, textarea:focus { outline:none; border-color: transparent; background: rgba(255,255,255,.1); box-shadow:none; }
+
+  /* 로그인 화면과 같은 분위기 : 포인트 색 빛 + 점 격자 + 천천히 도는 궤도 선, 유리 카드 */
+  .bg { position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
+  .bg::before { content:""; position:absolute; inset:0;
+    background: radial-gradient(50% 40% at 50% 18%, rgba(var(--point-rgb), .14), transparent 70%),
+                radial-gradient(rgba(255,255,255,.07) 1px, transparent 1.2px) 0 0 / 22px 22px;
+    -webkit-mask-image: radial-gradient(75% 55% at 50% 20%, #000 25%, transparent 75%); mask-image: radial-gradient(75% 55% at 50% 20%, #000 25%, transparent 75%); }
+  .bg .orbit { position:absolute; left:50%; top:150px; border-radius:50%; border:1px solid rgba(var(--point-rgb), .14);
+    transform:translate(-50%,-50%); animation: spin 70s linear infinite; }
+  .bg .orbit.o1 { width:min(620px, 140vw); height:min(620px, 140vw); }
+  .bg .orbit.o2 { width:min(980px, 220vw); height:min(980px, 220vw); border-style:dashed; border-color: rgba(255,255,255,.05); animation-duration:140s; animation-direction:reverse; }
+  .bg .orbit::after { content:""; position:absolute; top:-3px; left:50%; width:6px; height:6px; border-radius:50%;
+    background: rgb(var(--point-rgb)); box-shadow:0 0 12px 2px rgba(var(--point-rgb), .6); }
+  .bg .orbit.o2::after { background:#fff; opacity:.5; box-shadow:none; width:4px; height:4px; top:-2px; }
+  @keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+  .wrap { position:relative; z-index:1; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.42em; color: var(--muted); display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .eyebrow::after { content:""; width:36px; height:1px; background: linear-gradient(90deg, rgba(255,255,255,.25), transparent); }
+  .head h1 { font-size:46px; line-height:1; margin-bottom:12px; }
+  .room-card, .type-option, .empty {
+    background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.012)), rgba(16,16,19,.72);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-color: rgba(255,255,255,.08); }
+  .room-card { position:relative; border-radius:16px; animation: rise .45s cubic-bezier(.2,.9,.25,1) both; }
+  .room-card:hover { border-color: rgba(var(--point-rgb), .35); background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)), rgba(16,16,19,.8); }
+  .room-card .ico { border-radius:12px; background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.08); }
+  .room-card.lounge::before { content:""; position:absolute; left:22px; right:22px; top:-1px; height:1px;
+    background: linear-gradient(90deg, transparent, rgb(var(--point-rgb)), transparent); }
+  .room-card.lounge .ico { background: rgba(var(--point-rgb), .10); border-color: rgba(var(--point-rgb), .25); }
+  .room-card:nth-of-type(2) { animation-delay:.04s; } .room-card:nth-of-type(3) { animation-delay:.08s; }
+  .room-card:nth-of-type(4) { animation-delay:.12s; } .room-card:nth-of-type(n+5) { animation-delay:.16s; }
+  @keyframes rise { from { opacity:0; transform:translateY(10px); } }
+  .btn.primary { box-shadow:0 8px 22px rgba(var(--point-rgb), .22); }
+  .field { background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.08); border-radius:12px; }
+  .field:focus { border-color: rgba(var(--point-rgb), .7); box-shadow:0 0 0 3px rgba(var(--point-rgb), .14); background: rgba(0,0,0,.35); }
+  @media (prefers-reduced-motion: reduce) { .bg .orbit, .room-card { animation:none; } }
 </style>
 </head>
 <body>
+<div class="bg"><span class="orbit o2"></span><span class="orbit o1"></span></div>
 <div class="wrap">
   <div class="head">
+    <div class="eyebrow">EARTHTERRA</div>
     <h1>Rooms</h1>
     <p>기존 방으로 들어가거나 새 방을 만드세요. 방은 서버를 다시 켜도 그대로 남아 있어요.</p>
   </div>

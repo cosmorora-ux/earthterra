@@ -1293,6 +1293,12 @@
   .member-header .m-chat-close { display:none; align-items:center; justify-content:center; width:32px; height:32px; margin-left:4px;
     background:none; border:none; color: var(--muted); font-size:18px; cursor:pointer; border-radius:8px; }
   .member-header .m-chat-close:hover { color: var(--text); background: var(--card); }
+  @keyframes mPageIn { from { opacity:0; transform:translateY(8px); } }
+  @media (prefers-reduced-motion: reduce) { @keyframes mPageIn { from { opacity:1; } } }
+  .news-switch { display:none; margin-left:6px; padding:3px; gap:2px; border-radius:10px; background: rgba(255,255,255,.04); border:1px solid var(--line); }
+  .news-switch button { position:relative; height:28px; padding:0 12px; border:none; border-radius:7px; background:none; color: var(--muted); font-size:13px; font-weight:600; cursor:pointer; }
+  .news-switch button.on { background: rgba(var(--point-rgb), .14); color: var(--text); }
+  .news-switch .notice-dot { top:4px; right:3px; }
   @keyframes mChatIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
   @media (max-width:1180px) {
     .shell { padding:12px 14px 14px; }
@@ -1703,6 +1709,20 @@
     .mypage.v2 .mp-tagrow .mp-k, .mypage.v2 .mp-hero-side .mypage-label { width:auto; flex:none; font-size:13px; color: var(--muted); font-weight:500; }
     .mypage.v2 .mypage-roles, .mypage.v2 .mp-nations { flex-wrap:nowrap; justify-content:flex-end; gap:5px; min-width:0; }
     .mypage.v2 .mypage-roles button, .mypage.v2 .mp-nations button { height:28px; padding:0 10px; font-size:12.5px; white-space:nowrap; flex:none; }
+    /* 휴대폰 · 태블릿 스킬 로그 : 항목 이름은 위, 입력은 아래 전체 폭 / 등장 모션은 5칸 고른 버튼 / 컷인 설정과 스킬 내용 사이 구분선 */
+    .mypage.v2 .mp-skill .mp-card-h { margin-bottom:16px; }
+    .mypage.v2 .mp-cutin-opts { display:flex; flex-direction:column; align-items:stretch; gap:0; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+    .mypage.v2 .mp-cutin-opts .mp-k { font-size:12.5px; margin:0 0 7px 2px; }
+    .mypage.v2 .mp-cutin-opts .mp-k + .mp-motions, .mypage.v2 .mp-cutin-opts .idc-field { width:100%; box-sizing:border-box; }
+    .mypage.v2 .mp-cutin-opts .idc-field { margin-bottom:14px; height:44px; }
+    .mypage.v2 .mp-motions { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px; }
+    .mypage.v2 .mp-motions button { height:36px; padding:0 2px; border-radius:10px; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mypage.v2 #myPageSkillText .idc-field { height:44px; margin-bottom:10px; width:100%; box-sizing:border-box; }
+    .mypage.v2 .idc-editor .rich { min-height:130px; }
+    .mypage.v2 #myPageSkillImageBox { min-height:180px; }
+    .mypage.v2 #myPageSkillImage > div:has(#myPageSkillImageClear) { display:flex; justify-content:flex-end; }
+    .mypage.v2 #myPageSkillImageClear { font-size:13px; }
+    .mypage.v2 .mp-preview-btn { width:100%; height:44px; margin-top:14px; }
   }
 
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
@@ -2506,6 +2526,17 @@
     .modal-box.mypage .idc-head, .notice-head, .modal-box.shop-modal .shop-head, .modal-box.mail-modal .shop-head, .modal-box.userinfo-modal .ui-head { min-height:34px; margin-bottom:16px; }
     .modal-box.mypage .idc-close, .modal-box.shop-modal .shop-close, .modal-box.notice-modal .shop-close, .modal-box.mail-modal .shop-close, .modal-box.userinfo-modal .ui-close { display:none !important; }
     .mp-logout-bottom { display:flex; }
+    /* 일반 룸 : 공지 · 우체통 페이지 위쪽 전환 버튼 */
+    body.is-lounge .news-switch { display:inline-flex; }
+    .modal-box.mail-modal .shop-head .modal-title, .notice-head .modal-title { flex:1; margin:0; }
+    .modal-box.mail-modal .shop-head .mail-me { display:none; }
+    /* 하단 탭으로 바꾸는 모든 화면은 같은 방식으로 : 어둡게 깔리는 배경 없이 살짝 떠오르며 나타남 */
+    .modal-overlay:has(> .modal-box.mypage, > .modal-box.shop-modal, > .modal-box.notice-modal, > .modal-box.mail-modal, > .modal-box.userinfo-modal) {
+      animation:none; background: var(--bg); }
+    .modal-overlay > .modal-box.mypage, .modal-overlay > .modal-box.shop-modal, .modal-overlay > .modal-box.notice-modal,
+    .modal-overlay > .modal-box.mail-modal, .modal-overlay > .modal-box.userinfo-modal { animation: mPageIn .22s ease-out; }
+    .shell > *:not(.modal-overlay) { animation: mPageIn .22s ease-out; }
+    body.m-chat-open .member-col .member-panel { animation: mPageIn .22s ease-out !important; }
     .idc-head { display:flex; align-items:center; }
     /* 전투 헤더 오른쪽 위 : 유저 리스트 · 채팅 */
     .topbar.v2 { grid-template-areas:"room sep fmt . tools" "round round round round timer" !important; }
@@ -2584,7 +2615,7 @@
   <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
   <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps()" data-tip="운영" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
-  <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsSheet()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
+  <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsTab()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
   <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <div class="sidebar-grow"></div>
@@ -2629,6 +2660,7 @@
   <div class="modal-box notice-modal panel">
     <div class="notice-head">
       <div class="modal-title page-title" id="noticeModalTitle">Notice</div>
+      <div class="news-switch"><button class="on" onclick="switchNews('notice')">공지<span class="notice-dot nsw-notice-dot"></span></button><button class="" onclick="switchNews('mail')">우체통<span class="notice-dot nsw-mail-dot"></span></button></div>
       <button class="shop-btn" id="noticeNewBtn" onclick="startNoticeEdit(null)" style="display:none;"><i class="fa-solid fa-pen"></i> 새 공지</button>
       <button class="shop-close" onclick="closeNotices()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </div>
@@ -2856,6 +2888,7 @@
   <div class="modal-box mail-modal panel">
     <div class="shop-head">
       <div class="modal-title page-title">Mail</div>
+      <div class="news-switch"><button class="" onclick="switchNews('notice')">공지<span class="notice-dot nsw-notice-dot"></span></button><button class="on" onclick="switchNews('mail')">우체통<span class="notice-dot nsw-mail-dot"></span></button></div>
       <span class="mail-me" id="mailMe"></span>
       <button class="shop-close" onclick="closeMail()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </div>
@@ -7523,8 +7556,18 @@ function syncNewsDot() {
   const nOn = !!(n && n.classList.contains('on')), mOn = !!(m && m.classList.contains('on')) && !document.body.classList.contains('logged-out');
   const set = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('on', on); };
   set('newsDot', nOn || mOn); set('newsNoticeDot', nOn); set('newsMailDot', mOn);
+  document.querySelectorAll('.nsw-notice-dot').forEach(el => el.classList.toggle('on', nOn));
+  document.querySelectorAll('.nsw-mail-dot').forEach(el => el.classList.toggle('on', mOn));
 }
 function openNewsSheet() { syncNewsDot(); document.getElementById('newsSheet').style.display = 'flex'; }
+// 휴대폰 · 태블릿 '소식' 탭 : 바로 공지 페이지로. 일반 룸은 공지 · 우체통 페이지 위쪽 전환 버튼으로 오갑니다.
+function openNewsTab() { syncNewsDot(); openNotices(); }
+function switchNews(k) {
+  if (k === 'mail') {
+    if (noticeEditing) { closeNotices(); return; }
+    closeNotices(); openMail();
+  } else { closeMail(); openNotices(); }
+}
 function openMail(tab) {
   if (tab) mailTab = tab;
   mailOpenId = null;
