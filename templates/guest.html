@@ -2934,7 +2934,7 @@
   /* 격자 대상 고르기 : 대상 칸이 포인트 테두리 + 빛이 훑고 지나가며 반짝 */
   .gmap .gsel.tgt { z-index:9; box-shadow: inset 0 0 0 2px var(--point);
     background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%) no-repeat; background-size:260% 100%;
-    animation: gTgtShine 1.8s ease-in-out infinite; }
+    animation: gTgtShine 1.8s ease-in-out infinite; animation-delay: var(--tgt-phase, 0s); }
   @keyframes gTgtShine { 0% { background-position:160% 0; box-shadow: inset 0 0 0 2px var(--point), inset 0 0 8px rgba(var(--point-rgb), .4); }
     50% { box-shadow: inset 0 0 0 2px #fff, inset 0 0 14px rgba(var(--point-rgb), .9); }
     100% { background-position:-60% 0; box-shadow: inset 0 0 0 2px var(--point), inset 0 0 8px rgba(var(--point-rgb), .4); } }
@@ -2990,17 +2990,20 @@
   /* 격자 : 내 팀 차례 + 행동 전 = 샤인(빛이 쉬지 않고 천천히 훑고 지나감), 행동을 마치면 꺼짐. 이동 완료(행동 대기) = 모서리 작은 삼각형 */
   .gmap .gcell.ready::before { content:""; position:absolute; inset:0; z-index:7; pointer-events:none;
     background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.32) 50%, transparent 62%) no-repeat; background-size:260% 100%;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); animation: gReadyShine 3.2s linear infinite; }
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); animation: gReadyShine 3.2s linear infinite; animation-delay: var(--shine-phase, 0s); }
   @keyframes gReadyShine { 0% { background-position:100% 0; } 100% { background-position:0% 0; } }
   @media (prefers-reduced-motion: reduce) { .gmap .gcell.ready::before { animation:none; background:none; } }
   .gmap .gcell.moved::after { content:""; position:absolute; top:0; right:0; z-index:9; width:0; height:0;
     border-style:solid; border-width:0 7px 7px 0; border-color:transparent var(--point) transparent transparent; }
   /* 전조 칸 위에 캐릭터가 있어도 줄무늬가 보이게 */
   .gmap td.tel .gcell .gsel:not(.tgt) { background: repeating-linear-gradient(135deg, rgba(255,176,32,.08) 0 2.5px, transparent 2.5px 7.0711px);
-    animation: telDrift 2.4s linear infinite; }
-  /* 전조 구역 : 옅은 줄무늬가 천천히 흘러가는 움직임 */
-  .gmap td.tel { animation: telDrift 2.4s linear infinite; }
-  @keyframes telDrift { from { background-position:0 0; } to { background-position:10px 0; } }
+    background-size:10px 10px; background-position: var(--tx, 0px) 0; animation: telDrift 2.4s linear infinite; animation-delay: var(--tel-phase, 0s); }
+  /* 전조 구역 : 옅은 줄무늬가 천천히 흘러가는 움직임.
+     - 줄무늬 한 조각을 10px 정사각형(줄 간격 딱 한 주기)으로 깔아 칸 안에서 이음매가 생기지 않게 하고,
+       칸마다 시작점을 칸 위치만큼 밀어(--tx) 옆 칸과 줄이 끊김 없이 이어지게 합니다(칸 크기와 무관).
+     - 지도가 다시 그려져도 움직임이 처음으로 튀지 않도록 지금 시각만큼 앞당겨 시작합니다(--tel-phase). */
+  .gmap td.tel { background-size:10px 10px; background-position: var(--tx, 0px) 0; animation: telDrift 2.4s linear infinite; animation-delay: var(--tel-phase, 0s); }
+  @keyframes telDrift { from { background-position: var(--tx, 0px) 0; } to { background-position: calc(var(--tx, 0px) + 10px) 0; } }
   @media (prefers-reduced-motion: reduce) { .gmap td.tel, .gmap td.tel .gcell .gsel { animation:none; } }
   /* 격자 칸 툴팁 : 머리(이름 · 역할) / HP 막대 / 항목별 줄 / 알림 줄로 나눠 읽기 쉽게 */
   #floatTip.rich { padding:0; min-width:210px; max-width:280px; font-size:13px; line-height:1.4; overflow:hidden; }
@@ -5001,7 +5004,12 @@ function renderGrid(battle, all) {
   const TEL_EDGE = 'rgba(255,176,32,.38)';
   // 옅은 사선 줄무늬(한 줄 간격 7.07px = 가로 10px)가 천천히 흘러가도록 CSS(td.tel)에서 움직입니다.
   const TEL_STRIPES = 'repeating-linear-gradient(135deg, rgba(255,176,32,.08) 0 2.5px, rgba(255,176,32,0) 2.5px 7.0711px)';
-  let html = '<table class="gmap">';
+  // 움직임 이어 붙이기 : 지도를 다시 그려도 샤인 · 전조 줄무늬가 처음으로 튀지 않게, 지금 시각 기준으로 시작점을 맞춥니다.
+  const nowMs = performance.now();
+  const phase = ms => `-${((nowMs % ms) / 1000).toFixed(3)}s`;
+  // 칸 간격(칸 + 격자선 1px). 줄무늬는 가로 10px마다 반복하므로, 칸 위치만큼 밀면 옆 칸과 이어집니다.
+  const pitch = cellPx + 1;
+  let html = `<table class="gmap" style="--tel-phase:${phase(2400)}; --shine-phase:${phase(3200)}; --tgt-phase:${phase(1800)};">`;
   for (let y = 0; y < gridHeight; y++) {
     html += '<tr>';
     for (let x = 0; x < gridWidth; x++) {
@@ -5069,7 +5077,7 @@ function renderGrid(battle, all) {
         // 바탕 : 내 칸/범위는 옅은 색, 전조는 호박색 사선 줄무늬(겹쳐도 둘 다 보이게 색 + 무늬를 따로 깝니다)
         if (key === selfKey) tdStyle += 'background-color:color-mix(in srgb, var(--point) 18%, transparent);';
         else if (rngCol && highlightCells.has(key)) tdStyle += `background-color:color-mix(in srgb, ${rngCol} 14%, transparent);`;
-        if (telKeys.has(key)) tdStyle += `background-image:${TEL_STRIPES};`;
+        if (telKeys.has(key)) tdStyle += `background-image:${TEL_STRIPES}; --tx:${-(((x + y) * pitch) % 10)}px;`;
       }
       // 운영진 전조 선택 중 : 모든 칸을 눌러 고르고(Shift+클릭 가로 한 줄, Shift+우클릭 세로 한 줄), 고른 칸은 붉게 표시
       if (typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all') {
