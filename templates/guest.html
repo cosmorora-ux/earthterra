@@ -4264,7 +4264,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.24";
+const EXPECTED_SERVER_BUILD = "2026-10-13.25";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5118,7 +5118,7 @@ function renderGrid(battle, all) {
       const selTurn = !!(battle && battle.current_turn_team === (selChar.teamLabel === 'A' ? '1팀' : '2팀'));
       // 러너가 적을 누르면 적의 이동 범위 대신 공격 범위(받는 피해 1.2배 구역)만 보여줍니다.
       if (selChar.teamLabel === 'B') enemyZone = enemyZoneCells(selChar);
-      if ((selTurn || medicFreeTurn) && (gmView || selChar.teamLabel === 'A')) {
+      if ((selTurn || (gmView && medicFreeTurn)) && (gmView || selChar.teamLabel === 'A')) {
         highlightIsAction = selChar.teamLabel === 'B' ? !selChar.has_acted : !!selChar.moved_this_round;
         highlightCells = computeHighlightCells(selChar, highlightIsAction);
       }
@@ -5273,14 +5273,14 @@ function renderGrid(battle, all) {
   drawAttackLines();
   // 이동/사거리 안내는 지도 아래가 아니라 지도 위 알림줄(라디오 아이콘 옆)에 함께 보여줍니다.
   const guide = (selChar && selChar.teamLabel === 'B' && enemyZone.size && !(gmView && highlightCells.size && !highlightIsAction))
-    ? `${displayNameOf(selChar).replace(/\s*[\[-]\s*[NS][EW]\]?$/, '')} 공격 범위 — 안에서 맞으면 피해 1.2배예요.`
-    : (isEnemyTurn && !medicFreeTurn)
-    ? '적 턴이에요. 적을 누르면 공격 범위(안에서 맞으면 피해 1.2배)가 보여요.'
+    ? `${displayNameOf(selChar).replace(/\s*[\[-]\s*[NS][EW]\]?$/, '')}의 사거리를 표시합니다. 사거리 내의 캐릭터가 피격될 시 피해가 1.2배 가산됩니다.`
+    : isEnemyTurn
+    ? '적 턴입니다. 적을 누르면 사거리가 표시됩니다. 사거리 내의 캐릭터가 피격될 시 피해가 1.2배 가산됩니다.'
     : (selChar
       ? (highlightIsAction
-          ? `선택: ${displayNameOf(selChar)} — 사거리 표시 중. 범위 내 대상을 클릭해 행동을 고르세요.`
-          : `선택: ${displayNameOf(selChar)} — 이동 범위 표시 중. 이동할 칸을 클릭하세요.`)
-      : '캐릭터를 클릭하면 이동/사거리 범위가 표시돼요.');
+          ? `${displayNameOf(selChar)}의 사거리를 표시합니다. 사거리 내의 대상을 눌러 행동을 선택합니다.`
+          : `${displayNameOf(selChar)}의 이동 범위를 표시합니다. 이동할 칸을 눌러 이동합니다.`)
+      : '캐릭터를 누르면 이동 범위와 사거리가 표시됩니다.');
   renderGridNotice(battle, guide);
   const legend = document.getElementById('gridLegend');
   if (legend) { legend.textContent = ''; legend.style.display = 'none'; }
@@ -5297,7 +5297,7 @@ function renderGridNotice(battle, guide) {
   const parts = [];
   // 운영진 전조 선택 중 : 다른 안내 대신 선택 방법과 고른 칸 수만
   if (typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all') {
-    el.textContent = `전조 선택 중 · 고른 칸 ${telegraphSelectedCells.size}개 — 칸을 눌러 고르고, Shift+클릭은 가로 한 줄, Shift+우클릭은 세로 한 줄을 한꺼번에 골라요.`;
+    el.textContent = `전조 선택 중 · 고른 칸 ${telegraphSelectedCells.size}개 — 칸을 눌러 선택합니다. Shift+클릭은 가로 한 줄, Shift+우클릭은 세로 한 줄을 한꺼번에 선택합니다.`;
     return;
   }
   if (BATTLE_TYPE === 'siege' && lastSiteDice && lastSiteDice.value != null && !lastSiteDice.stale) {
@@ -5498,8 +5498,8 @@ function formatLogLineHtml(l, noIcon, asHead) {
   let { html, tone } = logLineParts(l.text, l.tag);
   // 즉시 정산(공격 수치 → 방어 → 최종 → HP)을 한 줄로 : "공격 nn · 방어 nn · 최종 nn   HP 현재"
   if (l._res) {
-    html = l._resOnly ? `<span class="st-atk">${shopEsc(siteLabelize(l.text))}</span>방어 <b class="lg-num">${l._res.def}</b> · 최종 <b class="lg-num">${l._res.dmg}</b>${l._res.zone ? `<span class="lg-zone">범위 ×${l._res.zone}</span>` : ''}${logResHp(null, l._res.hp)}`
-      : html.replace(/공격 수치(\s*<b class="lg-num">)/, '공격$1') + ` · 방어 <b class="lg-num">${l._res.def}</b> · 최종 <b class="lg-num">${l._res.dmg}</b>${l._res.zone ? `<span class="lg-zone">범위 ×${l._res.zone}</span>` : ''}${logResHp(l._res.hpName, l._res.hp)}`;
+    html = l._resOnly ? `<span class="st-atk">${shopEsc(siteLabelize(l.text))}</span>방어 <b class="lg-num">${l._res.def}</b> · 최종 <b class="lg-num">${l._res.dmg}</b>${l._res.zone ? `<span class="lg-zone">사거리 ×${l._res.zone}</span>` : ''}${logResHp(null, l._res.hp)}`
+      : html.replace(/공격 수치(\s*<b class="lg-num">)/, '공격$1') + ` · 방어 <b class="lg-num">${l._res.def}</b> · 최종 <b class="lg-num">${l._res.dmg}</b>${l._res.zone ? `<span class="lg-zone">사거리 ×${l._res.zone}</span>` : ''}${logResHp(l._res.hpName, l._res.hp)}`;
   }
   // 크리티컬은 따로 한 줄을 쓰지 않고, 그 타격(회복) 줄 끝에 작은 표시로 붙입니다.
   if (l._crit) html += `<span class="lg-crit ${l.tag === 'heal' ? 'heal' : 'atk'}"><i>✦</i>크리티컬</span>`;
@@ -5684,7 +5684,7 @@ function parseSettleSection(sec) {
     const t = typeof l.text === 'string' ? l.text : '';
     let k;
     if (l.tag === 'defend_value' && (k = t.match(/방어 값 (\d+)/))) row.def = k[1];
-    else if (l.tag === 'damage' && (k = t.match(/^피해량 (\d+)(?:\s*\(범위 ×([\d.]+)\))?/))) { row.dmg = k[1]; row.zone = k[2] || null; }
+    else if (l.tag === 'damage' && (k = t.match(/^피해량 (\d+)(?:\s*\((?:범위|사거리) ×([\d.]+)\))?/))) { row.dmg = k[1]; row.zone = k[2] || null; }
     else if (l.tag === 'hp' && (k = t.match(/^(.+?) HP (\d+)\s*→\s*(\d+)/))) { row.hpName = k[1]; row.hp = [+k[2], +k[3]]; }
     else if (l.tag === 'crit' && /방어 크리티컬/.test(t)) row.defCrit = true;
     else row.notes.push(l);
@@ -5716,7 +5716,7 @@ function formatSettleGroupHtml(g) {
     const parts = [];
     if (r.atkVal != null) parts.push(`공격 <b class="lg-num">${r.atkVal}</b>`);
     if (r.def != null) parts.push(`방어 <b class="lg-num">${r.def}</b>`);
-    if (r.dmg != null) parts.push(`최종 <b class="lg-num">${r.dmg}</b>${r.zone ? `<span class="lg-zone">범위 ×${r.zone}</span>` : ''}`);
+    if (r.dmg != null) parts.push(`최종 <b class="lg-num">${r.dmg}</b>${r.zone ? `<span class="lg-zone">사거리 ×${r.zone}</span>` : ''}`);
     const hp = r.hp ? logResHp(r.hpName && r.hpName !== r.tgt ? r.hpName : null, r.hp[1]) : '';
     const crit = r.defCrit ? '<span class="lg-crit def"><i>✦</i>방어 크리티컬</span>' : '';
     const notes = [...r.notes];
@@ -5810,7 +5810,7 @@ function compactResolutions(section) {
     const mHp = hp && hp.tag === 'hp' && (hp.text || '').match(/^(.+?) HP (\d+)\s*→\s*(\d+)/);
     if (mDv && mDm && mHp) {
       const prev = out[out.length - 1];
-      const res = { def: mDv[1], dmg: mDm[1], hp: +mHp[3], hpName: null, defCrit, zone: (dm.text.match(/\(범위 ×([\d.]+)\)/) || [])[1] };
+      const res = { def: mDv[1], dmg: mDm[1], hp: +mHp[3], hpName: null, defCrit, zone: (dm.text.match(/\((?:범위|사거리) ×([\d.]+)\)/) || [])[1] };
       if (prev && prev.tag === 'damage' && /공격 수치 \d+/.test(prev.text || '') && !prev._res) {
         out[out.length - 1] = { ...prev, _res: res };
       } else {

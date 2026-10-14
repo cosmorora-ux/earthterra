@@ -509,7 +509,7 @@ class Battle:
         else:
             self._log_public_only(f"방어 값 {dfs['total']}", tag="defend_value")
 
-        zone = f" (범위 ×{result['damage_mult']:g})" if result.get("damage_mult", 1) != 1 else ""
+        zone = f" (사거리 ×{result['damage_mult']:g})" if result.get("damage_mult", 1) != 1 else ""
         self._log(f"피해량 {result['damage']}{zone}", tag="damage")
         self._log(f"{target.name} HP {result['hp_before']} → {result['hp_after']}", tag="hp")
 
