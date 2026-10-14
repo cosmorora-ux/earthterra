@@ -3067,6 +3067,27 @@
   /* 묶음 블록 제목의 인원 · 횟수 : 제목 글 옆이 아니라 블록 오른쪽 끝에 */
   .lg-cnt { float:right; margin-left:10px; font-size:.84em; font-weight:500; color: var(--muted); font-variant-numeric: tabular-nums; }
   .logblock.first-team .ft-result .lt { color:#fff; font-weight:600; }
+  /* 마이룸 기간 : 운영진 관리(기간 고르기 · 지금 기간 바꾸기) · 지난 마이룸(본인 마이페이지) */
+  .dorm-periods { display:flex; gap:8px; flex-wrap:wrap; }
+  .dorm-period { display:flex; align-items:baseline; gap:8px; padding:9px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.03); color: var(--text); cursor:pointer; font:inherit; }
+  .dorm-period .no { font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .dorm-period b { font-size:14px; font-weight:700; }
+  .dorm-period .st { font-size:11.5px; color: var(--muted); }
+  .dorm-period.current .st { color: var(--point); }
+  .dorm-period.on { border-color: rgba(var(--point-rgb), .6); background: rgba(var(--point-rgb), .1); }
+  .dorm-period-act { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:10px; font-size:13px; color: var(--muted); }
+  .dorm-period-act .btn { margin-left:auto; }
+  .dorm-past-tag { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:10px; font-size:12.5px; color: var(--muted); background:rgba(255,255,255,.06); }
+  .idc-room-past:empty { display:none; }
+  .idc-past-h { margin:12px 0 6px; font-size:11.5px; font-weight:700; letter-spacing:.06em; color: var(--muted); }
+  .idc-past { display:flex; align-items:center; gap:10px; width:100%; padding:6px 10px 6px 6px; margin-top:6px; border-radius:10px;
+    border:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.03); color: var(--text); font:inherit; text-align:left; cursor:pointer; }
+  .idc-past:hover { background:rgba(255,255,255,.06); }
+  .idc-past .mini { flex:none; width:56px; height:44px; display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:6px; background:rgba(0,0,0,.25); }
+  .idc-past .t { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+  .idc-past .t b { font-size:13.5px; font-weight:700; } .idc-past .t span { font-size:12px; color: var(--muted); }
+  .idc-past > i { font-size:11px; color: var(--muted); }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -3099,7 +3120,7 @@
   <div class="sidebar-gap" id="sidebarAlign"></div>
   <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
   <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
-  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="기숙사"><i class="fa-solid fa-house"></i></button>
+  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i></button>
   <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
   <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i></button>
   <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
@@ -3524,6 +3545,7 @@
       <div class="mp-card idc-room" id="myPageRoomBox" style="display:none;">
         <div class="idc-room-head"><span class="mp-k"><i class="fa-solid fa-house"></i> 마이룸</span><span class="idc-room-sub" id="myPageRoomSub"></span></div>
         <div class="idc-room-prev" id="myPageRoomPrev" title="눌러서 방으로 가기"></div>
+        <div class="idc-room-past" id="myPageRoomPast"></div>
       </div>
     </div>
 
@@ -4169,7 +4191,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.17";
+const EXPECTED_SERVER_BUILD = "2026-10-13.18";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -8815,6 +8837,17 @@ const dormUp = { buf: null, filename: '', url: '', name: '', category: 'deco', c
 const DORM_CATS = [['furniture', '가구'], ['deco', '소품'], ['wall', '벽 장식'], ['surface', '벽지·바닥'], ['room', '방']];
 let dormSet = '', dormQ = '';
 function dormIsGm() { return myControlInfo(lastBattleForPanel).scope === 'all'; }
+// 마이룸 기간(1차 기숙사 · 2차 캠프 · 3차 선실) : 이름 · 단위(관/막사/구역)를 기간마다 바꿔 씁니다.
+const DORM_P_DEFAULT = { id: 'p1', no: 1, name: '기숙사', en: 'Dorm', unit: '관', unit_en: 'Hall', status: 'current' };
+function dormP() { return (dormData && dormData.period) || DORM_P_DEFAULT; }
+// 받침에 따라 조사 고르기 : josa('막사', '을', '를') → '막사를'
+function josa(w, withBatchim, without) {
+  const c = String(w || '').charCodeAt(String(w || '').length - 1);
+  const has = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 > 0;
+  return w + (has ? withBatchim : without);
+}
+let dormManagePeriod = null;   // 운영진 관리 화면에서 배치를 고치는 기간(기본 = 지금 기간)
+let dormPast = { owner: null, rooms: [] };   // 지난 기간의 내 방(본인만)
 // 기숙사 목록 New! : 방이 바뀐 때(꾸밈·음악·대사·방명록)가 이 브라우저에서 마지막으로 그 방을 본 때보다 나중이면 표시합니다.
 // 처음 쓰는 브라우저는 지금 상태를 기준으로 잡아서 전부 New!가 뜨지 않게 합니다.
 function dormSeenMap() { try { return JSON.parse(localStorage.getItem('dormSeen') || 'null'); } catch (e) { return null; } }
@@ -8854,7 +8887,7 @@ function openDorm() {
   renderDorm();
 }
 function closeDorm() {
-  if (dormEdit) { uiConfirm('저장하지 않은 꾸미기가 있어요. 닫을까요?', { title: '기숙사 닫기', okText: '닫기' }).then(ok => { if (ok) { dormEdit = null; closeDorm(); } }); return; }
+  if (dormEdit) { uiConfirm('저장하지 않은 꾸미기가 있어요. 닫을까요?', { title: '마이룸 닫기', okText: '닫기' }).then(ok => { if (ok) { dormEdit = null; closeDorm(); } }); return; }
   document.getElementById('dormModal').style.display = 'none';
   setMainView(false);
   syncDormMusic();
@@ -8862,6 +8895,13 @@ function closeDorm() {
 function setDormView(v) { dormView = v; if (v === 'manage') { dormHallsDraft = null; dormCreditsDraft = null; } renderDorm(); }
 function openDormRoom(owner) { dormZoom = 1; dormPan = { x: 0, y: 0 }; dormView = 'room'; dormRoom = { owner, loading: true }; dormEdit = null; dormSel = -1; socket.emit('dorm_room_get', { name: owner }); renderDorm(); }
 socket.on('dorm_data', (d) => {
+  // 기간이 바뀌면 지난 마이룸 목록 · 관리 초안을 새로 받습니다.
+  if (dormData && dormData.period && d.period && dormData.period.id !== d.period.id) {
+    dormPast = { owner: null, rooms: [] }; dormHallsDraft = null; dormManagePeriod = null;
+    if (dormRoom && !dormRoom.past && dormView === 'room') dormView = 'halls';
+  }
+  // 운영진 관리 정보는 운영진 요청에만 오므로, 모두에게 가는 알림에 없으면 앞 값을 지킵니다.
+  if (dormData && dormData.period_halls && !d.period_halls) d.period_halls = dormData.period_halls;
   dormData = d; if (d.roster) dormRoster = d.roster;
   dormSyncSeenBaseline();
   if (document.getElementById('dormModal').style.display === 'flex' && !dormEdit) renderDorm();
@@ -8875,15 +8915,44 @@ function renderMyPageRoom() {
   if (!box || document.getElementById('myPageModal').style.display !== 'flex') return;
   const c = myPageTargetChar(), name = c && c.name;
   const hall = name && dormData ? dormHallOf(name) : null;
-  if (!hall) { box.style.display = 'none'; return; }
+  // 지난 기간의 마이룸 : 본인 마이페이지에서만(서버도 본인 것만 보내 줍니다)
+  const self = !!(name && name === dormMe() && !dormIsGm());
+  if (self && dormPast.owner !== name) { dormPast = { owner: name, rooms: [], loading: true }; socket.emit('dorm_past_get'); }
+  const past = self && dormPast.owner === name ? (dormPast.rooms || []) : [];
+  if (!hall && !past.length) { box.style.display = 'none'; return; }
   box.style.display = '';
-  document.getElementById('myPageRoomSub').textContent = hall.name;
+  const P = dormP();
+  document.getElementById('myPageRoomSub').textContent = hall ? `${P.no}차 ${P.name} · ${hall.name}` : '';
   const prev = document.getElementById('myPageRoomPrev');
-  prev.innerHTML = dormMiniHtml(name, 120, 100);
-  prev.onclick = () => { document.getElementById('myPageModal').style.display = 'none'; openDorm(); openDormRoom(name); };
+  prev.style.display = hall ? '' : 'none';
+  if (hall) {
+    prev.innerHTML = dormMiniHtml(name, 120, 100);
+    prev.onclick = () => { document.getElementById('myPageModal').style.display = 'none'; openDorm(); openDormRoom(name); };
+  }
+  const pastEl = document.getElementById('myPageRoomPast');
+  pastEl.innerHTML = past.length ? `<div class="idc-past-h">지난 마이룸</div>` + past.map((e, i) =>
+    `<button class="idc-past" onclick="openDormPastRoom(${i})"><span class="mini">${dormMiniRoomHtml(e.room, 56, 44)}</span>
+      <span class="t"><b>${e.period.no}차 ${mailEsc(e.period.name)}</b><span>${mailEsc(e.hall || '')}</span></span><i class="fa-solid fa-chevron-right"></i></button>`).join('') : '';
+}
+socket.on('dorm_past', (d) => { dormPast = { owner: d.owner, rooms: d.rooms || [] }; renderMyPageRoom(); });
+// 지난 기간 방 미리보기(방 자료를 직접 받아 그림)
+function dormMiniRoomHtml(r, w, maxH) {
+  if (!dormData || !r) return '';
+  const base = dormBase(r); if (!base) return '';
+  const sc = Math.min(w / dormBW(base), (maxH || 1e9) / dormBH(base));
+  return `<div class="dorm-mini" style="width:${Math.round(dormBW(base) * sc)}px; height:${Math.round(dormBH(base) * sc)}px">${dormStageHtml(r, base, sc, false, true)}</div>`;
+}
+// 지난 기간의 내 방 열기 : 구경만(꾸미기 · 방명록 쓰기 없음)
+function openDormPastRoom(i) {
+  const e = (dormPast.rooms || [])[i]; if (!e) return;
+  document.getElementById('myPageModal').style.display = 'none';
+  openDorm();
+  dormZoom = 1; dormPan = { x: 0, y: 0 }; dormView = 'room'; dormEdit = null; dormSel = -1;
+  dormRoom = Object.assign({}, e.room, { past: e.period, pastHall: e.hall });
+  renderDorm();
 }
 socket.on('dorm_room', (r) => {
-  if (!dormRoom || dormRoom.owner !== r.owner) return;
+  if (!dormRoom || dormRoom.owner !== r.owner || dormRoom.past) return;
   dormMarkSeen(r.owner, r.activity);  // 지금 보고 있는 방만 '봤음'으로
   if (dormEdit && !dormSaving) { dormRoom = r; return; }
   dormRoom = r; dormSaving = false; dormEdit = null; dormSel = -1; dormPick = null;
@@ -8953,11 +9022,19 @@ function editDormLine() {
 function renderDormTop() {
   const el = document.getElementById('dormTop'); if (!el) return;
   const me = dormMe(), mine = me && dormData && dormHallOf(me);
-  const segs = ['<div class="seg dorm-brand">Dorm</div>'];
+  const P = dormP();
+  const segs = [`<div class="seg dorm-brand">${mailEsc(P.en)}</div>`];
   let right = '';
-  if (dormView === 'room' && dormRoom) {
+  if (dormView === 'room' && dormRoom && dormRoom.past) {
+    // 지난 기간의 내 방 : 구경만(꾸미기 · 방명록 쓰기 없음)
+    const pp = dormRoom.past;
+    segs[0] = `<div class="seg dorm-brand">${mailEsc(pp.en)}</div>`;
+    segs.push(`<span class="sep mid">▶</span><div class="seg mid">${pp.no}차 ${mailEsc(pp.name)}${dormRoom.pastHall ? ' · ' + mailEsc(dormRoom.pastHall) : ''}</div>`);
+    segs.push(`<span class="sep">▶</span><div class="seg">${mailEsc(dormRoom.owner)}</div>`);
+    right = `<span class="dorm-past-tag"><i class="fa-solid fa-clock-rotate-left"></i>지난 마이룸</span>`;
+  } else if (dormView === 'room' && dormRoom) {
     const hall = dormData && dormHallOf(dormRoom.owner);
-    segs.push(`<span class="sep mid">▶</span><div class="seg dorm-link mid" onclick="dormLeaveRoom()">${hall ? mailEsc(hall.name) : '기숙사'}</div>`);
+    segs.push(`<span class="sep mid">▶</span><div class="seg dorm-link mid" onclick="dormLeaveRoom()">${hall ? mailEsc(hall.name) : mailEsc(P.name)}</div>`);
     segs.push(`<span class="sep">▶</span><div class="seg">${mailEsc(dormRoom.owner)}</div>`);
     const can = dormCanEdit(dormRoom.owner) && hall && !dormRoom.loading;
     if (dormEdit) right = `<button class="dorm-tbtn" onclick="dormEdit=null; dormSel=-1; dormPick=null; renderDorm()" data-tip="취소"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
@@ -8966,23 +9043,23 @@ function renderDormTop() {
   } else if (dormView === 'manage') {
     segs.push('<span class="sep">▶</span><div class="seg">관리</div>');
   } else if (dormData) {
-    segs.push(`<span class="sep">▶</span><div class="seg">관 ${(dormData.halls || []).length}개</div>`);
+    segs.push(`<span class="sep">▶</span><div class="seg">${P.no}차 ${mailEsc(P.name)} · ${mailEsc(P.unit)} ${(dormData.halls || []).length}개</div>`);
     if (mine) right = `<button class="dorm-tbtn primary" onclick="openDormRoom(${mailEsc(JSON.stringify(me))})" data-tip="내 방"><i class="fa-solid fa-door-open"></i><span class="t">내 방</span></button>`;
   }
   const tools = `<button class="dorm-tbtn icon" onclick="openDormCredits()" data-tip="도트 자료 출처"><i class="fa-solid fa-circle-info"></i></button>`
-    + (dormIsGm() ? `<button class="dorm-tbtn icon ${dormView === 'manage' ? 'on' : ''}" onclick="setDormView(dormView === 'manage' ? 'halls' : 'manage')" data-tip="기숙사 관리"><i class="fa-solid fa-sliders"></i></button>` : '');
+    + (dormIsGm() ? `<button class="dorm-tbtn icon ${dormView === 'manage' ? 'on' : ''}" onclick="setDormView(dormView === 'manage' ? 'halls' : 'manage')" data-tip="마이룸 관리"><i class="fa-solid fa-sliders"></i></button>` : '');
   el.innerHTML = segs.join('') + `<div class="spacer"></div><div class="dorm-tools-r">${right}${tools}</div>`;
 }
 
 function dormHallsHtml() {
-  const me = dormMe();
+  const me = dormMe(), P = dormP();
   const halls = dormData.halls || [];
-  if (!halls.length) return `<div class="dorm-empty"><i class="fa-solid fa-building"></i>아직 기숙사가 없어요.<br>운영진이 관을 만들고 방을 배정하면 여기에 보여요.</div>`;
+  if (!halls.length) return `<div class="dorm-empty"><i class="fa-solid fa-building"></i>아직 ${mailEsc(josa(P.name, '이', '가'))} 없어요.<br>운영진이 ${mailEsc(josa(P.unit, '을', '를'))} 만들고 방을 배정하면 여기에 보여요.</div>`;
   return '<div class="dorm-halls">' + halls.map((h, hi) => {
     const n = (h.slots || []).filter(Boolean).length;
     const canRename = dormIsGm() || (me && (h.slots || []).includes(me));
-    return `<section class="dorm-hall"><h2 class="dorm-hall-title"><span class="en">Hall ${hi + 1}</span><span class="ko">${mailEsc(h.name)}</span>
-      ${canRename ? `<button class="dorm-rename" onclick="renameDormHall('${h.id}')" data-tip="관 이름 바꾸기"><i class="fa-solid fa-pen"></i></button>` : ''}
+    return `<section class="dorm-hall"><h2 class="dorm-hall-title"><span class="en">${mailEsc(P.unit_en)} ${hi + 1}</span><span class="ko">${mailEsc(h.name)}</span>
+      ${canRename ? `<button class="dorm-rename" onclick="renameDormHall('${h.id}')" data-tip="${mailEsc(P.unit)} 이름 바꾸기"><i class="fa-solid fa-pen"></i></button>` : ''}
       <span class="cnt">${n} / ${dormData.hall_size}</span></h2>
     <div class="dorm-cards holo-zone">${(h.slots || []).map((nm, i) => nm
       ? `<div class="char-card dorm-card ${nm === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(nm))})">
@@ -9012,7 +9089,7 @@ function renderDormRoom(body) {
   const isOwner = dormMe() && dormMe() === r.owner;
   const bubble = r.line ? `<div class="dorm-line-bubble"><b>${mailEsc(r.owner)}</b><span>${mailEsc(r.line)}</span></div>` : '';
   body.innerHTML = `<div class="dorm-room-layout"><div class="dorm-frame-wrap">${dormEdit ? '' : bubble}<div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>
-    <button class="dorm-back" onclick="dormLeaveRoom()" data-tip="기숙사 목록으로"><i class="fa-solid fa-arrow-left"></i><span>목록</span></button>
+    <button class="dorm-back" onclick="dormLeaveRoom()" data-tip="${mailEsc(dormP().name)} 목록으로"><i class="fa-solid fa-arrow-left"></i><span>목록</span></button>
     <div class="zoom-ctl" id="dormZoom">
       <button onclick="dormZoomBy(1 / 1.25)" data-tip="축소"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
       <span class="z" id="dormZoomLabel">100%</span>
@@ -9113,7 +9190,7 @@ function bindDormPan(frame) {
 
 function renameDormHall(id) {
   const h = (dormData.halls || []).find(x => x.id === id); if (!h) return;
-  uiPrompt('새 관 이름을 적어 주세요. (30자까지)', h.name, { title: '관 이름 바꾸기', okText: '바꾸기' }).then(v => {
+  uiPrompt(`새 ${dormP().unit} 이름을 적어 주세요. (30자까지)`, h.name, { title: `${dormP().unit} 이름 바꾸기`, okText: '바꾸기' }).then(v => {
     if (v == null) return; v = String(v).trim();
     if (v && v !== h.name) socket.emit('dorm_hall_rename', { id, name: v });
   });
@@ -9121,12 +9198,13 @@ function renameDormHall(id) {
 // ---------- 방명록 (한 방에 한 사람당 한 개, 다시 쓰면 고쳐져요) ----------
 let dormGbDraft = {};
 function dormGuestbookHtml(r) {
-  const me = dormLoggedName(), list = r.guestbook || [], mine = me && list.find(e => e.author === me);
+  // 지난 기간의 방은 구경만 : 방명록 쓰기 · 지우기 · 음악/대사 바꾸기를 숨깁니다.
+  const me = r.past ? null : dormLoggedName(), list = r.guestbook || [], mine = me && list.find(e => e.author === me);
   const draft = dormGbDraft[r.owner] != null ? dormGbDraft[r.owner] : (mine ? mine.text : '');
-  const canDel = (e) => dormIsGm() || me === e.author || me === r.owner;
+  const canDel = (e) => !r.past && (dormIsGm() || me === e.author || me === r.owner);
   const fmt = (at) => { const d = new Date(at * 1000); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`; };
   const color = (name) => { const p = (typeof lastRosterMypage !== 'undefined' && lastRosterMypage[name]) || {}; return p.color || '#6b6b73'; };
-  const isOwner = dormMe() && dormMe() === r.owner;
+  const isOwner = !r.past && dormMe() && dormMe() === r.owner;
   const music = r.music;
   const info = (music || isOwner) ? `<div class="dorm-roominfo">
       <div class="dorm-music">
@@ -9469,15 +9547,32 @@ function openDormCredits() {
 }
 
 // ---------- 관리 (운영진) ----------
+// 운영진 : 고치는 기간을 바꾸면 그 기간의 배치로 초안을 다시 잡습니다.
+function setDormManagePeriod(pid) { dormManagePeriod = pid; dormHallsDraft = null; renderDorm(); }
+function setDormCurrentPeriod(pid) {
+  const p = (dormData.periods || []).find(x => x.id === pid); if (!p) return;
+  uiConfirm(`지금 마이룸을 ${p.no}차 ${p.name}(으)로 바꿀까요? 모두의 마이룸이 이 기간의 배치로 바뀌고, 지난 기간의 방은 각자 마이페이지에서만 볼 수 있어요.`,
+    { title: '마이룸 기간 바꾸기', okText: '바꾸기' }).then(ok => ok && socket.emit('dorm_period_set', { period: pid }));
+}
 function dormManageHtml() {
-  if (!dormHallsDraft) dormHallsDraft = JSON.parse(JSON.stringify(dormData.halls || []));
+  const periods = dormData.periods || [DORM_P_DEFAULT];
+  if (!dormManagePeriod || !periods.some(p => p.id === dormManagePeriod)) dormManagePeriod = dormP().id;
+  const MP = periods.find(p => p.id === dormManagePeriod) || dormP();
+  const srcHalls = (dormData.period_halls && dormData.period_halls[MP.id]) || (MP.id === dormP().id ? dormData.halls : []) || [];
+  if (!dormHallsDraft) dormHallsDraft = JSON.parse(JSON.stringify(srcHalls));
+  const stLabel = { current: '지금', past: '지난 기간', future: '다음 기간' };
+  const periodSec = `<div class="dorm-sec"><h3><i class="fa-solid fa-calendar-days"></i> 마이룸 기간 <span class="dorm-room-sub">기간마다 배치 · 꾸밈 · 방명록이 따로예요</span></h3>
+    <div class="dorm-periods">${periods.map(p => `<button class="dorm-period ${p.id === MP.id ? 'on' : ''} ${p.status}" onclick="setDormManagePeriod('${p.id}')">
+        <span class="no">${p.no}차</span><b>${mailEsc(p.name)}</b><span class="st">${stLabel[p.status] || ''}</span></button>`).join('')}</div>
+    ${MP.status !== 'current' ? `<div class="dorm-period-act"><span>${MP.no}차 ${mailEsc(MP.name)} 배치를 미리 짜 두고, 때가 되면 지금 기간으로 바꿔요.</span>
+      <button class="btn" onclick="setDormCurrentPeriod('${MP.id}')"><i class="fa-solid fa-arrow-right-arrow-left"></i> 지금 기간으로 바꾸기</button></div>` : ''}</div>`;
   if (!dormCreditsDraft) dormCreditsDraft = JSON.parse(JSON.stringify(dormData.credits || []));
   const used = new Set(dormHallsDraft.flatMap(h => h.slots || []).filter(Boolean));
   const opt = (cur) => `<option value="">빈 방</option>` + dormRoster.map(n => `<option value="${mailEsc(n)}" ${n === cur ? 'selected' : ''} ${used.has(n) && n !== cur ? 'disabled' : ''}>${mailEsc(n)}</option>`).join('');
   const halls = dormHallsDraft.map((h, hi) => `<div class="dorm-hall-edit">
-      <input type="text" value="${mailEsc(h.name)}" placeholder="관 이름" oninput="dormHallsDraft[${hi}].name=this.value">
+      <input type="text" value="${mailEsc(h.name)}" placeholder="${mailEsc(MP.unit)} 이름" oninput="dormHallsDraft[${hi}].name=this.value">
       ${[0, 1, 2, 3, 4, 5].map(si => `<select onchange="dormHallsDraft[${hi}].slots[${si}]=this.value||null; renderDorm()">${opt((h.slots || [])[si])}</select>`).join('')}
-      <button class="dorm-x" title="관 지우기" onclick="dormHallsDraft.splice(${hi},1); renderDorm()"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
+      <button class="dorm-x" title="${mailEsc(MP.unit)} 지우기" onclick="dormHallsDraft.splice(${hi},1); renderDorm()"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
   const crOpt = (cur) => `<option value="">출처 없음</option>` + (dormData.credits || []).map(c => `<option value="${c.id}" ${c.id === cur ? 'selected' : ''}>${mailEsc(c.title)}</option>`).join('');
   const catOpt = (cur) => DORM_CATS.map(([k, t]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t}</option>`).join('');
   const builtinN = (dormData.assets || []).filter(a => a.builtin).length;
@@ -9495,9 +9590,10 @@ function dormManageHtml() {
       <input type="text" value="${mailEsc(c.url)}" placeholder="주소 https://…" oninput="dormCreditsDraft[${ci}].url=this.value">
       <button class="dorm-x" onclick="dormCreditsDraft.splice(${ci},1); renderDorm()"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
   return `
-    <div class="dorm-sec"><h3><i class="fa-solid fa-building"></i> 관 배치 <span class="dorm-room-sub">한 관에 ${dormData.hall_size}명</span><span class="sp"></span>
-      <button class="btn-plain" onclick="dormHallsDraft.push({name:'${(dormHallsDraft.length + 1)}관', slots:[null,null,null,null,null,null]}); renderDorm()"><i class="fa-solid fa-plus"></i> 관 추가</button>
-      <button class="btn" onclick="socket.emit('dorm_halls_save',{halls:dormHallsDraft}); dormHallsDraft=null">저장</button></h3>
+    ${periodSec}
+    <div class="dorm-sec"><h3><i class="fa-solid fa-building"></i> ${MP.no}차 ${mailEsc(MP.name)} · ${mailEsc(MP.unit)} 배치 <span class="dorm-room-sub">한 ${mailEsc(MP.unit)}에 ${dormData.hall_size}명</span><span class="sp"></span>
+      <button class="btn-plain" onclick="dormHallsDraft.push({name:'${(dormHallsDraft.length + 1)}${mailEsc(MP.unit)}', slots:[null,null,null,null,null,null]}); renderDorm()"><i class="fa-solid fa-plus"></i> ${mailEsc(MP.unit)} 추가</button>
+      <button class="btn" onclick="socket.emit('dorm_halls_save',{halls:dormHallsDraft, period:'${MP.id}'}); dormHallsDraft=null">저장</button></h3>
       ${halls || '<div class="dorm-hint">관 추가를 눌러 첫 관을 만들어 주세요.</div>'}</div>
     <div class="dorm-sec"><h3><i class="fa-solid fa-chess-rook"></i> 도트 자료 <span class="dorm-room-sub">기본 ${builtinN}개(${builtinSets}세트) · 올린 자료 ${(dormData.assets || []).length - builtinN}개</span></h3>
       <div class="dorm-up">
@@ -9514,7 +9610,7 @@ function dormManageHtml() {
     <div class="dorm-sec"><h3><i class="fa-solid fa-circle-info"></i> 출처<span class="sp"></span>
       <button class="btn-plain" onclick="dormCreditsDraft.push({title:'',author:'',license:'',url:''}); renderDorm()"><i class="fa-solid fa-plus"></i> 출처 추가</button>
       <button class="btn" onclick="socket.emit('dorm_credits_save',{credits:dormCreditsDraft}); dormCreditsDraft=null">저장</button></h3>
-      ${credits || '<div class="dorm-hint">도트 자료를 가져온 곳(자료 이름·제작자·라이선스·주소)을 적어 주세요. 기숙사 화면의 "출처"에 모두 보여요.</div>'}</div>`;
+      ${credits || '<div class="dorm-hint">도트 자료를 가져온 곳(자료 이름·제작자·라이선스·주소)을 적어 주세요. 마이룸 화면의 "출처"에 모두 보여요.</div>'}</div>`;
 }
 function onDormUpFile(ev) {
   const f = ev.target.files && ev.target.files[0]; ev.target.value = '';

@@ -21,6 +21,15 @@ import uuid
 
 DORMS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dorms.json")
 HALL_SIZE = 6
+# 마이룸 기간 : 배치가 두 번 바뀌어 기간마다 테마가 다른 마이룸을 하나씩 가집니다.
+# 기간마다 관 배치 · 방 꾸밈 · 방명록을 따로 저장하고(자료 · 출처는 공통), 운영진이 지금 기간을 고릅니다.
+# 지난 기간의 방은 본인만 마이페이지에서 볼 수 있습니다(구경만).
+PERIODS = [
+    {"id": "p1", "no": 1, "name": "기숙사", "en": "Dorm", "unit": "관", "unit_en": "Hall"},
+    {"id": "p2", "no": 2, "name": "캠프", "en": "Camp", "unit": "막사", "unit_en": "Barrack"},
+    {"id": "p3", "no": 3, "name": "선실", "en": "Cabin", "unit": "구역", "unit_en": "Deck"},
+]
+PERIOD_IDS = [p["id"] for p in PERIODS]
 MAX_ITEMS = 150
 CATEGORIES = ("room", "surface", "furniture", "deco", "wall", "chara")
 # 참가자가 직접 올릴 수 있는 종류(가구 · 캐릭터 SD)와 한 사람당 개수, 캐릭터 대사 제한
@@ -69,8 +78,41 @@ class Dorms:
     def __init__(self, path=DORMS_PATH):
         self.path = path
         self.lock = threading.Lock()
-        self.halls, self.assets, self.credits, self.rooms = [], [], [], {}
+        self.assets, self.credits = [], []
+        self.periods = {pid: {"halls": [], "rooms": {}, "guestbooks": {}} for pid in PERIOD_IDS}
+        self.current = PERIOD_IDS[0]
         self.load()
+
+    # 지금 기간의 관 · 방 · 방명록 (예전 코드가 그대로 지금 기간을 다루도록 속성으로 둡니다)
+    @property
+    def halls(self):
+        return self.periods[self.current]["halls"]
+
+    @halls.setter
+    def halls(self, v):
+        self.periods[self.current]["halls"] = v
+
+    @property
+    def rooms(self):
+        return self.periods[self.current]["rooms"]
+
+    @rooms.setter
+    def rooms(self, v):
+        self.periods[self.current]["rooms"] = v
+
+    @property
+    def guestbooks(self):
+        return self.periods[self.current]["guestbooks"]
+
+    @guestbooks.setter
+    def guestbooks(self, v):
+        self.periods[self.current]["guestbooks"] = v
+
+    def period_meta(self, pid):
+        meta = next((p for p in PERIODS if p["id"] == pid), PERIODS[0])
+        cur_no = next(p["no"] for p in PERIODS if p["id"] == self.current)
+        status = "current" if meta["no"] == cur_no else ("past" if meta["no"] < cur_no else "future")
+        return dict(meta, status=status)
 
     def load(self):
         try:
@@ -78,7 +120,6 @@ class Dorms:
                 d = json.load(f)
         except (OSError, ValueError):
             d = {}
-        self.halls = d.get("halls", [])
         # 예전(칸 방식) 자료는 새 방식과 맞지 않아 버립니다.
         self.assets = [a for a in d.get("assets", []) if a.get("category") in CATEGORIES and a.get("px")]
         self.credits = d.get("credits", [])
@@ -90,16 +131,27 @@ class Dorms:
                     self.credits.append(dict(c))
                 seeded.add(c["id"])
         self.seeded = sorted(seeded)
-        self.rooms = {k: v for k, v in (d.get("rooms") or {}).items() if v.get("v") == 2}
-        # 방명록 : {방 주인: [{"author", "text", "at"}, ...]} - 한 방에 한 사람당 한 개
-        self.guestbooks = d.get("guestbooks", {})
+        # 기간별 저장. 예전 파일(기간 없이 halls/rooms/guestbooks만 있던 것)은 1차(기숙사)로 옮깁니다.
+        periods = d.get("periods")
+        if not isinstance(periods, dict):
+            periods = {PERIOD_IDS[0]: {"halls": d.get("halls", []), "rooms": d.get("rooms") or {},
+                                       "guestbooks": d.get("guestbooks", {})}}
+        for pid in PERIOD_IDS:
+            p = periods.get(pid) or {}
+            self.periods[pid] = {
+                "halls": p.get("halls", []),
+                "rooms": {k: v for k, v in (p.get("rooms") or {}).items() if v.get("v") == 2},
+                # 방명록 : {방 주인: [{"author", "text", "at"}, ...]} - 한 방에 한 사람당 한 개
+                "guestbooks": p.get("guestbooks", {}),
+            }
+        self.current = d.get("current") if d.get("current") in PERIOD_IDS else PERIOD_IDS[0]
         if self._apply_aliases():
             self.save()
 
     def _apply_aliases(self):
         """지운(좌우 중복) 기본 자료를 쓰던 방을 남긴 자료 + 좌우 반전으로 바꿉니다. 바뀐 게 있으면 True."""
         changed = False
-        for r in self.rooms.values():
+        for r in (r for p in self.periods.values() for r in p["rooms"].values()):
             for it in r.get("items", []):
                 al = ASSET_ALIASES.get(it.get("a"))
                 if al:
@@ -117,8 +169,8 @@ class Dorms:
     def save(self):
         tmp = self.path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"halls": self.halls, "assets": self.assets, "credits": self.credits, "rooms": self.rooms,
-                       "seeded": self.seeded, "guestbooks": self.guestbooks},
+            json.dump({"current": self.current, "periods": self.periods, "assets": self.assets, "credits": self.credits,
+                       "seeded": self.seeded},
                       f, ensure_ascii=False, indent=1)
         os.replace(tmp, self.path)
 
@@ -142,32 +194,60 @@ class Dorms:
         # 관 목록·마이페이지에서 작은 미리보기로 그릴 수 있게, 배정된 방들의 꾸밈 정보도 같이 보냅니다.
         names = [n for h in self.halls for n in h.get("slots", []) if n]
         return {"halls": self.halls, "assets": self.all_assets(), "credits": self.all_credits(),
-                "hall_size": HALL_SIZE, "default_base": DEFAULT_BASE, "rooms": {n: self.room(n) for n in names}}
+                "hall_size": HALL_SIZE, "default_base": DEFAULT_BASE, "rooms": {n: self.room(n) for n in names},
+                "period": self.period_meta(self.current), "periods": [self.period_meta(p) for p in PERIOD_IDS]}
 
-    def room(self, name):
-        r = self.rooms.get(name) or {}
+    def room(self, name, period=None):
+        pdata = self.periods[period] if period in self.periods else self.periods[self.current]
+        r = pdata["rooms"].get(name) or {}
+        gb = pdata["guestbooks"]
         return {"owner": name, "base": r.get("base") or DEFAULT_BASE, "wall": r.get("wall"), "floor": r.get("floor"),
                 "items": r.get("items", []), "updated": r.get("updated"),
                 # 마지막으로 바뀐 때(꾸밈 · 음악 · 대사 · 방명록) : 기숙사 목록의 New! 표시에 씁니다.
                 "activity": max([r.get("updated") or 0, r.get("touched") or 0]
-                                + [e.get("at", 0) for e in self.guestbooks.get(name, [])]),
+                                + [e.get("at", 0) for e in gb.get(name, [])]),
                 "music": r.get("music"), "line": r.get("line") or "",
-                "guestbook": sorted(self.guestbooks.get(name, []), key=lambda e: -e.get("at", 0))}
+                "guestbook": sorted(gb.get(name, []), key=lambda e: -e.get("at", 0))}
+
+    # ---- 기간 ----
+    def set_current(self, pid):
+        if pid not in PERIOD_IDS:
+            raise DormError("알 수 없는 기간이에요.")
+        with self.lock:
+            self.current = pid
+            self.save()
+
+    def period_halls(self):
+        """운영진 관리 화면 : 기간마다의 배치(다음 기간을 미리 짜 둘 수 있게)."""
+        return {pid: self.periods[pid]["halls"] for pid in PERIOD_IDS}
+
+    def past_rooms_of(self, owner):
+        """owner가 지난 기간에 배정됐던 방들(본인 마이페이지에서만 보여줌)."""
+        cur_no = self.period_meta(self.current)["no"]
+        out = []
+        for meta in PERIODS:
+            if meta["no"] >= cur_no:
+                continue
+            hall = next((h for h in self.periods[meta["id"]]["halls"] if owner in h.get("slots", [])), None)
+            if hall is None:
+                continue
+            out.append({"period": self.period_meta(meta["id"]), "hall": hall.get("name"), "room": self.room(owner, meta["id"])})
+        return out
 
     # ---- 관 이름 (그 관에 사는 사람 또는 운영진) ----
     def rename_hall(self, hall_id, name, by, is_gm=False):
         name = (name or "").strip()[:30]
         if not name:
-            raise DormError("관 이름을 적어 주세요.")
+            raise DormError(f"{self.period_meta(self.current)['unit']} 이름을 적어 주세요.")
         with self.lock:
             for h in self.halls:
                 if h["id"] == hall_id:
                     if not is_gm and by not in h.get("slots", []):
-                        raise DormError("자기 관 이름만 바꿀 수 있어요.")
+                        raise DormError(f"자기 {self.period_meta(self.current)['unit']} 이름만 바꿀 수 있어요.")
                     h["name"] = name
                     self.save()
                     return h
-        raise DormError("관을 찾을 수 없어요.")
+        raise DormError("찾을 수 없어요.")
 
     # ---- 방 음악 · 방 주인 대사 (방 주인만) ----
     def _room_rec(self, owner):
@@ -220,10 +300,10 @@ class Dorms:
             self.save()
 
     # ---- 운영진 : 관 배치 ----
-    def set_halls(self, halls, valid_names):
+    def set_halls(self, halls, valid_names, period=None):
         clean, used = [], set()
         for h in (halls or [])[:50]:
-            name = str(h.get("name") or "").strip()[:30] or "이름 없는 관"
+            name = str(h.get("name") or "").strip()[:30] or "이름 없음"
             slots = []
             for s in (h.get("slots") or [])[:HALL_SIZE]:
                 s = (s or "").strip()
@@ -235,7 +315,7 @@ class Dorms:
             slots += [None] * (HALL_SIZE - len(slots))
             clean.append({"id": str(h.get("id") or uuid.uuid4().hex[:8])[:16], "name": name, "slots": slots})
         with self.lock:
-            self.halls = clean
+            self.periods[period if period in self.periods else self.current]["halls"] = clean
             self.save()
 
     # ---- 운영진 : 자료·출처 ----

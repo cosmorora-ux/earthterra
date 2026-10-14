@@ -35,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.17"
+SERVER_BUILD = "2026-10-13.18"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2897,10 +2897,43 @@ def _dorm_broadcast():
 @socketio.on("dorm_get")
 def on_dorm_get(data=None):
     me, is_gm, room = _mail_identity(request.sid)
-    payload = dorm_mod.shared_dorms().payload()
+    dorms = dorm_mod.shared_dorms()
+    payload = dorms.payload()
     if room is not None:
         payload["roster"] = _mail_candidates(room)
+    if is_gm:
+        # 운영진 관리 화면 : 기간마다의 배치(다음 기간을 미리 짜 둘 수 있게)
+        payload["period_halls"] = dorms.period_halls()
     emit("dorm_data", payload)
+
+
+@socketio.on("dorm_period_set")
+def on_dorm_period_set(data):
+    """운영진 : 지금 마이룸 기간을 바꿉니다(1차 기숙사 → 2차 캠프 → 3차 선실)."""
+    me, is_gm, room = _mail_identity(request.sid)
+    if not is_gm:
+        emit("dorm_result", {"ok": False, "message": "운영진만 기간을 바꿀 수 있어요."})
+        return
+    dorms = dorm_mod.shared_dorms()
+    try:
+        dorms.set_current((data or {}).get("period"))
+    except dorm_mod.DormError as e:
+        emit("dorm_result", {"ok": False, "message": str(e)})
+        return
+    meta = dorms.period_meta(dorms.current)
+    emit("dorm_result", {"ok": True, "message": f"지금 마이룸을 {meta['no']}차 {meta['name']}(으)로 바꿨어요."})
+    _dorm_broadcast()
+    on_dorm_get()
+
+
+@socketio.on("dorm_past_get")
+def on_dorm_past_get(data=None):
+    """지난 기간의 내 방 : 본인(로그인한 캐릭터)에게만 보냅니다. 다른 사람 이름을 물어도 내 것만 줍니다."""
+    me, is_gm, room = _mail_identity(request.sid)
+    if not me or is_gm:
+        emit("dorm_past", {"owner": None, "rooms": []})
+        return
+    emit("dorm_past", {"owner": me, "rooms": dorm_mod.shared_dorms().past_rooms_of(me)})
 
 
 @socketio.on("dorm_room_get")
@@ -2920,7 +2953,7 @@ def on_dorm_room_save(data):
         return
     dorms = dorm_mod.shared_dorms()
     if dorms.hall_of(owner) is None:
-        emit("dorm_result", {"ok": False, "message": "아직 기숙사 방이 배정되지 않았어요."})
+        emit("dorm_result", {"ok": False, "message": "아직 마이룸이 배정되지 않았어요."})
         return
     saved = dorms.save_room(owner, data)
     emit("dorm_result", {"ok": True, "message": "방을 저장했어요."})
@@ -3054,11 +3087,15 @@ def on_dorm_guestbook_delete(data):
 def on_dorm_halls_save(data):
     me, is_gm, room = _mail_identity(request.sid)
     if not is_gm:
-        emit("dorm_result", {"ok": False, "message": "운영진만 기숙사를 배치할 수 있어요."})
+        emit("dorm_result", {"ok": False, "message": "운영진만 마이룸을 배치할 수 있어요."})
         return
-    dorm_mod.shared_dorms().set_halls((data or {}).get("halls"), set(_mail_candidates(room)))
-    emit("dorm_result", {"ok": True, "message": "기숙사 배치를 저장했어요."})
+    dorms = dorm_mod.shared_dorms()
+    period = (data or {}).get("period") or dorms.current
+    dorms.set_halls((data or {}).get("halls"), set(_mail_candidates(room)), period)
+    meta = dorms.period_meta(period)
+    emit("dorm_result", {"ok": True, "message": f"{meta['no']}차 {meta['name']} 배치를 저장했어요."})
     _dorm_broadcast()
+    on_dorm_get()
 
 
 @socketio.on("dorm_asset_upload")
