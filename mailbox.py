@@ -21,6 +21,10 @@ import uuid
 LETTERS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "letters.json")
 MAX_TEXT_LEN = 2000
 MAX_LETTERS = 5000
+# 첨부 이미지 : 편지 한 통에 4장까지, 장당 5MB. 파일 이름은 추측할 수 없는 무작위 이름이라 받는 사람만 주소를 알아요.
+MAX_IMAGES = 4
+IMAGE_MAX_BYTES = 5 * 1024 * 1024
+IMAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "mail_images")
 SEND_COOLDOWN = 3.0  # 같은 사람이 연달아 보내는 간격(초)
 GM_NAME = "운영진"
 
@@ -50,10 +54,11 @@ class Mailbox:
             json.dump({"letters": self.letters}, f, ensure_ascii=False, indent=1)
         os.replace(tmp, self.path)
 
-    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True):
+    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True, images=(), dry_run=False):
         text = (text or "").strip()
-        if not text:
-            raise MailError("편지 내용을 써 주세요.")
+        images = list(images or [])[:MAX_IMAGES]
+        if not text and not images:
+            raise MailError("편지 내용을 쓰거나 이미지를 붙여 주세요.")
         if len(text) > MAX_TEXT_LEN:
             raise MailError(f"편지는 {MAX_TEXT_LEN}자까지 쓸 수 있어요.")
         with self.lock:
@@ -69,13 +74,19 @@ class Mailbox:
                 raise MailError("받는 사람을 찾을 수 없어요.")
             if to == sender:
                 raise MailError("자기 자신에게는 보낼 수 없어요.")
+            if dry_run:  # 보낼 수 있는지만 확인(첨부 이미지를 저장하기 전에)
+                return None
             letter = {
                 "id": uuid.uuid4().hex[:12], "from": sender, "to": to, "text": text,
                 "anonymous": bool(anonymous), "random": bool(random_pick),
                 "at": now, "read": False, "hide_to": False, "hide_from": False,
             }
+            if images:
+                letter["images"] = images
             self.letters.append(letter)
+            dropped = self.letters[:-MAX_LETTERS]
             del self.letters[:-MAX_LETTERS]
+            self._forget_images(dropped)
             self._last_send[sender] = now
             self.save()
             return letter
@@ -100,16 +111,31 @@ class Mailbox:
                     l["hide_to"] = True
                 if l["from"] == name:
                     l["hide_from"] = True
+                gone = [x for x in self.letters if x["hide_to"] and x["hide_from"]]
                 self.letters = [x for x in self.letters if not (x["hide_to"] and x["hide_from"])]
+                self._forget_images(gone)
                 self.save()
                 return True
         return False
+
+    def _forget_images(self, removed):
+        """양쪽 다 지워 사라진 편지의 첨부 이미지를, 다른 편지(여러 명에게 보낸 같은 편지)가 더 쓰지 않으면 지웁니다."""
+        urls = {u for l in removed for u in l.get("images", [])}
+        if not urls:
+            return
+        still = {u for l in self.letters for u in l.get("images", [])}
+        for u in urls - still:
+            name = os.path.basename(u)
+            try:
+                os.remove(os.path.join(IMAGE_DIR, name))
+            except OSError:
+                pass
 
     # ---- 화면에 보낼 목록 (익명/랜덤은 보는 사람에 따라 가립니다) ----
     @staticmethod
     def _view(l, me, is_gm):
         v = {"id": l["id"], "text": l["text"], "at": l["at"], "read": l["read"],
-             "anonymous": l["anonymous"], "random": l["random"]}
+             "anonymous": l["anonymous"], "random": l["random"], "images": l.get("images", [])}
         v["from"] = l["from"] if (is_gm or not l["anonymous"] or l["from"] == me) else None
         v["to"] = l["to"] if (is_gm or not l["random"] or l["to"] == me) else None
         return v

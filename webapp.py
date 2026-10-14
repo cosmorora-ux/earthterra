@@ -35,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.25"
+SERVER_BUILD = "2026-10-13.26"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2766,12 +2766,43 @@ def on_mail_send(data):
         if not targets:
             emit("mail_result", {"ok": False, "message": "받는 사람을 골라 주세요."})
             return
+    raw_images = data.get("images") or []
+    if not isinstance(raw_images, list) or len(raw_images) > mailbox_mod.MAX_IMAGES:
+        emit("mail_result", {"ok": False, "message": f"이미지는 {mailbox_mod.MAX_IMAGES}장까지 붙일 수 있어요."})
+        return
+    blobs = []
+    for img in raw_images:
+        blob = (img or {}).get("data") if isinstance(img, dict) else None
+        ext = _mail_image_ext(blob)
+        if ext is None:
+            emit("mail_result", {"ok": False, "message": "png · jpg · gif · webp 이미지만 붙일 수 있어요."})
+            return
+        if len(blob) > mailbox_mod.IMAGE_MAX_BYTES:
+            emit("mail_result", {"ok": False, "message": f"이미지는 한 장에 {mailbox_mod.IMAGE_MAX_BYTES // (1024 * 1024)}MB까지 붙일 수 있어요."})
+            return
+        blobs.append((blob, ext))
+    if not (data.get("text") or "").strip() and not blobs:
+        emit("mail_result", {"ok": False, "message": "편지 내용을 쓰거나 이미지를 붙여 주세요."})
+        return
+    # 보낼 수 있는지(쿨타임 · 받는 사람) 확인한 뒤에만 파일을 남기려고, 첫 통을 보낼 때 저장합니다.
     box = mailbox_mod.shared_mailbox()
-    sent = []
+    sent, images = [], []
+    def _store_images():
+        os.makedirs(mailbox_mod.IMAGE_DIR, exist_ok=True)
+        for blob, ext in blobs:
+            fn = f"{uuid.uuid4().hex}{uuid.uuid4().hex[:8]}{ext}"
+            with open(os.path.join(mailbox_mod.IMAGE_DIR, fn), "wb") as f:
+                f.write(blob)
+            images.append(url_for("static", filename=f"mail_images/{fn}"))
     try:
         for i, t in enumerate(targets):
+            if i == 0:
+                box.send(me, t, data.get("text"), anonymous=anonymous, random_pick=is_random,
+                         candidates=_mail_candidates(room), check_cooldown=True, dry_run=True,
+                         images=[ext for _, ext in blobs])
+                _store_images()
             sent.append(box.send(me, t, data.get("text"), anonymous=anonymous, random_pick=is_random,
-                                 candidates=_mail_candidates(room), check_cooldown=(i == 0)))
+                                 candidates=_mail_candidates(room), check_cooldown=(i == 0), images=images))
     except mailbox_mod.MailError as e:
         if not sent:
             emit("mail_result", {"ok": False, "message": str(e)})
@@ -2790,6 +2821,22 @@ def on_mail_send(data):
             if sid != request.sid and (info.get("nickname") or "").strip() == letter["to"]:
                 socketio.emit("mail_new", {"from": None if letter["anonymous"] else letter["from"]}, to=sid)
                 _emit_mail_data(sid)
+
+
+def _mail_image_ext(blob):
+    """편지 첨부 이미지 : 파일 앞부분(시그니처)으로 종류를 확인합니다. 이미지가 아니면 None."""
+    if not isinstance(blob, (bytes, bytearray)) or len(blob) < 12:
+        return None
+    head = bytes(blob[:12])
+    if head.startswith(b"\x89PNG\r\n\x1a\n"):
+        return ".png"
+    if head.startswith(b"\xff\xd8\xff"):
+        return ".jpg"
+    if head.startswith((b"GIF87a", b"GIF89a")):
+        return ".gif"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return ".webp"
+    return None
 
 
 @socketio.on("mail_read")

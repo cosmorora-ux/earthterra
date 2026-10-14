@@ -34,3 +34,5 @@ gm_password.txt
 site_settings.json
 world.json
 static/world/
+# 편지 첨부 이미지(서버 컴퓨터별 실데이터)
+static/mail_images/
