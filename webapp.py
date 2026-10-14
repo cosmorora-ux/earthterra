@@ -23,7 +23,6 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 import config
 import shop as shop_mod
 import notices as notices_mod
-import log_export
 import mailbox as mailbox_mod
 import dorm as dorm_mod
 import world as world_mod
@@ -36,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.16"
+SERVER_BUILD = "2026-10-13.17"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -839,15 +838,24 @@ def on_export_log(data):
             "public_log": battle.public_log, "operator_log": battle.operator_log,
             "teams": {c.name: c.team for c in battle.team_a + battle.team_b},
         })
-    colors = {n: d.get("color") for n, d in room.game.db.characters.items() if d.get("color")}
-    if battle is not None:
-        colors.update({c.name: c.color for c in battle.team_a + battle.team_b if c.color})
-    doc = log_export.build_export_html(
-        room.name, BATTLE_TYPE_LABELS.get(room.battle_type, room.battle_type),
-        room.chat_log, [], battles, colors, include_operator=is_gm,
-    )
-    # 파일 이름은 브라우저마다 한글 처리가 달라 영문으로 만듭니다(방 이름은 파일 안 제목에 들어갑니다).
-    emit("export_log_result", {"filename": f"battle_log_{room.id}_{time.strftime('%Y%m%d_%H%M')}.html", "html": doc})
+    # 파일 모양은 화면(채팅창 · 로그창)과 똑같아야 하므로, 서버는 원본 기록만 보내고
+    # 브라우저가 채팅창 · 로그창을 그리는 같은 코드로 파일을 만듭니다(화면을 고치면 파일도 자동으로 같이 바뀜).
+    # 운영진 로그는 GM 인증 소켓에만 보냅니다.
+    emit("export_log_data", {
+        "filename": f"battle_log_{room.id}_{time.strftime('%Y%m%d_%H%M')}.html",
+        "room_name": room.name,
+        "battle_type_label": BATTLE_TYPE_LABELS.get(room.battle_type, room.battle_type),
+        "saved_at": time.strftime("%Y-%m-%d %H:%M"),
+        # 아군 회의는 팀끼리만 보는 대화라 파일에 넣지 않습니다(room.chat_log에는 원래 없음).
+        "chat": [e for e in room.chat_log if e.get("category") != "team"],
+        "battles": [
+            {"label": b["label"], "public_log": list(b.get("public_log") or []),
+             "operator_log": list(b.get("operator_log") or []) if is_gm else [],
+             "teams": b.get("teams") or {}}
+            for b in battles
+        ],
+        "include_operator": is_gm,
+    })
 
 
 def _emit_fx_numbers(room):
