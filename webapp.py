@@ -35,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.21"
+SERVER_BUILD = "2026-10-13.22"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -87,8 +87,8 @@ def _load_gm_password():
 
 GM_GUEST_PASSWORD = _load_gm_password()
 
-# 국가 (마이페이지에서 운영진이 배치)
-NATIONS = ("아르카디아", "노바")
+# 진영 : 1차·3차 마이룸 기간은 모두 Resonans, 2차 기간은 使徒 / Void 중 하나(캐릭터 정보의 nation 칸에 저장)
+NATIONS = ("使徒", "Void")
 
 # 스킬 컷인 : 캐치프레이즈 길이, 등장 모션 7종(마이페이지에서 고름)
 CATCHPHRASE_MAX = 60
@@ -580,6 +580,7 @@ def build_public_state(room):
             name: {k: v for k, v in (build_preview_character(room, name) or {}).items() if k != "stats"}
             for name in room.game.db.all_names()
         },
+        "faction_period": dorm_mod.shared_dorms().period_meta(dorm_mod.shared_dorms().current)["no"],
         "userinfo_hidden": list(room.userinfo_hidden),
         "online_characters": sorted(_online_character_names(room)),
         # 채팅창에서 말한 사람의 프로필 이미지/닉네임 색상을 보여주기 위한 정보(전투 참여 여부와 무관).
@@ -1327,6 +1328,13 @@ def on_set_my_skill_log(data):
             entry.pop("catchphrase", None)
     if data.get("cutin_motion") in CUTIN_MOTIONS:
         entry["cutin_motion"] = data["cutin_motion"]
+    # 2차 진영 : 본인도 고를 수 있어요(使徒 / Void / 미정)
+    if "nation" in data:
+        nation = (data.get("nation") or "").strip()
+        if nation in NATIONS:
+            entry["nation"] = nation
+        elif not nation:
+            entry.pop("nation", None)
     # 출신지 : 맵의 '장소id:구역번호(0~3)' (맵 구역 카드를 누르면 '00의 출신지.'로 나옵니다)
     if "hometown" in data:
         home = (data.get("hometown") or "").strip()
@@ -1449,7 +1457,7 @@ def on_set_mypage_gm_fields(data):
 avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
 sound_effect_volume=existing.get("sound_effect_volume"),
         )
-    # 국가 배치 : 아르카디아 / 노바 / 없음
+    # 2차 진영 : 使徒 / Void / 미정
     if "nation" in data:
         nation = (data.get("nation") or "").strip()
         if nation in NATIONS or nation == "":
@@ -1539,9 +1547,9 @@ def on_update_character(data):
 avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
 sound_effect_volume=existing.get("sound_effect_volume"),
     )
-    if "nation" in data:
+    if "nation" in data and ((data.get("nation") or "").strip() in NATIONS or not (data.get("nation") or "").strip()):
         entry = room.game.db.get(name)
-        nation = (data.get("nation") or "").strip()[:20]
+        nation = (data.get("nation") or "").strip()
         if nation:
             entry["nation"] = nation
         else:
@@ -2890,6 +2898,7 @@ def on_dorm_period_set(data):
     meta = dorms.period_meta(dorms.current)
     emit("dorm_result", {"ok": True, "message": f"지금 마이룸을 {meta['no']}차 {meta['name']}(으)로 바꿨어요."})
     _dorm_broadcast()
+    _broadcast_all_rooms()  # 진영 표시(1·3차 Resonans / 2차 使徒·Void)가 기간을 따라갑니다
     on_dorm_get()
 
 

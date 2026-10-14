@@ -102,7 +102,7 @@ class CharacterDatabase:
     _ROLE_LINE_RE = re.compile(r"^\s*역할\s*[:：]?\s*(가디언|스트라이커|메딕)\s*$")
     _COLOR_LINE_RE = re.compile(r"^\s*색상\s*[:：]?\s*(#[0-9a-fA-F]{6})\s*$")
     _SKILL_LINE_RE = re.compile(r"^\s*스킬\s*[:：]?\s*(" + "|".join(config.ALL_SKILLS) + r")\s*$")
-    _NATION_LINE_RE = re.compile(r"^\s*국가(?:\s*[:：]\s*|\s+)(\S.{0,19})\s*$")
+    _NATION_LINE_RE = re.compile(r"^\s*(?:진영|국가)(?:\s*[:：]\s*|\s+)(\S.{0,19})\s*$")
 
     def parse_bulk_text(self, text: str):
         """

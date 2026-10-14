@@ -1632,7 +1632,7 @@
   /* ================================================================
      마이페이지 v2 : 전투 화면과 같은 카드 언어(옅은 선 · 둥근 모서리 · 포인트 컬러)로 정리
      ================================================================ */
-  :root { --nation-arcadia:#e9c05b; --nation-nova:#6f93ff; }
+  :root { --fac-resonans:#7fd6c8; --fac-apostle:#e9c05b; --fac-void:#9a8cff; }
   .modal-box.mypage.v2 { width:1040px; padding:26px 30px 30px; }
   .mypage.v2 .idc-head { align-items:center; margin-bottom:18px; }
   .mypage.v2 .mp-card { background: rgba(255,255,255,.025); border:1px solid var(--line); border-radius:14px; padding:16px 18px; min-width:0; }
@@ -1642,6 +1642,13 @@
   /* 프로필 */
   .mypage.v2 .mp-hero { display:grid; grid-template-columns:112px minmax(0,1fr) auto; gap:22px; align-items:center; margin-bottom:14px; padding:18px 20px; }
   .mypage.v2 .mypage-portrait { width:112px; height:112px; border-radius:14px; }
+  .mypage.v2 .mp-line { display:flex; align-items:center; gap:8px; margin:-6px 0 12px; height:32px; padding:0 12px; border-radius:10px; background: rgba(255,255,255,.035); min-width:0; }
+  .mypage.v2 .mp-line i { color: var(--muted); font-size:11px; flex:none; }
+  .mypage.v2 .mp-line .t { font-size:13px; color: var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mypage.v2 .mp-line input { flex:1; min-width:0; height:100%; border:none !important; background:transparent !important; box-shadow:none !important; border-radius:0; color: var(--text); font: inherit; font-size:13px; outline:none; padding:0; }
+  .mypage.v2 .mp-line input::placeholder { color: var(--muted); }
+  .mypage.v2 .mp-line:focus-within { background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px rgba(var(--point-rgb), .45); }
+  .mypage.v2 .mp-line:focus-within .ed { color: var(--point); }
   .mypage.v2 .mypage-name { font-size:26px; font-weight:800; margin:0 0 12px; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .mypage.v2 .mp-tags { display:flex; flex-direction:column; gap:8px; }
   .mypage.v2 .mp-tagrow { display:flex; align-items:center; gap:12px; }
@@ -1703,6 +1710,7 @@
     .mypage.v2 .mypage-portrait { width:64px; height:64px; border-radius:12px; }
     .mypage.v2 .mp-hero-main { display:contents; }
     .mypage.v2 .mypage-name { margin:0; font-size:22px; }
+    .mypage.v2 .mp-line { grid-column:1 / -1; margin:14px 0 4px; }
     .mypage.v2 .mp-tags, .mypage.v2 .mp-hero-side { grid-column:1 / -1; display:flex; flex-direction:column; gap:0; min-width:0;
       border:none; padding:0; margin:0; }
     .mypage.v2 .mp-tags { margin-top:14px; }
@@ -2233,16 +2241,11 @@
   .dorm-roominfo { padding:12px 16px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:8px; }
   .dorm-music { display:flex; align-items:center; gap:10px; min-width:0; }
   .dorm-music .t { flex:1; min-width:0; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .dorm-music .muted, .dorm-line-edit .muted { color: var(--muted); }
+  .dorm-music .muted { color: var(--muted); }
   .dorm-music .bgm-eq.playing span { background:var(--point); animation: bgmEq 1s ease-in-out infinite; }
   .dorm-music .bgm-eq.playing span:nth-child(2) { animation-delay:-.4s; } .dorm-music .bgm-eq.playing span:nth-child(3) { animation-delay:-.7s; } .dorm-music .bgm-eq.playing span:nth-child(4) { animation-delay:-.2s; }
   .dorm-ibtn { width:30px; height:30px; flex:none; border-radius:8px; border:none; background: rgba(255,255,255,.06); color: var(--text); cursor:pointer; font-size:12px; }
   .dorm-ibtn:hover { background: rgba(255,255,255,.12); }
-  .dorm-line-edit { display:flex; align-items:flex-start; gap:8px; width:100%; text-align:left; background: rgba(255,255,255,.035); border:none; border-radius:10px;
-    padding:9px 12px; color:#dcdce0; font-size:13.5px; line-height:1.5; cursor:pointer; }
-  .dorm-line-edit:hover { background: rgba(255,255,255,.07); }
-  .dorm-line-edit i { color: var(--muted); font-size:11px; margin-top:4px; }
-  .dorm-line-edit .ed { margin-left:auto; }
   @media (max-width:900px) { .dorm-frame-wrap { flex:none; } .dorm-line-bubble { left:12px; top:56px; max-width:80%; padding:9px 12px; } }
   .dorm-gb-write { padding:12px 16px 14px; border-bottom:1px solid var(--line); }
   .modal-box.dorm-modal .dorm-gb-write textarea { width:100%; resize:none; font-size:14px; line-height:1.65; padding:10px 12px; min-height:0; }
@@ -3519,7 +3522,7 @@
       <div class="seg-toggle" id="userInfoFilter">
         <button data-v="name" class="on" onclick="setUserInfoFilter('name')">이름순</button>
         <button data-v="role" onclick="setUserInfoFilter('role')">포지션순</button>
-        <button data-v="nation" onclick="setUserInfoFilter('nation')">국가순</button>
+        <button data-v="nation" onclick="setUserInfoFilter('nation')">진영순</button>
       </div>
     </div>
     <div class="userinfo-list" id="userInfoList"></div>
@@ -3534,16 +3537,17 @@
       <button class="idc-close" onclick="closeMyPage()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- 프로필 : 초상화 · 이름 · 포지션 · 국가 / 오른쪽에 표기 설정 -->
+    <!-- 프로필 : 초상화 · 이름 · 마이룸 한마디 · 포지션 · 진영 · 출신지 / 오른쪽에 표기 설정 -->
     <div class="mp-card mp-hero">
       <div class="mypage-portrait" id="myPagePortrait" data-tip="프로필 이미지 (정사각형 png/webp/gif)" onclick="document.getElementById('myAvatarFileInput').click()">
         <span class="mypage-portrait-icon" id="myPagePortraitIcon"><i class="fa-solid fa-user"></i></span>
       </div>
       <div class="mp-hero-main">
         <div class="mypage-name" id="myPageName">-</div>
+        <div class="mp-line" id="myPageLine"></div>
         <div class="mp-tags">
           <div class="mp-tagrow"><span class="mp-k">포지션</span><div class="mypage-roles" id="myPageRoles"></div></div>
-          <div class="mp-tagrow"><span class="mp-k">국가</span><div class="mp-nations" id="myPageNation"></div></div>
+          <div class="mp-tagrow"><span class="mp-k">진영</span><div class="mp-nations" id="myPageNation"></div></div>
           <div class="mp-tagrow"><span class="mp-k">출신지</span><div class="mp-home" id="myPageHome"></div></div>
         </div>
       </div>
@@ -3916,6 +3920,7 @@ let actionPanelActorName = null;
 let lastUserInfoHidden = new Set();  // 운영진이 눈을 끈(GM이 아닌 사람에게 숨긴) 이름들
 let lastRoster = [];  // 캐릭터 데이터베이스에 등록된 전체 이름 목록 (전투 참여 여부와 무관)
 let lastRosterProfiles = {};
+var lastFactionPeriod = 1;  // 지금 마이룸 기간(1·2·3차) : 진영 표시에 씁니다
 let lastRosterMypage = {};  // 이름 -> 마이페이지용 등록 정보(전투에 없는 캐릭터용)  // 이름 -> { color, avatar_url } (채팅창 프로필 이미지/닉네임 색상용)
 let lastOnlineCharacters = [];  // 지금 그 이름으로 로그인(접속)해 있는 캐릭터 이름 목록 (유저 접속정보 팝업용)
 
@@ -4242,7 +4247,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.21";
+const EXPECTED_SERVER_BUILD = "2026-10-13.22";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -4254,6 +4259,7 @@ socket.on('public_state', (state) => {
   lastUserInfoHidden = new Set(state.userinfo_hidden || []);
   lastRosterProfiles = state.roster_profiles || {};
   lastRosterMypage = state.roster_mypage || {};
+  if (state.faction_period) lastFactionPeriod = state.faction_period;
   lastShop = state.shop || lastShop;
   lastMapBg = state.map_bg || null;
   if (state.sfx_defaults) lastSfxDefaults = state.sfx_defaults;
@@ -6812,7 +6818,7 @@ function renderUserInfoList() {
   const gmHint = document.getElementById('userInfoGmHint');
   if (gmHint) gmHint.style.display = isGm ? '' : 'none';
   // 가나다순(한국어 정렬, 숫자는 크기순 - 예: NOVA 2구역 < NOVA 10구역)
-  // 탭(이름순/포지션순/국가순)마다 섹션 제목으로 나누고, 섹션 안에서는 가나다순
+  // 탭(이름순/포지션순/진영순)마다 섹션 제목으로 나누고, 섹션 안에서는 가나다순
   const visible = isGm ? lastRoster : lastRoster.filter(n => !lastUserInfoHidden.has(n));
   const q = ((document.getElementById('userInfoSearch') || {}).value || '').trim().toLowerCase();
   const names = visible.filter(n => !q || n.toLowerCase().includes(q));
@@ -6833,16 +6839,16 @@ function renderUserInfoList() {
   };
   const ROLE_ORDER = ['가디언', '스트라이커', '메딕'];
   const keyOf = (n) => userInfoFilter === 'role' ? (info(n).role || '기타')
-    : userInfoFilter === 'nation' ? (info(n).nation || '국가 없음') : initialOf(n);
+    : userInfoFilter === 'nation' ? (factionOf(n) || '진영 미정') : initialOf(n);
   const groups = {};
   names.forEach(n => { (groups[keyOf(n)] = groups[keyOf(n)] || []).push(n); });
   const keys = Object.keys(groups).sort((a, b) => {
     if (userInfoFilter === 'role') return (ROLE_ORDER.indexOf(a) + 1 || 99) - (ROLE_ORDER.indexOf(b) + 1 || 99);
     if (userInfoFilter === 'nation') {
-      const NO = ['아르카디아', '노바'], ia = NO.indexOf(a), ib = NO.indexOf(b);
+      const NO = FACTIONS.map(f => f[0]), ia = NO.indexOf(a), ib = NO.indexOf(b);
       if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     }
-    const last = userInfoFilter === 'nation' ? '국가 없음' : '#';
+    const last = userInfoFilter === 'nation' ? '진영 미정' : '#';
     if (a === last) return 1; if (b === last) return -1;
     return a.localeCompare(b, 'ko');
   });
@@ -6933,18 +6939,51 @@ function closeMyPage() {
   document.getElementById('myPageModal').style.display = 'none';
 }
 
-// 국가 : 아르카디아(노랑) / 노바(파랑). 운영진만 바꿀 수 있고, 다른 사람에게는 정해진 국가만 보입니다.
-const NATIONS = [['아르카디아', 'var(--nation-arcadia)'], ['노바', 'var(--nation-nova)']];
-function nationColor(n) { const f = NATIONS.find(x => x[0] === n); return f ? f[1] : null; }
+// 진영 : 마이룸 기간을 따라갑니다. 1차·3차는 모두 Resonans(레저넌트), 2차는 使徒(사도) · Void(보이드) 중 하나를 골라요.
+// 2차 선택은 캐릭터 정보의 nation 칸에 저장하고, 본인과 운영진이 고를 수 있어요.
+const FACTIONS = [['Resonans', 'var(--fac-resonans)', '레저넌트'], ['使徒', 'var(--fac-apostle)', '사도'], ['Void', 'var(--fac-void)', '보이드']];
+const FACTION_CHOICES = ['使徒', 'Void'];
+function factionPeriod() { return (dormData && dormData.period && dormData.period.no) || lastFactionPeriod || 1; }
+function factionOf(name) {
+  if (factionPeriod() !== 2) return 'Resonans';
+  const v = ((lastRosterMypage || {})[name] || {}).nation || '';
+  return FACTION_CHOICES.includes(v) ? v : '';
+}
+function nationColor(n) { const f = FACTIONS.find(x => x[0] === n); return f ? f[1] : null; }
+function factionTip(n) { const f = FACTIONS.find(x => x[0] === n); return f ? f[2] : ''; }
 function renderMyPageNation(c) {
   const el = document.getElementById('myPageNation'); if (!el) return;
   if (!c) { el.innerHTML = ''; return; }
-  const isGm = myControlInfo(lastBattleForPanel).scope === 'all';
-  const cur = ((lastRosterMypage || {})[c.name] || {}).nation || c.nation || '';
-  if (!isGm) { el.innerHTML = cur ? `<button class="on" disabled style="--nc:${nationColor(cur) || 'var(--muted)'}">${mailEsc(cur)}</button>` : '<span class="none">없음</span>'; return; }
-  el.innerHTML = NATIONS.map(([n, col]) => `<button class="${n === cur ? 'on' : ''}" style="--nc:${col}" onclick='setMyPageNation(${JSON.stringify(c.name)}, ${JSON.stringify(n === cur ? '' : n)})'>${n}</button>`).join('');
+  const cur = factionOf(c.name);
+  const tag = n => `<button class="on" disabled style="--nc:${nationColor(n)}" data-tip="${factionTip(n)}">${n}</button>`;
+  if (factionPeriod() !== 2) { el.innerHTML = tag('Resonans'); return; }
+  if (!canEditMyPage()) { el.innerHTML = cur ? tag(cur) : '<span class="none">미정</span>'; return; }
+  el.innerHTML = FACTION_CHOICES.map(n => `<button class="${n === cur ? 'on' : ''}" style="--nc:${nationColor(n)}" data-tip="${factionTip(n)}" onclick='setMyPageNation(${JSON.stringify(c.name)}, ${JSON.stringify(n === cur ? '' : n)})'>${n}</button>`).join('');
 }
-function setMyPageNation(name, nation) { socket.emit('set_mypage_gm_fields', { name, nation }); }
+function setMyPageNation(name, nation) {
+  if (myControlInfo(lastBattleForPanel).scope === 'all') socket.emit('set_mypage_gm_fields', { name, nation });
+  else socket.emit('set_my_skill_log', { name: myPageEditName(), nation });
+}
+// 마이룸 한마디 : 방에 들어온 사람에게 말풍선으로 보이는 방 주인 대사. 마이페이지 맨 위에서 본인만 고쳐요.
+function renderMyPageLine(c) {
+  const el = document.getElementById('myPageLine'); if (!el) return;
+  const name = c && c.name;
+  const hasRoom = !!(name && dormData && dormHallOf(name));
+  const line = hasRoom ? (((dormData.rooms || {})[name] || {}).line || '') : '';
+  const mine = hasRoom && name === dormMe() && !dormIsGm();
+  if (!hasRoom || (!mine && !line)) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = '';
+  if (!mine) { el.innerHTML = `<i class="fa-solid fa-quote-left"></i><span class="t">${mailEsc(line)}</span>`; return; }
+  if (document.activeElement && document.activeElement.id === 'myPageLineInput') return;
+  el.innerHTML = `<i class="fa-solid fa-quote-left"></i><input id="myPageLineInput" maxlength="80" autocomplete="off" placeholder="마이룸에 들어온 사람에게 보일 한마디" value="${mailEsc(line)}"
+    onchange="saveMyPageLine(this.value)" onkeydown="if(event.key==='Enter') this.blur()"><i class="fa-solid fa-pen ed"></i>`;
+}
+function saveMyPageLine(v) {
+  const name = dormMe(); if (!name) return;
+  const text = String(v || '').trim().slice(0, 80);
+  if (dormData && dormData.rooms && dormData.rooms[name]) dormData.rooms[name].line = text;
+  socket.emit('dorm_line_save', { owner: name, text });
+}
 // 출신지 : 맵의 장소 · 구역 중에서 고릅니다(맵 구역 카드를 누르면 '00의 출신지.'로 나옵니다). 본인과 운영진이 바꿀 수 있어요.
 function myPageHomeLabel(key) {
   const [pid, zi] = String(key || '').split(':');
@@ -6987,6 +7026,7 @@ function renderMyPage() {
     document.getElementById('myPageRaidNameInput').disabled = true;
     document.getElementById('myPageRoles').innerHTML = '';
     renderMyPageNation(null);
+    renderMyPageLine(null);
     renderMyPageHome(null);
     document.getElementById('myPageCurrentHpView').textContent = '000';
     document.getElementById('myPageMaxHp').textContent = '000';
@@ -7015,6 +7055,7 @@ function renderMyPage() {
   if (document.activeElement !== raidInput) raidInput.value = c.raid_display_name || '';
   renderMyPageRoles(c, canEdit);
   renderMyPageNation(c);
+  renderMyPageLine(c);
   renderMyPageHome(c);
 
   const hasHp = c.max_hp != null;
@@ -7562,9 +7603,9 @@ function renderShop() {
     const opts = ['<option value="">(캐릭터 선택)</option>'].concat(
       (lastRoster || []).map(n => `<option value="${shopEsc(n)}" ${n === shopGmTarget ? 'selected' : ''}>${shopEsc(n)}</option>`));
     wallet.innerHTML = `<span>대상</span><select onchange="shopGmTarget=this.value; renderShop();">${opts.join('')}</select>` +
-      (data ? `<span class="pts"><i class="fa-solid fa-coins"></i><b>${data.points || 0}</b>P</span>` : '');
+      (data ? `<span class="pts"><b>${data.points || 0}</b>P</span>` : '');
   } else {
-    wallet.innerHTML = target ? `<span>${shopEsc(target)}</span><span class="pts"><i class="fa-solid fa-coins"></i><b>${data ? (data.points || 0) : 0}</b>P</span>` : '<span>로그인 필요</span>';
+    wallet.innerHTML = target ? `<span>${shopEsc(target)}</span><span class="pts"><b>${data ? (data.points || 0) : 0}</b>P</span>` : '<span>로그인 필요</span>';
   }
 
   const pending = (lastShopRequests || []).filter(r => !r.done).length;
@@ -9037,6 +9078,7 @@ function renderMyPageRoom() {
   const box = document.getElementById('myPageRoomBox');
   if (!box || document.getElementById('myPageModal').style.display !== 'flex') return;
   const c = myPageTargetChar(), name = c && c.name;
+  renderMyPageLine(c); renderMyPageNation(c);
   const hall = name && dormData ? dormHallOf(name) : null;
   // 지난 기간의 마이룸 : 본인 마이페이지에서만(서버도 본인 것만 보내 줍니다)
   const self = !!(name && name === dormMe() && !dormIsGm());
@@ -9136,12 +9178,6 @@ function onDormMusicFile(ev) {
 }
 function clearDormMusic() {
   uiConfirm('방 음악을 지울까요?', { title: '방 음악 지우기', okText: '지우기', danger: true }).then(ok => ok && socket.emit('dorm_music_clear', { owner: dormRoom.owner }));
-}
-function editDormLine() {
-  uiPrompt('방에 들어온 사람에게 보일 한마디를 적어 주세요. (80자까지, 비우면 지워져요)', dormRoom.line || '', { title: '방 주인 대사', okText: '저장' }).then(v => {
-    if (v == null) return;
-    socket.emit('dorm_line_save', { owner: dormRoom.owner, text: String(v).trim() });
-  });
 }
 // 상단 바 : 전투 화면 헤더와 같은 모양 (Dorm ▶ 관 ▶ 방) + 오른쪽 버튼
 function renderDormTop() {
@@ -9348,7 +9384,6 @@ function dormGuestbookHtml(r) {
           ${music ? `<button class="dorm-ibtn" onclick="clearDormMusic()" data-tip="음악 지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}
           <input type="file" id="dormMusicFile" accept=".mp3,.ogg,.wav,.m4a,audio/*" style="display:none" onchange="onDormMusicFile(event)">` : ''}
       </div>
-      ${isOwner ? `<button class="dorm-line-edit" onclick="editDormLine()"><i class="fa-solid fa-quote-left"></i>${r.line ? mailEsc(r.line) : '<span class="muted">방 주인 대사를 적어 보세요</span>'}<i class="fa-solid fa-pen ed"></i></button>` : ''}
     </div>` : '';
   return `<div class="member-panel panel dorm-side">
     <div class="member-header"><b>Guestbook</b><span class="dorm-gb-cnt">${list.length}</span></div>${info}
@@ -10422,14 +10457,14 @@ function opsCharsHtml() {
       <div class="ops-field"><span class="lb">포지션</span><div class="ops-roles" id="opsQRoles"></div></div>
       <div class="ops-row" style="margin-top:10px;">
         <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsQSkill"></select></div>
-        <div class="ops-field" style="flex:1; margin:0;"><span class="lb">국가</span><select class="ops-in" id="opsQNation"><option value="">(없음)</option>${NATIONS.map(n => `<option>${n[0]}</option>`).join('')}</select></div>
+        <div class="ops-field" style="flex:1; margin:0;"><span class="lb">2차 진영</span><select class="ops-in" id="opsQNation"><option value="">(미정)</option>${FACTION_CHOICES.map(n => `<option>${n}</option>`).join('')}</select></div>
       </div>
       <div class="ops-steppers" id="opsQStats"></div>
       <div class="ops-start"><span class="ops-hint">합계 <b id="opsQTotal" style="color:var(--text)">0</b></span>
         <button class="ops-btn" onclick="opsQuickReset()">초기화</button>
         <button class="ops-btn primary" onclick="opsQuickSubmit()"><i class="fa-solid fa-plus"></i> 등록</button></div>`
       : `
-      <textarea class="ops-in" id="opsRegText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴&#10;국가 (선택)"></textarea>
+      <textarea class="ops-in" id="opsRegText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴&#10;진영 使徒 또는 Void (2차, 선택)"></textarea>
       <div class="ops-start"><span class="ops-hint">여러 명은 빈 줄로 나눠 한 번에 붙여 넣어요.</span>
         <button class="ops-btn primary" onclick="opsPasteSubmit()">일괄 등록</button></div>
       <div class="ops-row" style="margin-top:14px;"><span class="ops-hint" style="flex:1;">테스트용 더미 캐릭터</span>
@@ -10464,10 +10499,10 @@ function opsQuickReset() { opsQuick.stats = {}; document.getElementById('opsQNam
 function opsQuickSubmit() {
   const name = document.getElementById('opsQName').value.trim();
   if (!name) { showError('이름을 입력해 주세요.'); return; }
-  if (/^(체력|공격|방어|이능|정신|민첩|행운|역할|스킬|색상|국가)/.test(name)) { showError('이름이 스탯/역할 이름으로 시작하면 등록할 수 없어요.'); return; }
+  if (/^(체력|공격|방어|이능|정신|민첩|행운|역할|스킬|색상|국가|진영)/.test(name)) { showError('이름이 스탯/역할 이름으로 시작하면 등록할 수 없어요.'); return; }
   const lines = [name, ...STAT_KEYS.map(k => `${k} ${opsQuick.stats[k] || 0}`), `역할 ${opsQuick.role}`];
   const skill = document.getElementById('opsQSkill').value; if (skill) lines.push(`스킬 ${skill}`);
-  const nation = document.getElementById('opsQNation').value.trim(); if (nation) lines.push(`국가 ${nation}`);
+  const nation = document.getElementById('opsQNation').value.trim(); if (nation) lines.push(`진영 ${nation}`);
   socket.emit('register_characters', { text: lines.join('\n') });
   document.getElementById('opsQName').value = '';
   opsQuickRefresh();
@@ -10498,7 +10533,7 @@ function opsRenderRoster() {
     if (!g.length) return '';
     return `<div class="ops-rgroup"><div class="ops-rgroup-h" style="color:${opsRoleColor(role)}">${mailEsc(role)}<span>${g.length}</span></div>
       ${g.map(c => { const n = JSON.stringify(c.name); return `<div class="ops-prow"><span class="nm">${mailEsc(c.name)}</span>
-        ${c.skill ? `<span class="sk">${mailEsc(c.skill)}</span>` : ''}${c.nation ? `<span class="sk">${mailEsc(c.nation)}</span>` : ''}<span class="sp"></span>
+        ${c.skill ? `<span class="sk">${mailEsc(c.skill)}</span>` : ''}${FACTION_CHOICES.includes(c.nation) ? `<span class="sk">${mailEsc(c.nation)}</span>` : ''}<span class="sp"></span>
         <button class="ops-btn icon" onclick='opsEdit(${n})' data-tip="수정"><i class="fa-solid fa-pen"></i></button>
         <button class="ops-btn icon" onclick='opsDelete(${n})' data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>
         ${opsEditName === c.name ? opsEditHtml(c) : ''}`; }).join('')}</div>`;
@@ -10510,7 +10545,7 @@ function opsEditHtml(c) {
     <div class="ops-row"><div class="ops-field" style="flex:1; margin:0;"><span class="lb">역할</span>
       <select class="ops-in" id="opsERole" onchange="opsEditRole()">${OPS_ROLES.map(r => `<option ${r === c.role ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
       <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsESkill"><option value="">(없음)</option>${skills.map(k => `<option ${k === c.skill ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
-    <div class="ops-field" style="margin-top:10px;"><span class="lb">국가</span><select class="ops-in" id="opsENation"><option value="">(없음)</option>${[...NATIONS.map(n => n[0]), ...(c.nation && !nationColor(c.nation) ? [c.nation] : [])].map(n => `<option ${n === c.nation ? 'selected' : ''}>${mailEsc(n)}</option>`).join('')}</select></div>
+    <div class="ops-field" style="margin-top:10px;"><span class="lb">2차 진영</span><select class="ops-in" id="opsENation"><option value="">(미정)</option>${FACTION_CHOICES.map(n => `<option ${n === c.nation ? 'selected' : ''}>${mailEsc(n)}</option>`).join('')}</select></div>
     <div class="ops-stat-grid">${STAT_KEYS.map(k => `<label>${k}<input class="ops-in" type="number" id="opsEStat_${k}" value="${(c.stats || {})[k] ?? 0}" oninput="opsEditTotal()"></label>`).join('')}</div>
     <div class="ops-start"><span class="ops-hint">합계 <b id="opsETotal" style="color:var(--text)">${STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0)}</b></span>
       <button class="ops-btn" onclick="opsEditName=null; opsRenderRoster()">취소</button>
@@ -10597,7 +10632,7 @@ function opsRoomHtml() {
     <div class="ops-card">
       <h3><i class="fa-solid fa-palette"></i> 포인트 컬러<span class="sub">모든 방 · 모든 화면에 바로 적용</span></h3>
       <div class="ops-swatches" id="opsSwatches"></div>
-      <div class="ops-hint" style="margin-top:12px;">국가 색(아르카디아 노랑 · 노바 파랑)은 바뀌지 않아요.</div>
+      <div class="ops-hint" style="margin-top:12px;">진영 색(Resonans · 使徒 · Void)은 바뀌지 않아요.</div>
     </div>
     <div class="ops-card">
       <h3><i class="fa-solid fa-cloud-sun"></i> 배경 · 날씨</h3>
