@@ -2998,10 +2998,15 @@
   .gmap .gmk.hurt { left:0; border-width:8px 8px 0 0; border-color: var(--role-스트라이커) transparent transparent transparent; }
   .gmap .gmk.buff { right:0; border-width:0 8px 8px 0; border-color: transparent #fff transparent transparent; }
   /* 스킬을 쓰면 그 칸 윗선 위로 ✶가 떠올랐다 사라집니다(지도 틀 위 겹침 층에 띄워, 지도를 다시 그려도 끊기지 않음) */
+  /* ✶ : 작게 나타나 핑그르르 돌며 커진 뒤, 둥실 떠오르며 사라집니다(빛 번짐 없이 흰 별 하나) */
   .skill-pop { position:absolute; z-index:30; pointer-events:none; font-size:18px; line-height:1; color:#fff;
-    text-shadow: 0 0 6px rgba(var(--point-rgb), .95), 0 0 14px rgba(var(--point-rgb), .7); animation: skillPop 1.9s ease-out forwards; }
-  @keyframes skillPop { 0% { opacity:0; transform:translate(-50%, -30%) scale(.5); } 14% { opacity:1; transform:translate(-50%, -100%) scale(1.2); }
-    30% { transform:translate(-50%, -110%) scale(1); } 75% { opacity:1; transform:translate(-50%, -170%); } 100% { opacity:0; transform:translate(-50%, -220%); } }
+    text-shadow: 0 1px 3px rgba(0,0,0,.6); transform-origin:50% 50%; animation: skillPop 2.2s cubic-bezier(.2,.8,.3,1) forwards; }
+  @keyframes skillPop {
+    0%   { opacity:0; transform:translate(-50%, -50%) scale(.15) rotate(-240deg); }
+    28%  { opacity:1; transform:translate(-50%, -58%) scale(1.25) rotate(0deg); }
+    38%  { transform:translate(-50%, -62%) scale(1) rotate(0deg); }
+    72%  { opacity:1; transform:translate(-50%, -95%) scale(1) rotate(0deg); }
+    100% { opacity:0; transform:translate(-50%, -125%) scale(.9) rotate(0deg); } }
   @media (prefers-reduced-motion: reduce) { .skill-pop { animation-duration:.01s; } }
   /* 전조 칸 위에 캐릭터가 있어도 줄무늬가 보이게 */
   .gmap td.tel .gcell .gsel:not(.tgt) { background: repeating-linear-gradient(135deg, rgba(255,176,32,.08) 0 2.5px, transparent 2.5px 7.0711px);
@@ -4214,9 +4219,11 @@ socket.on('battle_starting', () => {
   document.getElementById('roundInfo').textContent = '선후공 다이스를 굴리는 중...';
 });
 
-socket.on('chat_message', (entry) => { appendChat(entry); if (entry && entry.category === 'skill') popSkillMark(entry.nickname); });
+// 스킬 기록이 오면 그 캐릭터 칸 위로 ✶. 컷인이 함께 나오면 컷인이 끝난 뒤(약 3초)에 띄워 가려지지 않게 합니다.
+socket.on('chat_message', (entry) => { appendChat(entry); if (entry && entry.category === 'skill') popSkillMark(entry.nickname, entry.fx ? 3000 : 0); });
 // 스킬을 쓴 캐릭터의 지도 칸 윗선 위로 ✶를 띄웁니다(격자 전투에서만).
-function popSkillMark(name) {
+function popSkillMark(name, delayMs) {
+  if (delayMs) { setTimeout(() => popSkillMark(name, 0), delayMs); return; }
   const frame = document.querySelector('#gridSection .map-frame');
   const table = document.querySelector('#gridMap table.gmap');
   const c = (lastAllForCards || []).find(x => x.name === name);
@@ -4231,7 +4238,7 @@ function popSkillMark(name) {
   el.style.left = (r.left - fr.left + frame.scrollLeft + r.width / 2) + 'px';
   el.style.top = (r.top - fr.top + frame.scrollTop) + 'px';
   frame.appendChild(el);
-  setTimeout(() => el.remove(), 2000);
+  setTimeout(() => el.remove(), 2300);
 }
 
 function statsTitle(c) {
@@ -6220,10 +6227,11 @@ function fmtChat(entry) {
     const ini = shopEsc([...(who || '?').trim()][0] || '?');
     const av = prof.avatar_url ? `<div class="chat-avatar" style="background-image:url('${prof.avatar_url}');"></div>`
       : `<div class="chat-avatar initial" style="--ac:${prof.color || '#5a5a62'}">${ini}</div>`;
-    const can = !!entry.fx;
+    // 컷인이 있거나 격자 지도(✶ 다시 보기)가 있으면 ▶ 버튼을 둡니다.
+    const can = !!entry.fx || !!document.getElementById('gridSection');
     return `<div class="chat-line is-skill"${idAttr}>${av}
       <div class="chat-body"><div class="chat-meta"><b${prof.color ? ` style="color:${prof.color};"` : ''}>${shopEsc(who || '')}</b><span class="time">${formatChatTime(entry.time)}</span></div>
-        <div class="chat-text">${shopEsc(entry.text || ('【' + (entry.skill || '') + '】'))}${entry.fx && entry.fx.title ? ' ' + shopEsc(entry.fx.title) : ''}${entry.uses_left > 0 ? ` (잔여 ${entry.uses_left}회)` : ''}${can ? ` <button type="button" class="sr-play" onclick="replaySkillCutin('${entry.id}')" data-tip="컷인 다시 보기"><i class="fa-solid fa-play"></i></button>` : ''}</div></div>${delBtn}</div>`;
+        <div class="chat-text">${shopEsc(entry.text || ('【' + (entry.skill || '') + '】'))}${entry.fx && entry.fx.title ? ' ' + shopEsc(entry.fx.title) : ''}${entry.uses_left > 0 ? ` (잔여 ${entry.uses_left}회)` : ''}${can ? ` <button type="button" class="sr-play" onclick="replaySkillCutin('${entry.id}')" data-tip="다시 보기"><i class="fa-solid fa-play"></i></button>` : ''}</div></div>${delBtn}</div>`;
   }
   if (entry.category === 'round') {
     const main = /^round\s*\d+/i.test((entry.text || '').trim());
@@ -6252,11 +6260,15 @@ function fmtChat(entry) {
   </div>`;
 }
 
+// 채팅 스킬 기록의 ▶ : 컷인(있으면)을 다시 보여주고, 지도 칸 위 ✶도 다시 띄웁니다(턴이 지나도 다시 볼 수 있게).
 function replaySkillCutin(id) {
   const e = (lastChat || []).find(x => x.id === id);
-  if (!e || !e.fx) return;
-  const c = typeof sfxCharacter === 'function' ? sfxCharacter(e.fx.actor) : null;
-  showSkillCutin({ ...e.fx, actor: c ? displayNameOf(c) : e.fx.actor });
+  if (!e) return;
+  if (e.fx) {
+    const c = typeof sfxCharacter === 'function' ? sfxCharacter(e.fx.actor) : null;
+    showSkillCutin({ ...e.fx, actor: c ? displayNameOf(c) : e.fx.actor });
+  }
+  popSkillMark(e.nickname, e.fx ? 3000 : 0);
 }
 
 function appendChat(entry) {
