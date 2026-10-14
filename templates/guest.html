@@ -2756,6 +2756,20 @@
     .breadcrumb-row .bgm-player input[type=range] { width:64px; }
     #gridSection.map-v2 .map-frame { padding:10px; }
   }
+  /* 휴대폰 : 위쪽을 세 줄로 정리 — ① 방 이름 · 형식(한 줄, 넘치면 …) + 타이머 ② 라운드 ③ 안내 문구 상자(음악은 음소거 버튼만) */
+  @media (max-width:560px) {
+    .topbar.v2 { grid-template-columns:minmax(0,max-content) auto minmax(0,max-content) minmax(0,1fr) auto; row-gap:4px; }
+    .topbar.v2 #roomNameLabel, .topbar.v2 #formatLabel { display:block; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12.5px; }
+    .topbar.v2 .sep { font-size:8px; opacity:.6; }
+    .topbar.v2 #roundInfo { font-size:19px; white-space:nowrap; }
+    .topbar.v2 #roundTimerLabel:has(.flip-clock) { font-size:13px; }
+    .topbar.v2 .flip-clock { gap:3px; }
+    .breadcrumb-row { gap:8px; padding:8px 8px 8px 12px; border-radius:10px; background: rgba(255,255,255,.035); align-items:center; }
+    .grid-notice { font-size:12.5px; line-height:1.5; }
+    .grid-notice .bell { font-size:13px; }
+    .breadcrumb-row .bgm-player input[type=range] { display:none; }
+    .breadcrumb-row .bgm-player .bgm-mute { width:30px; height:30px; border-radius:8px; background: rgba(255,255,255,.05) !important; font-size:12px; }
+  }
 
   /* 격자 전투 지도(마스 레이드 · 공성전) : 휴대폰에서만 확대 · 축소 · 맞춤(공통 부품 .zoom-ctl) */
   .gframe-wrap { position:relative; display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
@@ -4247,7 +4261,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.22";
+const EXPECTED_SERVER_BUILD = "2026-10-13.23";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5581,6 +5595,7 @@ function logSkillHead(l) {
 const LOG_FIRST_TEAM_RX = /^(\[선공 결정\]|→ 민첩 합산이 더 높은|민첩 합산 동점|→ 주사위 결과|\[규칙\] .*항상 선공)/;
 // 예전 문구로 이미 저장된 로그도 지금 문구로 보여줍니다(서버를 다시 켜기 전 전투 · 지난 전투 기록).
 const LOG_LEGACY_TEXT = [
+  [/^(⚡ 편광 : .+?)이\(가\) 못 막은 피해 /, '$1의 잔여 피해 '],
   [/^(전조 발동 — .+?)의 공격이 /, '$1의 공명이 '],
   [/^전조 공개 : (\d+)칸에 곧 피해가 발생합니다\./, '전조 공개 : $1칸에 곧 재해가 발생합니다.'],
   [/^전조 공개 : 이번 라운드는 피해 구역이 없습니다\./, '전조 공개 : 이번 라운드는 재해 구역이 없습니다.'],

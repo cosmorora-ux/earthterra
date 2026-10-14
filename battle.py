@@ -1738,7 +1738,7 @@ class Battle:
                 share = round(c.polarize_overflow / n) if n else 0
                 if share > 0 and survivors:
                     self._log(
-                        f"⚡ 편광 : {c.name}이(가) 못 막은 피해 {c.polarize_overflow}가 "
+                        f"⚡ 편광 : {c.name}의 잔여 피해 {c.polarize_overflow}가 "
                         f"생존 아군 {len(survivors)}명에게 각 {share}씩 가산됩니다.",
                         tag="system",
                     )
