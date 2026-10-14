@@ -18,7 +18,8 @@
   :root { --point-rgb:111,147,255; --on-accent:#fff; }
   html[data-point="purple"] { --accent-blue:#7650f0; --point-rgb:164,141,255; }
   html[data-point="yellow"] { --accent-blue:#e2b23c; --point-rgb:240,200,98; --on-accent:#17171a; }
-  * { box-sizing:border-box; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  :focus:not(:focus-visible) { outline: none; }
   input, select, textarea, button { font-family: inherit; }
   body { font-family: "42dot Sans", "Pretendard", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
   .wrap { max-width: 720px; margin: 0 auto; padding: 56px 20px 64px; }

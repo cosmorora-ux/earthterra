@@ -43,7 +43,8 @@
     -webkit-text-fill-color: var(--text); caret-color: var(--text);
     -webkit-box-shadow: 0 0 0 1000px #0c0c0d inset; transition: background-color 9999s;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :focus:not(:focus-visible) { outline: none; }
   input, select, textarea, button { font-family: inherit; }
   body { font-family: "42dot Sans", "Pretendard", -apple-system, "Segoe UI", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
   .shell {
@@ -9694,6 +9695,17 @@ function dormScale(frame, base) {
 function renderDormRoom(body) {
   const r = dormRoom;
   if (r.loading) { body.innerHTML = '<div class="dorm-empty">불러오는 중…</div>'; return; }
+  // 방명록을 쓰는 중(입력칸에 커서)이면 입력칸은 그대로 두고 나머지만 새로 그립니다.
+  // 모바일은 키보드가 올라오면 화면 크기가 바뀌어 다시 그리게 되는데, 입력칸까지 새로 만들면 키보드가 바로 닫혀요.
+  const gb = document.getElementById('dormGbText'), gbSide = body.querySelector('.dorm-side');
+  if (!dormEdit && gb && document.activeElement === gb && gbSide && body.contains(gb)) {
+    const tmp = document.createElement('div'); tmp.innerHTML = dormGuestbookHtml(r);
+    ['.dorm-gb-cnt', '.dorm-roominfo', '.dorm-gb-list'].forEach(sel => {
+      const o = gbSide.querySelector(sel), n = tmp.querySelector(sel); if (o && n) o.replaceWith(n);
+    });
+    dormRenderStage();
+    return;
+  }
   const side = dormEdit
     ? `<div class="member-panel panel dorm-side dorm-items"><div class="member-header"><b>Items</b><span class="dorm-gb-cnt" id="dormItemCnt"></span></div>
         <div class="member-toptabs dorm-cattabs" id="dormCatTabs"></div><div class="dorm-pfilter" id="dormFilter"></div>
