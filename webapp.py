@@ -3211,6 +3211,7 @@ def _runtime_save_loop():
 # 데모 캐릭터는 이 방 전투 안에만 있고 캐릭터 목록(characters.json)에는 저장하지 않습니다.
 # ----------------------------------------------------------------------
 DEMO_ROOM_NAME = "모의전투 · 디자인 미리보기"
+DEMO_SEED = 14  # 10라운드 동안 모든 표시(회피 성공 · 방어 크리티컬 · 다운/복귀/사망 …)가 한 번 이상 나오는 값
 
 _DEMO_RUNNERS = [
     # 이름, 역할, 스킬, (체력, 공격, 방어, 이능, 정신, 민첩, 행운), 컷인 (모션, 제목, 대사, 본문)
@@ -3260,14 +3261,16 @@ def _demo_character_db():
 
 
 def _demo_chat(room, nickname, text, category="player", role="guest"):
+    _mirror_round_logs(room)  # 라운드 안내 채팅이 대화 사이 제자리에 들어가도록 먼저 옮깁니다
     entry = {"time": time.strftime("%H:%M:%S"), "nickname": nickname, "role": role, "category": category, "text": text}
     room.chat_log.append(_with_chat_id(entry))
 
 
 def _demo_reveal_telegraph(room, battle, cells):
+    _mirror_round_logs(room)
     room.telegraph_cells = [list(c) for c in cells]
     room.telegraph_round_no = battle.round_no
-    text = f"전조 공개 : {len(cells)}칸에 곧 재해가 발생합니다."
+    text = f"전조 공개 : {len(cells)}칸에 곧 재해가 발생합니다." if cells else "전조 공개 : 이번 라운드는 재해 구역이 없습니다."
     battle.log_event(text, tag="system")
     post_system_chat(room, text, nickname="전조")
 
@@ -3286,6 +3289,7 @@ def _demo_act(room, battle, action_type, payload, problems):
     emit_attack_lines(room, action_type, payload)
     _maybe_relocate_boss(battle, actor_char)
     _maybe_resolve_telegraph_damage(room, battle)
+    _mirror_round_logs(room)
 
 
 def build_demo_room():
@@ -3305,10 +3309,11 @@ def build_demo_room():
         battle._started_label = time.strftime("%m-%d %H:%M")
         _apply_battle_rules(room, formula_overrides, size, size)
 
-        # 자리 : NOVA는 가운데, 러너는 주변에 흩어 두고 한 명은 지도 구석(가장자리 테두리 확인용)에.
+        # 자리 : NOVA는 왼쪽 위에서 시작(1라운드 뒤 가운데로 이동 — 보스 이동 안내 확인용),
+        # 러너는 주변에 흩어 두고 한 명은 지도 구석(가장자리 테두리 확인용)에.
         for c in battle.team_b:
             ox, oy = config.BOSS_SECTION_OFFSETS.get(c.boss_section, (0, 0))
-            c.grid_pos = (6 + ox, 6 + oy)
+            c.grid_pos = (2 + ox, 1 + oy)
         spots = {"레아": (5, 5), "카이": (8, 6), "세린": (4, 7), "도윤": (9, 9), "하루": (6, 9),
                  "미오": (3, 4), "유나": (10, 4), "한결": (5, 9), "리안": (8, 3), "시온": (2, 10),
                  "이든": (11, 10), "노아": (0, 13)}
@@ -3325,48 +3330,237 @@ def build_demo_room():
                    category="operator", role="gm")
         post_system_chat(room, "전투가 시작됩니다. 선공 팀은 러너 팀입니다.\n제한시간 내 행동해 주세요.", nickname="GM")
 
-        # ---- 1라운드 : 러너 선공 ----
-        _demo_reveal_telegraph(room, battle, [(x, 9) for x in range(3, 11)] + [(4, 10), (5, 10)])
-        _demo_chat(room, "하루", "아래 줄 전조 떴어요, 빠질게요!")
+        # NOVA는 10라운드를 버티도록 체력을 넉넉히(부위별) 잡습니다.
+        for c in battle.team_b:
+            c.max_hp = c.current_hp = 2600
+            battle.round_start_hp[c.name] = c.current_hp
+        for c in battle.team_a:
+            battle.round_start_hp[c.name] = c.current_hp
+
+        rng = random.Random(DEMO_SEED)  # 데모는 매번 같은 흐름이 되도록 고정된 난수
+        random.seed(DEMO_SEED)  # 전투 굴림(다이스 · 크리티컬)도 고정 — 끝나면 다시 무작위로 돌려 둡니다
         act = lambda t, p: _demo_act(room, battle, t, p, problems)
-        act("move", {"name": "하루", "x": 6, "y": 11})
-        act("move", {"name": "세린", "x": 4, "y": 6})
-        act("move", {"name": "리안", "x": 8, "y": 4})
-        act("shield", {"name": "레아", "target": "카이"})
-        act("command", {"guardian": "카이", "target": "NOVA-NW"})
-        act("collapse", {"attacker": "세린", "target": "NOVA-SW"})
-        act("emission", {"attacker": "도윤"})
-        act("attack", {"attacker": "하루", "target": "NOVA-SE"})
-        act("reflux", {"name": "미오", "targets": ["세린", "도윤", "하루"]})
-        act("restore", {"name": "유나", "target": "하루"})
-        act("guard", {"tanker": "한결", "target": "시온"})
-        act("attack", {"attacker": "리안", "target": "NOVA-NE"})
-        act("heal", {"healer": "시온", "target": "이든"})
-        act("defend", {"tanker": "이든", "target": "이든"})
-        act("timeout", {"name": "노아"})
-        _demo_chat(room, "세린", "붕괴 들어갔어요 👍")
-        act("advance_turn", {})
-        _maybe_resolve_telegraph_damage(room, battle)
+        alive = lambda team: [c for c in team if c.is_alive and c.status not in ("dead", "fled", "fleeing")]
 
-        # ---- 1라운드 : NOVA 후공 ----
-        act("defense_settle", {"name": "NOVA-NW"})
-        act("attack", {"attacker": "NOVA-NW", "target": "카이"})
-        act("attack", {"attacker": "NOVA-NE", "target": "이든"})
-        act("attack", {"attacker": "NOVA-SW", "target": "노아"})
-        act("heal", {"healer": "NOVA-SE", "target": "NOVA-SE"})
-        act("advance_turn", {})
+        def boss_alive():
+            return [c for c in battle.team_b if c.is_alive]
 
-        # ---- 2라운드 : 진행 중인 상태로 남겨 둡니다(이동 표시 · 행동 완료 표시 · 미행동자 확인용) ----
-        _demo_reveal_telegraph(room, battle, [(x, y) for x in (9, 10, 11) for y in (2, 3, 4)] + [(5, 4), (6, 4), (7, 4)])
-        act("move", {"name": "유나", "x": 12, "y": 4})
-        act("move", {"name": "리안", "x": 8, "y": 5})
-        act("move", {"name": "레아", "x": 4, "y": 5})
-        act("polarize", {"name": "카이"})
-        act("attack", {"attacker": "리안", "target": "NOVA-NE"})
-        act("swap", {"medic": "미오", "target": "레아"})
-        _demo_chat(room, "카이", "편광 켰어요. 이번 턴은 저한테 다 몰려요.")
-        _demo_chat(room, "관전자", "와 컷인 멋있다", category="spectator")
+        def can_act(c):
+            return c.is_alive and not c.has_acted and c.status not in ("dead", "fled", "fleeing")
+
+        def try_move(c, prefer=None):
+            if c.moved_this_round or not c.is_alive or c.grid_pos is None:
+                return
+            offs = [(dx, dy) for dx in range(-3, 4) for dy in range(-3, 4) if (dx, dy) != (0, 0)]
+            rng.shuffle(offs)
+            if prefer:
+                offs.sort(key=lambda o: -(o[0] * prefer[0] + o[1] * prefer[1]))
+            for dx, dy in offs[:20]:
+                x, y = c.grid_pos[0] + dx, c.grid_pos[1] + dy
+                try:
+                    battle.perform_move(c.name, x, y)
+                    return
+                except BattleError:
+                    continue
+
+        def boss_attack(part, target):
+            """지휘로 묶여 있으면 그 가디언을 칩니다."""
+            if part.commanded_by:
+                g = battle.find_character(part.commanded_by)
+                if g is not None and g.is_alive:
+                    target = g
+            act("attack", {"attacker": part.name, "target": target.name})
+
+        def lowest(team):
+            cands = [c for c in alive(team)]
+            return min(cands, key=lambda c: c.current_hp / max(1, c.max_hp)) if cands else None
+
+        def random_cells(n, avoid_center=True):
+            cells = set()
+            while len(cells) < n:
+                x, y = rng.randrange(0, size), rng.randrange(0, size)
+                if avoid_center and 5 <= x <= 8 and 5 <= y <= 8:
+                    continue
+                cells.add((x, y))
+            return sorted(cells)
+
+        def telegraph_for(rnd):
+            if rnd == 4:
+                return []  # 재해 구역 없는 라운드
+            shapes = [
+                [(x, 9) for x in range(3, 11)] + [(4, 10), (5, 10)],
+                [(x, y) for x in (9, 10, 11) for y in (2, 3, 4)],
+                [(2, y) for y in range(2, 12)],
+                [],
+                [(x, y) for x in range(0, 4) for y in range(10, 14)],
+                random_cells(10),
+                [(x, x) for x in range(0, 14) if not 5 <= x <= 8],
+                [(x, 3) for x in range(0, 14)],
+                random_cells(14),
+                [(x, y) for x in range(9, 13) for y in range(8, 12)],
+            ]
+            return shapes[rnd - 1]
+
+        chat_lines = {
+            1: [("하루", "아래 줄 전조 떴어요, 빠질게요!")],
+            3: [("세린", "붕괴 연속으로 갑니다 👍"), ("관전자", "와 컷인 멋있다")],
+            2: [("카이", "편광 켰어요. 이번 턴은 저한테 다 몰려요.")],
+            4: [("GM", "이번 라운드는 재해가 없습니다. 몰아서 공격하세요.")],
+            5: [("시온", "자리 바꿔 줄게요!"), ("이든", "저 일단 빠질게요… 도주 시도!")],
+            6: [("유나", "다들 체력 확인하세요, 복원 갑니다.")],
+            7: [("하루", "체력이 바닥이에요…")],
+            8: [("관전자", "NOVA 체력 많이 빠졌다")],
+            9: [("레아", "차폐 한 번 더 씌울게요.")],
+            10: [("GM", "마지막 라운드입니다. NOVA 행동을 지켜봐 주세요.")],
+        }
+
+        guardians = ["레아", "카이", "한결", "노아"]
+        strikers = ["세린", "도윤", "하루", "리안", "이든"]
+        medics = ["미오", "유나", "시온"]
+
+        for rnd in range(1, 11):
+            # ---- 선공 : 러너 ----
+            _demo_reveal_telegraph(room, battle, telegraph_for(rnd))
+            for who, text in chat_lines.get(rnd, []):
+                if who == "GM":
+                    _demo_chat(room, "GM", text, category="operator", role="gm")
+                elif who == "관전자":
+                    _demo_chat(room, who, text, category="spectator")
+                else:
+                    _demo_chat(room, who, text)
+            tele = set(room.telegraph_cells and map(tuple, room.telegraph_cells) or [])
+            # 전조 칸에 선 러너는 대부분 빠져나가고, 몇 명은 그대로 맞습니다(전조 발동 확인용).
+            for c in alive(battle.team_a):
+                if c.grid_pos and tuple(c.grid_pos) in tele and rng.random() < 0.7:
+                    try_move(c)
+            for c in rng.sample(alive(battle.team_a), k=min(3, len(alive(battle.team_a)))):
+                try_move(c)
+
+            bosses = boss_alive()
+            pick_boss = lambda: rng.choice(bosses) if bosses else None
+            for name in guardians:
+                c = battle.find_character(name)
+                if c is None or not can_act(c):
+                    continue
+                if name == "노아" and rnd in (2, 5, 8):
+                    continue  # 시간 초과로 남겨 둡니다
+                if name == "레아":
+                    if rnd in (1, 5, 9):
+                        act("shield", {"name": name, "target": rng.choice(["카이", "한결", "세린"])})
+                    elif rnd in (3, 7):
+                        act("defend", {"tanker": name, "target": "미오"})  # 대리 방어
+                    else:
+                        act("command", {"guardian": name, "target": pick_boss().name})
+                elif name == "카이":
+                    if rnd in (2, 9):
+                        act("polarize", {"name": name})
+                    elif rnd % 2:
+                        act("command", {"guardian": name, "target": pick_boss().name})
+                    else:
+                        act("attack", {"attacker": name, "target": pick_boss().name})
+                elif name == "한결":
+                    if rnd % 3 == 1:
+                        act("guard", {"tanker": name, "target": rng.choice([x.name for x in alive(battle.team_a) if x.name in ("시온", "유나", "하루", "세린")] or ["시온"])})
+                    elif rnd % 3 == 2:
+                        act("defend", {"tanker": name, "target": name})
+                    else:
+                        act("dodge", {"name": name})
+                else:
+                    act("attack", {"attacker": name, "target": pick_boss().name})
+            for name in strikers:
+                c = battle.find_character(name)
+                if c is None or not can_act(c):
+                    continue
+                if name == "이든" and rnd == 5:
+                    act("flee", {"name": name})
+                elif name == "세린" and rnd in (2, 5, 8):
+                    act("collapse", {"attacker": name, "target": pick_boss().name})
+                elif name == "하루" and rnd in (3, 6, 9):
+                    act("collapse", {"attacker": name, "target": pick_boss().name})
+                elif name == "도윤" and rnd in (1, 4, 7, 10):
+                    act("emission", {"attacker": name})
+                elif name == "리안" and rnd in (2, 6):
+                    act("dodge", {"name": name})
+                else:
+                    act("attack", {"attacker": name, "target": pick_boss().name})
+            for name in medics:
+                c = battle.find_character(name)
+                if c is None or not can_act(c):
+                    continue
+                # 8라운드엔 하루를 치료하지 않습니다(사망 장면). 나머지는 가장 다친 사람부터.
+                pool = [x for x in battle.team_a if not (rnd == 8 and x.name == "하루")]
+                low = lowest(pool)
+                # 4 · 8라운드엔 맞을 공격이 남아 있는 사람을 먼저 치료합니다("피해 정산 후 회복" 확인용).
+                if rnd in (4, 8):
+                    hurt = [x for x in alive(pool) if x.pending_attacks]
+                    if hurt:
+                        low = hurt[0]
+                if name == "미오" and rnd % 3 == 1:
+                    act("reflux", {"name": name, "targets": [x.name for x in rng.sample(alive(battle.team_a), k=3)]})
+                elif name == "유나" and rnd % 3 == 0:
+                    act("restore", {"name": name, "target": low.name if low else name})
+                elif name == "시온" and rnd == 5:
+                    act("swap", {"medic": name, "target": "노아"})
+                else:
+                    act("heal", {"healer": name, "target": low.name if low else name})
+            # 남은 사람은 운영진이 시간 초과 처리
+            if any(can_act(c) for c in battle.team_a):
+                act("timeout_unacted_runners", {})
+            act("advance_turn", {})
+            _maybe_resolve_telegraph_damage(room, battle)
+
+            # ---- 후공 : NOVA ----
+            targets = alive(battle.team_a)
+            parts = boss_alive()
+            last = rnd == 10
+            # 장면 연출 : 6라운드엔 노아가, 7라운드엔 하루가 크게 맞아 다음 라운드에 다운됩니다
+            # (노아는 회복으로 복귀, 하루는 회복을 못 받아 라운드 끝에 사망). 편광(2~4 · 9~10라운드)이 없는 때로 잡습니다.
+            forced_hits = {6: "노아", 7: "하루"}
+            if rnd in forced_hits:
+                victim = battle.find_character(forced_hits[rnd])
+                if victim is not None and victim.is_alive:
+                    victim.current_hp = 1
+            hit_already = set()
+            for i, part in enumerate(parts):
+                if not targets:
+                    break
+                if last and i >= 2:
+                    break  # 마지막 라운드는 두 부위만 행동한 채로 둡니다(공격선 · 미행동 샤인 확인용).
+                if part.pending_attacks and rng.random() < 0.5:
+                    act("defense_settle", {"name": part.name})
+                if part.boss_section == "SE" and rnd % 3 == 0 and not part.commanded_by:
+                    act("heal", {"healer": part.name, "target": part.name})
+                else:
+                    # 볼거리 대상 우선 : 장면 연출 대상 → 수호 · 대리 방어 받은 사람(방어 크리티컬) → 회피 태세(회피 성공) → 무작위
+                    focus = [battle.find_character(forced_hits[rnd])] if rnd in forced_hits else []
+                    focus += [c for c in targets if c.defense_grants and c.name not in ("레아", "카이", "한결", "노아")]
+                    focus += [c for c in targets if c.dodging_this_round]
+                    focus += [c for c in targets if c.interceptors]  # 대리 방어가 걸린 사람(대신 맞기 확인용)
+                    focus = [c for c in focus if c is not None and c.is_alive and c.name not in hit_already]
+                    g = battle.find_character(part.commanded_by) if part.commanded_by else None
+                    tgt = g if (g is not None and g.is_alive) else (focus[0] if focus else rng.choice(targets))
+                    hit_already.add(tgt.name)
+                    boss_attack(part, tgt)
+            if last:
+                break
+            if rnd == 9:
+                # 장면 연출 : 편광 중인 카이가 다 못 막은 피해를 다음 라운드 시작에 아군이 나눠 받습니다.
+                kai = battle.find_character("카이")
+                if kai is not None and kai.is_alive:
+                    kai.polarize_overflow += 48
+            act("advance_turn", {})
+            if rnd == 9:
+                # 마지막 장면용 : 체력 막대가 여러 색으로 보이도록 몇 명은 다친 채로 시작합니다.
+                for nm, ratio in (("하루", 0.32), ("도윤", 0.58), ("노아", 0.2), ("세린", 0.75), ("시온", 0.45)):
+                    ch = battle.find_character(nm)
+                    if ch is not None and ch.is_alive:
+                        ch.current_hp = max(1, int(ch.max_hp * ratio))
+                        battle.round_start_hp[ch.name] = ch.current_hp
+        for c in battle.team_a + battle.team_b:
+            if c.status == "dead":
+                c.current_hp = 0
     finally:
+        random.seed()
         # 이후 이 방에서 캐릭터를 고치거나 새 전투를 시작하면 평소처럼 공용 캐릭터 목록을 씁니다.
         room.game.db = shared_db()
     if problems:
