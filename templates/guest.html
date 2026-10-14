@@ -3047,6 +3047,8 @@
   .action-bar-bottom.armed .send-btn:not(:disabled), .action-bar-bottom.armed .gm-run { animation: armPulse 1.6s ease-in-out infinite; }
   @keyframes armPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(var(--point-rgb), .55); } 50% { box-shadow: 0 0 0 6px rgba(var(--point-rgb), 0), 0 0 20px rgba(var(--point-rgb), .6); } }
 
+  /* 지금 행동할 수 없는 턴 : 커맨드 블록을 비우고 통째로 잠급니다 */
+  #commandSendBar.cmd-off select, #commandSendBar.cmd-off .send-btn { opacity:.35; pointer-events:none; }
   .action-bar-bottom.gm-bar.wrap-fields { flex-wrap:wrap; }
   .action-bar-bottom.gm-bar.wrap-fields .gm-bar-fields { flex:1 1 100%; }
   .action-bar-bottom.gm-bar.wrap-fields .gm-bar-ctrl { border-left:none; padding-left:0; }
@@ -4081,7 +4083,7 @@ function updateChatVisibility() {
   // 로그인(캐릭터 입장) 전에도 입력칸/커맨드 블록 자체는 항상 보이고, 전송 버튼만 비활성화합니다.
   // 단, 전투 관전 탭은 애초에 미참여(비로그인) 인원이 모여서 대화하는 곳이라 예외입니다.
   refreshChatSendEnabled();
-  document.getElementById('cmdSendBtn').disabled = !explicitlyJoined;
+  refreshCmdPanel();
 }
 
 function refreshChatSendEnabled() {
@@ -4885,13 +4887,35 @@ function targetsForAction(actor, label) {
 
 // 커맨드 전송 바([행동] [대상] [전송]) - 라운드 진행 등으로 전투 상태가 바뀔 때마다 호출해서
 // 드롭다운 목록을 최신으로 맞춥니다.
+// 서버(_check_actor_turn)와 같은 기준 : 전투 중 · 살아 있음 · 아직 행동 안 함 · 우리 팀 차례
+// (1라운드에 후공을 선언한 메딕은 후공 페이즈에도 가능)
+function cmdCanActNow(actor) {
+  const b = lastBattleForPanel;
+  if (!explicitlyJoined || !actor || !b || b.finished || !b.current_turn_team) return false;
+  if (isDefeatedStatus(actor) || actor.status === 'fleeing' || actor.has_acted) return false;
+  if (actor.teamLabel === (b.current_turn_team === '1팀' ? 'A' : 'B')) return true;
+  return !!actor.deferred_this_round && b.current_turn_team !== b.round_first_team;
+}
+function setCmdLocked(locked) {
+  const bar = document.getElementById('commandSendBar');
+  if (!bar) return;
+  bar.classList.toggle('cmd-off', locked);
+  if (locked) bar.classList.remove('armed');
+  bar.querySelectorAll('select, button').forEach(el => { el.disabled = locked; });
+}
 function refreshCmdPanel() {
   const actionSel = document.getElementById('cmdActionSelect');
   const targetSel = document.getElementById('cmdTargetSelect');
   if (!actionSel || !targetSel) return;
   const actorName = myActorName(lastBattleForPanel);
   const actor = lastAllForCards.find(c => c.name === actorName);
-  if (!actor) { actionSel.innerHTML = ''; targetSel.innerHTML = ''; return; }
+  if (!cmdCanActNow(actor)) {
+    ['cmdActionSelect', 'cmdTargetSelect', 'cmdTarget2', 'cmdTarget3'].forEach(id => { document.getElementById(id).innerHTML = ''; });
+    document.getElementById('cmdTarget2').style.display = document.getElementById('cmdTarget3').style.display = 'none';
+    setCmdLocked(true);
+    return;
+  }
+  setCmdLocked(false);
   const labels = actor.available_actions.filter(l => l !== '이동' && l !== '시간초과');
   const prevLabel = actionSel.value;
   actionSel.innerHTML = labels.map(l => `<option value="${l}">${l}</option>`).join('');
@@ -4942,6 +4966,7 @@ function syncCmdPanelFromCardClick() {
   const actionSel = document.getElementById('cmdActionSelect');
   const targetSel = document.getElementById('cmdTargetSelect');
   if (!actor || !actionSel || !targetSel) return;
+  if (!cmdCanActNow(actor)) { refreshCmdPanel(); return; }
   const target = lastAllForCards.find(c => c.name === selectedTargetName);
   if (!target) { refreshCmdPanel(); return; }
 
@@ -5033,6 +5058,7 @@ function doActionThenAnnounce(type, payload, actorName, label, targetLabel) {
 // 커맨드 전송 바의 [전송] 버튼 - 환류 등 다중 지정 스킬이 진행 중이면 그걸 커밋하고,
 // 아니면 [행동]/[대상] 드롭다운에 지금 골라져 있는 값 그대로 실행합니다.
 function submitCmd() {
+  if (!cmdCanActNow(lastAllForCards.find(c => c.name === myActorName(lastBattleForPanel)))) return;
   if (pendingMultiLabel) {
     if (pendingMultiTargets.length === MULTI_TARGET_ACTIONS[pendingMultiLabel]) {
       commitMultiAction(pendingMultiLabel, myActorName(lastBattleForPanel));
@@ -5179,6 +5205,7 @@ function armCommandFromGrid(actorName, targetName) {
     if ([...tg.options].some(o => o.value === targetName)) tg.value = targetName;
     flashArm(document.getElementById('gmActPanel'));
   } else if (control.scope === 'character' && control.character.name === actorName) {
+    if (!cmdCanActNow(actor)) return;
     selectedTargetName = targetName;
     syncCmdPanelFromCardClick();
     flashArm(document.getElementById('commandSendBar'));
