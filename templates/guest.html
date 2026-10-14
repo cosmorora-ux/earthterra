@@ -2777,7 +2777,25 @@
   .mp-home { min-width:0; }
   .mp-home .none, .mp-home .v { font-size:13px; color: var(--muted); }
   .mp-home .v { color: var(--text); }
-  .mp-home-sel { max-width:100%; height:30px; padding:0 30px 0 12px; border-radius:999px; border:1px solid var(--line); background:#0c0c0d; color: var(--text); font-size:13px; }
+  .mp-home-btn { max-width:100%; min-width:0; height:30px; padding:0 12px; display:inline-flex; align-items:center; gap:10px; border-radius:999px; border:1px solid var(--line);
+    background: rgba(255,255,255,.03); color: var(--text); font-size:13px; cursor:pointer; transition: border-color .15s ease, background .15s ease; }
+  .mp-home-btn span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mp-home-btn .muted { color: var(--muted); }
+  .mp-home-btn i { font-size:10px; color: var(--muted); transition: rotate .2s ease; flex:none; }
+  .mp-home-btn:hover, .mp-home-btn.open { border-color: rgba(var(--point-rgb), .55); background: rgba(255,255,255,.05); }
+  .mp-home-btn.open i { rotate:180deg; color: var(--point); }
+  .home-menu { position:fixed; z-index:600; overflow-y:auto; padding:6px; border-radius:12px; background:#161619; border:1px solid var(--line);
+    box-shadow: 0 16px 40px rgba(0,0,0,.55); animation: homeMenuIn .14s ease-out; overscroll-behavior:contain; }
+  @keyframes homeMenuIn { from { opacity:0; translate:0 -4px; } to { opacity:1; translate:0 0; } }
+  .home-menu .hm-group { padding:12px 10px 5px; font-size:11.5px; font-weight:700; letter-spacing:.02em; color: var(--muted); border-top:1px solid var(--line); margin-top:4px; }
+  .home-menu .hm-opt { width:100%; display:flex; align-items:center; gap:10px; padding:8px 10px; border:none; border-radius:8px; background:none;
+    color: var(--text); font-size:13px; text-align:left; cursor:pointer; }
+  .home-menu .hm-opt .t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .home-menu .hm-opt em { font-style:normal; color: var(--muted); margin-left:8px; }
+  .home-menu .hm-opt:hover { background: rgba(255,255,255,.06); }
+  .home-menu .hm-opt.on { color: var(--point); background: rgba(var(--point-rgb), .1); }
+  .home-menu .hm-opt.on em { color: rgba(var(--point-rgb), .75); }
+  .home-menu .hm-opt i { font-size:11px; color: var(--point); }
 
   /* ================================================================
      격자 전투(마스 레이드 · 공성전) 화면 정돈
@@ -4322,6 +4340,7 @@ socket.on('public_state', (state) => {
   lastRosterProfiles = state.roster_profiles || {};
   lastRosterMypage = state.roster_mypage || {};
   if (state.faction_period) lastFactionPeriod = state.faction_period;
+  if (document.getElementById('myPageModal') && document.getElementById('myPageModal').style.display === 'flex' && !(homeMenu && homeMenu.open)) renderMyPageHome(myPageTargetChar());
   lastShop = state.shop || lastShop;
   lastMapBg = state.map_bg || null;
   if (state.sfx_defaults) lastSfxDefaults = state.sfx_defaults;
@@ -7080,6 +7099,7 @@ function openMyPage() {
 }
 
 function closeMyPage() {
+  if (typeof closeHomeMenu === 'function') closeHomeMenu();
   myPageViewName = null;
   document.getElementById('myPageModal').style.display = 'none';
 }
@@ -7143,12 +7163,55 @@ function renderMyPageHome(c) {
   if (!worldData) socket.emit('world_get');
   const cur = ((lastRosterMypage || {})[c.name] || {}).hometown || '';
   if (!canEditMyPage()) { el.innerHTML = cur ? `<span class="v">${worldEsc(myPageHomeLabel(cur))}</span>` : '<span class="none">없음</span>'; return; }
-  const places = ((worldData && worldData.places) || []).filter(p => !p.locked && (p.zones || []).length);
-  el.innerHTML = `<select class="mp-home-sel" onchange="setMyPageHome(this.value)"><option value="">없음</option>${places.map(p => `<optgroup label="${worldEsc(p.name)}">${p.zones.map((z, i) =>
-    `<option value="${worldEsc(p.id)}:${i}" ${cur === `${p.id}:${i}` ? 'selected' : ''}>${worldEsc(p.name)} · ${i + 1}구역${z.title ? ' ' + worldEsc(z.title) : ''}</option>`).join('')}</optgroup>`).join('')}
-    ${cur && !places.some(p => cur.startsWith(p.id + ':')) ? `<option value="${worldEsc(cur)}" selected>${worldEsc(myPageHomeLabel(cur) || cur)}</option>` : ''}</select>`;
+  // 기본 select는 목록(그룹 제목 등)을 꾸밀 수 없어서, 사이트 디자인에 맞춘 드롭다운을 직접 띄웁니다.
+  el.innerHTML = `<button type="button" class="mp-home-btn ${homeMenu.open ? 'open' : ''}" onclick="toggleHomeMenu(this)">
+    <span class="${cur ? '' : 'muted'}">${cur ? worldEsc(myPageHomeLabel(cur) || cur) : '없음'}</span><i class="fa-solid fa-chevron-down"></i></button>`;
 }
-function setMyPageHome(v) { if (canEditMyPage()) socket.emit('set_my_skill_log', { name: myPageEditName(), hometown: v }); }
+var homeMenu = { open: false, el: null };  // var : 상태가 이 줄보다 먼저 도착해도 오류가 나지 않게
+function closeHomeMenu() {
+  homeMenu.open = false;
+  if (homeMenu.el) homeMenu.el.remove(); homeMenu.el = null;
+  document.querySelectorAll('.mp-home-btn.open').forEach(b => b.classList.remove('open'));
+}
+function toggleHomeMenu(btn) {
+  if (homeMenu.open) { closeHomeMenu(); return; }
+  const c = myPageTargetChar(); if (!c || !canEditMyPage()) return;
+  const cur = ((lastRosterMypage || {})[c.name] || {}).hometown || '';
+  const places = ((worldData && worldData.places) || []).filter(p => !p.locked && (p.zones || []).length);
+  const opt = (v, label, sub) => `<button type="button" class="hm-opt ${v === cur ? 'on' : ''}" onclick="pickHome(${worldEsc(JSON.stringify(v))})">
+      <span class="t">${label}${sub ? `<em>${sub}</em>` : ''}</span>${v === cur ? '<i class="fa-solid fa-check"></i>' : ''}</button>`;
+  const m = document.createElement('div');
+  m.className = 'home-menu';
+  m.innerHTML = opt('', '없음')
+    + places.map(p => `<div class="hm-group">${worldEsc(p.name)}</div>`
+      + p.zones.map((z, i) => opt(`${p.id}:${i}`, `${i + 1}구역`, z.title ? worldEsc(z.title) : '')).join('')).join('')
+    + (cur && !places.some(p => cur.startsWith(p.id + ':')) ? opt(cur, worldEsc(myPageHomeLabel(cur) || cur)) : '');
+  document.body.appendChild(m);
+  homeMenu.open = true; homeMenu.el = m; btn.classList.add('open');
+  // 버튼 바로 아래(공간이 없으면 위)에 버튼 폭 이상으로 띄웁니다.
+  const r = btn.getBoundingClientRect(), w = Math.max(r.width, 260);
+  const left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left));
+  m.style.width = w + 'px'; m.style.left = left + 'px';
+  const below = window.innerHeight - r.bottom - 16, above = r.top - 16;
+  const maxH = Math.min(380, Math.max(below, above));
+  m.style.maxHeight = maxH + 'px';
+  if (below >= Math.min(260, m.scrollHeight) || below >= above) m.style.top = (r.bottom + 6) + 'px';
+  else m.style.top = (r.top - 6 - Math.min(maxH, m.scrollHeight)) + 'px';
+  const on = m.querySelector('.hm-opt.on'); if (on) on.scrollIntoView({ block: 'center' });
+}
+function pickHome(v) { closeHomeMenu(); setMyPageHome(v); }
+document.addEventListener('pointerdown', (e) => { if (homeMenu.open && !e.target.closest('.home-menu, .mp-home-btn')) closeHomeMenu(); }, true);
+document.addEventListener('keydown', (e) => { if (homeMenu.open && e.key === 'Escape') closeHomeMenu(); });
+window.addEventListener('resize', () => homeMenu.open && closeHomeMenu());
+document.addEventListener('scroll', (e) => { if (homeMenu.open && !(e.target.closest && e.target.closest('.home-menu'))) closeHomeMenu(); }, true);
+function setMyPageHome(v) {
+  if (!canEditMyPage()) return;
+  const name = myPageEditName();
+  socket.emit('set_my_skill_log', { name, hometown: v });
+  // 서버 응답을 기다리지 않고 바로 보여줍니다(전투가 없는 방에서도 바로 바뀌게).
+  if (name && lastRosterMypage[name]) lastRosterMypage[name].hometown = v;
+  renderMyPageHome(myPageTargetChar());
+}
 
 function renderMyPage() {
   if (document.getElementById('myPageModal').style.display !== 'flex') return;
