@@ -2,7 +2,7 @@
 """
 shop.py
 =======
-상점 : 상품 목록(이름/가격/설명/이미지/효과)과 '운영진 처리 요청' 기록을 관리합니다.
+상점 : 상품 목록(이름/가격/설명/아이콘/효과)과 '운영진 처리 요청' 기록을 관리합니다.
 캐릭터별 재화(P)와 보유 아이템은 캐릭터 DB(characters.json)의 "points"/"items" 필드에 저장됩니다.
 
 상품 목록은 모든 방이 함께 쓰며 shop.json에 저장됩니다(서버 컴퓨터별 실데이터라 git에 올리지 않음).
@@ -31,6 +31,20 @@ TIMING_LABELS = {
     "prebattle": "전투 전",
     "battle": "전투 중",
 }
+
+# 상품 아이콘 : 이미지 대신 Font Awesome 아이콘 이름(fa-…)만 씁니다. 운영진이 상품 관리에서 이 중에 고릅니다.
+ICON_CHOICES = [
+    "fa-flask", "fa-bottle-droplet", "fa-kit-medical", "fa-heart-pulse", "fa-dumbbell", "fa-arrow-trend-up",
+    "fa-shuffle", "fa-wand-magic-sparkles", "fa-sliders", "fa-up-down-left-right", "fa-dice", "fa-ticket",
+    "fa-gem", "fa-shield-halved", "fa-bolt", "fa-scroll", "fa-key", "fa-gift", "fa-box", "fa-coins",
+    "fa-crosshairs", "fa-feather", "fa-hourglass-half", "fa-star", "fa-compass", "fa-ring", "fa-book", "fa-shoe-prints",
+]
+# 아이콘을 따로 정하지 않은 상품 : 기본 상품은 이름으로, 나머지는 효과 종류로 고릅니다.
+DEFAULT_ICON_BY_NAME = {
+    "회복 포션": "fa-flask", "스탯 강화제": "fa-dumbbell", "포지션 변경권": "fa-shuffle", "스킬 변경권": "fa-wand-magic-sparkles",
+    "스테이터스 변경권": "fa-sliders", "이동/사거리 조절권": "fa-up-down-left-right", "ReRoll권": "fa-dice",
+}
+DEFAULT_ICON_BY_EFFECT = {"heal": "fa-flask", "stat_up": "fa-arrow-trend-up", "role_change": "fa-shuffle", "request": "fa-ticket"}
 
 DEFAULT_ITEMS = [
     {"name": "회복 포션", "price": 100, "effect": "heal", "value": 50, "timing": "battle",
@@ -76,22 +90,24 @@ def _clean_item(raw: dict, base: dict = None) -> dict:
             pass
     if "timing" in raw and raw.get("timing") in TIMING_LABELS:
         item["timing"] = raw["timing"]
-    if "icon_url" in raw:
-        item["icon_url"] = raw.get("icon_url") or None
+    if "icon" in raw and raw.get("icon") in ICON_CHOICES:
+        item["icon"] = raw["icon"]
     item.setdefault("name", "이름 없음")
     item.setdefault("price", 0)
     item.setdefault("desc", "")
     item.setdefault("effect", "request")
     item.setdefault("value", 0)
     item.setdefault("timing", "any")
-    item.setdefault("icon_url", None)
+    item.pop("icon_url", None)  # 예전 상품 이미지는 더 쓰지 않습니다
+    if item.get("icon") not in ICON_CHOICES:
+        item["icon"] = DEFAULT_ICON_BY_NAME.get(item["name"]) or DEFAULT_ICON_BY_EFFECT.get(item["effect"], "fa-box")
     return item
 
 
 class Shop:
     def __init__(self, path: str = SHOP_PATH):
         self.path = path
-        self.items = []      # [{id, name, price, desc, effect, value, timing, icon_url}, ...] (표시 순서대로)
+        self.items = []      # [{id, name, price, desc, effect, value, timing, icon}, ...] (표시 순서대로)
         self.requests = []   # [{id, time, room_id, character, item_id, item_name, memo, done}, ...]
         self.load()
 
@@ -195,6 +211,7 @@ class Shop:
             "effect_labels": EFFECT_LABELS,
             "timing_labels": TIMING_LABELS,
             "stat_keys": list(config.STAT_KEYS),
+            "icon_choices": ICON_CHOICES,
         }
 
 

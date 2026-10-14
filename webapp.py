@@ -35,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.18"
+SERVER_BUILD = "2026-10-13.19"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2288,10 +2288,6 @@ def on_reveal_pending_action(data):
 # ----------------------------------------------------------------------
 # 상점 : 구매/사용(참가자), 상품·재화·소지품 관리(운영진)
 # ----------------------------------------------------------------------
-SHOP_ICON_DIR = os.path.join(_THIS_DIR, "static", "shop_icons")
-os.makedirs(SHOP_ICON_DIR, exist_ok=True)
-SHOP_ICON_ALLOWED_EXTS = (".png", ".webp", ".gif", ".jpg", ".jpeg")
-SHOP_ICON_MAX_BYTES = 1 * 1024 * 1024
 
 
 def _broadcast_all_rooms():
@@ -2447,37 +2443,6 @@ def on_shop_admin_item(data):
         shop.move_item(data.get("item_id"), int(data.get("delta") or 0))
     else:
         return
-    _broadcast_all_rooms()
-
-
-@socketio.on("shop_admin_icon")
-def on_shop_admin_icon(data):
-    """운영진 : 상품 이미지(도트) 업로드 - 소켓으로 파일 내용을 받아 static/shop_icons/에 저장합니다."""
-    room = _require_gm_or_guest_gm(request.sid)
-    if room is None:
-        emit("action_error", {"message": "운영진만 상품 이미지를 바꿀 수 있습니다."})
-        return
-    data = data or {}
-    shop = shop_mod.shared_shop()
-    item = shop.get(data.get("item_id"))
-    if item is None:
-        return
-    if data.get("clear"):
-        shop.update_item(item["id"], {"icon_url": None})
-        _broadcast_all_rooms()
-        return
-    ext = os.path.splitext((data.get("filename") or "").lower())[1]
-    blob = data.get("data")
-    if ext not in SHOP_ICON_ALLOWED_EXTS or not isinstance(blob, (bytes, bytearray)):
-        emit("action_error", {"message": "png/webp/gif/jpg 이미지만 올릴 수 있습니다."})
-        return
-    if len(blob) > SHOP_ICON_MAX_BYTES:
-        emit("action_error", {"message": "이미지가 너무 큽니다 (최대 1MB)."})
-        return
-    filename = f"{uuid.uuid4().hex}{ext}"
-    with open(os.path.join(SHOP_ICON_DIR, filename), "wb") as f:
-        f.write(blob)
-    shop.update_item(item["id"], {"icon_url": f"/static/shop_icons/{filename}"})
     _broadcast_all_rooms()
 
 

@@ -3088,6 +3088,36 @@
   .idc-past .t { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
   .idc-past .t b { font-size:13.5px; font-weight:700; } .idc-past .t span { font-size:12px; color: var(--muted); }
   .idc-past > i { font-size:11px; color: var(--muted); }
+  /* ================================================================
+     상점 : 이미지 없이 아이콘만. 카드 = 아이콘 · 이름(+사용 시점 · 효과 한 줄) · 가격 / 설명 / 보유 · 구매
+     ================================================================ */
+  .shop-icon { width:42px; height:42px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:10px;
+    border:1px solid rgba(var(--point-rgb), .25); background: rgba(var(--point-rgb), .1); color: var(--point); font-size:17px;
+    background-image:none !important; padding:0; }
+  .shop-icon.editable { cursor:pointer; font:inherit; font-size:17px; }
+  .shop-icon.editable:hover, .shop-icon.editable.on { border-color: rgba(var(--point-rgb), .7); background: rgba(var(--point-rgb), .18); }
+  .shop-grid { gap:12px; }
+  .shop-card { gap:10px; padding:14px 16px; border-radius:16px; border:1px solid rgba(255,255,255,.07);
+    background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01)); }
+  .shop-card:hover { border-color: rgba(255,255,255,.14); }
+  .sc-head { display:flex; align-items:center; gap:12px; }
+  .sc-title { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .sc-title b { font-size:15.5px; font-weight:700; letter-spacing:-0.02em; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sc-title span { font-size:12px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sc-price { flex:none; font-weight:800; font-size:17px; color:#fff; font-variant-numeric: tabular-nums; }
+  .sc-price small { font-size:12px; font-weight:700; margin-left:2px; color: var(--muted); }
+  .sc-count { flex:none; font-weight:700; font-size:15px; color:#fff; font-variant-numeric: tabular-nums; }
+  .sc-desc { margin:0; font-size:13px; line-height:1.55; color: var(--muted); min-height:3.1em;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .sc-foot { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:auto; }
+  .sc-owned { margin-right:auto; font-size:12px; color: var(--muted); }
+  .sc-use select, .sc-use input { flex:1; min-width:0; background:#0c0c0d; border:1px solid var(--card-border); color: var(--text); border-radius:8px; padding:7px 9px; font-size:13px; }
+  .shop-card .shop-btn { padding:7px 16px; border-radius:10px; }
+  /* 운영진 : 아이콘 고르기 칸(상품 줄 아래로 펼쳐짐) */
+  .shop-icon-pick { grid-column: 1 / -1; display:flex; flex-wrap:wrap; gap:6px; padding:8px; border-radius:10px; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.06); }
+  .shop-icon-pick button { width:36px; height:36px; border-radius:8px; border:1px solid transparent; background:rgba(255,255,255,.04); color:#d7d8de; font-size:15px; cursor:pointer; }
+  .shop-icon-pick button:hover { background:rgba(255,255,255,.09); color:#fff; }
+  .shop-icon-pick button.on { border-color: rgba(var(--point-rgb), .7); background: rgba(var(--point-rgb), .15); color: var(--point); }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -3424,7 +3454,6 @@
     <div class="shop-body" id="shopBody"></div>
   </div>
 </div>
-<input type="file" id="shopIconFileInput" accept="image/png,image/webp,image/gif,image/jpeg" style="display:none;" onchange="onShopIconChosen(event)">
 <div id="globalError"><span class="err-icon">i</span><span id="globalErrorText"></span></div>
 
 <div id="formulaModal" class="modal-overlay">
@@ -4191,7 +4220,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.18";
+const EXPECTED_SERVER_BUILD = "2026-10-13.19";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -7375,7 +7404,6 @@ let lastShop = null;          // {items, effect_labels, timing_labels, stat_keys
 let lastShopRequests = [];    // 운영진 전용
 let shopTab = 'shop';
 let shopGmTarget = '';        // 운영진이 상점/소지품 탭에서 대신 조작할 캐릭터
-let shopIconTargetId = null;
 
 function shopIsGm() { return myControlInfo(lastBattleForPanel).scope === 'all'; }
 function shopEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
@@ -7400,19 +7428,26 @@ function openShop(tab) {
 function closeShop() { document.getElementById('shopModal').style.display = 'none'; }
 function setShopTab(tab) { shopTab = tab; renderShop(); }
 
+// 상품 아이콘 : 이미지 대신 아이콘만(운영진이 상품 관리에서 골라요)
+let shopIconPickFor = null;
 function shopIconHtml(it, editable) {
-  const style = it && it.icon_url ? ` style="background-image:url('${shopEsc(it.icon_url)}')"` : '';
-  const inner = it && it.icon_url ? '' : '<i class="fa-solid fa-box"></i>';
-  const attrs = editable ? ` class="shop-icon editable" onclick="pickShopIcon('${it.id}')"` : ' class="shop-icon"';
-  return `<div${attrs}${style}>${inner}</div>`;
+  const ic = (it && it.icon) || 'fa-box';
+  return editable
+    ? `<button class="shop-icon editable ${shopIconPickFor === it.id ? 'on' : ''}" onclick="shopIconPickFor = shopIconPickFor === '${it.id}' ? null : '${it.id}'; renderShop()" data-tip="아이콘 고르기"><i class="fa-solid ${ic}"></i></button>`
+    : `<span class="shop-icon"><i class="fa-solid ${ic}"></i></span>`;
 }
-function shopTagsHtml(it) {
+function shopIconPickerHtml(it) {
+  const list = (lastShop && lastShop.icon_choices) || [];
+  return `<div class="shop-icon-pick">${list.map(ic => `<button class="${ic === it.icon ? 'on' : ''}" onclick="shopIconPickFor=null; shopEditItem('${it.id}', {icon:'${ic}'})"><i class="fa-solid ${ic}"></i></button>`).join('')}</div>`;
+}
+// 사용 시점 · 효과를 한 줄 글로(예: 전투 중 · 체력 회복 50)
+function shopMetaText(it) {
   const tl = (lastShop && lastShop.timing_labels) || {};
   const el = (lastShop && lastShop.effect_labels) || {};
   let eff = el[it.effect] || it.effect;
   if (it.effect === 'heal') eff += ` ${it.value}`;
   if (it.effect === 'stat_up') eff += ` +${it.value}`;
-  return `<div class="shop-tags"><span class="shop-tag"><i class="fa-regular fa-clock"></i>${shopEsc(tl[it.timing] || it.timing)}</span><span class="shop-tag"><i class="fa-solid fa-wand-sparkles"></i>${shopEsc(eff)}</span></div>`;
+  return `${shopEsc(tl[it.timing] || it.timing)} · ${shopEsc(eff)}`;
 }
 
 function renderShop() {
@@ -7462,12 +7497,12 @@ function renderShopList(target, data) {
     const can = !!target && points >= it.price;
     const owned = data && data.items ? (data.items[it.id] || 0) : 0;
     return `<div class="shop-card">
-      <div class="shop-card-top">${shopIconHtml(it, false)}
-        <div class="shop-info"><div class="shop-name">${shopEsc(it.name)}</div>${owned ? `<div class="shop-owned">보유 ${owned}개</div>` : ''}</div></div>
-      <div class="shop-desc">${shopEsc(it.desc)}</div>
-      <div class="shop-card-foot">${shopTagsHtml(it)}
-        <div class="shop-buy"><span class="shop-price">${it.price}<small>P</small></span>
-        <button class="shop-btn" ${can ? '' : 'disabled'} onclick="shopBuy('${it.id}')">구매</button></div></div>
+      <div class="sc-head">${shopIconHtml(it, false)}
+        <div class="sc-title"><b>${shopEsc(it.name)}</b><span>${shopMetaText(it)}</span></div>
+        <span class="sc-price">${it.price}<small>P</small></span></div>
+      <p class="sc-desc">${shopEsc(it.desc)}</p>
+      <div class="sc-foot">${owned ? `<span class="sc-owned">보유 ${owned}개</span>` : ''}
+        <button class="shop-btn" ${can ? '' : 'disabled'} onclick="shopBuy('${it.id}')">구매</button></div>
     </div>`;
   }).join('').replace(/^/, '<div class="shop-grid">') + '</div>' + '';
 }
@@ -7479,16 +7514,17 @@ function renderShopInventory(target, data) {
   const statKeys = lastShop.stat_keys || [];
   return owned.map(([id, n]) => {
     const it = shopItemById(id);
-    if (!it) return `<div class="shop-item"><div class="shop-icon"><i class="fa-solid fa-ban"></i></div><div class="shop-info"><div class="shop-name">삭제된 상품<span class="count">×${n}</span></div></div></div>`;
+    if (!it) return `<div class="shop-card"><div class="sc-head"><span class="shop-icon"><i class="fa-solid fa-ban"></i></span>
+      <div class="sc-title"><b>삭제된 상품</b><span>판매가 끝난 상품이에요</span></div><span class="sc-count">×${n}</span></div></div>`;
     let extra = '';
     if (it.effect === 'stat_up') extra = `<select id="shopStat_${it.id}">${statKeys.map(k => `<option>${k}</option>`).join('')}</select>`;
     if (it.effect === 'request') extra = `<input id="shopMemo_${it.id}" maxlength="200" placeholder="요청 내용 (선택)">`;
     return `<div class="shop-card">
-      <div class="shop-card-top">${shopIconHtml(it, false)}
-        <div class="shop-info"><div class="shop-name">${shopEsc(it.name)}</div><div class="shop-owned">${n}개 보유</div></div></div>
-      <div class="shop-desc">${shopEsc(it.desc)}</div>
-      ${shopTagsHtml(it)}
-      <div class="shop-use">${extra}${it.effect === 'role_change'
+      <div class="sc-head">${shopIconHtml(it, false)}
+        <div class="sc-title"><b>${shopEsc(it.name)}</b><span>${shopMetaText(it)}</span></div>
+        <span class="sc-count">×${n}</span></div>
+      <p class="sc-desc">${shopEsc(it.desc)}</p>
+      <div class="sc-foot sc-use">${extra}${it.effect === 'role_change'
         ? `<button class="shop-btn" onclick="closeShop(); openMyPage();">마이페이지에서 사용</button>`
         : `<button class="shop-btn" onclick="shopUse('${it.id}')">사용</button>`}</div>
     </div>`;
@@ -7508,14 +7544,14 @@ function renderShopItemsAdmin() {
       <div class="ops">
         <button class="shop-ico-btn" onclick="shopMoveItem('${it.id}',-1)"><i class="fa-solid fa-arrow-up"></i></button>
         <button class="shop-ico-btn" onclick="shopMoveItem('${it.id}',1)"><i class="fa-solid fa-arrow-down"></i></button>
-        ${it.icon_url ? `<button class="shop-ico-btn" onclick="shopClearIcon('${it.id}')" data-tip="이미지 지우기"><i class="fa-regular fa-image"></i></button>` : ''}
         <button class="shop-ico-btn danger" onclick="shopDeleteItem('${it.id}')"><i class="fa-solid fa-trash-can"></i></button>
       </div>
       <input class="desc" value="${shopEsc(it.desc)}" maxlength="200" onchange="shopEditItem('${it.id}', {desc:this.value})" placeholder="설명">
+      ${shopIconPickFor === it.id ? shopIconPickerHtml(it) : ''}
     </div>`).join('');
-  return `<div class="shop-toolbar"><span>고치면 바로 저장 · 이미지 칸 클릭 = 이미지 등록</span>
+  return `<div class="shop-toolbar"><span>고치면 바로 저장돼요 · 아이콘 칸을 누르면 아이콘을 고를 수 있어요</span>
       <div style="flex:1"></div><button class="shop-btn" onclick="shopAddItem()"><i class="fa-solid fa-plus"></i> 상품 추가</button></div>
-    <div class="shop-edit-head"><span>이미지</span><span>이름</span><span>가격(P)</span><span>효과</span><span>사용 시점</span><span>수치</span><span></span></div>
+    <div class="shop-edit-head"><span>아이콘</span><span>이름</span><span>가격(P)</span><span>효과</span><span>사용 시점</span><span>수치</span><span></span></div>
     ${rows || '<div class="shop-empty">상품이 없어요.</div>'}`;
 }
 
@@ -7587,15 +7623,6 @@ function shopDeleteItem(id) {
   const it = shopItemById(id);
   uiConfirm(`'${it ? it.name : ''}' 상품을 삭제할까요?\n이미 산 사람의 소지품에는 '삭제된 상품'으로 남아요.`, {title:'상품 삭제', okText:'삭제', danger:true})
     .then(ok => ok && socket.emit('shop_admin_item', { action: 'delete', item_id: id }));
-}
-function pickShopIcon(id) { shopIconTargetId = id; document.getElementById('shopIconFileInput').click(); }
-function shopClearIcon(id) { socket.emit('shop_admin_icon', { item_id: id, clear: true }); }
-function onShopIconChosen(ev) {
-  const f = ev.target.files && ev.target.files[0];
-  ev.target.value = '';
-  if (!f || !shopIconTargetId) return;
-  if (f.size > 1024 * 1024) { showError('이미지가 너무 커요 (최대 1MB).'); return; }
-  f.arrayBuffer().then(buf => socket.emit('shop_admin_icon', { item_id: shopIconTargetId, filename: f.name, data: buf }));
 }
 function shopSetPoints(name, v) { socket.emit('shop_admin_points', { name, set: parseInt(v || '0', 10) }); }
 function shopBulkPoints(sign) {
