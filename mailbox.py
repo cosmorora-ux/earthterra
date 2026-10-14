@@ -34,6 +34,21 @@ ERAS = [
 DEFAULT_ERA = "n12"
 # 캐릭터 나이 기준 해 : 캐릭터 정보의 age = 1차 입학(空歷 514年) 때 나이
 AGE_BASE_YEAR = 514
+# 1차 나이 범위와 기본값(정하지 않은 캐릭터는 13세로 봅니다)
+AGE_MIN, AGE_MAX, AGE_DEFAULT = 13, 16, 13
+
+
+def clean_age(v):
+    try:
+        v = int(v)
+    except (TypeError, ValueError):
+        return None
+    return v if AGE_MIN <= v <= AGE_MAX else None
+
+
+def age_of(entry):
+    a = clean_age((entry or {}).get("age"))
+    return AGE_DEFAULT if a is None else a
 ERA_INDEX = {e[0]: i for i, e in enumerate(ERAS)}
 
 

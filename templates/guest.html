@@ -3643,6 +3643,7 @@
           <div class="mp-tagrow"><span class="mp-k">포지션</span><div class="mypage-roles" id="myPageRoles"></div></div>
           <div class="mp-tagrow"><span class="mp-k">진영</span><div class="mp-nations" id="myPageNation"></div></div>
           <div class="mp-tagrow"><span class="mp-k">출신지</span><div class="mp-home" id="myPageHome"></div></div>
+          <div class="mp-tagrow"><span class="mp-k">나이</span><div class="mp-nations mp-ages" id="myPageAge"></div></div>
         </div>
       </div>
       <div class="mp-hero-side">
@@ -4344,7 +4345,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.29";
+const EXPECTED_SERVER_BUILD = "2026-10-13.30";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -7270,6 +7271,22 @@ document.addEventListener('pointerdown', (e) => { if (homeMenu.open && !e.target
 document.addEventListener('keydown', (e) => { if (homeMenu.open && e.key === 'Escape') closeHomeMenu(); });
 window.addEventListener('resize', () => homeMenu.open && closeHomeMenu());
 document.addEventListener('scroll', (e) => { if (homeMenu.open && !(e.target.closest && e.target.closest('.home-menu'))) closeHomeMenu(); }, true);
+// 나이 : 1차 입학(空歷 514年) 때 나이 13~16세(정하지 않으면 13세). 본인과 운영진이 고를 수 있어요.
+const MYPAGE_AGES = [13, 14, 15, 16];
+function renderMyPageAge(c) {
+  const el = document.getElementById('myPageAge'); if (!el) return;
+  if (!c) { el.innerHTML = ''; return; }
+  const cur = ((lastRosterMypage || {})[c.name] || {}).age || 13;
+  if (!canEditMyPage()) { el.innerHTML = `<button class="on" disabled style="--nc:var(--point)">1차 ${cur}세</button>`; return; }
+  el.innerHTML = MYPAGE_AGES.map(a => `<button class="${a === cur ? 'on' : ''}" style="--nc:var(--point)" data-tip="1차(空歷 514年) 때 나이" onclick="setMyPageAge(${a})">${a}세</button>`).join('');
+}
+function setMyPageAge(a) {
+  if (!canEditMyPage()) return;
+  const name = myPageEditName();
+  socket.emit('set_my_skill_log', { name, age: a });
+  if (name && lastRosterMypage[name]) lastRosterMypage[name].age = a;
+  renderMyPageAge(myPageTargetChar());
+}
 function setMyPageHome(v) {
   if (!canEditMyPage()) return;
   const name = myPageEditName();
@@ -7304,6 +7321,7 @@ function renderMyPage() {
     renderMyPageNation(null);
     renderMyPageLine(null);
     renderMyPageHome(null);
+    renderMyPageAge(null);
     document.getElementById('myPageCurrentHpView').textContent = '000';
     document.getElementById('myPageMaxHp').textContent = '000';
     document.getElementById('myPageHpBar').style.width = '0%';
@@ -7333,6 +7351,7 @@ function renderMyPage() {
   renderMyPageNation(c);
   renderMyPageLine(c);
   renderMyPageHome(c);
+  renderMyPageAge(c);
 
   const hasHp = c.max_hp != null;
   document.getElementById('myPageHpCard').style.display = viewOnly && !hasHp ? 'none' : '';
@@ -10888,7 +10907,7 @@ function opsCharsHtml() {
         <button class="ops-btn" onclick="opsQuickReset()">초기화</button>
         <button class="ops-btn primary" onclick="opsQuickSubmit()"><i class="fa-solid fa-plus"></i> 등록</button></div>`
       : `
-      <textarea class="ops-in" id="opsRegText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴&#10;진영 使徒 또는 Void (2차, 선택)&#10;나이 17 (1차 기준, 선택)"></textarea>
+      <textarea class="ops-in" id="opsRegText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴&#10;진영 使徒 또는 Void (2차, 선택)&#10;나이 13~16 (1차 기준, 선택 · 기본 13)"></textarea>
       <div class="ops-start"><span class="ops-hint">여러 명은 빈 줄로 나눠 한 번에 붙여 넣어요.</span>
         <button class="ops-btn primary" onclick="opsPasteSubmit()">일괄 등록</button></div>
       <div class="ops-row" style="margin-top:14px;"><span class="ops-hint" style="flex:1;">테스트용 더미 캐릭터</span>
@@ -10969,7 +10988,7 @@ function opsEditHtml(c) {
     <div class="ops-row"><div class="ops-field" style="flex:1; margin:0;"><span class="lb">역할</span>
       <select class="ops-in" id="opsERole" onchange="opsEditRole()">${OPS_ROLES.map(r => `<option ${r === c.role ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
       <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsESkill"><option value="">(없음)</option>${skills.map(k => `<option ${k === c.skill ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
-    <div class="ops-field" style="margin-top:10px;"><span class="lb">나이 (1차 · 空歷 514年 기준)</span><input class="ops-in" type="number" id="opsEAge" min="0" max="999" placeholder="비우면 미등록" value="${c.age ?? ''}"></div>
+    <div class="ops-field" style="margin-top:10px;"><span class="lb">나이 (1차 · 空歷 514年 기준, 13~16세)</span><input class="ops-in" type="number" id="opsEAge" min="13" max="16" placeholder="비우면 기본 13세" value="${c.age ?? ''}"></div>
     <div class="ops-field" style="margin-top:10px;"><span class="lb">2차 진영</span><select class="ops-in" id="opsENation"><option value="">(미정)</option>${FACTION_CHOICES.map(n => `<option ${n === c.nation ? 'selected' : ''}>${mailEsc(n)}</option>`).join('')}</select></div>
     <div class="ops-stat-grid">${STAT_KEYS.map(k => `<label>${k}<input class="ops-in" type="number" id="opsEStat_${k}" value="${(c.stats || {})[k] ?? 0}" oninput="opsEditTotal()"></label>`).join('')}</div>
     <div class="ops-start"><span class="ops-hint">합계 <b id="opsETotal" style="color:var(--text)">${STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0)}</b></span>
@@ -11063,7 +11082,7 @@ function opsRoomHtml() {
     <div class="ops-card">
       <h3><i class="fa-solid fa-envelope"></i> 편지 시기<span class="sub">러너는 이 기간 안에서 연도만 골라요</span></h3>
       <div class="mail-eras" id="opsMailEras"></div>
-      <div class="ops-hint" style="margin-top:12px;">캐릭터 나이는 캐릭터 수정에서 1차 입학(空歷 514年) 때 나이로 적어 주세요.</div>
+      <div class="ops-hint" style="margin-top:12px;">캐릭터 나이는 1차 입학(空歷 514年) 기준 13~16세(기본 13세)이고, 본인이 마이페이지에서 고르거나 캐릭터 수정에서 바꿀 수 있어요.</div>
     </div>
     <div class="ops-card">
       <h3><i class="fa-solid fa-cloud-sun"></i> 배경 · 날씨</h3>

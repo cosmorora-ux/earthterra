@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.29"
+SERVER_BUILD = "2026-10-13.30"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -462,6 +462,7 @@ def build_preview_character(room, name):
         "items": dict(data.get("items") or {}),
         "nation": data.get("nation") or "",
         "hometown": data.get("hometown") or "",
+        "age": mailbox_mod.age_of(data),
     }
 
 
@@ -1357,6 +1358,11 @@ def on_set_my_skill_log(data):
             entry["nation"] = nation
         elif not nation:
             entry.pop("nation", None)
+    # 나이 : 본인도 고칠 수 있어요(1차 기준 13~16세)
+    if "age" in data:
+        age = mailbox_mod.clean_age(data.get("age"))
+        if age is not None:
+            entry["age"] = age
     # 출신지 : 맵의 '장소id:구역번호(0~3)' (맵 구역 카드를 누르면 '00의 출신지.'로 나옵니다)
     if "hometown" in data:
         home = (data.get("hometown") or "").strip()
@@ -1387,6 +1393,8 @@ def on_set_my_skill_log(data):
         if live is not None:
             live.skill_log_type = entry.get("skill_log_type") or "text"
             live.skill_log_text = entry.get("skill_log_text") or ""
+    if "age" in data:
+        _emit_mail_data(request.sid)  # 편지 쓰기의 나이 안내도 바로 바뀌게
     _broadcast_all_rooms()
 
 
@@ -1566,14 +1574,11 @@ def on_update_character(data):
 avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
 sound_effect_volume=existing.get("sound_effect_volume"),
     )
-    # 나이 : 1차 입학(空歷 514年) 때 나이. 비우면 지웁니다.
+    # 나이 : 1차 입학(空歷 514年) 때 나이(13~16세). 범위 밖이면 기본값(13세)으로 되돌립니다.
     if "age" in data:
         entry = room.game.db.get(name)
-        try:
-            age = int(data.get("age"))
-        except (TypeError, ValueError):
-            age = None
-        if age is not None and 0 <= age <= 999:
+        age = mailbox_mod.clean_age(data.get("age"))
+        if age is not None:
             entry["age"] = age
         else:
             entry.pop("age", None)
@@ -2771,11 +2776,10 @@ def _mail_age_info(room, me):
     """편지 쓰기의 나이 안내 : 등록된 캐릭터들의 1차(空歷 514年) 나이 목록과 내 나이."""
     ages, mine = [], None
     for name, entry in room.game.db.characters.items():
-        a = entry.get("age")
-        if isinstance(a, int):
-            ages.append(a)
-            if name == me:
-                mine = a
+        a = mailbox_mod.age_of(entry)  # 정하지 않았으면 기본 13세
+        ages.append(a)
+        if name == me:
+            mine = a
     return {"ages": ages, "my_age": mine, "age_base": mailbox_mod.AGE_BASE_YEAR}
 
 

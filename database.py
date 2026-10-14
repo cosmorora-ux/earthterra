@@ -151,8 +151,10 @@ class CharacterDatabase:
                         )
                 if current_nation:
                     entry["nation"] = current_nation
-                if current_age is not None:
+                if current_age is not None and 13 <= current_age <= 16:
                     entry["age"] = current_age
+                elif current_age is not None:
+                    errors.append(f"'{current_name}' - 나이는 13~16세(1차 기준)만 넣을 수 있어 무시되었습니다.")
                 # 이미 있는 캐릭터를 다시 등록해도 프로필 이미지·효과음·마이페이지 설정·재화 등
                 # 이번에 적지 않은 정보는 그대로 남깁니다.
                 old = self.characters.get(current_name) or {}
