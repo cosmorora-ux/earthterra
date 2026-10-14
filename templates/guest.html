@@ -2213,11 +2213,11 @@
     transform-origin:50% 100%; transition: scale .18s ease, filter .2s ease; }
   /* 꾹 누르는 중 : 살짝 눌림 → 들림 : 위로 떠서 흔들흔들 + 바닥 그림자 → 놓으면 통통 */
   .dorm-stage:not(.editing) .dorm-item.chara.pressing { scale: .94 1.04; transition-duration:.35s; }
-  .dorm-stage:not(.editing) .dorm-item.chara.held { cursor:grabbing; z-index:50; scale:1.08; transition: scale .2s cubic-bezier(.3,1.6,.5,1);
-    animation: dormHeld .9s ease-in-out infinite; filter: drop-shadow(0 10px 4px rgba(0,0,0,.35)); }
+  .dorm-stage:not(.editing) .dorm-item.chara.held { cursor:grabbing; z-index:50; scale:1.04; transition: scale .2s cubic-bezier(.3,1.4,.5,1);
+    animation: dormHeld 1s ease-in-out infinite; filter: drop-shadow(0 3px 2px rgba(0,0,0,.16)); }
   .dorm-stage:not(.editing) .dorm-item.chara.landing { animation: dormLand .5s cubic-bezier(.3,1.4,.5,1); }
-  @keyframes dormHeld { 0%, 100% { rotate:-3deg; margin-top:-8px; } 50% { rotate:3deg; margin-top:-11px; } }
-  @keyframes dormLand { 0% { margin-top:-8px; scale:1.06; } 45% { margin-top:0; scale:1.12 .86; } 70% { scale:.96 1.05; } 100% { margin-top:0; scale:1; } }
+  @keyframes dormHeld { 0%, 100% { rotate:-2deg; margin-top:-4px; } 50% { rotate:2deg; margin-top:-6px; } }
+  @keyframes dormLand { 0% { margin-top:-4px; scale:1.03; } 45% { margin-top:0; scale:1.08 .9; } 70% { scale:.96 1.05; } 100% { margin-top:0; scale:1; } }
   .dorm-say { position:absolute; z-index:5; transform:translate(-50%, calc(-100% - 10px)); max-width:220px; width:max-content; padding:8px 12px; border-radius:12px;
     background: rgba(12,12,14,.92); color:#f2f2f4; border:1px solid rgba(255,255,255,.14); font-size:13px; font-weight:600; line-height:1.45; text-align:center;
     image-rendering:auto; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.45); animation: dormSay 3.8s ease forwards; }
@@ -9486,9 +9486,9 @@ function dormSay(el) {
   setTimeout(() => { say.remove(); if (el._say === say) el._say = null; }, 3800);
   return true;
 }
-// 캐릭터 SD 꾹 눌러 들기 : 0.35초 누르고 있으면 살짝 들려 올라가고, 원래 자리 근처(반지름 DORM_HOLD_R 방 픽셀)
+// 캐릭터 SD 꾹 눌러 들기 : 0.35초 누르고 있으면 살짝 들려 올라가고(진동 없음), 원래 자리 근처(반지름 DORM_HOLD_R 방 픽셀)
 // 안에서만 끌 수 있어요. 손을 떼면 통통 튀며 내려앉습니다. 방 주인의 배치는 바뀌지 않고, 이 화면에서만 기억해요.
-const DORM_HOLD_R = 14, DORM_HOLD_MS = 350;
+const DORM_HOLD_R = 40, DORM_HOLD_MS = 350;
 const dormNudge = {};  // '주인:소품번호' -> [x, y] (방 픽셀)
 function dormNudgeKey(el) { return `${dormRoom ? dormRoom.owner : ''}:${el.dataset.i}`; }
 function dormSetNudge(el, x, y, s) { el.style.translate = `${x * s}px ${y * s}px`; }
@@ -9519,7 +9519,6 @@ function bindDormHold(s) {
       hold.lifted = true;
       el.classList.remove('pressing'); el.classList.add('held');
       try { el.setPointerCapture(hold.id); } catch (_) {}
-      if (navigator.vibrate) navigator.vibrate(12);
       if (el._say) { el._say.remove(); el._say = null; }
     }, DORM_HOLD_MS);
   });
