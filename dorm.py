@@ -79,7 +79,7 @@ class Dorms:
         self.path = path
         self.lock = threading.Lock()
         self.assets, self.credits = [], []
-        self.periods = {pid: {"halls": [], "rooms": {}, "guestbooks": {}} for pid in PERIOD_IDS}
+        self.periods = {pid: {"halls": [], "rooms": {}, "guestbooks": {}, "default": None} for pid in PERIOD_IDS}
         self.current = PERIOD_IDS[0]
         self.load()
 
@@ -143,6 +143,8 @@ class Dorms:
                 "rooms": {k: v for k, v in (p.get("rooms") or {}).items() if v.get("v") == 2},
                 # 방명록 : {방 주인: [{"author", "text", "at"}, ...]} - 한 방에 한 사람당 한 개
                 "guestbooks": p.get("guestbooks", {}),
+                # 기간의 기본 방(운영진이 꾸밈) : 아직 꾸미지 않은 방은 이 모양으로 보입니다. 없으면 빈 기본 방.
+                "default": p.get("default") if isinstance(p.get("default"), dict) else None,
             }
         self.current = d.get("current") if d.get("current") in PERIOD_IDS else PERIOD_IDS[0]
         if self._apply_aliases():
@@ -201,8 +203,10 @@ class Dorms:
         pdata = self.periods[period] if period in self.periods else self.periods[self.current]
         r = pdata["rooms"].get(name) or {}
         gb = pdata["guestbooks"]
-        return {"owner": name, "base": r.get("base") or DEFAULT_BASE, "wall": r.get("wall"), "floor": r.get("floor"),
-                "items": r.get("items", []), "updated": r.get("updated"),
+        # 한 번도 꾸미지 않은 방(저장한 적 없음)은 그 기간의 기본 방 모양으로 보여줍니다.
+        lay = r if r.get("updated") else (pdata.get("default") or {})
+        return {"owner": name, "base": lay.get("base") or DEFAULT_BASE, "wall": lay.get("wall"), "floor": lay.get("floor"),
+                "items": [dict(i) for i in lay.get("items", [])], "updated": r.get("updated"),
                 # 마지막으로 바뀐 때(꾸밈 · 음악 · 대사 · 방명록) : 기숙사 목록의 New! 표시에 씁니다.
                 "activity": max([r.get("updated") or 0, r.get("touched") or 0]
                                 + [e.get("at", 0) for e in gb.get(name, [])]),
@@ -216,6 +220,24 @@ class Dorms:
         with self.lock:
             self.current = pid
             self.save()
+
+    def set_period_default(self, pid, data):
+        """운영진 : 기간의 기본 방 꾸밈. 아직 꾸미지 않은 사람의 방이 이 모양으로 보입니다."""
+        if pid not in PERIOD_IDS:
+            raise DormError("알 수 없는 기간이에요.")
+        lay = self._clean_layout(data or {})
+        with self.lock:
+            self.periods[pid]["default"] = lay
+            self.save()
+        return lay
+
+    def period_default(self, pid):
+        d = self.periods.get(pid, {}).get("default") or {}
+        return {"base": d.get("base") or DEFAULT_BASE, "wall": d.get("wall"), "floor": d.get("floor"),
+                "items": [dict(i) for i in d.get("items", [])]}
+
+    def period_defaults(self):
+        return {pid: self.period_default(pid) for pid in PERIOD_IDS}
 
     def period_halls(self):
         """운영진 관리 화면 : 기간마다의 배치(다음 기간을 미리 짜 둘 수 있게)."""
@@ -397,7 +419,8 @@ class Dorms:
             self.save()
 
     # ---- 방 꾸미기 ----
-    def save_room(self, owner, data):
+    def _clean_layout(self, data):
+        """방 꾸밈(바탕 · 벽지 · 바닥 · 소품)을 검사해 저장할 모양으로 정리합니다(방 저장 · 기간 기본 방 공용)."""
         base = self.asset(data.get("base"))
         if not base or base["category"] != "room":
             base = self.asset(DEFAULT_BASE)
@@ -435,11 +458,13 @@ class Dorms:
         def slot_asset(key, slot):
             a = self.asset(data.get(key))
             return a["id"] if a and a.get("slot") == slot else None
+        return {"base": base["id"], "wall": slot_asset("wall", "wall"), "floor": slot_asset("floor", "floor"), "items": items}
+
+    def save_room(self, owner, data):
+        lay = self._clean_layout(data)
         with self.lock:
             old = self.rooms.get(owner) or {}
-            self.rooms[owner] = {"v": 2, "base": base["id"], "wall": slot_asset("wall", "wall"),
-                                 "floor": slot_asset("floor", "floor"), "items": items, "updated": time.time(),
-                                 "music": old.get("music"), "line": old.get("line", "")}
+            self.rooms[owner] = dict(lay, v=2, updated=time.time(), music=old.get("music"), line=old.get("line", ""))
             self.save()
         return self.room(owner)
 

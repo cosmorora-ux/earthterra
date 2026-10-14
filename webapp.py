@@ -35,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.20"
+SERVER_BUILD = "2026-10-13.21"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2870,6 +2870,7 @@ def on_dorm_get(data=None):
     if is_gm:
         # 운영진 관리 화면 : 기간마다의 배치(다음 기간을 미리 짜 둘 수 있게)
         payload["period_halls"] = dorms.period_halls()
+        payload["period_defaults"] = dorms.period_defaults()
     emit("dorm_data", payload)
 
 
@@ -2888,6 +2889,26 @@ def on_dorm_period_set(data):
         return
     meta = dorms.period_meta(dorms.current)
     emit("dorm_result", {"ok": True, "message": f"지금 마이룸을 {meta['no']}차 {meta['name']}(으)로 바꿨어요."})
+    _dorm_broadcast()
+    on_dorm_get()
+
+
+@socketio.on("dorm_default_save")
+def on_dorm_default_save(data):
+    """운영진 : 기간별 기본 방 꾸밈 저장(기숙사 · 캠프 · 선실이 서로 다르게 생긴 기본 방)."""
+    me, is_gm, room = _mail_identity(request.sid)
+    if not is_gm:
+        emit("dorm_result", {"ok": False, "message": "운영진만 기본 방을 꾸밀 수 있어요."})
+        return
+    dorms = dorm_mod.shared_dorms()
+    data = data or {}
+    try:
+        dorms.set_period_default(data.get("period"), data)
+    except dorm_mod.DormError as e:
+        emit("dorm_result", {"ok": False, "message": str(e)})
+        return
+    meta = dorms.period_meta(data.get("period"))
+    emit("dorm_result", {"ok": True, "message": f"{meta['no']}차 {meta['name']} 기본 방을 저장했어요.", "default_saved": True})
     _dorm_broadcast()
     on_dorm_get()
 

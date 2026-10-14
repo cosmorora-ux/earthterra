@@ -3131,6 +3131,13 @@
   .jump-bottom:hover { border-color: rgba(var(--point-rgb), .6); }
   .jump-bottom .dot { position:absolute; top:3px; right:3px; width:8px; height:8px; border-radius:50%; background: var(--point); display:none; }
   .jump-bottom.new .dot { display:block; }
+  .chat-start { text-align:center; margin:2px 0 12px; font-size:11.5px; color: var(--muted); opacity:.7; }
+  /* 마이룸 관리 : 기간 기본 방 */
+  .dorm-default-row { display:flex; align-items:center; gap:14px; margin-top:12px; padding:10px 12px; border-radius:12px;
+    border:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.025); }
+  .dorm-default-prev { flex:none; width:120px; height:90px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:rgba(0,0,0,.25); overflow:hidden; }
+  .dorm-default-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .dorm-default-txt b { font-size:14px; } .dorm-default-txt span { font-size:12.5px; color: var(--muted); }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -4235,7 +4242,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.20";
+const EXPECTED_SERVER_BUILD = "2026-10-13.21";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -6314,8 +6321,10 @@ function updateJumpBottom() {
 function renderChatFiltered() {
   const el = document.getElementById('chatLog');
   const shown = lastChat.filter(e => matchesFilter(e) && matchesChatSearch(e));
-  const more = !chatSearchQuery && chatHasOlder()
-    ? `<button class="chat-more" onclick="loadOlderChat()"><i class="fa-solid fa-clock-rotate-left"></i>이전 대화 더보기</button>` : '';
+  // 맨 위 : 더 예전 대화가 있으면 '이전 대화 더보기', 다 보이고 있으면 '대화의 처음이에요'
+  const more = chatSearchQuery || !shown.length ? ''
+    : chatHasOlder() ? `<button class="chat-more" onclick="loadOlderChat()"><i class="fa-solid fa-clock-rotate-left"></i>이전 대화 더보기</button>`
+    : `<div class="chat-start">대화의 처음이에요</div>`;
   scrollKeepingView(el, () => { el.innerHTML = more + shown.map(fmtChat).join(''); markChatContinuations(el); }, !!chatSearchQuery);
   updateChatSearchCount(shown.length);
 }
@@ -9015,6 +9024,7 @@ socket.on('dorm_data', (d) => {
   }
   // 운영진 관리 정보는 운영진 요청에만 오므로, 모두에게 가는 알림에 없으면 앞 값을 지킵니다.
   if (dormData && dormData.period_halls && !d.period_halls) d.period_halls = dormData.period_halls;
+  if (dormData && dormData.period_defaults && !d.period_defaults) d.period_defaults = dormData.period_defaults;
   dormData = d; if (d.roster) dormRoster = d.roster;
   dormSyncSeenBaseline();
   if (document.getElementById('dormModal').style.display === 'flex' && !dormEdit) renderDorm();
@@ -9073,6 +9083,8 @@ socket.on('dorm_room', (r) => {
 });
 socket.on('dorm_result', (d) => {
   showShopToast(d.message); if (!d.ok) dormSaving = false;
+  // 기본 방 저장이 끝나면 관리 화면으로 돌아갑니다.
+  if (d.default_saved && dormRoom && dormRoom.isDefault) { dormSaving = false; dormEdit = null; setDormView('manage'); return; }
   // 방금 올린 자료는 바로 놓을 수 있게 골라 둡니다.
   if (d.asset_id && dormEdit) { dormCat = 'mine'; dormPick = d.asset_id; dormSel = -1; setTimeout(() => { renderDormPalette(); dormUpdateGhost(); }, 0); }
 });
@@ -9145,6 +9157,14 @@ function renderDormTop() {
     segs.push(`<span class="sep mid">▶</span><div class="seg mid">${pp.no}차 ${mailEsc(pp.name)}${dormRoom.pastHall ? ' · ' + mailEsc(dormRoom.pastHall) : ''}</div>`);
     segs.push(`<span class="sep">▶</span><div class="seg">${mailEsc(dormRoom.owner)}</div>`);
     right = `<span class="dorm-past-tag"><i class="fa-solid fa-clock-rotate-left"></i>지난 마이룸</span>`;
+  } else if (dormView === 'room' && dormRoom && dormRoom.isDefault) {
+    // 운영진 : 기간 기본 방 꾸미기(아직 꾸미지 않은 방들이 이 모양으로 보여요)
+    const dp = (dormData.periods || []).find(p => p.id === dormRoom.isDefault) || P;
+    segs[0] = `<div class="seg dorm-brand">${mailEsc(dp.en)}</div>`;
+    segs.push(`<span class="sep mid">▶</span><div class="seg dorm-link mid" onclick="dormLeaveRoom()">관리</div>`);
+    segs.push(`<span class="sep">▶</span><div class="seg">${dp.no}차 ${mailEsc(dp.name)} 기본 방</div>`);
+    right = `<button class="dorm-tbtn" onclick="dormLeaveRoom()" data-tip="취소"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
+      <button class="dorm-tbtn primary" onclick="saveDormRoom()" data-tip="저장"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`;
   } else if (dormView === 'room' && dormRoom) {
     const hall = dormData && dormHallOf(dormRoom.owner);
     segs.push(`<span class="sep mid">▶</span><div class="seg dorm-link mid" onclick="dormLeaveRoom()">${hall ? mailEsc(hall.name) : mailEsc(P.name)}</div>`);
@@ -9358,8 +9378,17 @@ function deleteDormGuestbook(author) {
   });
 }
 function dormLeaveRoom() {
-  if (!dormEdit) { setDormView('halls'); return; }
-  uiConfirm('저장하지 않은 꾸미기가 있어요. 나갈까요?', { title: '방 나가기', okText: '나가기' }).then(ok => { if (ok) { dormEdit = null; setDormView('halls'); } });
+  // 기본 방 꾸미기에서 나가면 관리 화면으로 돌아갑니다.
+  const back = dormRoom && dormRoom.isDefault ? 'manage' : 'halls';
+  if (!dormEdit) { setDormView(back); return; }
+  uiConfirm('저장하지 않은 꾸미기가 있어요. 나갈까요?', { title: '방 나가기', okText: '나가기' }).then(ok => { if (ok) { dormEdit = null; setDormView(back); } });
+}
+// 운영진 : 기간 기본 방 꾸미기 열기(관리 화면의 '기본 방 꾸미기')
+function openDormDefaultEdit(pid) {
+  const d = (dormData.period_defaults && dormData.period_defaults[pid]) || { base: dormData.default_base, items: [] };
+  dormZoom = 1; dormPan = { x: 0, y: 0 }; dormView = 'room'; dormSel = -1; dormPick = null;
+  dormRoom = Object.assign({ owner: '', guestbook: [] }, JSON.parse(JSON.stringify(d)), { isDefault: pid });
+  startDormEdit();
 }
 // 그리는 순서(뒤 → 앞) : 깔개(surface)가 맨 뒤, 그다음 겹침 순서(o, 앞/뒤로 보내기로 정함), 같으면 바닥 쪽(아래)일수록 앞
 function dormDrawOrder(items) {
@@ -9430,6 +9459,7 @@ function startDormEdit() {
 function saveDormRoom() {
   if (!dormEdit) return;
   dormSaving = true;
+  if (dormRoom && dormRoom.isDefault) { socket.emit('dorm_default_save', Object.assign({ period: dormRoom.isDefault }, dormEdit)); return; }
   socket.emit('dorm_room_save', Object.assign({ owner: dormRoom.owner }, dormEdit));
 }
 function dormAssetList() {
@@ -9695,6 +9725,9 @@ function dormManageHtml() {
   const periodSec = `<div class="dorm-sec"><h3><i class="fa-solid fa-calendar-days"></i> 마이룸 기간 <span class="dorm-room-sub">기간마다 배치 · 꾸밈 · 방명록이 따로예요</span></h3>
     <div class="dorm-periods">${periods.map(p => `<button class="dorm-period ${p.id === MP.id ? 'on' : ''} ${p.status}" onclick="setDormManagePeriod('${p.id}')">
         <span class="no">${p.no}차</span><b>${mailEsc(p.name)}</b><span class="st">${stLabel[p.status] || ''}</span></button>`).join('')}</div>
+    <div class="dorm-default-row"><div class="dorm-default-prev">${dormMiniRoomHtml((dormData.period_defaults || {})[MP.id] || { base: dormData.default_base, items: [] }, 120, 90)}</div>
+      <div class="dorm-default-txt"><b>${MP.no}차 ${mailEsc(MP.name)} 기본 방</b><span>아직 꾸미지 않은 방은 모두 이 모양으로 보여요. 기간마다 따로 꾸밀 수 있어요.</span></div>
+      <button class="btn" onclick="openDormDefaultEdit('${MP.id}')"><i class="fa-solid fa-paintbrush"></i> 기본 방 꾸미기</button></div>
     ${MP.status !== 'current' ? `<div class="dorm-period-act"><span>${MP.no}차 ${mailEsc(MP.name)} 배치를 미리 짜 두고, 때가 되면 지금 기간으로 바꿔요.</span>
       <button class="btn" onclick="setDormCurrentPeriod('${MP.id}')"><i class="fa-solid fa-arrow-right-arrow-left"></i> 지금 기간으로 바꾸기</button></div>` : ''}</div>`;
   if (!dormCreditsDraft) dormCreditsDraft = JSON.parse(JSON.stringify(dormData.credits || []));
