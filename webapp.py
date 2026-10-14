@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.27"
+SERVER_BUILD = "2026-10-13.28"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2755,7 +2755,7 @@ def _emit_mail_data(sid):
     if room is None:
         return
     if me is None:
-        socketio.emit("mail_data", {"me": None, "inbox": [], "outbox": [], "unread": 0,
+        socketio.emit("mail_data", {"me": None, "inbox": [], "outbox": [], "unread": 0, "eras": mailbox_mod.eras_payload(),
                                     "roster": _mail_candidates(room)}, to=sid)
         return
     data = mailbox_mod.shared_mailbox().payload(me, is_gm)
@@ -2803,6 +2803,9 @@ def on_mail_send(data):
             emit("mail_result", {"ok": False, "message": f"이미지는 한 장에 {mailbox_mod.IMAGE_MAX_BYTES // (1024 * 1024)}MB까지 붙일 수 있어요."})
             return
         blobs.append((blob, ext))
+    if data.get("era") not in mailbox_mod.ERA_INDEX:
+        emit("mail_result", {"ok": False, "message": "편지의 시기(대분류 · 연도)를 골라 주세요."})
+        return
     if not (data.get("text") or "").strip() and not blobs:
         emit("mail_result", {"ok": False, "message": "편지 내용을 쓰거나 이미지를 붙여 주세요."})
         return
@@ -2824,7 +2827,8 @@ def on_mail_send(data):
                          images=[ext for _, ext in blobs])
                 _store_images()
             sent.append(box.send(me, t, data.get("text"), anonymous=anonymous, random_pick=is_random,
-                                 candidates=_mail_candidates(room), check_cooldown=(i == 0), images=images))
+                                 candidates=_mail_candidates(room), check_cooldown=(i == 0), images=images,
+                                 era=data.get("era"), year=data.get("year")))
     except mailbox_mod.MailError as e:
         if not sent:
             emit("mail_result", {"ok": False, "message": str(e)})

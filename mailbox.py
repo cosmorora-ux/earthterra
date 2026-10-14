@@ -25,6 +25,34 @@ MAX_LETTERS = 5000
 # 첨부 이미지 : 편지 한 통에 4장까지, 장당 5MB. 파일 이름은 추측할 수 없는 무작위 이름이라 받는 사람만 주소를 알아요.
 MAX_IMAGES = 4
 IMAGE_MAX_BYTES = 5 * 1024 * 1024
+# 편지의 시기(작중 연도, 空歷) : 대분류를 먼저 고르고, 리뉴얼 기간만 그 안에서 연도를 고릅니다.
+# (id, 이름, 첫 해, 마지막 해) — 러닝 기간은 연도가 하나로 정해져 있어요. 순서 = 작중 시간 순서.
+ERAS = [
+    ("r1", "1차 러닝", 514, 514),
+    ("n12", "1~2차 리뉴얼", 514, 524),
+    ("r2", "2차 러닝", 524, 524),
+    ("n23", "2~3차 리뉴얼", 500, 524),
+    ("r3", "3차 기간", 524, 524),
+]
+ERA_INDEX = {e[0]: i for i, e in enumerate(ERAS)}
+
+
+def clean_era(era, year):
+    """(era id, 연도) 확인 : 모르는 대분류면 None, 러닝 기간은 연도를 그 기간 연도로 고정합니다."""
+    if era not in ERA_INDEX:
+        return None, None
+    _, _, lo, hi = ERAS[ERA_INDEX[era]]
+    try:
+        year = int(year)
+    except (TypeError, ValueError):
+        year = lo
+    return era, max(lo, min(hi, year))
+
+
+def eras_payload():
+    return [{"id": i, "name": n, "from": lo, "to": hi} for i, n, lo, hi in ERAS]
+
+
 IMAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "mail_images")
 SEND_COOLDOWN = 3.0  # 같은 사람이 연달아 보내는 간격(초)
 GM_NAME = "운영진"
@@ -52,7 +80,7 @@ class Mailbox:
     def save(self):
         safeio.write_json(self.path, {"letters": self.letters}, indent=1)
 
-    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True, images=(), dry_run=False):
+    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True, images=(), dry_run=False, era=None, year=None):
         text = (text or "").strip()
         images = list(images or [])[:MAX_IMAGES]
         if not text and not images:
@@ -81,6 +109,9 @@ class Mailbox:
             }
             if images:
                 letter["images"] = images
+            era, year = clean_era(era, year)
+            if era:
+                letter["era"], letter["year"] = era, year
             self.letters.append(letter)
             dropped = self.letters[:-MAX_LETTERS]
             del self.letters[:-MAX_LETTERS]
@@ -133,7 +164,8 @@ class Mailbox:
     @staticmethod
     def _view(l, me, is_gm):
         v = {"id": l["id"], "text": l["text"], "at": l["at"], "read": l["read"],
-             "anonymous": l["anonymous"], "random": l["random"], "images": l.get("images", [])}
+             "anonymous": l["anonymous"], "random": l["random"], "images": l.get("images", []),
+             "era": l.get("era"), "year": l.get("year")}
         v["from"] = l["from"] if (is_gm or not l["anonymous"] or l["from"] == me) else None
         v["to"] = l["to"] if (is_gm or not l["random"] or l["to"] == me) else None
         return v
@@ -141,7 +173,7 @@ class Mailbox:
     def payload(self, me, is_gm=False):
         inbox = [self._view(l, me, is_gm) for l in self.letters if l["to"] == me and not l["hide_to"]]
         outbox = [self._view(l, me, is_gm) for l in self.letters if l["from"] == me and not l["hide_from"]]
-        data = {"me": me, "inbox": inbox[::-1], "outbox": outbox[::-1],
+        data = {"me": me, "inbox": inbox[::-1], "outbox": outbox[::-1], "eras": eras_payload(),
                 "unread": sum(1 for l in inbox if not l["read"])}
         if is_gm:
             data["all"] = [self._view(l, me, True) for l in self.letters][::-1][:500]

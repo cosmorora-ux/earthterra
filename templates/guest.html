@@ -1607,6 +1607,18 @@
   .mail-letter { position:relative; border-radius:16px; border:1px solid rgba(255,255,255,.08); padding:30px 30px 24px;
     background: linear-gradient(180deg, #19191d 0%, #141417 100%); }
   .mail-letter .to { font-size:13px; color: var(--muted); margin-bottom:18px; }
+  .mail-letter .era { font-size:12px; color: var(--muted); letter-spacing:.02em; margin-bottom:10px; }
+  .mail-group { font-size:12px; font-weight:700; color: var(--muted); padding:14px 4px 6px; letter-spacing:.02em; }
+  .mail-group:first-child { padding-top:2px; }
+  .mail-eras { display:flex; flex-wrap:wrap; gap:6px; }
+  .mail-eras button { height:34px; padding:0 14px; border-radius:10px; border:1px solid transparent; background: rgba(255,255,255,.05); color: var(--muted); font-size:13px; cursor:pointer; }
+  .mail-eras button:hover { color: var(--text); background: rgba(255,255,255,.08); }
+  .mail-eras button.on { color:#fff; background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); }
+  .mail-year { display:flex; align-items:center; gap:10px; margin-top:10px; min-height:34px; }
+  .mail-year b { font-size:15px; min-width:96px; text-align:center; }
+  .mail-year button { width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); cursor:pointer; font-size:12px; }
+  .mail-year button:disabled { opacity:.35; cursor:default; }
+  .mail-year .rng { font-size:12px; color: var(--muted); margin-left:4px; }
   .mail-letter .to b { color: var(--text); font-weight:700; font-size:15px; margin-left:4px; }
   .mail-letter .txt { font-size:15.5px; line-height:1.85; white-space:pre-wrap; word-break:break-word; color:#e8e8ec; min-height:120px; }
   .mail-letter .from { margin-top:26px; text-align:right; font-size:13px; color: var(--muted); }
@@ -4327,7 +4339,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.27";
+const EXPECTED_SERVER_BUILD = "2026-10-13.28";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -9089,7 +9101,39 @@ var Weather = (function () {
 // 우체통 : 캐릭터끼리 편지. 받는 사람 지정 / 랜덤, 익명 보내기. 운영진은 전체 편지를 볼 수 있습니다.
 // ==================================================================
 let mailData = null, mailTab = 'inbox', mailOpenId = null;
-const mailDraft = { mode: 'pick', to: [], q: '', anon: true, text: '', images: [] };
+const mailDraft = { mode: 'pick', to: [], q: '', anon: true, text: '', images: [], era: null, year: null };
+// 편지의 시기 : 대분류(1차 러닝 · 1~2차 리뉴얼 · 2차 러닝 · 2~3차 리뉴얼 · 3차 기간) → 리뉴얼 기간만 연도를 고릅니다.
+// 목록은 서버(mailbox.ERAS)가 보내 주고, 처음에는 지금 마이룸 기간의 러닝을 골라 둡니다.
+function mailEras() { return (mailData && mailData.eras) || []; }
+function mailEra(id) { return mailEras().find(e => e.id === id) || null; }
+function mailEraLabel(l) {
+  const e = l && mailEra(l.era);
+  return e ? `空歷 ${l.year != null ? l.year : e.from}年 · ${e.name}` : '';
+}
+function mailEnsureEra() {
+  const eras = mailEras(); if (!eras.length) return;
+  if (!mailEra(mailDraft.era)) {
+    const want = ({ 1: 'r1', 2: 'r2', 3: 'r3' })[typeof factionPeriod === 'function' ? factionPeriod() : 1] || eras[0].id;
+    mailDraft.era = mailEra(want) ? want : eras[0].id;
+  }
+  const e = mailEra(mailDraft.era);
+  if (mailDraft.year == null || mailDraft.year < e.from || mailDraft.year > e.to) mailDraft.year = e.from === e.to ? e.from : e.from;
+}
+function mailEraHtml() {
+  mailEnsureEra();
+  const e = mailEra(mailDraft.era); if (!e) return '';
+  const ranged = e.from !== e.to;
+  return `<div class="mail-eras">${mailEras().map(x => `<button class="${x.id === mailDraft.era ? 'on' : ''}" onclick="mailSetEra('${x.id}')">${mailEsc(x.name)}</button>`).join('')}</div>
+    <div class="mail-year">${ranged
+      ? `<button onclick="mailStepYear(-1)" ${mailDraft.year <= e.from ? 'disabled' : ''} aria-label="이전 해"><i class="fa-solid fa-minus"></i></button>
+         <b>空歷 ${mailDraft.year}年</b>
+         <button onclick="mailStepYear(1)" ${mailDraft.year >= e.to ? 'disabled' : ''} aria-label="다음 해"><i class="fa-solid fa-plus"></i></button>
+         <span class="rng">${e.from} ~ ${e.to}年 중에서 골라요</span>`
+      : `<b>空歷 ${e.from}年</b><span class="rng">러닝 기간은 연도가 정해져 있어요</span>`}</div>`;
+}
+function mailSetEra(id) { mailDraft.era = id; mailDraft.year = null; mailRefreshEra(); }
+function mailStepYear(d) { const e = mailEra(mailDraft.era); if (!e) return; mailDraft.year = Math.max(e.from, Math.min(e.to, (mailDraft.year || e.from) + d)); mailRefreshEra(); }
+function mailRefreshEra() { const el = document.getElementById('mailEraBox'); if (el) el.innerHTML = mailEraHtml(); }
 // 편지 첨부 이미지 : 4장까지, 장당 5MB (png · jpg · gif · webp). 파일 고르기 · 붙여넣기(Ctrl+V) · 끌어다 놓기 모두 돼요.
 const MAIL_IMG_MAX = 4, MAIL_IMG_BYTES = 5 * 1024 * 1024;
 function mailAddImages(files) {
@@ -9189,7 +9233,18 @@ function renderMail() {
     body.innerHTML = `<div class="mail-empty"><i class="fa-regular fa-envelope-open"></i>${msg}</div>`;
     return;
   }
-  body.innerHTML = '<div class="mail-list">' + list.map(l => {
+  // 시기(대분류 · 연도) 순으로 쌓기 : 늦은 시기가 위, 같은 시기 안에서는 최근 편지가 위. 시기가 없는 옛 편지는 맨 아래.
+  const eraIdx = l => { const i = mailEras().findIndex(e => e.id === l.era); return i < 0 ? -1 : i; };
+  const sorted = list.slice().sort((a, b) => (eraIdx(b) - eraIdx(a)) || ((b.year || 0) - (a.year || 0)) || (b.at - a.at));
+  let lastGroup = null;
+  body.innerHTML = '<div class="mail-list">' + sorted.map(l => {
+    const g = mailEraLabel(l) || '시기 없음';
+    const head = g !== lastGroup ? `<div class="mail-group">${mailEsc(g)}</div>` : '';
+    lastGroup = g;
+    return head + mailItemHtml(l);
+  }).join('') + '</div>';
+}
+function mailItemHtml(l) {
     const unread = mailTab === 'inbox' && !l.read;
     let who;
     if (mailTab === 'inbox') who = l.from ? `<span class="mail-who">${mailEsc(l.from)}</span>` : '<span class="mail-who anon">익명</span>';
@@ -9200,7 +9255,6 @@ function renderMail() {
       <div class="mail-ic"><i class="fa-solid ${unread ? 'fa-envelope' : 'fa-envelope-open'}"></i></div>
       <div class="mail-main"><div class="mail-top">${who}${badges}<span class="mail-time">${mailTime(l.at)}</span>${unread ? '<span class="mail-dot"></span>' : ''}</div>
       <div class="mail-prev">${(l.images || []).length ? `<i class="fa-regular fa-image"></i>${l.images.length > 1 ? `${l.images.length}장${l.text ? ' · ' : ''}` : ''}` : ''}${l.text ? mailEsc(l.text.replace(/\s+/g, ' ')) : (l.images || []).length === 1 ? '이미지' : ''}</div></div></div>`;
-  }).join('') + '</div>';
 }
 function openLetter(id) {
   mailOpenId = id;
@@ -9213,7 +9267,7 @@ function mailLetterHtml(l, d) {
   const fromName = l.from ? mailEsc(l.from) : '익명';
   const canDelete = mailTab !== 'all' || d.is_gm;
   return `<button class="mail-back" onclick="mailOpenId=null; renderMail()"><i class="fa-solid fa-chevron-left"></i> 목록으로</button>
-    <div class="mail-letter"><div class="to">To.<b>${toName}</b></div>${l.text ? `<div class="txt">${mailEsc(l.text)}</div>` : ''}${(l.images || []).length ? `<div class="mail-imgs n${Math.min(l.images.length, 4)}">${l.images.map(u => `<a href="${mailEsc(u)}" target="_blank" rel="noopener"><img src="${mailEsc(u)}" alt="" loading="lazy"></a>`).join('')}</div>` : ''}
+    <div class="mail-letter">${mailEraLabel(l) ? `<div class="era">${mailEsc(mailEraLabel(l))}</div>` : ''}<div class="to">To.<b>${toName}</b></div>${l.text ? `<div class="txt">${mailEsc(l.text)}</div>` : ''}${(l.images || []).length ? `<div class="mail-imgs n${Math.min(l.images.length, 4)}">${l.images.map(u => `<a href="${mailEsc(u)}" target="_blank" rel="noopener"><img src="${mailEsc(u)}" alt="" loading="lazy"></a>`).join('')}</div>` : ''}
       <div class="from">From.<b>${fromName}</b></div><div class="date">${mailTime(l.at)}</div></div>
     <div class="mail-actions"><span style="display:flex;align-items:center;gap:10px;">
       ${canDelete ? `<button class="mail-del" onclick="deleteLetter('${l.id}')"><i class="fa-solid fa-trash-can"></i> ${mailTab === 'all' ? '편지 지우기' : '내 목록에서 지우기'}</button>` : ''}
@@ -9241,6 +9295,7 @@ function mailComposeHtml(d) {
         <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
         : `<div class="mail-rand" style="margin-top:10px">등록된 캐릭터 중 한 명에게 무작위로 보내요. 누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</div>`}
     </div>
+    <div><div class="mail-label">시기</div><div id="mailEraBox">${mailEraHtml()}</div></div>
     <div><div class="mail-label">내용</div>
       <textarea class="mail-text" id="mailText" maxlength="2000" placeholder="편지를 써 주세요. 이미지는 붙여넣기(Ctrl+V)나 끌어다 놓기로도 붙일 수 있어요." onpaste="mailOnPaste(event)"
         ondragover="event.preventDefault()" ondrop="if(event.dataTransfer.files.length){event.preventDefault(); mailAddImages(event.dataTransfer.files);}" oninput="mailDraft.text=this.value; document.getElementById('mailCount').textContent=this.value.length+' / 2000'">${mailEsc(mailDraft.text)}</textarea>
@@ -9280,8 +9335,11 @@ function sendLetter() {
   if (mailDraft.images.some(it => !it.buf)) { showShopToast('이미지를 읽는 중이에요. 잠시 뒤 다시 눌러 주세요.'); return; }
   const pick = mailDraft.mode === 'pick';
   if (pick && !mailDraft.to.length) { showShopToast('받는 사람을 골라 주세요.'); return; }
+  mailEnsureEra();
+  if (!mailDraft.era) { showShopToast('편지의 시기를 골라 주세요.'); return; }
   document.getElementById('mailSendBtn').disabled = true;
   socket.emit('mail_send', { to: pick ? mailDraft.to : [], random: !pick, anonymous: pick ? false : mailDraft.anon, text,
+    era: mailDraft.era, year: mailDraft.year,
     images: mailDraft.images.map(it => ({ data: it.buf })) });
 }
 
