@@ -324,12 +324,17 @@ class AttackSkill(Skill):
                 overrides=overrides,
             )
         damage = config.calculate_final_damage(atk["total"], dfs["total"], overrides=overrides)
+        # 적의 공격 범위 안에서 맞으면 최종 피해 배율(1.2배)을 곱합니다.
+        mult = atk.get("damage_mult", 1)
+        if mult != 1 and damage > 0:
+            damage = int(round(damage * mult))
         target.take_damage(damage)
         hp_after = target.current_hp
 
         return {
             "dodged": False, "dodge": dodge, "dfs": dfs, "damage": damage,
             "hp_before": hp_before, "hp_after": hp_after,
+            "damage_mult": mult,
         }
 
 

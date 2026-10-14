@@ -509,7 +509,8 @@ class Battle:
         else:
             self._log_public_only(f"방어 값 {dfs['total']}", tag="defend_value")
 
-        self._log(f"피해량 {result['damage']}", tag="damage")
+        zone = f" (범위 ×{result['damage_mult']:g})" if result.get("damage_mult", 1) != 1 else ""
+        self._log(f"피해량 {result['damage']}{zone}", tag="damage")
         self._log(f"{target.name} HP {result['hp_before']} → {result['hp_after']}", tag="hp")
 
         if target.status == Character.STATUS_DOWNED:
@@ -562,6 +563,22 @@ class Battle:
         if actor.commanded_by and actor.commanded_by in hit_names:
             self._log(f"유도 효과 해제 ({actor.name} → {actor.commanded_by} 공격 완료)", tag="system")
             actor.commanded_by = None
+
+    def enemy_zone_cells(self, unit: Character) -> set:
+        """적(2팀 BOSS · 몹 · 거점)의 공격 범위 : 차지한 칸(BOSS는 살아 있는 부위 전부)마다
+        러너 사거리와 같은 모양(십자 3칸 + 주변 8칸)을 합친 칸들. 적은 범위와 상관없이 공격하지만,
+        이 범위 안에 있던 대상은 받는 피해가 ENEMY_ZONE_DAMAGE_MULT배가 됩니다."""
+        if unit is None or unit.team != "B" or unit.grid_pos is None:
+            return set()
+        parts = [c for c in self.team_b if c.boss_group and c.boss_group == unit.boss_group
+                 and c.is_alive and c.grid_pos is not None] if unit.boss_group else [unit]
+        own = {tuple(c.grid_pos) for c in parts}
+        cells = set()
+        for (px, py) in own:
+            for d in range(1, 4):
+                cells.update({(px + d, py), (px - d, py), (px, py + d), (px, py - d)})
+            cells.update({(px + dx, py + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)})
+        return cells - own
 
     def _settle_immediately(self, target: Character) -> bool:
         """공격을 바로 정산할지 여부. 일반 캐릭터는 항상 보류해서 방어할 기회를 줍니다(후공 단계 포함).
@@ -795,6 +812,9 @@ class Battle:
 
         atk = self.attack_skill.roll(attacker, overrides=self.formula_overrides)
         attacker.has_acted = True
+        # 적의 공격 범위 안에 있던 대상(공격 시점 기준)은 받는 피해가 1.2배입니다(대리 방어 · 편광으로 옮겨 가도 그대로).
+        if target.grid_pos is not None and tuple(target.grid_pos) in self.enemy_zone_cells(attacker):
+            atk["damage_mult"] = config.ENEMY_ZONE_DAMAGE_MULT
 
         self._log(f"{attacker.name} 공격 → {target.name}", tag="action")
         # 요청 1 : 공격 수치는 정산(HP 반영) 여부와 무관하게 즉시 알 수 있어야 합니다.
@@ -941,7 +961,10 @@ class Battle:
         resolved_target = self._redirect_for_polarize(target)
         def_mult = resolved_target.polarize_ally_count if resolved_target.polarize_active else 1.0
 
+        in_zone = target.grid_pos is not None and tuple(target.grid_pos) in self.enemy_zone_cells(attacker)
         for i, atk in enumerate(hits, 1):
+            if in_zone:
+                atk["damage_mult"] = config.ENEMY_ZONE_DAMAGE_MULT
             note = " (강제 크리티컬 적용)" if forced_crit_applied and i == len(hits) else ""
             if atk["is_crit"]:
                 self._log_public_only("크리티컬!", tag="crit")
@@ -1020,11 +1043,14 @@ class Battle:
             tag="action",
         )
 
+        zone = self.enemy_zone_cells(attacker)
         for enemy in enemies:
             resolved_target = self._redirect_for_polarize(enemy)
             def_mult = resolved_target.polarize_ally_count if resolved_target.polarize_active else 1.0
             for i in range(1, emission_hits + 1):
                 atk = self.attack_skill.roll(attacker, overrides=merged)
+                if enemy.grid_pos is not None and tuple(enemy.grid_pos) in zone:
+                    atk["damage_mult"] = config.ENEMY_ZONE_DAMAGE_MULT
                 if atk["is_crit"]:
                     self._log_public_only("크리티컬!", tag="crit")
                     self._log(f"[방출 → {enemy.name} {i}/{emission_hits}] 공격 수치 {atk['total']}", tag="damage", role=attacker.role)

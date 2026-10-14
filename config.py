@@ -52,6 +52,9 @@ ROLES = [ROLE_TANKER, ROLE_DEALER, ROLE_HEALER]
 # 캐릭터 데이터베이스 목록을 이 순서(포지션순)로 정렬합니다.
 ROLE_ORDER = [ROLE_TANKER, ROLE_DEALER, ROLE_HEALER]
 
+# 격자 전투 : 적(2팀)의 공격 범위(차지한 칸마다 십자 3칸 + 주변 8칸) 안에서 공격받으면 최종 피해 배율
+ENEMY_ZONE_DAMAGE_MULT = 1.2
+
 # 붙여넣기 등록 시 역할이 명시되지 않았을 때 사용할 기본 역할
 DEFAULT_ROLE = ROLE_DEALER
 
