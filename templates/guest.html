@@ -3028,7 +3028,8 @@
   .logblock.moves .mv-name { display:inline-block; min-width:4.5em; margin-right:10px; color:#d7d8de; font-weight:600; }
   .logblock.moves .mv-cells { color: var(--muted); font-variant-numeric: tabular-nums; }
   .lg-crit { display:inline-flex; align-items:center; gap:4px; margin-left:8px; font-size:.84em; font-weight:700; color:#ffd27a; white-space:nowrap; }
-  .lg-crit i { font-size:.85em; }
+  .lg-crit i { font-style:normal; font-size:.95em; }
+  .logline .li .lg-gl { font-style:normal; font-size:12px; color:#ffd27a; }
   /* 로그창 피해 정산 묶음 : 정산 1회 = 한 줄(공격자 · 방어 · 피해 · HP) */
   .logblock.settle .st-atk { display:inline-block; min-width:4.5em; margin-right:10px; color:#d7d8de; font-weight:600; }
 </style>
@@ -5231,7 +5232,7 @@ const LOG_GROUP_START_TAGS = new Set(['action', 'defend', 'taunt', 'round', 'wai
 // 로그 아이콘 : 이모지 대신 한 벌의 단색 아이콘(Font Awesome)으로 통일
 const LOG_TAG_ICON = {
   action: 'fa-solid fa-bolt', damage: 'fa-solid fa-burst', defend: 'fa-solid fa-shield-halved', defend_value: 'fa-solid fa-shield-halved',
-  taunt: 'fa-solid fa-crosshairs', heal: 'fa-solid fa-plus', crit: 'fa-solid fa-star', wait: 'fa-solid fa-pause', hp: 'fa-solid fa-heart',
+  taunt: 'fa-solid fa-crosshairs', heal: 'fa-solid fa-plus', crit: 'glyph-crit', wait: 'fa-solid fa-pause', hp: 'fa-solid fa-heart',
   system: 'fa-solid fa-circle-info', summary: 'fa-solid fa-list', formula: '',
 };
 // 라운드/단계 안내 한 줄 (채팅창·로그창 공통) : "✶ Round 1"은 기호 + Baunk 제목,
@@ -5304,10 +5305,12 @@ function formatLogLineHtml(l, noIcon, asHead) {
   const head = asHead !== undefined ? asHead : LOG_GROUP_START_TAGS.has(l.tag);
   let { html, tone } = logLineParts(l.text, l.tag);
   // 크리티컬은 따로 한 줄을 쓰지 않고, 그 타격(회복) 줄 끝에 작은 표시로 붙입니다.
-  if (l._crit) html += '<span class="lg-crit"><i class="fa-solid fa-star"></i>크리티컬</span>';
-  const ic = tone === 'note' ? 'fa-solid fa-turn-up fa-rotate-90' : tone === 'warn' ? 'fa-solid fa-triangle-exclamation' : (LOG_TAG_ICON[l.tag] || '');
+  if (l._crit) html += '<span class="lg-crit"><i>✦</i>크리티컬</span>';
+  // 아이콘은 블록 첫 줄에만 둡니다(아래 줄은 비워 정렬만 맞춤). 주의(⚠) 줄만 예외로 항상 표시.
+  const ic = tone === 'warn' ? 'fa-solid fa-triangle-exclamation'
+    : noIcon ? '' : tone === 'note' ? 'fa-solid fa-turn-up fa-rotate-90' : (LOG_TAG_ICON[l.tag] || '');
   // 직군 색은 블록 왼쪽 선이 맡고, 글줄은 모두 같은 색으로 둡니다(아이콘 칸 + 글 칸 두 칸 정렬).
-  return `<div class="logline${head ? ' group-start' : ''} tag-${l.tag}${tone ? ' tone-' + tone : ''}"><span class="li">${ic ? `<i class="${ic}"></i>` : ''}</span><span class="lt">${html}</span></div>`;
+  return `<div class="logline${head ? ' group-start' : ''} tag-${l.tag}${tone ? ' tone-' + tone : ''}"><span class="li">${ic === 'glyph-crit' ? '<i class="lg-gl">✦</i>' : ic ? `<i class="${ic}"></i>` : ''}</span><span class="lt">${html}</span></div>`;
 }
 // 블록 첫 줄의 내용으로 공격/방어/힐 중 어떤 행동인지 구분해 그 색을 입힙니다. 피해 정산처럼
 // 자동으로 발생한 안내성 줄("["로 시작)이나 이동/배치처럼 셋 중 어디에도 안 속하는 행동은
@@ -5335,7 +5338,7 @@ function formatRoundSummaryHtml(section) {
     if (m) rows.push({ name: m[1].trim(), start: +m[2], end: +m[3], state: m[4] || '' });
     else if (l.tag !== 'system' || !/시작 체력/.test(l.text || '')) rest.push(l);
   });
-  if (!rows.length) return section.map(l => formatLogLineHtml(l, false)).join('');
+  if (!rows.length) return section.map((l, i) => formatLogLineHtml(l, i > 0)).join('');
   const chars = lastAllForCards || [];
   const info = n => chars.find(c => c.name === n) || {};
   const rowHtml = r => {
@@ -5355,7 +5358,7 @@ function formatRoundSummaryHtml(section) {
     + `<div class="round-summary">
         ${block(BATTLE_TYPE === 'pvp' ? 'Team 1' : '러너', teamA)}${block(BATTLE_TYPE === 'pvp' ? 'Team 2' : (BATTLE_TYPE === 'siege' ? '거점' : '보스'), teamB)}
       </div>`
-    + rest.map(l => formatLogLineHtml(l, false)).join('');
+    + rest.map(l => formatLogLineHtml(l, true)).join('');
 }
 // 같은 [분류]로 시작하는 회복 줄이 연달아 나오면("[환류 - 메딕 회복] AG +18 (240→240)" 여러 줄)
 // 한 줄로 묶습니다 : [환류 · 메딕 회복] AG +18 · F +24 · C +36 …
@@ -5499,13 +5502,13 @@ function formatSettleGroupHtml(g) {
       const d = r.hp[1] - r.hp[0];
       hp = ` <span class="lg-hp">${r.hpName && r.hpName !== r.tgt ? nm(r.hpName) + ' ' : ''}${r.hp[0]}<i>→</i><b>${r.hp[1]}</b>${d ? `<em class="down">${d}</em>` : ''}</span>`;
     }
-    const crit = r.defCrit ? '<span class="lg-crit"><i class="fa-solid fa-star"></i>방어 크리티컬</span>' : '';
+    const crit = r.defCrit ? '<span class="lg-crit"><i>✦</i>방어 크리티컬</span>' : '';
     const notes = [...r.notes];
     // 회피처럼 수치 줄이 없으면 첫 안내를 그 줄 내용으로 씁니다.
     const body = parts.length ? parts.join(' · ') : (notes.length ? logLineParts(siteLabelize(notes.shift().text), 'heal').html : '');
-    return `<div class="logline tag-damage st-row"><span class="li"><i class="fa-solid fa-burst"></i></span>`
+    return `<div class="logline tag-damage st-row"><span class="li"></span>`
       + `<span class="lt"><span class="st-atk">${nm(r.atk)}</span>${body}${hp}${crit}</span></div>`
-      + notes.map(l => formatLogLineHtml(l, false, false)).join('');
+      + notes.map(l => formatLogLineHtml(l, true, false)).join('');
   }).join('');
   return `<div class="logblock settle">${head}${rows}</div>`;
 }
@@ -5522,7 +5525,7 @@ function formatLogHtml(lines) {
       const flush = () => {
         if (!run.length) return;
         const kind = run.some(l => l.tag === 'heal') ? ' heal' : '';
-        out += `<div class="logblock cont${kind}">${run.map(l => formatLogLineHtml(l, false)).join('')}</div>`;
+        out += `<div class="logblock cont${kind}">${run.map((l, i) => formatLogLineHtml(l, i > 0)).join('')}</div>`;
         run = [];
       };
       section.forEach(l => { if (l.tag === 'round') { flush(); out += formatLogLineHtml(l, false); } else run.push(l); });
@@ -5533,7 +5536,7 @@ function formatLogHtml(lines) {
     const actionCls = isGroup ? logActionClass(head) : '';
     const cls = `logblock${isGroup ? '' : ' cont'}${actionCls ? ' ' + actionCls : ''}`;
     // 블록 첫 줄(⚔ NOVA 공격 → E)과 바로 아래 줄(⚔ 공격 수치)의 아이콘이 겹치므로, 아래 줄이 있으면 첫 줄 아이콘은 뺍니다.
-    return `<div class="${cls}">${section.map((l, i) => formatLogLineHtml(l, i === 0 && isGroup && section.length > 1, i === 0 && isGroup)).join('')}</div>`;
+    return `<div class="${cls}">${section.map((l, i) => formatLogLineHtml(l, i > 0, i === 0 && isGroup)).join('')}</div>`;
   }).join('');
 }
 
