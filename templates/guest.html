@@ -320,8 +320,7 @@
     background: var(--panel); box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.07);
     opacity:0; scale:.86; transition: opacity .22s ease, scale .28s cubic-bezier(.2,.8,.2,1); will-change: transform; }
   .ui-hovercard.on { opacity:1; scale:1; }
-  .ui-hovercard .pic { width:168px; height:168px; background:center/cover no-repeat; background-color: color-mix(in srgb, var(--c) 22%, #141417);
-    display:flex; align-items:center; justify-content:center; font-size:56px; font-weight:800; color: var(--c); }
+  .ui-hovercard .pic { width:168px; height:168px; background:center/cover no-repeat; background-color:#0b0b0d; }
   .ui-hovercard .cap { padding:10px 12px 11px; display:flex; flex-direction:column; gap:2px; min-width:0; }
   .ui-hovercard .cap b { font-size:14px; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .ui-hovercard .cap span { font-size:12px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -7104,7 +7103,7 @@ function openUserFromList(name) {
   closeUserInfoPanel();
   openMyPageFor(name);
 }
-// 유저 리스트 호버 카드 : 프로필 사진(없으면 이름 첫 글자)이 커서를 부드럽게 따라옵니다. 마우스가 있는 기기에서만.
+// 유저 리스트 호버 카드 : 프로필 사진(없으면 검은 블럭)이 커서를 부드럽게 따라옵니다. 마우스가 있는 기기에서만.
 const uiHover = { el: null, x: 0, y: 0, tx: 0, ty: 0, raf: 0, on: false };
 function uiHoverEl() {
   if (!uiHover.el) {
@@ -7120,13 +7119,11 @@ function uiHoverShow(row, e) {
   const name = row.dataset.name, d = (lastRosterMypage || {})[name] || {};
   const el = uiHoverEl(), pic = el.querySelector('.pic');
   const fresh = !uiHover.on;
-  const initial = [...name.trim()][0] || '';
-  pic.style.setProperty('--c', d.color || 'var(--point)');
-  pic.style.backgroundImage = 'none'; pic.textContent = initial;
+  pic.style.backgroundImage = 'none';
   if (d.avatar_url) {
-    // 이미지를 다 받은 뒤에 바꿔 끼워서, 못 불러오면 이름 첫 글자를 그대로 둡니다.
+    // 이미지를 다 받은 뒤에 바꿔 끼워서, 못 불러오면 검은 블럭을 그대로 둡니다.
     const img = new Image(), want = name;
-    img.onload = () => { if (uiHover.name === want) { pic.style.backgroundImage = `url('${d.avatar_url}')`; pic.textContent = ''; } };
+    img.onload = () => { if (uiHover.name === want) { pic.style.backgroundImage = `url('${d.avatar_url}')`; } };
     img.src = d.avatar_url;
   }
   uiHover.name = name;
