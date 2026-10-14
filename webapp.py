@@ -27,7 +27,7 @@ import log_export
 import mailbox as mailbox_mod
 import dorm as dorm_mod
 import world as world_mod
-from battle import Battle, BattleError
+from battle import Battle, BattleError, cell_label
 from database import CharacterDatabase, shared_db
 from rooms import (
     create_room, get_room, delete_room, list_rooms, load_rooms, save_rooms, load_runtime, save_runtime, mark_runtime_dirty,
@@ -36,7 +36,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.14"
+SERVER_BUILD = "2026-10-13.15"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -730,6 +730,9 @@ def emit_action_sfx(room, actor_name, action_type):
             "text": f"【{SKILL_ACTION_LABELS.get(action_type, action_type)}】",
             "skill": SKILL_ACTION_LABELS.get(action_type, action_type),
             "fx": dict(fx, actor=actor_name) if fx else None,
+            # 스킬 사용 횟수 제한이 있는 캐릭터면 남은 횟수(없으면 None - 채팅에 표시하지 않음)
+            "uses_left": getattr(room.game.battle.find_character(actor_name), "skill_uses_left", None)
+            if room.game.battle is not None and room.game.battle.find_character(actor_name) is not None else None,
         }
         room.chat_log.append(_with_chat_id(entry))
         mark_runtime_dirty()
@@ -1835,7 +1838,7 @@ def on_roll_site_dice(data):
     room.site_dice_round_no = battle.round_no
     room.site_dice_value = value
     room.site_dice_used = 0
-    text = f"전조 : 이번 라운드 거점은 {value}회 행동합니다."
+    text = f"전조 : 이번 라운드 거점과 {value}회 대치합니다."
     battle.log_event(text, tag="system")
     post_system_chat(room, text, nickname="전조")
     broadcast_state(room)
@@ -1866,7 +1869,7 @@ def on_telegraph_reveal(data):
             cells.append([x, y])
     room.telegraph_cells = cells
     room.telegraph_round_no = battle.round_no
-    text = f"전조 공개 : {len(cells)}칸에 곧 피해가 발생합니다." if cells else "전조 공개 : 이번 라운드는 피해 구역이 없습니다."
+    text = f"전조 공개 : {len(cells)}칸에 곧 재해가 발생합니다." if cells else "전조 공개 : 이번 라운드는 재해 구역이 없습니다."
     battle.log_event(text, tag="system")
     post_system_chat(room, text, nickname="전조")
     broadcast_state(room)
@@ -1988,7 +1991,7 @@ def _post_mass_raid_reminder(room, battle, threshold):
         "nickname": "system",
         "role": "system",
         "category": "system",
-        "text": f"제한시간 {minutes}분 남았습니다 ({acted_count}/{len(living)}명 행동 완료) · 미완료: {names}",
+        "text": f"제한시간 {minutes}분 남았습니다. · 미완료: {names}",
     }
     room.chat_log.append(_with_chat_id(entry))
     mark_runtime_dirty()
@@ -2064,7 +2067,7 @@ def _maybe_auto_advance_turn(room, battle):
         "nickname": "system",
         "role": "system",
         "category": "system",
-        "text": f"{battle.current_turn_team} 전원 행동 완료 — 자동으로 다음 턴으로 넘어갑니다.",
+        "text": f"{battle.current_turn_team} 전원 행동 완료 — 다음 턴으로 넘어갑니다.",
     }
     room.chat_log.append(_with_chat_id(entry))
     mark_runtime_dirty()
@@ -2106,7 +2109,7 @@ def _maybe_relocate_boss(battle, actor_char):
     group_label = next(
         (p for p in config.BOSS_NAME_PREFIXES if nw.name.startswith(p)), nw.name,
     )
-    battle.log_event(f"{group_label} 전원 행동 완료 — 새로운 자리로 이동했습니다.", tag="system")
+    battle.log_event(f"{group_label} 이동 — {cell_label(*current_anchor)} → {cell_label(*anchor)}", tag="system")
 
 
 @socketio.on("battle_action")
@@ -2216,7 +2219,7 @@ def on_battle_action(data):
             # 함께 쓰고, 남은 횟수가 있으면 모든 부위가 다시 행동 가능, 다 쓰면 모든 부위가 행동 완료.
             _set_site_group_acted(battle, actor_char, acted=remaining <= 0)
             if remaining > 0:
-                battle.log_event(f"거점 추가 행동 가능 (이번 라운드 남은 횟수 {remaining}회)", tag="system")
+                battle.log_event(f"거점 행동 게이지 (라운드 내 {remaining}회)", tag="system")
             else:
                 battle.log_event("거점의 이번 라운드 행동이 모두 끝났습니다.", tag="system")
 
@@ -2266,7 +2269,7 @@ def on_reveal_pending_action(data):
             # 함께 쓰고, 남은 횟수가 있으면 모든 부위가 다시 행동 가능, 다 쓰면 모든 부위가 행동 완료.
             _set_site_group_acted(battle, actor_char, acted=remaining <= 0)
             if remaining > 0:
-                battle.log_event(f"거점 추가 행동 가능 (이번 라운드 남은 횟수 {remaining}회)", tag="system")
+                battle.log_event(f"거점 행동 게이지 (라운드 내 {remaining}회)", tag="system")
             else:
                 battle.log_event("거점의 이번 라운드 행동이 모두 끝났습니다.", tag="system")
 
@@ -2381,7 +2384,7 @@ def on_shop_use(data):
         hp_before = live.current_hp
         was_downed = live.status == live.STATUS_DOWNED
         queued = battle._apply_or_queue_heal(live, amount, item["name"])
-        battle.log_event(f"🧪 {name} 아이템 사용 : {item['name']}", tag="heal")
+        battle.log_event(f"{name} 물자 사용 : {item['name']}", tag="heal")
         if queued:
             battle.log_event(f"회복 {amount} (피해 정산 후 적용)", tag="heal")
         else:
@@ -2642,7 +2645,7 @@ def on_notice_save(data):
     emit("notice_saved", {"id": notice["id"]})
     if is_new:
         for r in list_rooms():
-            post_system_chat(r, f"새 공지사항이 올라왔어요 : {notice['title']}")
+            post_system_chat(r, f"{notice['title']} : 새 공지사항이 업데이트 되었습니다.")
 
 
 @socketio.on("notice_delete")
@@ -3256,7 +3259,7 @@ def _demo_chat(room, nickname, text, category="player", role="guest"):
 def _demo_reveal_telegraph(room, battle, cells):
     room.telegraph_cells = [list(c) for c in cells]
     room.telegraph_round_no = battle.round_no
-    text = f"전조 공개 : {len(cells)}칸에 곧 피해가 발생합니다."
+    text = f"전조 공개 : {len(cells)}칸에 곧 재해가 발생합니다."
     battle.log_event(text, tag="system")
     post_system_chat(room, text, nickname="전조")
 

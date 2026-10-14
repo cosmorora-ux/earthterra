@@ -876,7 +876,7 @@ class Battle:
             attacker.name,
         ) if attacker.boss_group else attacker.name
         self._log(
-            f"전조 발동 — {attacker_label}의 공격이 표시된 구역({len(targets)}명)을 덮칩니다.",
+            f"전조 발동 — {attacker_label}의 공명이 표시된 구역({len(targets)}명)을 덮칩니다.",
             tag="summary",
         )
         self._log(f"[{', '.join(t.name for t in targets)}]", tag="summary")

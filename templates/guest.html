@@ -4155,7 +4155,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.14";
+const EXPECTED_SERVER_BUILD = "2026-10-13.15";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -4833,7 +4833,7 @@ function gridCellTip(c, x, y, key, telKeys, rangeCells, rangeIsAction) {
     if (badges.length) h += `<div class="tt-sec"><div class="k">효과</div><div class="tt-tags">${badges.join('')}</div></div>`;
   }
   if (telKeys.has(key)) {
-    h += `<div class="tt-note warn"><i class="fa-solid fa-triangle-exclamation"></i>${telegraphRevealedCells.has(key) ? '전조 구역 · 곧 피해가 발생합니다' : '전조로 고른 칸'}</div>`;
+    h += `<div class="tt-note warn"><i class="fa-solid fa-triangle-exclamation"></i>${telegraphRevealedCells.has(key) ? '전조 구역 · 곧 재해가 발생합니다' : '전조로 고른 칸'}</div>`;
   }
   return h;
 }
@@ -5133,7 +5133,7 @@ function renderGridNotice(battle, guide) {
     parts.push(`이번 턴 적이 ${lastSiteDice.value}회 공격합니다.`);
   }
   if (telegraphRevealedCells.size > 0) {
-    parts.push(`${telegraphRevealedCells.size}칸의 데미지 구역이 공개됩니다.`);
+    parts.push(`${telegraphRevealedCells.size}칸의 재해 구역이 공개됩니다.`);
   }
   if (!battle) parts.push('전투 시작 전입니다.');
   else if (lastGridGuide) parts.push(lastGridGuide);
@@ -5550,8 +5550,8 @@ function mergeSiteCounters(lines) {
   lines.forEach(l => {
     const t = typeof l.text === 'string' ? l.text : '';
     let m;
-    if (l.tag === 'system' && (m = t.match(/거점은 (\d+)회 행동합니다/))) total = +m[1];
-    const left = l.tag === 'system' && (m = t.match(/^거점 추가 행동 가능 \(이번 라운드 남은 횟수 (\d+)회\)$/)) ? +m[1]
+    if (l.tag === 'system' && (m = t.match(/거점(?:은|과) (\d+)회 (?:행동합니다|대치합니다)/))) total = +m[1];
+    const left = l.tag === 'system' && (m = t.match(/^거점 (?:추가 행동 가능 \(이번 라운드 남은 횟수|행동 게이지 \(라운드 내) (\d+)회\)$/)) ? +m[1]
       : (l.tag === 'system' && /^거점의 이번 라운드 행동이 모두 끝났습니다\.?$/.test(t) ? 0 : null);
     if (left == null) { out.push(l); return; }
     for (let i = out.length - 1; i >= 0; i--) {
@@ -5755,7 +5755,7 @@ function revealNewLogLines(view, fullLog, logTotal) {
   const newLines = fullLog.slice(already - sliceStart);
   // 새 행동 · 방어 · 정산 줄은 앞 블록(같은 행동 묶음 · 정산 묶음 · 이동 묶음 · 거점 횟수)에 합쳐질 수 있으므로,
   // 그런 줄이 있으면 보던 위치를 지킨 채 로그 전체를 다시 그립니다.
-  if (newLines.some(l => l.tag === 'action' || l.tag === 'defend' || (typeof l.text === 'string' && /^거점(의 이번 라운드 행동이 모두| 추가 행동 가능)/.test(l.text)))) {
+  if (newLines.some(l => l.tag === 'action' || l.tag === 'defend' || (typeof l.text === 'string' && /^거점(의 이번 라운드 행동이 모두| 추가 행동 가능| 행동 게이지)/.test(l.text)))) {
     const el = document.getElementById('pubLog');
     logSeenTotal[view] = logTotal;
     logRevealQueue[view] = [];
@@ -6170,7 +6170,7 @@ function fmtChat(entry) {
     const can = !!entry.fx;
     return `<div class="chat-line is-skill"${idAttr}>${av}
       <div class="chat-body"><div class="chat-meta"><b${prof.color ? ` style="color:${prof.color};"` : ''}>${shopEsc(who || '')}</b><span class="time">${formatChatTime(entry.time)}</span></div>
-        <div class="chat-text">${shopEsc(entry.text || ('【' + (entry.skill || '') + '】'))}${entry.fx && entry.fx.title ? ' ' + shopEsc(entry.fx.title) : ''}${can ? ` <button type="button" class="sr-play" onclick="replaySkillCutin('${entry.id}')" data-tip="컷인 다시 보기"><i class="fa-solid fa-play"></i></button>` : ''}</div></div>${delBtn}</div>`;
+        <div class="chat-text">${shopEsc(entry.text || ('【' + (entry.skill || '') + '】'))}${entry.fx && entry.fx.title ? ' ' + shopEsc(entry.fx.title) : ''}${entry.uses_left > 0 ? ` (잔여 ${entry.uses_left}회)` : ''}${can ? ` <button type="button" class="sr-play" onclick="replaySkillCutin('${entry.id}')" data-tip="컷인 다시 보기"><i class="fa-solid fa-play"></i></button>` : ''}</div></div>${delBtn}</div>`;
   }
   if (entry.category === 'round') {
     const main = /^round\s*\d+/i.test((entry.text || '').trim());
