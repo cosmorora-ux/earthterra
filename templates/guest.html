@@ -4158,7 +4158,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.15";
+const EXPECTED_SERVER_BUILD = "2026-10-13.16";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -5453,9 +5453,24 @@ function logSkillHead(l) {
 }
 // 마스 레이드 · 공성전은 러너 팀이 항상 선공이라, 선공 결정(민첩 비교 · 규칙 안내) 줄을 로그창에 띄우지 않습니다.
 const LOG_FIRST_TEAM_RX = /^(\[선공 결정\]|→ 민첩 합산이 더 높은|민첩 합산 동점|→ 주사위 결과|\[규칙\] .*항상 선공)/;
+// 예전 문구로 이미 저장된 로그도 지금 문구로 보여줍니다(서버를 다시 켜기 전 전투 · 지난 전투 기록).
+const LOG_LEGACY_TEXT = [
+  [/^(전조 발동 — .+?)의 공격이 /, '$1의 공명이 '],
+  [/^전조 공개 : (\d+)칸에 곧 피해가 발생합니다\./, '전조 공개 : $1칸에 곧 재해가 발생합니다.'],
+  [/^전조 공개 : 이번 라운드는 피해 구역이 없습니다\./, '전조 공개 : 이번 라운드는 재해 구역이 없습니다.'],
+  [/ \(다이스 ×\d+, (?:각 )?\d+회 공격\)$/, ''],
+  [/ 다운! \(팀 전체가 이번 라운드 행동을 마쳐야 생사가 확정됩니다\)$/, ' 다운!'],
+  [/ 사망 \(팀의 라운드 행동이 모두 끝났습니다\)$/, ' 사망'],
+  [/, 이 효과로는 죽지 않습니다\)/, ')'],
+];
+function modernizeLogText(t) {
+  if (typeof t !== 'string') return t;
+  LOG_LEGACY_TEXT.forEach(([rx, to]) => { t = t.replace(rx, to); });
+  return t;
+}
 function dropFirstTeamLines(lines) {
   // 단계 사이 ↓ 줄은 블록 안에 끼어 빈 줄처럼 보이므로 뺍니다(단계 제목이 이미 구분해 줍니다).
-  lines = lines.filter(l => l.tag !== 'arrow');
+  lines = lines.filter(l => l.tag !== 'arrow').map(l => (typeof l.text === 'string' ? { ...l, text: modernizeLogText(l.text) } : l));
   return (BATTLE_TYPE === 'mass_raid' || BATTLE_TYPE === 'siege') ? lines.filter(l => !(l.tag === 'system' && LOG_FIRST_TEAM_RX.test(l.text || ''))) : lines;
 }
 // "크리티컬!" 줄 + 바로 다음 타격(회복) 줄 → 그 줄 하나에 크리티컬 표시. "(강제 크리티컬 적용)" 문구도 같은 표시로 바꿉니다.

@@ -514,7 +514,7 @@ class Battle:
 
         if target.status == Character.STATUS_DOWNED:
             self._log(
-                f"{target.name} 다운! (팀 전체가 이번 라운드 행동을 마쳐야 생사가 확정됩니다)",
+                f"{target.name} 다운!",
                 tag="system",
             )
         elif target.status == Character.STATUS_DEAD:
@@ -934,7 +934,7 @@ class Battle:
         attacker.has_acted = True
 
         self._log(
-            f"{attacker.name} 【붕괴】 → {target.name} (다이스 ×{collapse_mult}, {collapse_hits}회 공격)",
+            f"{attacker.name} 【붕괴】 → {target.name}",
             tag="action",
         )
 
@@ -1016,8 +1016,7 @@ class Battle:
         attacker.has_acted = True
 
         self._log(
-            f"{attacker.name} 【방출】 → 적 전원({len(enemies)}명) "
-            f"(다이스 ×{emission_mult}, 각 {emission_hits}회 공격)",
+            f"{attacker.name} 【방출】 → 적 전원({len(enemies)}명)",
             tag="action",
         )
 
@@ -1293,7 +1292,7 @@ class Battle:
 
         self._log(
             f"{actor.name} 【편광】 : {config.get_value('SKILL_POLARIZE_DURATION', self.formula_overrides)}턴간 아군 전원의 피해를 집중시킵니다 "
-            f"(방어력 ×{actor.polarize_ally_count}, 이 효과로는 죽지 않습니다).",
+            f"(방어력 ×{actor.polarize_ally_count}).",
             tag="defend",
         )
         self._resolve_pending_attacks(actor)
@@ -1623,7 +1622,7 @@ class Battle:
                     self._log(f"{c.name} 위기를 넘겼습니다", tag="system")
                 else:
                     c.status = Character.STATUS_DEAD
-                    self._log(f"{c.name} 사망 (팀의 라운드 행동이 모두 끝났습니다)", tag="system")
+                    self._log(f"{c.name} 사망", tag="system")
 
     def _finalize_fleeing(self, ending_team_key: str):
         """
