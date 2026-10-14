@@ -797,3 +797,14 @@ def save_profile_overrides(profile: str, values: dict) -> dict:
     with open(_PROFILES_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     return current
+
+
+# ----------------------------------------------------------------------
+# 세계관 날짜 · 시간 표기(화면과 같은 규칙) : 연도 대신 '空歷', 월日 한자, AM/PM
+#   et_stamp() → "空歷 10月14日 PM.01:07"
+# ----------------------------------------------------------------------
+def et_stamp(ts=None):
+    import time as _time
+    t = _time.localtime(ts) if ts is not None else _time.localtime()
+    h12 = t.tm_hour % 12 or 12
+    return f"空歷 {t.tm_mon:02d}月{t.tm_mday:02d}日 {'AM' if t.tm_hour < 12 else 'PM'}.{h12:02d}:{t.tm_min:02d}"

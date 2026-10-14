@@ -35,7 +35,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.19"
+SERVER_BUILD = "2026-10-13.20"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -569,7 +569,8 @@ def build_public_state(room):
         # 그대로 쓰므로 서버 메모리에서는 자르지 않습니다).
         "log": pub_log[-LOG_SEND_CAP:],
         "log_total": len(pub_log),
-        "chat": [_with_chat_id(e) for e in room.chat_log[-200:]],
+        "chat": [_with_chat_id(e) for e in room.chat_log[-CHAT_SEND_CAP:]],
+        "chat_total": len(room.chat_log),  # 더 예전 대화가 있으면 채팅창 맨 위에 '이전 대화 더보기'를 띄웁니다
         "chat_tabs": room.chat_tabs_enabled,
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
@@ -807,7 +808,7 @@ def _archive_battle_logs(room):
     past = getattr(room, "past_battles", None)
     if past is None:
         past = room.past_battles = []
-    started = getattr(battle, "_started_label", None) or time.strftime("%m-%d %H:%M")
+    started = getattr(battle, "_started_label", None) or config.et_stamp()
     past.append({
         "label": f"{started} 전투 ({len(battle.team_a)}:{len(battle.team_b)})",
         "public_log": list(battle.public_log),
@@ -845,7 +846,7 @@ def on_export_log(data):
         "filename": f"battle_log_{room.id}_{time.strftime('%Y%m%d_%H%M')}.html",
         "room_name": room.name,
         "battle_type_label": BATTLE_TYPE_LABELS.get(room.battle_type, room.battle_type),
-        "saved_at": time.strftime("%Y-%m-%d %H:%M"),
+        "saved_at": config.et_stamp(),
         # 아군 회의는 팀끼리만 보는 대화라 파일에 넣지 않습니다(room.chat_log에는 원래 없음).
         "chat": [e for e in room.chat_log if e.get("category") != "team"],
         "battles": [
@@ -1799,7 +1800,7 @@ def on_start_battle(data):
         emit("action_error", {"message": str(e)})
         return
     if room.game.battle is not None:
-        room.game.battle._started_label = time.strftime("%m-%d %H:%M")
+        room.game.battle._started_label = config.et_stamp()
 
     # 전투가 방금 막 만들어져서 팀이 정해졌으므로, 이미 접속해 있던 소켓들의 아군 회의
     # 채널 소속도 다시 계산해줍니다(전투 시작 전에는 팀이 없어서 못 넣었을 것이므로).
@@ -3180,6 +3181,27 @@ def on_set_scene(data):
     broadcast_state(room)
 
 
+CHAT_SEND_CAP = 200   # 상태를 보낼 때 함께 보내는 최근 채팅 수(더 예전 것은 '더보기'로 받아요)
+CHAT_OLDER_PAGE = 200
+
+
+@socketio.on("chat_older")
+def on_chat_older(data):
+    """채팅창 '이전 대화 더보기' : before(지금 보이는 가장 오래된 채팅 id) 앞의 대화를 한 번에 200개씩 보냅니다.
+    공용 채팅 기록(room.chat_log)만 보내므로 아군 회의(팀 전용)는 들어가지 않습니다."""
+    info = CONNECTIONS.get(request.sid)
+    room = get_room(info["room_id"]) if info else None
+    if room is None:
+        return
+    before = (data or {}).get("before")
+    log = room.chat_log
+    idx = next((i for i, e in enumerate(log) if e.get("id") == before), None)
+    if idx is None:
+        idx = max(0, len(log) - CHAT_SEND_CAP)
+    start = max(0, idx - CHAT_OLDER_PAGE)
+    emit("chat_older_result", {"entries": [_with_chat_id(e) for e in log[start:idx]], "has_more": start > 0})
+
+
 @socketio.on("chat_delete")
 def on_chat_delete(data):
     """운영진 : 채팅 메시지 한 줄 삭제. 모든 접속자 화면에서도 바로 지워집니다."""
@@ -3308,7 +3330,7 @@ def build_demo_room():
             site_auto_defense=True, grid_width=size, grid_height=size,
         )
         battle = room.game.battle
-        battle._started_label = time.strftime("%m-%d %H:%M")
+        battle._started_label = config.et_stamp()
         _apply_battle_rules(room, formula_overrides, size, size)
 
         # 자리 : NOVA는 왼쪽 위에서 시작(1라운드 뒤 가운데로 이동 — 보스 이동 안내 확인용),

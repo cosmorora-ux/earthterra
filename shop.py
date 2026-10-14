@@ -183,7 +183,7 @@ class Shop:
     def add_request(self, room_id: str, character: str, item: dict, memo: str) -> dict:
         req = {
             "id": _new_id(),
-            "time": time.strftime("%m-%d %H:%M"),
+            "time": config.et_stamp(),
             "room_id": room_id,
             "character": character,
             "item_id": item["id"],

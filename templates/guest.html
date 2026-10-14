@@ -3118,6 +3118,19 @@
   .shop-icon-pick button { width:36px; height:36px; border-radius:8px; border:1px solid transparent; background:rgba(255,255,255,.04); color:#d7d8de; font-size:15px; cursor:pointer; }
   .shop-icon-pick button:hover { background:rgba(255,255,255,.09); color:#fff; }
   .shop-icon-pick button.on { border-color: rgba(var(--point-rgb), .7); background: rgba(var(--point-rgb), .15); color: var(--point); }
+  /* 채팅창 : 이전 대화 더보기 · 맨 아래로 버튼 */
+  .chat-more { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; margin:2px 0 12px; padding:8px 12px; border-radius:10px;
+    border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); color: var(--muted); font:inherit; font-size:12.5px; cursor:pointer; }
+  .chat-more:hover { color:#fff; background:rgba(255,255,255,.06); }
+  .member-body { position:relative; }
+  .jump-bottom { position:absolute; right:16px; bottom:14px; z-index:6; width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.12); background:rgba(20,20,23,.92);
+    color:#fff; font-size:13px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.45);
+    opacity:0; transform:translateY(6px); pointer-events:none; transition: opacity .18s, transform .18s; }
+  .jump-bottom.show { opacity:1; transform:none; pointer-events:auto; }
+  .jump-bottom:hover { border-color: rgba(var(--point-rgb), .6); }
+  .jump-bottom .dot { position:absolute; top:3px; right:3px; width:8px; height:8px; border-radius:50%; background: var(--point); display:none; }
+  .jump-bottom.new .dot { display:block; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -3889,6 +3902,8 @@ function serverNowSec() {
 let MY_NICKNAME = '';
 let chatFilter = 'all';
 let lastChat = [];
+// '이전 대화 더보기'로 받아 둔 예전 대화 등 : 상태가 뒤쪽 스크립트보다 먼저 도착해도 쓸 수 있게 여기서 선언합니다.
+var olderChat = [], olderChatHasMore = null, lastChatTotal = 0, lastPublicChat = [], olderChatLoading = false;
 let lastBattleForPanel = null;
 let actionPanelActorName = null;
 let lastUserInfoHidden = new Set();  // 운영진이 눈을 끈(GM이 아닌 사람에게 숨긴) 이름들
@@ -4220,7 +4235,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.19";
+const EXPECTED_SERVER_BUILD = "2026-10-13.20";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -4252,6 +4267,7 @@ socket.on('public_state', (state) => {
   renderChatTabVisibility();
   renderBattle(state.battle);
   renderPubLog(state.log, state.log_total);
+  lastChatTotal = state.chat_total != null ? state.chat_total : (state.chat || []).length;
   renderChat(state.chat);
   renderMusic(state.music, state.server_now);
   renderShop();
@@ -4299,6 +4315,17 @@ function statsTitle(c) {
 // ------------------------------------------------------------------
 // 실시간 시계
 // ------------------------------------------------------------------
+// 세계관 날짜 · 시간 표기(화면 전체 공통) : 연도 대신 '空歷', 월日 한자, 오전/오후 대신 AM/PM
+//   etTime(13, 7)            → "PM.01:07"
+//   etDate(date)             → "空歷 10月14日"
+//   etStamp(date)            → "空歷 10月14日 PM.01:07"
+function etPad(n) { return String(n).padStart(2, '0'); }
+function etTime(h, m, sec) {
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h < 12 ? 'AM' : 'PM'}.${etPad(h12)}:${etPad(m)}${sec != null ? ':' + etPad(sec) : ''}`;
+}
+function etDate(d) { return `空歷 ${etPad(d.getMonth() + 1)}月${etPad(d.getDate())}日`; }
+function etStamp(d) { return `${etDate(d)} ${etTime(d.getHours(), d.getMinutes())}`; }
 function tickClock() {
   const el = document.getElementById('liveClock');
   if (!el) return;
@@ -4308,7 +4335,7 @@ function tickClock() {
   const h24 = now.getHours();
   const ampm = h24 < 12 ? 'AM' : 'PM';
   const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-  el.textContent = `空歷 ${pad(now.getMonth() + 1)}月${pad(now.getDate())}日 ${ampm}.${pad(h12)}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  el.textContent = `${etDate(now)} ${etTime(h24, now.getMinutes(), now.getSeconds())}`;
 }
 setInterval(tickClock, 200);
 tickClock();
@@ -6084,6 +6111,7 @@ setChatFilter('general');
 const MEMBER_TAB_TITLES = { chat: 'Chat', log: 'Log', meeting: 'Council', spectate: 'Spectators' };
 function setMemberTab(view) {
   currentMemberView = view;
+  setTimeout(updateJumpBottom, 0);  // 탭을 바꾸면 그 탭의 스크롤 위치로 '맨 아래로' 버튼을 다시 판단
   const titleEl = document.getElementById('memberTitle');
   if (titleEl) titleEl.textContent = MEMBER_TAB_TITLES[view] || 'Chat';
   // 로그창에는 검색이 없으므로 검색 모드를 끄고 아이콘도 숨깁니다.
@@ -6208,24 +6236,87 @@ function refreshChatTabSettingsVisibility() {
 // 매번 다시 합쳐줍니다.
 let lastTeamChat = [];
 
+// '이전 대화 더보기'로 받아 둔 예전 대화(서버가 매번 보내는 최근 200개보다 앞의 것)
 function renderChat(chat) {
-  lastChat = (chat || []).concat(lastTeamChat).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  lastPublicChat = chat || [];
+  // 공용 채팅은 서버 순서 그대로(예전 대화 + 최근 대화), 아군 회의는 시각에 맞춰 사이사이에 끼워 넣습니다.
+  const seen = new Set(lastPublicChat.map(e => e.id));
+  const pub = olderChat.filter(e => !seen.has(e.id)).concat(lastPublicChat);
+  const merged = pub.slice();
+  lastTeamChat.forEach(t => {
+    let i = merged.length;
+    while (i > 0 && (merged[i - 1].time || '') > (t.time || '')) i--;
+    merged.splice(i, 0, t);
+  });
+  lastChat = merged;
   renderChatFiltered();
 }
+function chatHasOlder() {
+  if (olderChatHasMore === false) return false;
+  return lastChatTotal > lastPublicChat.length + olderChat.length;
+}
+function loadOlderChat() {
+  if (olderChatLoading) return;
+  const first = olderChat[0] || lastPublicChat[0];
+  if (!first) return;
+  olderChatLoading = true;
+  socket.emit('chat_older', { before: first.id });
+}
+socket.on('chat_older_result', (d) => {
+  olderChatLoading = false;
+  const el = document.getElementById('chatLog');
+  const fromBottom = el.scrollHeight - el.scrollTop;   // 위에 대화가 붙어도 보던 자리를 그대로 지킵니다
+  olderChat = (d.entries || []).concat(olderChat);
+  olderChatHasMore = !!d.has_more;
+  renderChat(lastPublicChat);
+  el.scrollTop = el.scrollHeight - fromBottom;
+});
 
 // 새 글/로그가 추가돼도 사용자가 보던 위치를 유지합니다. 맨 아래를 보고 있었을 때만(또는 forceBottom)
 // 새 내용을 따라 아래로 내려가고, 위로 올려서 읽던 중이면 그 화면 그대로 둡니다.
 function scrollKeepingView(el, mutate, forceBottom) {
   const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-  const prev = el.scrollTop;
+  const prev = el.scrollTop, prevH = el.scrollHeight;
   mutate();
   el.scrollTop = (forceBottom || atBottom) ? el.scrollHeight : prev;
+  // 위로 올려 읽는 중에 새 글이 붙으면 '맨 아래로' 버튼에 새 글 점을 켭니다.
+  if (!forceBottom && !atBottom && el.scrollHeight > prevH) jumpNewMark(el);
+  updateJumpBottom();
+}
+// ---- 채팅창 · 로그창 '맨 아래로' 버튼 : 위로 올려 읽는 중일 때만 보이고, 누르면 맨 아래로 ----
+function activeChatScroller() {
+  const logTab = document.getElementById('memberTabLog');
+  return logTab && logTab.classList.contains('active') ? document.getElementById('pubLog') : document.getElementById('chatLog');
+}
+function ensureJumpBottomBtn() {
+  let b = document.getElementById('jumpBottomBtn');
+  if (b) return b;
+  const body = document.querySelector('.member-panel .member-body');
+  if (!body) return null;
+  b = document.createElement('button');
+  b.id = 'jumpBottomBtn'; b.className = 'jump-bottom'; b.type = 'button';
+  b.setAttribute('aria-label', '맨 아래로'); b.dataset.tip = '맨 아래로';
+  b.innerHTML = '<i class="fa-solid fa-arrow-down"></i><span class="dot"></span>';
+  b.onclick = () => { const el = activeChatScroller(); if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); b.classList.remove('new'); };
+  body.appendChild(b);
+  ['chatLog', 'pubLog'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('scroll', updateJumpBottom, { passive: true }); });
+  return b;
+}
+function jumpNewMark(el) { const b = ensureJumpBottomBtn(); if (b && el === activeChatScroller()) b.classList.add('new'); }
+function updateJumpBottom() {
+  const b = ensureJumpBottomBtn(); if (!b) return;
+  const el = activeChatScroller();
+  const away = !!(el && el.offsetParent && el.scrollHeight - el.scrollTop - el.clientHeight > 120);
+  b.classList.toggle('show', away);
+  if (!away) b.classList.remove('new');
 }
 
 function renderChatFiltered() {
   const el = document.getElementById('chatLog');
   const shown = lastChat.filter(e => matchesFilter(e) && matchesChatSearch(e));
-  scrollKeepingView(el, () => { el.innerHTML = shown.map(fmtChat).join(''); markChatContinuations(el); }, !!chatSearchQuery);
+  const more = !chatSearchQuery && chatHasOlder()
+    ? `<button class="chat-more" onclick="loadOlderChat()"><i class="fa-solid fa-clock-rotate-left"></i>이전 대화 더보기</button>` : '';
+  scrollKeepingView(el, () => { el.innerHTML = more + shown.map(fmtChat).join(''); markChatContinuations(el); }, !!chatSearchQuery);
   updateChatSearchCount(shown.length);
 }
 
@@ -6252,14 +6343,12 @@ function chatProfileOf(nickname) {
 }
 
 function formatChatTime(timeStr) {
-  // timeStr: 서버가 보내는 "HH:MM:SS"(24시간제) 문자열을 "오후 3:07"처럼 초 없이 표시합니다.
+  // timeStr: 서버가 보내는 "HH:MM:SS"(24시간제) 문자열을 "PM.03:07"처럼 초 없이 표시합니다.
   const parts = (timeStr || '').split(':');
   const h = parseInt(parts[0], 10);
-  const m = parts[1] || '00';
+  const m = parseInt(parts[1], 10) || 0;
   if (isNaN(h)) return timeStr;
-  const period = h < 12 ? '오전' : '오후';
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${period} ${h12}:${m}`;
+  return etTime(h, m);
 }
 
 function fmtChat(entry) {
@@ -7819,9 +7908,7 @@ function closeNotices() {
 }
 function fmtNoticeDate(ts) {
   if (!ts) return '';
-  const d = new Date(ts * 1000);
-  const p = n => String(n).padStart(2, '0');
-  return `${p(d.getMonth() + 1)}月${p(d.getDate())}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return etStamp(new Date(ts * 1000));
 }
 function toggleNotice(id) {
   if (openNoticeIds.has(id)) openNoticeIds.delete(id); else openNoticeIds.add(id);
@@ -8694,8 +8781,7 @@ let mailData = null, mailTab = 'inbox', mailOpenId = null;
 const mailDraft = { mode: 'pick', to: [], q: '', anon: true, text: '' };
 function mailEsc(t) { return shopEsc(t); }
 function mailTime(at) {
-  const d = new Date(at * 1000), h = d.getHours();
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return etStamp(new Date(at * 1000));
 }
 function updateMailDot() {
   const dot = document.getElementById('mailDot');
@@ -9229,7 +9315,7 @@ function dormGuestbookHtml(r) {
   const me = r.past ? null : dormLoggedName(), list = r.guestbook || [], mine = me && list.find(e => e.author === me);
   const draft = dormGbDraft[r.owner] != null ? dormGbDraft[r.owner] : (mine ? mine.text : '');
   const canDel = (e) => !r.past && (dormIsGm() || me === e.author || me === r.owner);
-  const fmt = (at) => { const d = new Date(at * 1000); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`; };
+  const fmt = (at) => etDate(new Date(at * 1000));
   const color = (name) => { const p = (typeof lastRosterMypage !== 'undefined' && lastRosterMypage[name]) || {}; return p.color || '#6b6b73'; };
   const isOwner = !r.past && dormMe() && dormMe() === r.owner;
   const music = r.music;
