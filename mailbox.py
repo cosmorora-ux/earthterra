@@ -25,15 +25,15 @@ MAX_LETTERS = 5000
 # 첨부 이미지 : 편지 한 통에 4장까지, 장당 5MB. 파일 이름은 추측할 수 없는 무작위 이름이라 받는 사람만 주소를 알아요.
 MAX_IMAGES = 4
 IMAGE_MAX_BYTES = 5 * 1024 * 1024
-# 편지의 시기(작중 연도, 空歷) : 대분류를 먼저 고르고, 리뉴얼 기간만 그 안에서 연도를 고릅니다.
-# (id, 이름, 첫 해, 마지막 해) — 러닝 기간은 연도가 하나로 정해져 있어요. 순서 = 작중 시간 순서.
+# 편지의 시기(작중 연도, 空歷) : 편지는 리뉴얼 기간에만 씁니다. 지금 기간은 운영진이 정하고,
+# 쓰는 사람은 그 기간 안에서 연도만 고릅니다. (id, 이름, 첫 해, 마지막 해) — 순서 = 작중 시간 순서.
 ERAS = [
-    ("r1", "1차 러닝", 514, 514),
     ("n12", "1~2차 리뉴얼", 514, 524),
-    ("r2", "2차 러닝", 524, 524),
     ("n23", "2~3차 리뉴얼", 500, 524),
-    ("r3", "3차 기간", 524, 524),
 ]
+DEFAULT_ERA = "n12"
+# 캐릭터 나이 기준 해 : 캐릭터 정보의 age = 1차 입학(空歷 514年) 때 나이
+AGE_BASE_YEAR = 514
 ERA_INDEX = {e[0]: i for i, e in enumerate(ERAS)}
 
 
@@ -80,7 +80,7 @@ class Mailbox:
     def save(self):
         safeio.write_json(self.path, {"letters": self.letters}, indent=1)
 
-    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True, images=(), dry_run=False, era=None, year=None):
+    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True, images=(), dry_run=False, era=None, year=None, batch=None):
         text = (text or "").strip()
         images = list(images or [])[:MAX_IMAGES]
         if not text and not images:
@@ -112,6 +112,8 @@ class Mailbox:
             era, year = clean_era(era, year)
             if era:
                 letter["era"], letter["year"] = era, year
+            if batch:
+                letter["batch"] = batch  # 여러 명에게 한 번에 보낸 편지 : 보낸 편지함에서 한 통으로 묶어 보여요
             self.letters.append(letter)
             dropped = self.letters[:-MAX_LETTERS]
             del self.letters[:-MAX_LETTERS]
@@ -140,6 +142,11 @@ class Mailbox:
                     l["hide_to"] = True
                 if l["from"] == name:
                     l["hide_from"] = True
+                    # 한 번에 여러 명에게 보낸 편지는 보낸 편지함에서 한 통이라, 지우면 같이 지웁니다.
+                    if l.get("batch"):
+                        for x in self.letters:
+                            if x.get("batch") == l["batch"] and x["from"] == name:
+                                x["hide_from"] = True
                 gone = [x for x in self.letters if x["hide_to"] and x["hide_from"]]
                 self.letters = [x for x in self.letters if not (x["hide_to"] and x["hide_from"])]
                 self._forget_images(gone)
@@ -172,7 +179,24 @@ class Mailbox:
 
     def payload(self, me, is_gm=False):
         inbox = [self._view(l, me, is_gm) for l in self.letters if l["to"] == me and not l["hide_to"]]
-        outbox = [self._view(l, me, is_gm) for l in self.letters if l["from"] == me and not l["hide_from"]]
+        outbox = []
+        batches = {}
+        for l in self.letters:
+            if l["from"] != me or l["hide_from"]:
+                continue
+            v = self._view(l, me, is_gm)
+            v["to_list"] = [v["to"]] if v["to"] else []
+            v["read_count"] = 1 if l["read"] else 0
+            b = l.get("batch")
+            if b and b in batches:
+                g = batches[b]
+                if v["to"]:
+                    g["to_list"].append(v["to"])
+                g["read_count"] += v["read_count"]
+                continue
+            if b:
+                batches[b] = v
+            outbox.append(v)
         data = {"me": me, "inbox": inbox[::-1], "outbox": outbox[::-1], "eras": eras_payload(),
                 "unread": sum(1 for l in inbox if not l["read"])}
         if is_gm:

@@ -1619,6 +1619,11 @@
   .mail-year button { width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); cursor:pointer; font-size:12px; }
   .mail-year button:disabled { opacity:.35; cursor:default; }
   .mail-year .rng { font-size:12px; color: var(--muted); margin-left:4px; }
+  .mail-year .era-name { font-size:13px; color: var(--muted); margin-right:4px; padding:0 10px; height:34px; display:inline-flex; align-items:center; border-radius:10px; background: rgba(255,255,255,.04); }
+  .mail-ages { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .mail-ages span { display:inline-flex; align-items:baseline; gap:8px; padding:8px 12px; border-radius:10px; background: rgba(255,255,255,.03); border:1px solid var(--line); }
+  .mail-ages em { font-style:normal; font-size:12px; color: var(--muted); }
+  .mail-ages b { font-size:14px; }
   .mail-letter .to b { color: var(--text); font-weight:700; font-size:15px; margin-left:4px; }
   .mail-letter .txt { font-size:15.5px; line-height:1.85; white-space:pre-wrap; word-break:break-word; color:#e8e8ec; min-height:120px; }
   .mail-letter .from { margin-top:26px; text-align:right; font-size:13px; color: var(--muted); }
@@ -4339,7 +4344,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.28";
+const EXPECTED_SERVER_BUILD = "2026-10-13.29";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -9111,27 +9116,30 @@ function mailEraLabel(l) {
   return e ? `空歷 ${l.year != null ? l.year : e.from}年 · ${e.name}` : '';
 }
 function mailEnsureEra() {
-  const eras = mailEras(); if (!eras.length) return;
-  if (!mailEra(mailDraft.era)) {
-    const want = ({ 1: 'r1', 2: 'r2', 3: 'r3' })[typeof factionPeriod === 'function' ? factionPeriod() : 1] || eras[0].id;
-    mailDraft.era = mailEra(want) ? want : eras[0].id;
-  }
-  const e = mailEra(mailDraft.era);
-  if (mailDraft.year == null || mailDraft.year < e.from || mailDraft.year > e.to) mailDraft.year = e.from === e.to ? e.from : e.from;
+  // 시기(리뉴얼 기간)는 운영진이 정한 지금 기간, 쓰는 사람은 연도만 고릅니다.
+  const e = mailEra(mailData && mailData.era_now) || mailEras()[0]; if (!e) return;
+  if (mailDraft.era !== e.id) { mailDraft.era = e.id; mailDraft.year = null; }
+  if (mailDraft.year == null || mailDraft.year < e.from || mailDraft.year > e.to) mailDraft.year = e.from;
+}
+// 나이 : 캐릭터 정보의 나이 = 1차 입학(空歷 514年) 때 나이. 고른 해에 맞춰 더하거나 뺍니다.
+function mailAgeAt(age, year) { return age == null ? null : age + (year - ((mailData && mailData.age_base) || 514)); }
+function mailAgeHtml(year) {
+  const d = mailData || {};
+  const ages = (d.ages || []).map(a => mailAgeAt(a, year));
+  const fmt = a => a < 0 ? '출생 전' : `${a}세`;
+  const mine = d.my_age != null ? fmt(mailAgeAt(d.my_age, year)) : '나이 미등록';
+  const range = ages.length ? (Math.min(...ages) === Math.max(...ages) ? fmt(ages[0]) : `${fmt(Math.min(...ages))} ~ ${fmt(Math.max(...ages))}`) : '등록된 나이가 없어요';
+  return `<div class="mail-ages"><span><em>내 캐릭터</em><b>${mine}</b></span><span><em>전체 나이 폭</em><b>${range}</b></span></div>`;
 }
 function mailEraHtml() {
   mailEnsureEra();
   const e = mailEra(mailDraft.era); if (!e) return '';
-  const ranged = e.from !== e.to;
-  return `<div class="mail-eras">${mailEras().map(x => `<button class="${x.id === mailDraft.era ? 'on' : ''}" onclick="mailSetEra('${x.id}')">${mailEsc(x.name)}</button>`).join('')}</div>
-    <div class="mail-year">${ranged
-      ? `<button onclick="mailStepYear(-1)" ${mailDraft.year <= e.from ? 'disabled' : ''} aria-label="이전 해"><i class="fa-solid fa-minus"></i></button>
-         <b>空歷 ${mailDraft.year}年</b>
-         <button onclick="mailStepYear(1)" ${mailDraft.year >= e.to ? 'disabled' : ''} aria-label="다음 해"><i class="fa-solid fa-plus"></i></button>
-         <span class="rng">${e.from} ~ ${e.to}年 중에서 골라요</span>`
-      : `<b>空歷 ${e.from}年</b><span class="rng">러닝 기간은 연도가 정해져 있어요</span>`}</div>`;
+  return `<div class="mail-year"><span class="era-name">${mailEsc(e.name)}</span>
+      <button onclick="mailStepYear(-1)" ${mailDraft.year <= e.from ? 'disabled' : ''} aria-label="이전 해"><i class="fa-solid fa-minus"></i></button>
+      <b>空歷 ${mailDraft.year}年</b>
+      <button onclick="mailStepYear(1)" ${mailDraft.year >= e.to ? 'disabled' : ''} aria-label="다음 해"><i class="fa-solid fa-plus"></i></button>
+      <span class="rng">${e.from} ~ ${e.to}年</span></div>${mailAgeHtml(mailDraft.year)}`;
 }
-function mailSetEra(id) { mailDraft.era = id; mailDraft.year = null; mailRefreshEra(); }
 function mailStepYear(d) { const e = mailEra(mailDraft.era); if (!e) return; mailDraft.year = Math.max(e.from, Math.min(e.to, (mailDraft.year || e.from) + d)); mailRefreshEra(); }
 function mailRefreshEra() { const el = document.getElementById('mailEraBox'); if (el) el.innerHTML = mailEraHtml(); }
 // 편지 첨부 이미지 : 4장까지, 장당 5MB (png · jpg · gif · webp). 파일 고르기 · 붙여넣기(Ctrl+V) · 끌어다 놓기 모두 돼요.
@@ -9202,6 +9210,8 @@ function setMailTab(t) { mailTab = t; mailOpenId = null; renderMail(); }
 socket.on('joined', () => socket.emit('mail_list'));
 socket.on('mail_data', (d) => {
   mailData = d; updateMailDot();
+  if (typeof opsRenderMailEras === 'function') opsRenderMailEras();
+  if (mailTab === 'write') mailRefreshEra();
   // 편지를 쓰는 중이면 입력이 끊기지 않도록 다시 그리지 않습니다.
   if (document.getElementById('mailModal').style.display === 'flex' && mailTab !== 'write') renderMail();
 });
@@ -9248,7 +9258,8 @@ function mailItemHtml(l) {
     const unread = mailTab === 'inbox' && !l.read;
     let who;
     if (mailTab === 'inbox') who = l.from ? `<span class="mail-who">${mailEsc(l.from)}</span>` : '<span class="mail-who anon">익명</span>';
-    else if (mailTab === 'outbox') who = l.to ? `<span class="mail-who">To. ${mailEsc(l.to)}</span>` : '<span class="mail-who anon">To. 누군가 (랜덤)</span>';
+    else if (mailTab === 'outbox') who = (l.to_list || []).length > 1 ? `<span class="mail-who">To. ${mailEsc(l.to_list[0])} 외 ${l.to_list.length - 1}명</span>`
+      : l.to ? `<span class="mail-who">To. ${mailEsc(l.to)}</span>` : '<span class="mail-who anon">To. 누군가 (랜덤)</span>';
     else who = `<span class="mail-who">${mailEsc(l.from)} → ${mailEsc(l.to)}</span>`;
     const badges = (l.anonymous && mailTab !== 'inbox' ? '<span class="mail-badge">익명</span>' : '') + (l.random && mailTab !== 'outbox' ? '<span class="mail-badge">랜덤</span>' : '');
     return `<div class="mail-item ${unread ? 'unread' : ''}" onclick="openLetter('${l.id}')">
@@ -9263,7 +9274,8 @@ function openLetter(id) {
   renderMail();
 }
 function mailLetterHtml(l, d) {
-  const toName = l.to ? mailEsc(l.to) : '누군가 (랜덤)';
+  const many = (l.to_list || []).length > 1;
+  const toName = many ? l.to_list.map(mailEsc).join(', ') : l.to ? mailEsc(l.to) : '누군가 (랜덤)';
   const fromName = l.from ? mailEsc(l.from) : '익명';
   const canDelete = mailTab !== 'all' || d.is_gm;
   return `<button class="mail-back" onclick="mailOpenId=null; renderMail()"><i class="fa-solid fa-chevron-left"></i> 목록으로</button>
@@ -9271,7 +9283,7 @@ function mailLetterHtml(l, d) {
       <div class="from">From.<b>${fromName}</b></div><div class="date">${mailTime(l.at)}</div></div>
     <div class="mail-actions"><span style="display:flex;align-items:center;gap:10px;">
       ${canDelete ? `<button class="mail-del" onclick="deleteLetter('${l.id}')"><i class="fa-solid fa-trash-can"></i> ${mailTab === 'all' ? '편지 지우기' : '내 목록에서 지우기'}</button>` : ''}
-      ${l.anonymous ? '<span class="mail-badge">익명 편지</span>' : ''}${l.random ? '<span class="mail-badge">랜덤 편지</span>' : ''}</span>
+      ${many && mailTab === 'outbox' ? `<span class="mail-badge">${l.to_list.length}명 중 ${l.read_count || 0}명 읽음</span>` : ''}${l.anonymous ? '<span class="mail-badge">익명 편지</span>' : ''}${l.random ? '<span class="mail-badge">랜덤 편지</span>' : ''}</span>
       ${mailTab === 'inbox' && l.from ? `<button class="btn mail-send" onclick="replyLetter(${mailEsc(JSON.stringify(l.from))})"><i class="fa-solid fa-reply"></i> 답장</button>` : ''}</div>`;
 }
 function deleteLetter(id) {
@@ -9295,7 +9307,7 @@ function mailComposeHtml(d) {
         <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
         : `<div class="mail-rand" style="margin-top:10px">등록된 캐릭터 중 한 명에게 무작위로 보내요. 누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</div>`}
     </div>
-    <div><div class="mail-label">시기</div><div id="mailEraBox">${mailEraHtml()}</div></div>
+    <div><div class="mail-label">연도</div><div id="mailEraBox">${mailEraHtml()}</div></div>
     <div><div class="mail-label">내용</div>
       <textarea class="mail-text" id="mailText" maxlength="2000" placeholder="편지를 써 주세요. 이미지는 붙여넣기(Ctrl+V)나 끌어다 놓기로도 붙일 수 있어요." onpaste="mailOnPaste(event)"
         ondragover="event.preventDefault()" ondrop="if(event.dataTransfer.files.length){event.preventDefault(); mailAddImages(event.dataTransfer.files);}" oninput="mailDraft.text=this.value; document.getElementById('mailCount').textContent=this.value.length+' / 2000'">${mailEsc(mailDraft.text)}</textarea>
@@ -9336,10 +9348,9 @@ function sendLetter() {
   const pick = mailDraft.mode === 'pick';
   if (pick && !mailDraft.to.length) { showShopToast('받는 사람을 골라 주세요.'); return; }
   mailEnsureEra();
-  if (!mailDraft.era) { showShopToast('편지의 시기를 골라 주세요.'); return; }
   document.getElementById('mailSendBtn').disabled = true;
   socket.emit('mail_send', { to: pick ? mailDraft.to : [], random: !pick, anonymous: pick ? false : mailDraft.anon, text,
-    era: mailDraft.era, year: mailDraft.year,
+    year: mailDraft.year,
     images: mailDraft.images.map(it => ({ data: it.buf })) });
 }
 
@@ -10877,7 +10888,7 @@ function opsCharsHtml() {
         <button class="ops-btn" onclick="opsQuickReset()">초기화</button>
         <button class="ops-btn primary" onclick="opsQuickSubmit()"><i class="fa-solid fa-plus"></i> 등록</button></div>`
       : `
-      <textarea class="ops-in" id="opsRegText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴&#10;진영 使徒 또는 Void (2차, 선택)"></textarea>
+      <textarea class="ops-in" id="opsRegText" placeholder="메이&#10;체력 2&#10;공격 3&#10;방어 1&#10;이능 3&#10;정신 2&#10;민첩 3&#10;행운 2&#10;역할 스트라이커&#10;스킬 붕괴&#10;진영 使徒 또는 Void (2차, 선택)&#10;나이 17 (1차 기준, 선택)"></textarea>
       <div class="ops-start"><span class="ops-hint">여러 명은 빈 줄로 나눠 한 번에 붙여 넣어요.</span>
         <button class="ops-btn primary" onclick="opsPasteSubmit()">일괄 등록</button></div>
       <div class="ops-row" style="margin-top:14px;"><span class="ops-hint" style="flex:1;">테스트용 더미 캐릭터</span>
@@ -10912,7 +10923,7 @@ function opsQuickReset() { opsQuick.stats = {}; document.getElementById('opsQNam
 function opsQuickSubmit() {
   const name = document.getElementById('opsQName').value.trim();
   if (!name) { showError('이름을 입력해 주세요.'); return; }
-  if (/^(체력|공격|방어|이능|정신|민첩|행운|역할|스킬|색상|국가|진영)/.test(name)) { showError('이름이 스탯/역할 이름으로 시작하면 등록할 수 없어요.'); return; }
+  if (/^(체력|공격|방어|이능|정신|민첩|행운|역할|스킬|색상|국가|진영|나이)/.test(name)) { showError('이름이 스탯/역할 이름으로 시작하면 등록할 수 없어요.'); return; }
   const lines = [name, ...STAT_KEYS.map(k => `${k} ${opsQuick.stats[k] || 0}`), `역할 ${opsQuick.role}`];
   const skill = document.getElementById('opsQSkill').value; if (skill) lines.push(`스킬 ${skill}`);
   const nation = document.getElementById('opsQNation').value.trim(); if (nation) lines.push(`진영 ${nation}`);
@@ -10958,6 +10969,7 @@ function opsEditHtml(c) {
     <div class="ops-row"><div class="ops-field" style="flex:1; margin:0;"><span class="lb">역할</span>
       <select class="ops-in" id="opsERole" onchange="opsEditRole()">${OPS_ROLES.map(r => `<option ${r === c.role ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
       <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsESkill"><option value="">(없음)</option>${skills.map(k => `<option ${k === c.skill ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
+    <div class="ops-field" style="margin-top:10px;"><span class="lb">나이 (1차 · 空歷 514年 기준)</span><input class="ops-in" type="number" id="opsEAge" min="0" max="999" placeholder="비우면 미등록" value="${c.age ?? ''}"></div>
     <div class="ops-field" style="margin-top:10px;"><span class="lb">2차 진영</span><select class="ops-in" id="opsENation"><option value="">(미정)</option>${FACTION_CHOICES.map(n => `<option ${n === c.nation ? 'selected' : ''}>${mailEsc(n)}</option>`).join('')}</select></div>
     <div class="ops-stat-grid">${STAT_KEYS.map(k => `<label>${k}<input class="ops-in" type="number" id="opsEStat_${k}" value="${(c.stats || {})[k] ?? 0}" oninput="opsEditTotal()"></label>`).join('')}</div>
     <div class="ops-start"><span class="ops-hint">합계 <b id="opsETotal" style="color:var(--text)">${STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0)}</b></span>
@@ -10974,7 +10986,8 @@ function opsEditSave() {
   if (!opsEditName) return;
   const stats = {}; STAT_KEYS.forEach(k => { stats[k] = document.getElementById('opsEStat_' + k).value; });
   socket.emit('update_character', { name: opsEditName, role: document.getElementById('opsERole').value, stats,
-    skill: document.getElementById('opsESkill').value || null, nation: document.getElementById('opsENation').value });
+    skill: document.getElementById('opsESkill').value || null, nation: document.getElementById('opsENation').value,
+    age: document.getElementById('opsEAge').value === '' ? null : document.getElementById('opsEAge').value });
   opsEditName = null;
 }
 function opsDelete(name) {
@@ -11048,6 +11061,11 @@ function opsRoomHtml() {
       <div class="ops-hint" style="margin-top:12px;">진영 색(Resonans · 使徒 · Void)은 바뀌지 않아요.</div>
     </div>
     <div class="ops-card">
+      <h3><i class="fa-solid fa-envelope"></i> 편지 시기<span class="sub">러너는 이 기간 안에서 연도만 골라요</span></h3>
+      <div class="mail-eras" id="opsMailEras"></div>
+      <div class="ops-hint" style="margin-top:12px;">캐릭터 나이는 캐릭터 수정에서 1차 입학(空歷 514年) 때 나이로 적어 주세요.</div>
+    </div>
+    <div class="ops-card">
       <h3><i class="fa-solid fa-cloud-sun"></i> 배경 · 날씨</h3>
       <div class="ops-scene" id="opsScene"></div>
       <div class="ops-foot"><button class="ops-btn" onclick="openSceneModal()"><i class="fa-solid fa-sliders"></i> 배경 · 날씨 설정</button></div>
@@ -11075,8 +11093,14 @@ function opsRenderSwatches() {
   el.innerHTML = OPS_POINTS.map(([k, t, c]) => `<button class="ops-swatch ${k === cur ? 'on' : ''}" style="--sw:${c}" onclick="socket.emit('set_point_theme', {theme:'${k}'})">
     <span class="sw"></span>${t}${k === cur ? '<i class="fa-solid fa-check"></i>' : ''}</button>`).join('');
 }
+function opsRenderMailEras() {
+  const el = document.getElementById('opsMailEras'); if (!el) return;
+  if (!mailData || !mailData.eras) { socket.emit('mail_list'); return; }
+  const cur = mailData.era_now;
+  el.innerHTML = mailData.eras.map(e => `<button class="${e.id === cur ? 'on' : ''}" onclick="socket.emit('mail_era_set', {era:'${e.id}'})">${mailEsc(e.name)} · ${e.from}~${e.to}年</button>`).join('');
+}
 function opsRenderRoomInfo() {
-  opsRenderSwatches(); opsRenderScene();
+  opsRenderSwatches(); opsRenderScene(); opsRenderMailEras();
   const n = document.getElementById('opsRoomName');
   if (n && document.activeElement !== n) n.value = (opsLastPublic && opsLastPublic.room_name) || ROOM_ID;
   const l = document.getElementById('opsGuestLink');

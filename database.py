@@ -48,7 +48,7 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "characters.j
 
 # 상점 재화(P)/구매한 아이템 - 다른 필드를 수정하는 호출(add_or_update/재등록)에서도 사라지지 않게 유지합니다.
 # 상점 재화/아이템과 스킬 이펙트(컷인) 설정은 add_or_update 인자에 없어서, 다른 필드를 바꿀 때 지워지지 않도록 유지합니다.
-SHOP_FIELDS = ("points", "items", "skill_log_title", "skill_log_image", "nation", "catchphrase", "cutin_motion", "hometown")
+SHOP_FIELDS = ("points", "items", "skill_log_title", "skill_log_image", "nation", "catchphrase", "cutin_motion", "hometown", "age")
 
 
 def _keep_shop_fields(old: dict, new: dict):
@@ -102,6 +102,7 @@ class CharacterDatabase:
     _ROLE_LINE_RE = re.compile(r"^\s*역할\s*[:：]?\s*(가디언|스트라이커|메딕)\s*$")
     _COLOR_LINE_RE = re.compile(r"^\s*색상\s*[:：]?\s*(#[0-9a-fA-F]{6})\s*$")
     _SKILL_LINE_RE = re.compile(r"^\s*스킬\s*[:：]?\s*(" + "|".join(config.ALL_SKILLS) + r")\s*$")
+    _AGE_LINE_RE = re.compile(r"^\s*나이\s*[:：]?\s*(\d{1,3})\s*(?:세|살)?\s*$")
     _NATION_LINE_RE = re.compile(r"^\s*(?:진영|국가)(?:\s*[:：]\s*|\s+)(\S.{0,19})\s*$")
 
     def parse_bulk_text(self, text: str):
@@ -124,9 +125,10 @@ class CharacterDatabase:
         current_color = None
         current_skill = None
         current_nation = None
+        current_age = None
 
         def flush():
-            nonlocal current_name, current_stats, current_role, current_color, current_skill, current_nation
+            nonlocal current_name, current_stats, current_role, current_color, current_skill, current_nation, current_age
             if current_name is None:
                 return
             if len(current_stats) == 0:
@@ -149,6 +151,8 @@ class CharacterDatabase:
                         )
                 if current_nation:
                     entry["nation"] = current_nation
+                if current_age is not None:
+                    entry["age"] = current_age
                 # 이미 있는 캐릭터를 다시 등록해도 프로필 이미지·효과음·마이페이지 설정·재화 등
                 # 이번에 적지 않은 정보는 그대로 남깁니다.
                 old = self.characters.get(current_name) or {}
@@ -166,6 +170,7 @@ class CharacterDatabase:
             current_color = None
             current_skill = None
             current_nation = None
+            current_age = None
 
         for line in lines:
             stat_match = self._STAT_LINE_RE.match(line)
@@ -173,6 +178,7 @@ class CharacterDatabase:
             color_match = self._COLOR_LINE_RE.match(line)
             skill_match = self._SKILL_LINE_RE.match(line)
             nation_match = self._NATION_LINE_RE.match(line)
+            age_match = self._AGE_LINE_RE.match(line)
 
             if stat_match:
                 if current_name is None:
@@ -186,6 +192,8 @@ class CharacterDatabase:
                 current_color = color_match.group(1)
             elif skill_match:
                 current_skill = skill_match.group(1)
+            elif age_match and current_name is not None:
+                current_age = int(age_match.group(1))
             elif nation_match and current_name is not None:
                 current_nation = nation_match.group(1).strip()
             else:

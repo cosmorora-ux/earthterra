@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.28"
+SERVER_BUILD = "2026-10-13.29"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -1566,6 +1566,18 @@ def on_update_character(data):
 avatar_url=existing.get("avatar_url"), sound_effect=existing.get("sound_effect"),
 sound_effect_volume=existing.get("sound_effect_volume"),
     )
+    # 나이 : 1차 입학(空歷 514年) 때 나이. 비우면 지웁니다.
+    if "age" in data:
+        entry = room.game.db.get(name)
+        try:
+            age = int(data.get("age"))
+        except (TypeError, ValueError):
+            age = None
+        if age is not None and 0 <= age <= 999:
+            entry["age"] = age
+        else:
+            entry.pop("age", None)
+        room.game.db.save()
     if "nation" in data and ((data.get("nation") or "").strip() in NATIONS or not (data.get("nation") or "").strip()):
         entry = room.game.db.get(name)
         nation = (data.get("nation") or "").strip()
@@ -2750,16 +2762,48 @@ def _mail_candidates(room):
     return sorted(n for n, d in room.game.db.characters.items() if (d or {}).get("role") and not config.is_boss_name(n))
 
 
+def _mail_era_now():
+    era = SITE_SETTINGS.get("mail_era")
+    return era if era in mailbox_mod.ERA_INDEX else mailbox_mod.DEFAULT_ERA
+
+
+def _mail_age_info(room, me):
+    """편지 쓰기의 나이 안내 : 등록된 캐릭터들의 1차(空歷 514年) 나이 목록과 내 나이."""
+    ages, mine = [], None
+    for name, entry in room.game.db.characters.items():
+        a = entry.get("age")
+        if isinstance(a, int):
+            ages.append(a)
+            if name == me:
+                mine = a
+    return {"ages": ages, "my_age": mine, "age_base": mailbox_mod.AGE_BASE_YEAR}
+
+
+@socketio.on("mail_era_set")
+def on_mail_era_set(data):
+    """운영진 : 편지를 쓰는 지금 시기(리뉴얼 기간)를 정합니다."""
+    me, is_gm, room = _mail_identity(request.sid)
+    era = (data or {}).get("era")
+    if not is_gm or era not in mailbox_mod.ERA_INDEX:
+        return
+    SITE_SETTINGS["mail_era"] = era
+    safeio.write_json(SITE_SETTINGS_PATH, SITE_SETTINGS, indent=1)
+    for sid in list(CONNECTIONS.keys()):
+        _emit_mail_data(sid)
+
+
 def _emit_mail_data(sid):
     me, is_gm, room = _mail_identity(sid)
     if room is None:
         return
     if me is None:
-        socketio.emit("mail_data", {"me": None, "inbox": [], "outbox": [], "unread": 0, "eras": mailbox_mod.eras_payload(),
+        socketio.emit("mail_data", {"me": None, "inbox": [], "outbox": [], "unread": 0, "eras": mailbox_mod.eras_payload(), "era_now": _mail_era_now(),
                                     "roster": _mail_candidates(room)}, to=sid)
         return
     data = mailbox_mod.shared_mailbox().payload(me, is_gm)
     data["roster"] = _mail_candidates(room)
+    data["era_now"] = _mail_era_now()
+    data.update(_mail_age_info(room, me))
     data["is_gm"] = is_gm
     socketio.emit("mail_data", data, to=sid)
 
@@ -2803,15 +2847,15 @@ def on_mail_send(data):
             emit("mail_result", {"ok": False, "message": f"이미지는 한 장에 {mailbox_mod.IMAGE_MAX_BYTES // (1024 * 1024)}MB까지 붙일 수 있어요."})
             return
         blobs.append((blob, ext))
-    if data.get("era") not in mailbox_mod.ERA_INDEX:
-        emit("mail_result", {"ok": False, "message": "편지의 시기(대분류 · 연도)를 골라 주세요."})
-        return
+    # 시기(리뉴얼 기간)는 운영진이 정한 지금 기간으로, 쓰는 사람은 연도만 고릅니다.
+    era_now = _mail_era_now()
     if not (data.get("text") or "").strip() and not blobs:
         emit("mail_result", {"ok": False, "message": "편지 내용을 쓰거나 이미지를 붙여 주세요."})
         return
     # 보낼 수 있는지(쿨타임 · 받는 사람) 확인한 뒤에만 파일을 남기려고, 첫 통을 보낼 때 저장합니다.
     box = mailbox_mod.shared_mailbox()
     sent, images = [], []
+    batch = uuid.uuid4().hex[:10] if len(targets) > 1 else None
     def _store_images():
         os.makedirs(mailbox_mod.IMAGE_DIR, exist_ok=True)
         for blob, ext in blobs:
@@ -2823,12 +2867,12 @@ def on_mail_send(data):
         for i, t in enumerate(targets):
             if i == 0:
                 box.send(me, t, data.get("text"), anonymous=anonymous, random_pick=is_random,
-                         candidates=_mail_candidates(room), check_cooldown=True, dry_run=True,
+                         candidates=_mail_candidates(room), check_cooldown=True, dry_run=True, era=era_now,
                          images=[ext for _, ext in blobs])
                 _store_images()
             sent.append(box.send(me, t, data.get("text"), anonymous=anonymous, random_pick=is_random,
                                  candidates=_mail_candidates(room), check_cooldown=(i == 0), images=images,
-                                 era=data.get("era"), year=data.get("year")))
+                                 era=era_now, year=data.get("year"), batch=batch))
     except mailbox_mod.MailError as e:
         if not sent:
             emit("mail_result", {"ok": False, "message": str(e)})
