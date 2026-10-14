@@ -14,6 +14,7 @@ dorm.py
 """
 
 import json
+import safeio
 import os
 import threading
 import time
@@ -169,12 +170,8 @@ class Dorms:
         return changed
 
     def save(self):
-        tmp = self.path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"current": self.current, "periods": self.periods, "assets": self.assets, "credits": self.credits,
-                       "seeded": self.seeded},
-                      f, ensure_ascii=False, indent=1)
-        os.replace(tmp, self.path)
+        safeio.write_json(self.path, {"current": self.current, "periods": self.periods, "assets": self.assets,
+                                      "credits": self.credits, "seeded": self.seeded}, indent=1)
 
     # ---- 조회 ----
     def all_assets(self):

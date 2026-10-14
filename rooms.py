@@ -7,6 +7,7 @@ rooms.py
 """
 
 import json
+import safeio
 import os
 import pickle
 import secrets
@@ -164,10 +165,7 @@ def save_rooms():
         room_id: {field: getattr(room, field) for field in _PERSISTED_FIELDS}
         for room_id, room in ROOMS.items()
     }
-    tmp_path = ROOMS_FILE + ".tmp"
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    os.replace(tmp_path, ROOMS_FILE)  # 저장 도중 서버가 죽어도 파일이 반쯤 쓰인 채로 깨지지 않도록.
+    safeio.write_json(ROOMS_FILE, data, indent=2)  # 저장 도중 서버가 죽어도 파일이 반쯤 쓰인 채로 깨지지 않도록.
 
 
 def load_rooms():
@@ -226,10 +224,7 @@ def save_runtime(force: bool = False) -> bool:
         return False
     if not force and blob == _last_runtime_blob:
         return False
-    tmp_path = RUNTIME_FILE + ".tmp"
-    with open(tmp_path, "wb") as f:
-        f.write(blob)
-    os.replace(tmp_path, RUNTIME_FILE)
+    safeio.write_bytes(RUNTIME_FILE, blob)
     _last_runtime_blob = blob
     return True
 

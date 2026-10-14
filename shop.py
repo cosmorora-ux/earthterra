@@ -10,6 +10,7 @@ shop.py
 """
 
 import json
+import safeio
 import os
 import time
 import uuid
@@ -137,10 +138,7 @@ class Shop:
             self.save()
 
     def save(self):
-        tmp = self.path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"items": self.items, "requests": self.requests}, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, self.path)
+        safeio.write_json(self.path, {"items": self.items, "requests": self.requests}, indent=2)
 
     # ---------------- 상품 ----------------
     def get(self, item_id: str):

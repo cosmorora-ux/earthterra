@@ -12,6 +12,7 @@ letters.json에 저장됩니다(서버 컴퓨터별 실데이터라 git에 올�
 """
 
 import json
+import safeio
 import os
 import random
 import threading
@@ -49,10 +50,7 @@ class Mailbox:
             self.letters = []
 
     def save(self):
-        tmp = self.path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"letters": self.letters}, f, ensure_ascii=False, indent=1)
-        os.replace(tmp, self.path)
+        safeio.write_json(self.path, {"letters": self.letters}, indent=1)
 
     def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True, images=(), dry_run=False):
         text = (text or "").strip()

@@ -11,9 +11,11 @@ Flask-SocketIO로 방(room) 단위 실시간 동기화 + 역할(운영진/참가
 """
 
 import json
+import safeio
 import os
 import random
 import re
+import threading
 import time
 import uuid
 
@@ -35,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.26"
+SERVER_BUILD = "2026-10-13.27"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -704,8 +706,7 @@ SFX_CONFIG = _load_sfx_config()
 
 
 def _save_sfx_config():
-    with open(SFX_CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump({k: {"url": v["url"], "volume": v["volume"]} for k, v in SFX_CONFIG.items()}, f, ensure_ascii=False, indent=2)
+    safeio.write_json(SFX_CONFIG_PATH, {k: {"url": v["url"], "volume": v["volume"]} for k, v in SFX_CONFIG.items()}, indent=2)
 
 
 def emit_action_sfx(room, actor_name, action_type):
@@ -900,12 +901,33 @@ def _emit_fx_numbers(room):
         socketio.emit("fx_numbers", events, room=room_channel(room.id, "all"))
 
 
+# 상태 묶어 보내기 : 상태 한 번이 수십 KB(채팅 · 로그 포함)라서, 30명이 한꺼번에 들어오거나 행동이 몰리면
+# 같은 상태를 수십 번 다시 보내게 됩니다. 짧은 시간(_BCAST_DELAY) 안에 생긴 변경은 마지막 상태 한 번으로 묶어 보냅니다.
+_BCAST_DELAY = 0.15
+_BCAST_PENDING = set()
+_BCAST_LOCK = threading.Lock()
+
+
 def broadcast_state(room):
     _emit_fx_numbers(room)
     mark_runtime_dirty()
     _mirror_round_logs(room)
-    socketio.emit("public_state", build_public_state(room), room=room_channel(room.id, "all"))
-    socketio.emit("gm_state", build_gm_state(room), room=room_channel(room.id, "gm"))
+    with _BCAST_LOCK:
+        if room.id in _BCAST_PENDING:
+            return
+        _BCAST_PENDING.add(room.id)
+    socketio.start_background_task(_flush_state, room)
+
+
+def _flush_state(room):
+    socketio.sleep(_BCAST_DELAY)
+    with _BCAST_LOCK:
+        _BCAST_PENDING.discard(room.id)
+    try:
+        socketio.emit("public_state", build_public_state(room), room=room_channel(room.id, "all"))
+        socketio.emit("gm_state", build_gm_state(room), room=room_channel(room.id, "gm"))
+    except Exception as e:
+        print(f"[broadcast] room {room.id} error: {e}")
 
 
 def _require_gm(sid):
@@ -1482,10 +1504,7 @@ def on_set_point_theme(data):
     if theme not in POINT_THEMES:
         return
     SITE_SETTINGS["point_theme"] = theme
-    tmp = SITE_SETTINGS_PATH + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(SITE_SETTINGS, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, SITE_SETTINGS_PATH)
+    safeio.write_json(SITE_SETTINGS_PATH, SITE_SETTINGS, indent=1)
     for r in list_rooms():
         broadcast_state(r)
 
@@ -2300,9 +2319,12 @@ def on_reveal_pending_action(data):
 
 
 def _broadcast_all_rooms():
-    """상품 목록/재화/소지품은 모든 방이 같이 쓰는 데이터라 모든 방에 다시 보내줍니다."""
+    """상품 목록/재화/소지품은 모든 방이 같이 쓰는 데이터라 모든 방에 다시 보내줍니다.
+    아무도 접속해 있지 않은 방은 건너뜁니다(들어올 때 새 상태를 받으니까요)."""
+    active = {info.get("room_id") for info in list(CONNECTIONS.values())}
     for r in list_rooms():
-        broadcast_state(r)
+        if r.id in active:
+            broadcast_state(r)
 
 
 def _shop_context(data):
@@ -3688,8 +3710,7 @@ def _ensure_demo_room_once():
         return
     SITE_SETTINGS["demo_room_created"] = True
     try:
-        with open(SITE_SETTINGS_PATH, "w", encoding="utf-8") as f:
-            json.dump(SITE_SETTINGS, f, ensure_ascii=False, indent=2)
+        safeio.write_json(SITE_SETTINGS_PATH, SITE_SETTINGS, indent=2)
     except OSError:
         pass
 

@@ -36,6 +36,7 @@ database.py
 """
 
 import json
+import safeio
 import os
 import re
 
@@ -92,8 +93,7 @@ class CharacterDatabase:
 
     def save(self):
         """현재 데이터베이스 상태를 characters.json 에 자동 저장합니다."""
-        with open(self.path, "w", encoding="utf-8") as f:
-            json.dump(self.characters, f, ensure_ascii=False, indent=2)
+        safeio.write_json(self.path, self.characters, indent=2)
 
     # ------------------------------------------------------------------
     # 붙여넣기 텍스트 파싱

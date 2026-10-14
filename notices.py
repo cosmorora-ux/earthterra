@@ -11,6 +11,7 @@ notices.json에 저장됩니다(서버 컴퓨터별 실데이터라 git에 올�
 
 import html
 import json
+import safeio
 import os
 import re
 import time
@@ -136,10 +137,7 @@ class NoticeBoard:
                 self.notices = []
 
     def save(self):
-        tmp = self.path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"notices": self.notices}, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, self.path)
+        safeio.write_json(self.path, {"notices": self.notices}, indent=2)
 
     def upsert(self, notice_id, title: str, body_html: str, pinned: bool, author: str):
         title = (title or "").strip()[:MAX_TITLE_LEN] or "제목 없음"

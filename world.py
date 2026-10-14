@@ -11,6 +11,7 @@ world.py
 """
 
 import json
+import safeio
 import os
 import threading
 import uuid
@@ -129,11 +130,7 @@ class World:
             self.save()
 
     def save(self):
-        tmp = self.path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"places": self.places, "chapters": self.chapters, "unlocked": self.unlocked},
-                      f, ensure_ascii=False, indent=1)
-        os.replace(tmp, self.path)
+        safeio.write_json(self.path, {"places": self.places, "chapters": self.chapters, "unlocked": self.unlocked}, indent=1)
 
     # ---- 운영진 : 통째로 저장 ----
     def set_all(self, data):

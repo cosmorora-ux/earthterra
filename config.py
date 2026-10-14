@@ -20,6 +20,7 @@ config.py
 
 import os
 import json
+import safeio
 import random
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -736,8 +737,7 @@ def save_formula_overrides(values: dict):
 
     data = {field["key"]: globals()[field["key"]] for field in FORMULA_FIELDS}
     data["_defaults_version"] = FORMULA_DEFAULTS_VERSION
-    with open(_OVERRIDE_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    safeio.write_json(_OVERRIDE_PATH, data, indent=2)
 
 
 def _apply_saved_overrides():
@@ -750,8 +750,7 @@ def _apply_saved_overrides():
                 for key in PUBLISHED_FORMULA_KEYS:
                     data.pop(key, None)
                 data["_defaults_version"] = FORMULA_DEFAULTS_VERSION
-                with open(_OVERRIDE_PATH, "w", encoding="utf-8") as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
+                safeio.write_json(_OVERRIDE_PATH, data, indent=2)
             for field in FORMULA_FIELDS:
                 key = field["key"]
                 if key in data:
@@ -797,8 +796,7 @@ def save_profile_overrides(profile: str, values: dict) -> dict:
             except (TypeError, ValueError):
                 pass
     data[profile] = current
-    with open(_PROFILES_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    safeio.write_json(_PROFILES_PATH, data, indent=2)
     return current
 
 
