@@ -1006,7 +1006,7 @@
   .gmap { border-collapse:collapse; }
   .gmap td { padding:0; border:1px solid rgba(255,255,255,var(--grid-line, .22)); position:relative; }
   .map-frame { position:relative; }
-  .map-bg-btn { margin-left:12px; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid var(--card-border); color: var(--text);
+  .map-bg-btn { flex:none; white-space:nowrap; margin-left:12px; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid var(--card-border); color: var(--text);
     border-radius:7px; padding:4px 10px; font-size:13px; cursor:pointer; display:none; }
   .map-bg-btn:hover { background:rgba(255,255,255,.12); }
   .modal-box.mapbg-modal { width:420px; max-height:88vh; overflow-y:auto; }
@@ -2364,6 +2364,7 @@
     .dorm-palette { width:auto; }
     .dorm-hall-edit { grid-template-columns: 1fr 1fr 1fr; }
     .dorm-up { grid-template-columns: 64px 1fr; }
+    .dorm-up > .btn { grid-column: 1 / -1; white-space:nowrap; justify-content:center; }
     .dorm-arow { grid-template-columns: 40px 1fr 90px 28px; }
     .dorm-arow .sz, .dorm-arow .cr { display:none; }
     .dorm-crow { grid-template-columns: 1fr 1fr; }
@@ -3235,6 +3236,19 @@
   .dorm-default-prev { flex:none; width:120px; height:90px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:rgba(0,0,0,.25); overflow:hidden; }
   .dorm-default-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
   .dorm-default-txt b { font-size:14px; } .dorm-default-txt span { font-size:12.5px; color: var(--muted); }
+  .dorm-default-row > .btn { flex:none; white-space:nowrap; }
+  .dorm-sec h3 { flex-wrap:wrap; }
+  .dorm-sec h3 .dorm-room-sub { font-weight:400; }
+  /* 휴대폰 : 기본 방 줄은 [미리보기 + 설명] 아래에 버튼을 한 줄로, 카드 제목 설명은 제목 아래로 */
+  @media (max-width:560px) {
+    .dorm-default-row { flex-wrap:wrap; align-items:flex-start; }
+    .dorm-default-prev { width:96px; height:72px; }
+    .dorm-default-txt { flex:1 1 140px; }
+    .dorm-default-row > .btn { flex:1 1 100%; justify-content:center; }
+    .dorm-sec h3 .dorm-room-sub { flex-basis:100%; }
+    .map-bg-btn .t { display:none; }
+    .map-bg-btn { padding:0; width:34px; height:34px; justify-content:center; margin-left:4px; }
+  }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -3784,7 +3798,7 @@
 <div class="breadcrumb-row">
   {% if grid_size %}
   <div class="grid-notice"><span class="bell"><i class="fa-solid fa-radio"></i></span><span id="gridNoticeText"></span>
-      <button class="map-bg-btn" id="mapBgBtn" onclick="openMapBgModal()"><i class="fa-solid fa-image"></i> 배경·몹 이미지</button></div>
+      <button class="map-bg-btn" id="mapBgBtn" onclick="openMapBgModal()" data-tip="배경·몹 이미지" aria-label="배경·몹 이미지"><i class="fa-solid fa-image"></i><span class="t">배경·몹 이미지</span></button></div>
   {% else %}
   <div></div>
   {% endif %}
