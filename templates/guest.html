@@ -3031,7 +3031,25 @@
   .lg-crit i { font-style:normal; font-size:.95em; }
   .logline .li .lg-gl { font-style:normal; font-size:12px; color:#ffd27a; }
   /* 로그창 피해 정산 묶음 : 정산 1회 = 한 줄(공격자 · 방어 · 피해 · HP) */
-  .logblock.settle .st-atk { display:inline-block; min-width:4.5em; margin-right:10px; color:#d7d8de; font-weight:600; }
+  .logblock .st-atk { display:inline-block; min-width:4.5em; margin-right:10px; color:#d7d8de; font-weight:600; }
+  /* ================================================================
+     로그 블록 : 왼쪽 색 띠 대신, 라운드 패널처럼 블록 윗선에 빛 한 줄(행동 종류 색 : 공격 · 방어 · 회복).
+     행동 블록 · 피해 정산 · 이동 묶음 · 안내 블록이 모두 같은 상자 모양을 씁니다.
+     ================================================================ */
+  .logblock { position:relative; border:1px solid rgba(255,255,255,.06); border-left:1px solid rgba(255,255,255,.06); border-radius:10px;
+    padding:8px 12px; background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)); --lb-glow: rgba(255,255,255,.3); }
+  .logblock::before { content:""; position:absolute; left:16px; right:16px; top:-1px; height:1px; pointer-events:none;
+    background: linear-gradient(90deg, transparent, var(--lb-glow), transparent); }
+  .logblock.atk { border-left-color: rgba(255,255,255,.06); --lb-glow: var(--role-스트라이커); }
+  .logblock.def { border-left-color: rgba(255,255,255,.06); --lb-glow: var(--role-가디언); }
+  .logblock.heal { border-left-color: rgba(255,255,255,.06); --lb-glow: var(--role-메딕); }
+  .logblock.cont { --lb-glow: rgba(255,255,255,.14); background: rgba(255,255,255,.02); }
+  /* 크리티컬 : 공격 = 빨강, 방어 = 파랑, 회복 = 노랑 (로그에서 색을 쓰는 건 크리티컬뿐) */
+  .lg-crit.atk { color: var(--role-스트라이커); } .lg-crit.def { color: var(--role-가디언); } .lg-crit.heal { color: var(--role-메딕); }
+  .logline.tone-crit, .logline.tone-crit .li, .logline .li .lg-gl { color: var(--role-스트라이커) !important; }
+  .logblock.def .logline.tone-crit, .logblock.def .logline.tone-crit .li, .logblock.def .lg-gl { color: var(--role-가디언) !important; }
+  .logblock.heal .logline.tone-crit, .logblock.heal .logline.tone-crit .li, .logblock.heal .lg-gl { color: var(--role-메딕) !important; }
+  .lg-tail { margin-left:8px; margin-right:0; font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -5305,7 +5323,9 @@ function formatLogLineHtml(l, noIcon, asHead) {
   const head = asHead !== undefined ? asHead : LOG_GROUP_START_TAGS.has(l.tag);
   let { html, tone } = logLineParts(l.text, l.tag);
   // 크리티컬은 따로 한 줄을 쓰지 않고, 그 타격(회복) 줄 끝에 작은 표시로 붙입니다.
-  if (l._crit) html += '<span class="lg-crit"><i>✦</i>크리티컬</span>';
+  if (l._crit) html += `<span class="lg-crit ${l.tag === 'heal' ? 'heal' : 'atk'}"><i>✦</i>크리티컬</span>`;
+  // 공성전 : 거점 행동 횟수(1/3 …)를 행동 첫 줄 끝에 붙입니다.
+  if (l._tail) html += `<span class="lg-lab lg-tail">${l._tail}</span>`;
   // 아이콘은 블록 첫 줄에만 둡니다(아래 줄은 비워 정렬만 맞춤). 주의(⚠) 줄만 예외로 항상 표시.
   const ic = tone === 'warn' ? 'fa-solid fa-triangle-exclamation'
     : noIcon ? '' : tone === 'note' ? 'fa-solid fa-turn-up fa-rotate-90' : (LOG_TAG_ICON[l.tag] || '');
@@ -5414,10 +5434,12 @@ function logSkillHead(l) {
   const m = l && typeof l.text === 'string' && l.text.match(LOG_SKILL_HEAD_RX);
   return m ? { who: m[1], skill: m[2] } : null;
 }
-// 마스 레이드는 러너 팀이 항상 선공이라, 선공 결정(민첩 비교 · 규칙 안내) 줄을 로그창에 띄우지 않습니다.
+// 마스 레이드 · 공성전은 러너 팀이 항상 선공이라, 선공 결정(민첩 비교 · 규칙 안내) 줄을 로그창에 띄우지 않습니다.
 const LOG_FIRST_TEAM_RX = /^(\[선공 결정\]|→ 민첩 합산이 더 높은|민첩 합산 동점|→ 주사위 결과|\[규칙\] .*항상 선공)/;
 function dropFirstTeamLines(lines) {
-  return BATTLE_TYPE === 'mass_raid' ? lines.filter(l => !(l.tag === 'system' && LOG_FIRST_TEAM_RX.test(l.text || ''))) : lines;
+  // 단계 사이 ↓ 줄은 블록 안에 끼어 빈 줄처럼 보이므로 뺍니다(단계 제목이 이미 구분해 줍니다).
+  lines = lines.filter(l => l.tag !== 'arrow');
+  return (BATTLE_TYPE === 'mass_raid' || BATTLE_TYPE === 'siege') ? lines.filter(l => !(l.tag === 'system' && LOG_FIRST_TEAM_RX.test(l.text || ''))) : lines;
 }
 // "크리티컬!" 줄 + 바로 다음 타격(회복) 줄 → 그 줄 하나에 크리티컬 표시. "(강제 크리티컬 적용)" 문구도 같은 표시로 바꿉니다.
 function mergeCritLines(lines) {
@@ -5502,7 +5524,7 @@ function formatSettleGroupHtml(g) {
       const d = r.hp[1] - r.hp[0];
       hp = ` <span class="lg-hp">${r.hpName && r.hpName !== r.tgt ? nm(r.hpName) + ' ' : ''}${r.hp[0]}<i>→</i><b>${r.hp[1]}</b>${d ? `<em class="down">${d}</em>` : ''}</span>`;
     }
-    const crit = r.defCrit ? '<span class="lg-crit"><i>✦</i>방어 크리티컬</span>' : '';
+    const crit = r.defCrit ? '<span class="lg-crit def"><i>✦</i>방어 크리티컬</span>' : '';
     const notes = [...r.notes];
     // 회피처럼 수치 줄이 없으면 첫 안내를 그 줄 내용으로 씁니다.
     const body = parts.length ? parts.join(' · ') : (notes.length ? logLineParts(siteLabelize(notes.shift().text), 'heal').html : '');
@@ -5510,11 +5532,78 @@ function formatSettleGroupHtml(g) {
       + `<span class="lt"><span class="st-atk">${nm(r.atk)}</span>${body}${hp}${crit}</span></div>`
       + notes.map(l => formatLogLineHtml(l, true, false)).join('');
   }).join('');
-  return `<div class="logblock settle">${head}${rows}</div>`;
+  return `<div class="logblock settle def">${head}${rows}</div>`;
+}
+// 공성전 : "거점 추가 행동 가능 (남은 횟수 N회)" · "거점의 이번 라운드 행동이 모두 끝났습니다." 줄을 따로 두지 않고,
+// 바로 앞 거점 행동의 첫 줄 끝에 "1/3"처럼 횟수로 붙입니다(전조 다이스 줄의 총 횟수 기준).
+function mergeSiteCounters(lines) {
+  if (BATTLE_TYPE !== 'siege') return lines;
+  const out = [];
+  let total = null;
+  lines.forEach(l => {
+    const t = typeof l.text === 'string' ? l.text : '';
+    let m;
+    if (l.tag === 'system' && (m = t.match(/거점은 (\d+)회 행동합니다/))) total = +m[1];
+    const left = l.tag === 'system' && (m = t.match(/^거점 추가 행동 가능 \(이번 라운드 남은 횟수 (\d+)회\)$/)) ? +m[1]
+      : (l.tag === 'system' && /^거점의 이번 라운드 행동이 모두 끝났습니다\.?$/.test(t) ? 0 : null);
+    if (left == null) { out.push(l); return; }
+    for (let i = out.length - 1; i >= 0; i--) {
+      if (LOG_GROUP_START_TAGS.has(out[i].tag) && out[i].tag !== 'round') {
+        out[i] = { ...out[i], _tail: total ? `${total - left}/${total}` : (left ? `남은 ${left}회` : '행동 끝') };
+        return;
+      }
+    }
+    out.push(l);
+  });
+  return out;
+}
+// 같은 행동 묶기 : "AA 방어 (직접 방어)" · "AB 방어 (직접 방어)" …처럼 내용이 같은 짧은 행동 블록이
+// 연달아 나오면 한 블록으로 합칩니다(제목 = 행동, 아래 줄 = 누가 · 수치). 공격 수치 · 회복 한 줄짜리까지만.
+function sameActionKey(sec) {
+  if (!Array.isArray(sec) || !sec.length || sec.length > 2) return null;
+  const h = sec[0];
+  if (!(h.tag === 'action' || h.tag === 'defend') || typeof h.text !== 'string' || logSkillHead(h) || h._tail) return null;
+  if (h.text.startsWith('[') || isLogMoveLine(h)) return null;
+  const m = h.text.match(/^(\S+) (.+)$/);
+  if (!m) return null;
+  const sub = sec[1];
+  if (sub && !((sub.tag === 'damage' && /^공격 수치 \d+/.test(sub.text || '')) || (sub.tag === 'heal' && /^회복 \d+/.test(sub.text || '')))) return null;
+  return { key: siteLabelize(m[2]), name: m[1], tag: h.tag, sub: sub || null, head: h };
+}
+function combineSameActions(sections) {
+  const out = [];
+  sections.forEach(sec => {
+    const k = sameActionKey(sec);
+    const prev = out[out.length - 1];
+    if (k && prev && prev.same && prev.same.key === k.key && prev.same.tag === k.tag && !!prev.same.rows[0].sub === !!k.sub) {
+      prev.same.rows.push(k); return;
+    }
+    if (k && prev && !prev.same && sameActionKey(prev)) {
+      const pk = sameActionKey(prev);
+      if (pk.key === k.key && pk.tag === k.tag && !!pk.sub === !!k.sub) { out[out.length - 1] = { same: { key: k.key, tag: k.tag, head: pk.head, rows: [pk, k] } }; return; }
+    }
+    out.push(sec);
+  });
+  return out;
+}
+function formatSameActionHtml(g) {
+  const cls = logActionClass(g.head);
+  const ic = LOG_TAG_ICON[g.tag] || '';
+  const head = `<div class="logline group-start tag-${g.tag}"><span class="li">${ic ? `<i class="${ic}"></i>` : ''}</span>`
+    + `<span class="lt">${logLineParts(g.key, g.tag).html} <span class="lg-lab">${g.rows.length}명</span></span></div>`;
+  const nm = t => shopEsc(siteLabelize(t));
+  const body = g.rows[0].sub
+    ? g.rows.map(r => {
+        const crit = r.sub._crit ? `<span class="lg-crit ${r.sub.tag === 'heal' ? 'heal' : 'atk'}"><i>✦</i>크리티컬</span>` : '';
+        return `<div class="logline tag-${r.sub.tag} st-row"><span class="li"></span><span class="lt"><span class="st-atk">${nm(r.name)}</span>${logLineParts(r.sub.text, r.sub.tag).html}${crit}</span></div>`;
+      }).join('')
+    : `<div class="logline tag-${g.tag}"><span class="li"></span><span class="lt">${g.rows.map(r => nm(r.name)).join(' · ')}</span></div>`;
+  return `<div class="logblock${cls ? ' ' + cls : ''}">${head}${body}</div>`;
 }
 function formatLogHtml(lines) {
-  return combineSettlements(splitLogIntoSections(groupPhaseMoves(mergeLogRuns(mergeCritLines(dropFirstTeamLines(lines || [])))))).map(section => {
+  return combineSameActions(combineSettlements(splitLogIntoSections(groupPhaseMoves(mergeLogRuns(mergeCritLines(mergeSiteCounters(dropFirstTeamLines(lines || [])))))))).map(section => {
     if (section.settle) return formatSettleGroupHtml(section.settle);
+    if (section.same) return formatSameActionHtml(section.same);
     if (logSkillHead(section[0]) && section.length > 1) section = tidySkillSection(section);
     const head = section[0];
     if (head.tag === 'movegroup') return formatMoveGroupHtml(head);
@@ -5610,8 +5699,15 @@ function revealNewLogLines(view, fullLog, logTotal) {
   }
   if (logTotal === already) return;  // 새 줄 없음
   const newLines = fullLog.slice(already - sliceStart);
-  // 이동 줄(단계 위쪽 이동 블록)과 피해 정산(같은 대상 정산 묶음)은 앞 블록에 합쳐져야 하므로, 있으면 로그 전체를 다시 그립니다.
-  if (newLines.some(l => isLogMoveLine(l) || (typeof l.text === 'string' && LOG_SETTLE_RX.test(l.text)))) { renderCurrentLog(); return; }
+  // 새 행동 · 방어 · 정산 줄은 앞 블록(같은 행동 묶음 · 정산 묶음 · 이동 묶음 · 거점 횟수)에 합쳐질 수 있으므로,
+  // 그런 줄이 있으면 보던 위치를 지킨 채 로그 전체를 다시 그립니다.
+  if (newLines.some(l => l.tag === 'action' || l.tag === 'defend' || (typeof l.text === 'string' && /^거점(의 이번 라운드 행동이 모두| 추가 행동 가능)/.test(l.text)))) {
+    const el = document.getElementById('pubLog');
+    logSeenTotal[view] = logTotal;
+    logRevealQueue[view] = [];
+    scrollKeepingView(el, () => { el.innerHTML = formatLogHtml(fullLog); });
+    return;
+  }
   logSeenTotal[view] = logTotal;
   logRevealQueue[view].push(...splitLogIntoSections(newLines));
   processLogRevealQueue(view);
