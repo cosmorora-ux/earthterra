@@ -2209,7 +2209,15 @@
   .map-frame.dorm-frame.panning { cursor:grabbing; }
   .map-frame.dorm-frame .dorm-stage { flex:none; will-change:transform; }
   .dorm-item.smooth, .dorm-asset.smooth { image-rendering:auto; }
-  .dorm-stage:not(.editing) .dorm-item.chara { cursor:pointer; }
+  .dorm-stage:not(.editing) .dorm-item.chara { cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+    transform-origin:50% 100%; transition: scale .18s ease, filter .2s ease; }
+  /* 꾹 누르는 중 : 살짝 눌림 → 들림 : 위로 떠서 흔들흔들 + 바닥 그림자 → 놓으면 통통 */
+  .dorm-stage:not(.editing) .dorm-item.chara.pressing { scale: .94 1.04; transition-duration:.35s; }
+  .dorm-stage:not(.editing) .dorm-item.chara.held { cursor:grabbing; z-index:50; scale:1.08; transition: scale .2s cubic-bezier(.3,1.6,.5,1);
+    animation: dormHeld .9s ease-in-out infinite; filter: drop-shadow(0 10px 4px rgba(0,0,0,.35)); }
+  .dorm-stage:not(.editing) .dorm-item.chara.landing { animation: dormLand .5s cubic-bezier(.3,1.4,.5,1); }
+  @keyframes dormHeld { 0%, 100% { rotate:-3deg; margin-top:-8px; } 50% { rotate:3deg; margin-top:-11px; } }
+  @keyframes dormLand { 0% { margin-top:-8px; scale:1.06; } 45% { margin-top:0; scale:1.12 .86; } 70% { scale:.96 1.05; } 100% { margin-top:0; scale:1; } }
   .dorm-say { position:absolute; z-index:5; transform:translate(-50%, calc(-100% - 10px)); max-width:220px; width:max-content; padding:8px 12px; border-radius:12px;
     background: rgba(12,12,14,.92); color:#f2f2f4; border:1px solid rgba(255,255,255,.14); font-size:13px; font-weight:600; line-height:1.45; text-align:center;
     image-rendering:auto; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.45); animation: dormSay 3.8s ease forwards; }
@@ -9457,7 +9465,7 @@ function dormRenderStage() {
   dormApplyPan();
   const lb = document.getElementById('dormZoomLabel'); if (lb) lb.textContent = Math.round(dormZoom * 100) + '%';
   if (dormEdit) bindDormStage(s);
-  else bindDormSpeak();
+  else { bindDormSpeak(); bindDormHold(s); }
   bindDormPan(frame);
 }
 // 방에 놓인 캐릭터(SD)는 등록한 대사를 몇 초마다 저절로 말하고, 누르면 바로 한마디 합니다.
@@ -9478,9 +9486,68 @@ function dormSay(el) {
   setTimeout(() => { say.remove(); if (el._say === say) el._say = null; }, 3800);
   return true;
 }
+// 캐릭터 SD 꾹 눌러 들기 : 0.35초 누르고 있으면 살짝 들려 올라가고, 원래 자리 근처(반지름 DORM_HOLD_R 방 픽셀)
+// 안에서만 끌 수 있어요. 손을 떼면 통통 튀며 내려앉습니다. 방 주인의 배치는 바뀌지 않고, 이 화면에서만 기억해요.
+const DORM_HOLD_R = 14, DORM_HOLD_MS = 350;
+const dormNudge = {};  // '주인:소품번호' -> [x, y] (방 픽셀)
+function dormNudgeKey(el) { return `${dormRoom ? dormRoom.owner : ''}:${el.dataset.i}`; }
+function dormSetNudge(el, x, y, s) { el.style.translate = `${x * s}px ${y * s}px`; }
+function bindDormHold(s) {
+  const st = document.getElementById('dormStage'); if (!st) return;
+  st.querySelectorAll('.dorm-item.chara').forEach(el => { const n = dormNudge[dormNudgeKey(el)]; if (n) dormSetNudge(el, n[0], n[1], s); });
+  let hold = null;
+  const release = (e) => {
+    if (!hold) return;
+    const h = hold; hold = null;
+    clearTimeout(h.timer);
+    h.el.classList.remove('pressing');
+    if (!h.lifted) return;
+    h.el._justHeld = true;
+    h.el.classList.remove('held');
+    h.el.classList.remove('landing'); void h.el.offsetWidth; h.el.classList.add('landing');
+    setTimeout(() => h.el.classList.remove('landing'), 520);
+    if (e && e.pointerId != null && h.el.hasPointerCapture && h.el.hasPointerCapture(e.pointerId)) h.el.releasePointerCapture(e.pointerId);
+  };
+  st.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('.dorm-item.chara'); if (!el || dormEdit) return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    const n = dormNudge[dormNudgeKey(el)] || [0, 0];
+    hold = { el, id: e.pointerId, x: e.clientX, y: e.clientY, nx: n[0], ny: n[1], lifted: false };
+    el.classList.add('pressing');
+    hold.timer = setTimeout(() => {
+      if (!hold || hold.el !== el) return;
+      hold.lifted = true;
+      el.classList.remove('pressing'); el.classList.add('held');
+      try { el.setPointerCapture(hold.id); } catch (_) {}
+      if (navigator.vibrate) navigator.vibrate(12);
+      if (el._say) { el._say.remove(); el._say = null; }
+    }, DORM_HOLD_MS);
+  });
+  st.addEventListener('pointermove', (e) => {
+    if (!hold || e.pointerId !== hold.id) return;
+    if (!hold.lifted) {
+      // 들기 전에 손가락이 움직이면 '꾹 누르기'를 취소합니다.
+      if (Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 6) { clearTimeout(hold.timer); hold.el.classList.remove('pressing'); hold = null; }
+      return;
+    }
+    e.preventDefault();
+    let x = hold.nx + (e.clientX - hold.x) / s, y = hold.ny + (e.clientY - hold.y) / s;
+    const d = Math.hypot(x, y);
+    if (d > DORM_HOLD_R) { x *= DORM_HOLD_R / d; y *= DORM_HOLD_R / d; }
+    dormNudge[dormNudgeKey(hold.el)] = [x, y];
+    dormSetNudge(hold.el, x, y, s);
+  });
+  st.addEventListener('pointerup', release);
+  st.addEventListener('pointercancel', release);
+  st.addEventListener('contextmenu', (e) => { if (e.target.closest('.dorm-item.chara')) e.preventDefault(); });
+}
 function bindDormSpeak() {
   const st = document.getElementById('dormStage'); if (!st) return;
-  st.addEventListener('click', (e) => { const el = e.target.closest('.dorm-item.chara'); if (el) dormSay(el); });
+  st.addEventListener('click', (e) => {
+    const el = e.target.closest('.dorm-item.chara'); if (!el) return;
+    if (el._justHeld) { el._justHeld = false; return; }  // 들었다 놓은 직후의 클릭은 대사 없이
+    dormSay(el);
+  });
   clearTimeout(dormSpeakTimer);
   const talkers = () => [...st.querySelectorAll('.dorm-item.chara')].filter(el => {
     const it = (dormRoom.items || [])[+el.dataset.i], a = it && dormAsset(it.a); return a && (a.lines || []).length; });
@@ -9515,6 +9582,8 @@ function bindDormPan(frame) {
   frame.addEventListener('pointerdown', (e) => {
     // 꾸미기 중에는 소품을 잡거나 놓을 때는 이동하지 않습니다(빈 곳을 끌 때만).
     if (dormEdit && (dormPick || e.target.closest('.dorm-item'))) return;
+    // 구경 중 캐릭터 SD를 누르면 '꾹 눌러 들기'가 먼저라서 방은 움직이지 않습니다.
+    if (!dormEdit && e.target.closest('.dorm-item.chara')) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     pan = { x: e.clientX, y: e.clientY, px: dormPan.x, py: dormPan.y, id: e.pointerId, on: false };
   });
