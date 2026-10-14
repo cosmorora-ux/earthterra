@@ -2577,7 +2577,7 @@
       width:100%; max-width:none !important; margin-left:auto; margin-right:auto; box-sizing:border-box; }
     .modal-box.mypage .idc-title, .modal-box .modal-title.page-title { font-size:28px; }
     .modal-box.mypage .idc-head, .notice-head, .modal-box.shop-modal .shop-head, .modal-box.mail-modal .shop-head, .modal-box.userinfo-modal .ui-head { min-height:34px; margin-bottom:16px; }
-    .modal-box.mypage .idc-close, .modal-box.shop-modal .shop-close, .modal-box.notice-modal .shop-close, .modal-box.mail-modal .shop-close, .modal-box.userinfo-modal .ui-close { display:none !important; }
+    .modal-box.mypage .idc-close, .modal-box.shop-modal .shop-close, .modal-box.notice-modal .shop-close, .modal-box.mail-modal .shop-close { display:none !important; }
     .mp-logout-bottom { display:flex; }
     /* 일반 룸 : 공지 · 우체통 페이지 위쪽 전환 버튼 */
     body.is-lounge .news-switch { display:inline-flex; }
@@ -6191,6 +6191,55 @@ function updateUnreadBadges() {
   if (mDot) mDot.classList.toggle('on', mobileChatUnread);
   const mDot2 = document.getElementById('mChatDot2'); if (mDot2) mDot2.classList.toggle('on', mobileChatUnread);
 }
+
+// ==================================================================
+// 뒤로 가기(아이폰 스와이프 · 안드로이드 뒤로 버튼) : 사이트를 나가지 않고 맨 위 화면부터 하나씩 닫습니다.
+// 화면을 열 때마다 기록(history)을 하나 쌓고, 뒤로 가기가 오면 그 화면을 닫습니다.
+// ==================================================================
+function backLayers() {
+  const shown = id => { const el = document.getElementById(id); return !!el && getComputedStyle(el).display !== 'none'; };
+  const L = [];
+  const dlg = document.getElementById('uiDialog');
+  if (dlg && dlg.style.display === 'flex' && uiDialogResolve) L.push(() => uiDialogResolve(null));
+  if (typeof homeMenu !== 'undefined' && homeMenu.open) L.push(() => closeHomeMenu());
+  const small = [['wmReader', () => { document.getElementById('wmReader').style.display = 'none'; }],
+    ['dormAddModal', () => closeDormAddModal()], ['dormCreditModal', () => { document.getElementById('dormCreditModal').style.display = 'none'; }],
+    ['mapBgModal', () => closeMapBgModal()], ['soundModal', () => closeSoundSettings()], ['sceneModal', () => closeSceneModal()],
+    ['trackBgModal', () => closeTrackBgModal()], ['formulaModal', () => closeFormulaPanel()], ['chatTabSettingsModal', () => closeChatTabSettings()],
+    ['newsSheet', () => { document.getElementById('newsSheet').style.display = 'none'; }]];
+  small.forEach(([id, fn]) => { if (shown(id)) L.push(fn); });
+  if (shown('mailModal') && typeof mailOpenId !== 'undefined' && mailOpenId) L.push(() => { mailOpenId = null; renderMail(); });
+  [['userInfoModal', () => closeUserInfoPanel()], ['myPageModal', () => closeMyPage()], ['shopModal', () => closeShop()],
+   ['mailModal', () => closeMail()], ['noticeModal', () => closeNotices()]].forEach(([id, fn]) => { if (shown(id)) L.push(fn); });
+  if (document.body.classList.contains('m-chat-open')) L.push(() => toggleMobileChat(false));
+  if (shown('dormModal')) {
+    if (typeof dormView !== 'undefined' && dormView === 'room') L.push(() => dormLeaveRoom());
+    else if (typeof dormView !== 'undefined' && dormView !== 'halls') L.push(() => setDormView('halls'));
+    else if (!IS_LOUNGE) L.push(() => closeDorm());
+  }
+  if (typeof worldOpen === 'function' && worldOpen()) L.push(() => closeWorldMap());
+  if (typeof opsOpen === 'function' && opsOpen()) L.push(() => closeOps());
+  return L;
+}
+var backDepth = 0, backSkip = 0;
+function backSync() {
+  if (!window.history || !history.pushState) return;
+  // +1 : 맨 바닥 화면에서 실수로 뒤로 가도 바로 나가지 않도록 한 칸을 더 깔아 둡니다.
+  const n = backLayers().length + 1;
+  while (backDepth < n) { history.pushState({ etLayer: backDepth + 1 }, ''); backDepth++; }
+  // X 버튼 · 탭으로 닫아서 남은 기록은 조용히 되돌립니다.
+  if (backDepth > n) { const d = backDepth - n; backDepth = n; backSkip += d; history.go(-d); }
+}
+window.addEventListener('popstate', () => {
+  if (backSkip > 0) { backSkip--; return; }
+  if (backDepth > 0) backDepth--;
+  const top = backLayers()[0];
+  if (top) { try { top(); } catch (e) {} }
+  else if (typeof showShopToast === 'function') showShopToast('한 번 더 뒤로 가면 사이트에서 나갑니다.');
+  // 닫기에 확인창이 뜨는 경우(저장 안 한 꾸미기 등) 등은 다음 터치 때 다시 맞춥니다.
+});
+// 화면은 누르기(탭 · 클릭)로 열리므로, 누를 때마다 열린 화면 수와 기록을 맞춥니다(사용자 동작 직후라 브라우저가 기록을 인정해요).
+['click', 'keyup'].forEach(ev => document.addEventListener(ev, () => setTimeout(backSync, 60), true));
 
 // 세로 태블릿(폭 900px 이하)에서는 카드 화면이 기본이고, 채팅은 사이드바 버튼으로 따로 엽니다.
 var mobileChatUnread = false;
