@@ -8934,7 +8934,7 @@ function renderMyPageRoom() {
     `<button class="idc-past" onclick="openDormPastRoom(${i})"><span class="mini">${dormMiniRoomHtml(e.room, 56, 44)}</span>
       <span class="t"><b>${e.period.no}차 ${mailEsc(e.period.name)}</b><span>${mailEsc(e.hall || '')}</span></span><i class="fa-solid fa-chevron-right"></i></button>`).join('') : '';
 }
-socket.on('dorm_past', (d) => { dormPast = { owner: d.owner, rooms: d.rooms || [] }; renderMyPageRoom(); });
+socket.on('dorm_past', (d) => { dormPast = { owner: d.owner, rooms: d.rooms || [] }; renderMyPageRoom(); if (dormEdit) renderDormEditBar(); });
 // 지난 기간 방 미리보기(방 자료를 직접 받아 그림)
 function dormMiniRoomHtml(r, w, maxH) {
   if (!dormData || !r) return '';
@@ -9295,8 +9295,22 @@ function dormMiniHtml(owner, w, maxH) {
   const s = Math.min(w / dormBW(base), (maxH || 1e9) / dormBH(base));
   return `<div class="dorm-mini" style="width:${Math.round(dormBW(base) * s)}px; height:${Math.round(dormBH(base) * s)}px">${dormStageHtml(r, base, s, false, true)}</div>`;
 }
+// 지난 기간 내 방의 배치(바탕 · 벽지 · 바닥 · 소품)를 지금 꾸미기로 가져옵니다. 저장을 눌러야 실제로 바뀌어요.
+function loadDormPastLayout(i) {
+  const e = (dormPast.rooms || [])[i]; if (!e || !dormEdit) return;
+  uiConfirm(`${e.period.no}차 ${e.period.name} 방 배치를 불러올까요? 지금 꾸미던 배치는 바뀌고, 저장을 눌러야 실제로 적용돼요.`,
+    { title: '지난 마이룸 불러오기', okText: '불러오기' }).then(ok => {
+    if (!ok) return;
+    const r = e.room || {};
+    dormEdit = { base: r.base || dormData.default_base, wall: r.wall || null, floor: r.floor || null, items: (r.items || []).map(it => Object.assign({}, it)) };
+    dormSel = -1; dormPick = null; renderDorm();
+    showShopToast(`${e.period.no}차 ${e.period.name} 배치를 불러왔어요. 고친 뒤 저장해 주세요.`);
+  });
+}
 function startDormEdit() {
   const r = dormRoom;
+  const me = dormMe();
+  if (me && me === r.owner && !dormIsGm() && dormPast.owner !== me) { dormPast = { owner: me, rooms: [], loading: true }; socket.emit('dorm_past_get'); }
   dormEdit = { base: r.base || dormData.default_base, wall: r.wall || null, floor: r.floor || null, items: (r.items || []).map(i => Object.assign({}, i)) };
   dormSel = -1; dormPick = null; renderDorm();
 }
@@ -9438,7 +9452,11 @@ function renderDormEditBar() {
       <span class="hint">방을 눌러 놓아요</span><button onclick="dormPick=null; renderDormGrid(); dormUpdateGhost()" data-tip="그만 놓기 ( Esc )"><i class="fa-solid fa-xmark"></i></button>`;
   } else {
     bar.className = 'dorm-edit-bar';
-    bar.innerHTML = `<i class="fa-solid fa-hand-pointer"></i><span class="hint">놓은 소품을 누르면 옮기거나 크기를 바꿀 수 있어요</span>`;
+    // 내 방이고 지난 기간 방이 있으면 : 그 배치를 불러와 고쳐 쓸 수 있게(저장해야 적용)
+    const mine = dormRoom && dormMe() && dormMe() === dormRoom.owner && !dormIsGm();
+    const past = mine && dormPast.owner === dormRoom.owner ? (dormPast.rooms || []) : [];
+    bar.innerHTML = `<i class="fa-solid fa-hand-pointer"></i><span class="hint">놓은 소품을 누르면 옮기거나 크기를 바꿀 수 있어요</span>`
+      + (past.length ? '<span class="sep"></span>' + past.map((e, i) => `<button class="txt" onclick="loadDormPastLayout(${i})" data-tip="${e.period.no}차 ${mailEsc(e.period.name)} 방 배치를 불러와요 (저장해야 적용)"><i class="fa-solid fa-clock-rotate-left"></i> ${e.period.no}차 ${mailEsc(e.period.name)} 불러오기</button>`).join('') : '');
   }
 }
 function pickDormAsset(id) {
