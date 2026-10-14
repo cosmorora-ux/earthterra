@@ -153,10 +153,12 @@
   .idc-close { background:none; border:none; color: var(--muted); font-size:22px; cursor:pointer; padding:4px 6px; }
   .idc-close:hover { color: var(--text); }
   .mypage-cols { display:grid; grid-template-columns:1fr 1fr; gap:36px; }
-  /* 남의 마이페이지(보기 전용) : 프로필 · 체력 · 마이룸만 */
-  .modal-box.mypage.is-view .idc-logout, .modal-box.mypage.is-view .mp-tiles, .modal-box.mypage.is-view .mypage-cols > .mypage-col:last-child { display:none !important; }
+  /* 남의 마이페이지(보기 전용) : 프로필(진영 제외) · 체력 · 재화 · 소지품 · 마이룸 */
+  .modal-box.mypage.is-view .idc-logout, .modal-box.mypage.is-view .mp-tagrow:has(#myPageNation), .modal-box.mypage.is-view .mypage-cols > .mypage-col:last-child { display:none !important; }
   .modal-box.mypage.is-view .mypage-cols { grid-template-columns:1fr; }
   .modal-box.mypage.is-view .mypage-roles button:disabled.on { opacity:1; }
+  .modal-box.mypage.is-view .mp-click { cursor:default; }
+  .modal-box.mypage.is-view .mp-click .mp-go { display:none; }
   .mypage-col { min-width:0; }
   .mypage-col + .mypage-col { border-left:1px solid var(--panel-border); padding-left:36px; }
   @media (max-width:900px) { .mypage-cols { grid-template-columns:1fr; } .mypage-col + .mypage-col { border-left:none; padding-left:0; padding-top:8px; } .modal-box.mypage { padding:22px 18px; } }
@@ -6994,7 +6996,7 @@ function uiHoverShow(row, e) {
   }
   uiHover.name = name;
   el.querySelector('.cap b').textContent = name;
-  el.querySelector('.cap span').textContent = [d.role, factionOf(name)].filter(Boolean).join(' · ');
+  el.querySelector('.cap span').textContent = d.role || '';
   uiHover.tx = e.clientX; uiHover.ty = e.clientY;
   if (fresh) { uiHover.x = uiHover.tx; uiHover.y = uiHover.ty; }
   uiHover.on = true;
@@ -7027,7 +7029,7 @@ function uiHoverTick() {
 // ------------------------------------------------------------------
 // 유저 리스트에서 눌러 연 캐릭터 이름(없으면 평소처럼 본인/선택된 행동자 기준)
 let myPageViewName = null;
-// 남의 마이페이지를 보기만 하는 중(운영진이 아닐 때) : 수정 칸과 재화 · 소지품 · 스킬 로그 · 효과음은 감춥니다.
+// 남의 마이페이지를 보기만 하는 중(운영진이 아닐 때) : 수정은 막고, 진영 · 스킬 로그 · 효과음은 감춥니다.
 function myPageIsView() { return !!myPageViewName && myControlInfo(lastBattleForPanel).scope !== 'all' && myPageViewName !== myLoggedInName(); }
 
 function openMyPageFor(name) {
@@ -7929,6 +7931,7 @@ function renderMyPagePoints() {
   document.getElementById('myPageItemsView').innerHTML = items.length ? items.join(', ') : '<span style="color:var(--muted)">없음</span>';
 }
 function openShopFromMyPage() {
+  if (myPageIsView()) return;  // 남의 마이페이지에서는 소지품을 보기만 합니다
   const c = myPageTargetChar();
   if (shopIsGm() && c) shopGmTarget = c.name;
   closeMyPage();
