@@ -2929,7 +2929,6 @@
   @keyframes ciShutter { 0% { transform:scaleY(1); } 18% { transform:scaleY(.12); } 82% { transform:scaleY(.12); } 96%, 100% { transform:scaleY(1); } }
   .skill-cutin.show.m-shutter .skill-cutin-band > * { animation-name: ciShutterIn; }
   @keyframes ciShutterIn { 0%, 10% { opacity:0; letter-spacing:.3em; } 24% { opacity:1; letter-spacing:normal; } 82% { opacity:1; } 92%, 100% { opacity:0; } }
-  @media (prefers-reduced-motion: reduce) { .ci-fx { display:none; } }
 
   /* 격자 대상 고르기 : 대상 칸이 포인트 테두리 + 빛이 훑고 지나가며 반짝 */
   .gmap .gsel.tgt { z-index:9; box-shadow: inset 0 0 0 2px var(--point);
@@ -2987,12 +2986,12 @@
     position:relative; top:-1px; border:none; background:none; color: var(--muted); font-size:10px; cursor:pointer; transition: color .15s; }
   .sr-play:hover { color:#fff; }
 
+  /* 행동 전 샤인 · 스킬 ✶ · 전조 줄무늬 · 컷인 효과는 전투 상황을 알려주는 표시라, 기기의 '애니메이션 줄이기' 설정과 상관없이 항상 움직입니다. */
   /* 격자 : 내 팀 차례 + 행동 전 = 샤인(빛이 쉬지 않고 천천히 훑고 지나감), 행동을 마치면 꺼짐. 이동 완료(행동 대기) = 모서리 작은 삼각형 */
   .gmap .gcell.ready::before { content:""; position:absolute; inset:0; z-index:7; pointer-events:none;
     background: linear-gradient(115deg, transparent 44%, rgba(255,255,255,.5) 50%, transparent 56%) no-repeat; background-size:260% 100%;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); animation: gReadyShine 3.2s linear infinite; animation-delay: var(--shine-phase, 0s); }
   @keyframes gReadyShine { 0% { background-position:100% 0; } 100% { background-position:0% 0; } }
-  @media (prefers-reduced-motion: reduce) { .gmap .gcell.ready::before { animation:none; background:none; } }
   /* 칸 모서리 표시 : 왼쪽 위 빨간 삼각형 = 받을 피해가 있음(피해 보류), 오른쪽 위 흰 삼각형 = 보호 · 회복 효과를 받는 중 */
   .gmap .gmk { position:absolute; top:0; z-index:9; width:0; height:0; border-style:solid; pointer-events:none; }
   .gmap .gmk.hurt { left:0; border-width:8px 8px 0 0; border-color: var(--role-스트라이커) transparent transparent transparent; }
@@ -3007,7 +3006,6 @@
     38%  { transform:translate(-50%, -62%) scale(1) rotate(0deg); }
     72%  { opacity:1; transform:translate(-50%, -95%) scale(1) rotate(0deg); }
     100% { opacity:0; transform:translate(-50%, -125%) scale(.9) rotate(0deg); } }
-  @media (prefers-reduced-motion: reduce) { .skill-pop { animation-duration:.01s; } }
   /* 전조 칸 위에 캐릭터가 있어도 줄무늬가 보이게 */
   .gmap td.tel .gcell .gsel:not(.tgt) { background: repeating-linear-gradient(135deg, rgba(255,176,32,.08) 0 2.5px, transparent 2.5px 7.0711px);
     background-size:10px 10px; background-position: var(--tx, 0px) 0; animation: telDrift 2.4s linear infinite; animation-delay: var(--tel-phase, 0s); }
@@ -3017,7 +3015,6 @@
      - 지도가 다시 그려져도 움직임이 처음으로 튀지 않도록 지금 시각만큼 앞당겨 시작합니다(--tel-phase). */
   .gmap td.tel { background-size:10px 10px; background-position: var(--tx, 0px) 0; animation: telDrift 2.4s linear infinite; animation-delay: var(--tel-phase, 0s); }
   @keyframes telDrift { from { background-position: var(--tx, 0px) 0; } to { background-position: calc(var(--tx, 0px) + 10px) 0; } }
-  @media (prefers-reduced-motion: reduce) { .gmap td.tel, .gmap td.tel .gcell .gsel { animation:none; } }
   /* 격자 칸 툴팁 : 머리(이름 · 역할) / HP 막대 / 항목별 줄 / 알림 줄로 나눠 읽기 쉽게 */
   #floatTip.rich { padding:0; min-width:210px; max-width:280px; font-size:13px; line-height:1.4; overflow:hidden; }
   .tt-head { display:flex; align-items:baseline; gap:8px; padding:10px 12px 8px; }
