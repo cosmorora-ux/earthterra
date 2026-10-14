@@ -9887,6 +9887,26 @@ function gridCharCenter(frame, name) {
   if (!pts.length) return null;
   return { x: pts.reduce((a, p) => a + p.x, 0) / pts.length, y: pts.reduce((a, p) => a + p.y, 0) / pts.length };
 }
+// 캐릭터(보스면 그 부위) 칸의 이름 글자 상자 : 지도 틀 기준 좌표. 이름이 없으면 칸 가운데 점.
+function gridNameBox(frame, name) {
+  const c = (lastAllForCards || []).find(k => k.name === name);
+  const table = document.querySelector('#gridMap table.gmap');
+  if (!c || !c.grid_pos || !table) return null;
+  const row = table.rows[c.grid_pos[1]], td = row && row.cells[c.grid_pos[0]];
+  if (!td) return null;
+  const el = td.querySelector('.gname') || td;
+  const fr = frame.getBoundingClientRect(), r = el.getBoundingClientRect();
+  const pad = 3;
+  const x = r.left - fr.left + frame.scrollLeft, y = r.top - fr.top + frame.scrollTop;
+  return { cx: x + r.width / 2, cy: y + r.height / 2, hw: r.width / 2 + pad, hh: r.height / 2 + pad };
+}
+// 상자 가운데에서 target 쪽으로 뻗은 선이 상자 가장자리를 지나는 점
+function clipToBox(b, target) {
+  const dx = target.x - b.cx, dy = target.y - b.cy;
+  if (!dx && !dy) return { x: b.cx, y: b.cy };
+  const t = Math.min(dx ? b.hw / Math.abs(dx) : Infinity, dy ? b.hh / Math.abs(dy) : Infinity);
+  return t >= 1 ? { x: b.cx, y: b.cy } : { x: b.cx + dx * t, y: b.cy + dy * t };
+}
 function drawAttackLines() {
   const frame = document.querySelector('#gridSection .map-frame');
   if (!frame) return;
@@ -9898,9 +9918,18 @@ function drawAttackLines() {
   svg.setAttribute('class', 'atk-lines');
   svg.setAttribute('width', frame.scrollWidth);
   svg.setAttribute('height', frame.scrollHeight);
+  // 2x2 보스는 네 부위 이름 중 대상에 가장 가까운 글자에서 출발해 대상 이름 글자에서 끝납니다(가운데서 나오지 않게).
+  // 선 끝은 글자 상자의 가장자리(서로를 향한 쪽)에 맞춰, 이름을 가리지 않고 글자에서 바로 이어져 보이게 합니다.
   lastAttackLines.forEach(l => {
-    const from = gridCharCenter(frame, l.from), to = gridCharCenter(frame, l.to);
-    if (!from || !to) return;
+    const B = gridNameBox(frame, l.to);
+    if (!B) return;
+    const all = lastAllForCards || [];
+    const atk = all.find(k => k.name === l.from);
+    const names = atk && atk.boss_group ? all.filter(k => k.boss_group === atk.boss_group && k.grid_pos && k.status !== 'dead').map(k => k.name) : [l.from];
+    const boxes = names.map(n => gridNameBox(frame, n)).filter(Boolean);
+    if (!boxes.length) return;
+    const A = boxes.reduce((best, b) => Math.hypot(b.cx - B.cx, b.cy - B.cy) < Math.hypot(best.cx - B.cx, best.cy - B.cy) ? b : best);
+    const from = clipToBox(A, { x: B.cx, y: B.cy }), to = clipToBox(B, { x: A.cx, y: A.cy });
     const line = document.createElementNS(NS, 'line');
     line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
     line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
