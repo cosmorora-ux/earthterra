@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.30"
+SERVER_BUILD = "2026-10-13.31"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -526,6 +526,27 @@ def build_battle_common(battle):
     }
 
 
+def _clean_device(d):
+    """접속 기기(브라우저가 알려준 값) : 종류(pc/tablet/mobile) · 운영체제 · 브라우저. 운영진 화면에만 보냅니다."""
+    if not isinstance(d, dict):
+        return None
+    kind = d.get("type") if d.get("type") in ("pc", "tablet", "mobile") else "pc"
+    clip = lambda v: str(v or "")[:20]
+    return {"type": kind, "os": clip(d.get("os")), "browser": clip(d.get("browser"))}
+
+
+def _online_devices(room):
+    """운영진 유저 리스트용 : 캐릭터 이름 → 지금 접속한 기기 목록(창을 여러 개 열면 여러 개)."""
+    out = {}
+    for info in list(CONNECTIONS.values()):
+        if info.get("room_id") != room.id or not info.get("device"):
+            continue
+        nickname = info.get("nickname") or ""
+        if room.game.db.exists(nickname):
+            out.setdefault(nickname, []).append(info["device"])
+    return out
+
+
 def _online_character_names(room):
     """이 방에 지금 연결된 소켓들의 닉네임 중, 등록된 캐릭터 이름과 정확히 일치하는 것만
     모읍니다. 전투 시작 전/후 상관없이 동작합니다(resolve_control처럼 battle.team_a/b를 보는
@@ -622,6 +643,7 @@ def build_gm_state(room):
     payload["operator_log"] = op_log[-LOG_SEND_CAP:]
     payload["operator_log_total"] = len(op_log)
     payload["can_undo"] = battle.can_undo() if battle else False
+    payload["online_devices"] = _online_devices(room)
     # 상점 '운영진 처리' 요청 - 최근 것부터
     payload["shop_requests"] = list(reversed(shop_mod.shared_shop().requests[-100:]))
     payload["roster_detail"] = [
@@ -1029,7 +1051,8 @@ def on_join(data):
     previous = CONNECTIONS.get(request.sid)
     previous_nickname = previous["nickname"] if previous else None
 
-    CONNECTIONS[request.sid] = {"room_id": room_id, "role": role, "nickname": nickname}
+    CONNECTIONS[request.sid] = {"room_id": room_id, "role": role, "nickname": nickname,
+                                "device": _clean_device(data.get("device"))}
     join_room(room_channel(room_id, "all"))
     # 참가자 링크에서 닉네임 "GM"으로 (비밀번호 인증까지 마치고) 입장한 경우도 운영진 로그/수식이
     # 필요하므로 gm 채널에 넣어줍니다. 다른 이름으로 재입장(로그아웃 포함)하면 다시 빠집니다.

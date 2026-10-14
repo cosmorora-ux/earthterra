@@ -311,6 +311,9 @@
     50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--point) 18%, transparent), 0 0 10px 3px color-mix(in srgb, var(--point) 70%, transparent); }
   }
   .userinfo-row:hover { background:#1c1c20; }
+  .ui-dev { display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 8px; margin-left:6px; border-radius:10px; background: rgba(255,255,255,.05); color: var(--muted); font-size:11.5px; flex:none; }
+  .ui-dev i { font-size:11px; color:#cfcfd4; }
+  .ui-dev em { font-style:normal; }
   .userinfo-row { cursor:pointer; transition: opacity .25s ease, background .2s ease; }
   @media (hover:hover) and (pointer:fine) { .userinfo-list:hover .userinfo-row:not(:hover) { opacity:.42; } }
   .ui-hovercard { position:fixed; left:0; top:0; z-index:400; width:168px; pointer-events:none; border-radius:16px; overflow:hidden;
@@ -4001,6 +4004,21 @@ const BATTLE_TYPE = "{{ battle_type }}";
 const GRID_SIZE = {{ grid_size }};
 
 const socket = io();
+// 접속 기기 : 운영진 유저 리스트에 PC · 태블릿 · 모바일과 운영체제 · 브라우저를 보여주는 용도(운영진에게만 전달)
+const MY_DEVICE = (() => {
+  const ua = navigator.userAgent || '';
+  const touch = (navigator.maxTouchPoints || 0) > 1;
+  const ipad = /iPad/.test(ua) || (/Macintosh/.test(ua) && touch);  // iPadOS는 Mac처럼 보입니다
+  const os = ipad ? 'iPadOS' : /iPhone|iPod/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android'
+    : /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'macOS' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : '기타';
+  const browser = /SamsungBrowser/.test(ua) ? '삼성 인터넷' : /Whale/.test(ua) ? '웨일' : /Edg\//.test(ua) ? 'Edge'
+    : /KAKAOTALK/i.test(ua) ? '카카오톡' : /NAVER/.test(ua) ? '네이버' : /Firefox|FxiOS/.test(ua) ? 'Firefox'
+    : /CriOS|Chrome/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : '기타';
+  const shortSide = Math.min(screen.width || 0, screen.height || 0);
+  const type = ipad || (/Android/.test(ua) && !/Mobile/.test(ua)) || (/Tablet/.test(ua)) ? 'tablet'
+    : (/Mobi|iPhone|Android/.test(ua) || (touch && shortSide < 600)) ? 'mobile' : 'pc';
+  return { type, os, browser };
+})();
 let roundDeadlineAt = null;
 // 서버 시계와 내 PC 시계의 차이(초). 접속자마다 PC 시계가 조금씩 달라도 타이머/시계가 모두
 // 서버 기준으로 똑같이 보이도록, 서버가 상태를 보낼 때 함께 보내는 server_now로 계산합니다.
@@ -4083,7 +4101,7 @@ function silentJoin() {
   // 페이지에 들어오면 일단 '익명'으로 관전만 가능하게 조용히 접속합니다.
   // 실제 캐릭터로 입장하려면 상단 아바타 동그라미를 클릭해야 합니다.
   MY_NICKNAME = '익명';
-  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, device: MY_DEVICE });
 }
 
 // 새로고침해도 로그인이 유지되도록, 저장된 캐릭터 이름이 있으면 그걸로 바로 재입장을 시도합니다.
@@ -4114,7 +4132,7 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
   let rejected = false;
   const onErr = () => { rejected = true; };
   socket.once('error', onErr);
-  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, gm_password: password || undefined });
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, gm_password: password || undefined, device: MY_DEVICE });
   // 서버가 join → public_state 순으로 응답하는 짧은 시간을 기다린 뒤, 이 이름이 실제 전투에
   // 참여 중인 캐릭터거나(전투 시작 전이어도) 캐릭터 데이터베이스에 등록되어 있는지 확인합니다.
   setTimeout(() => {
@@ -4171,7 +4189,7 @@ function logout() {
   lastTeamChat = [];
   localStorage.removeItem(SAVED_NAME_KEY);
   MY_NICKNAME = '익명';
-  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME });
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, device: MY_DEVICE });
   explicitlyJoined = false;
   updateChatVisibility();
   updateAvatarDots();
@@ -4359,7 +4377,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.30";
+const EXPECTED_SERVER_BUILD = "2026-10-13.31";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -6185,9 +6203,18 @@ socket.on('formulas_saved', (d) => {
   setTimeout(() => { el.textContent = ''; }, 4000);
 });
 
-let lastRosterDetail = [];  // GM 전용 - 등록된 캐릭터 전체 정보(전투에 없는 캐릭터의 마이페이지용)
+let lastRosterDetail = [];
+var lastOnlineDevices = {};  // 운영진 전용 : 캐릭터 이름 → 접속 기기 목록
+var DEVICE_ICON = { pc: 'fa-desktop', tablet: 'fa-tablet-screen-button', mobile: 'fa-mobile-screen-button' };
+var DEVICE_NAME = { pc: 'PC', tablet: '태블릿', mobile: '모바일' };
+function deviceBadgesHtml(name) {
+  const list = (lastOnlineDevices || {})[name] || [];
+  return list.map(d => `<span class="ui-dev" data-tip="${DEVICE_NAME[d.type] || ''} · ${mailEsc(d.os || '')} · ${mailEsc(d.browser || '')}"><i class="fa-solid ${DEVICE_ICON[d.type] || 'fa-desktop'}"></i><em>${mailEsc(d.os || '')}</em></span>`).join('');
+}  // GM 전용 - 등록된 캐릭터 전체 정보(전투에 없는 캐릭터의 마이페이지용)
 socket.on('gm_state', (state) => {
   lastRosterDetail = state.roster_detail || [];
+  lastOnlineDevices = state.online_devices || {};
+  if (document.getElementById('userInfoModal') && document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
   lastShopRequests = state.shop_requests || [];
   renderShop();
   lastOperatorLog = state.operator_log || [];
@@ -7053,7 +7080,7 @@ function renderUserInfoList() {
       // 누르면 그 캐릭터의 마이페이지(운영진 = 수정 가능, 그 외 = 보기 전용), 마우스를 올리면 프로필 사진 카드가 따라다닙니다.
       return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}"
         onclick="openUserFromList('${js}')" onmouseenter="uiHoverShow(this, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()">
-        <span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}</b></span>${eye}</div>`;
+        <span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}</b></span>${isGm && online ? deviceBadgesHtml(name) : ''}${eye}</div>`;
     }).join('');
   }).join('');
 }
