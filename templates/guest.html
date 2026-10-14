@@ -153,6 +153,10 @@
   .idc-close { background:none; border:none; color: var(--muted); font-size:22px; cursor:pointer; padding:4px 6px; }
   .idc-close:hover { color: var(--text); }
   .mypage-cols { display:grid; grid-template-columns:1fr 1fr; gap:36px; }
+  /* 남의 마이페이지(보기 전용) : 프로필 · 체력 · 마이룸만 */
+  .modal-box.mypage.is-view .idc-logout, .modal-box.mypage.is-view .mp-tiles, .modal-box.mypage.is-view .mypage-cols > .mypage-col:last-child { display:none !important; }
+  .modal-box.mypage.is-view .mypage-cols { grid-template-columns:1fr; }
+  .modal-box.mypage.is-view .mypage-roles button:disabled.on { opacity:1; }
   .mypage-col { min-width:0; }
   .mypage-col + .mypage-col { border-left:1px solid var(--panel-border); padding-left:36px; }
   @media (max-width:900px) { .mypage-cols { grid-template-columns:1fr; } .mypage-col + .mypage-col { border-left:none; padding-left:0; padding-top:8px; } .modal-box.mypage { padding:22px 18px; } }
@@ -305,6 +309,18 @@
     50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--point) 18%, transparent), 0 0 10px 3px color-mix(in srgb, var(--point) 70%, transparent); }
   }
   .userinfo-row:hover { background:#1c1c20; }
+  .userinfo-row { cursor:pointer; transition: opacity .25s ease, background .2s ease; }
+  @media (hover:hover) and (pointer:fine) { .userinfo-list:hover .userinfo-row:not(:hover) { opacity:.42; } }
+  .ui-hovercard { position:fixed; left:0; top:0; z-index:400; width:168px; pointer-events:none; border-radius:16px; overflow:hidden;
+    background: var(--panel); box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.07);
+    opacity:0; scale:.86; transition: opacity .22s ease, scale .28s cubic-bezier(.2,.8,.2,1); will-change: transform; }
+  .ui-hovercard.on { opacity:1; scale:1; }
+  .ui-hovercard .pic { width:168px; height:168px; background:center/cover no-repeat; background-color: color-mix(in srgb, var(--c) 22%, #141417);
+    display:flex; align-items:center; justify-content:center; font-size:56px; font-weight:800; color: var(--c); }
+  .ui-hovercard .cap { padding:10px 12px 11px; display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .ui-hovercard .cap b { font-size:14px; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ui-hovercard .cap span { font-size:12px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ui-hovercard .cap span:empty { display:none; }
   .userinfo-name { flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.25; }
   .userinfo-name b { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .userinfo-name small { font-size:12px; }
@@ -2651,6 +2667,8 @@
       padding:28px 32px !important; border-radius:20px !important; border:1px solid var(--line) !important;
       display:flex !important; flex-direction:column; overflow:hidden; box-sizing:border-box; }
     .modal-overlay > .modal-box.panel.mypage { display:block !important; overflow-y:auto; }
+    /* 남의 마이페이지(보기 전용)는 내용만큼만 : 프로필 카드 크기의 작은 창 */
+    .modal-overlay > .modal-box.panel.mypage.is-view { width:min(760px, calc(100vw - 48px)) !important; height:auto !important; max-height:calc(100vh - 48px) !important; }
     .modal-box.mypage > *, .modal-box.shop-modal > *, .modal-box.notice-modal > *, .modal-box.mail-modal > *, .modal-box.userinfo-modal > *,
     .modal-box.mypage.v2 .mp-hero, .modal-box.mypage .idc-head, .modal-box.mypage .mypage-cols { max-width:none !important; width:auto; margin-left:0; margin-right:0; }
     .modal-box.mypage .idc-title, .modal-box .modal-title.page-title { font-size:32px !important; line-height:1.1; }
@@ -3570,7 +3588,7 @@
 
     <!-- 프로필 : 초상화 · 이름 · 마이룸 한마디 · 포지션 · 진영 · 출신지 / 오른쪽에 표기 설정 -->
     <div class="mp-card mp-hero">
-      <div class="mypage-portrait" id="myPagePortrait" data-tip="프로필 이미지 (정사각형 png/webp/gif)" onclick="document.getElementById('myAvatarFileInput').click()">
+      <div class="mypage-portrait" id="myPagePortrait" data-tip="프로필 이미지 (정사각형 png/webp/gif)" onclick="if(canEditMyPage()) document.getElementById('myAvatarFileInput').click()">
         <span class="mypage-portrait-icon" id="myPagePortraitIcon"><i class="fa-solid fa-user"></i></span>
       </div>
       <div class="mp-hero-main">
@@ -3600,7 +3618,7 @@
 
     <div class="mypage-cols">
     <div class="mypage-col">
-      <div class="mp-card">
+      <div class="mp-card" id="myPageHpCard">
         <div class="mp-card-h"><i class="fa-solid fa-heart-pulse"></i> 체력</div>
         <div class="mypage-hp-row">
           <div class="mypage-hp-col">
@@ -4172,6 +4190,7 @@ function myLoggedInName() {
   return lastRoster.includes(n) ? n : null;
 }
 function canEditMyPage() {
+  if (typeof myPageIsView === 'function' && myPageIsView()) return false;
   return myControlInfo(lastBattleForPanel).scope === 'all' || !!myLoggedInName();
 }
 // 지금 마이페이지에 떠 있는 캐릭터 이름 (GM이 남의 마이페이지를 수정할 때 서버에 함께 보냅니다)
@@ -6921,8 +6940,9 @@ function renderUserInfoList() {
         ? `<button class="userinfo-eye" onclick="event.stopPropagation(); toggleUserInfoHidden('${js}')">`
           + `<i class="fa-solid ${hidden ? 'fa-eye-slash' : 'fa-eye'}"></i></button>`
         : '';
-      const dbl = isGm ? ` ondblclick="openMyPageFor('${js}')" style="cursor:pointer;"` : '';
-      return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}"${dbl}>
+      // 누르면 그 캐릭터의 마이페이지(운영진 = 수정 가능, 그 외 = 보기 전용), 마우스를 올리면 프로필 사진 카드가 따라다닙니다.
+      return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}"
+        onclick="openUserFromList('${js}')" onmouseenter="uiHoverShow(this, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()">
         <span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}</b></span>${eye}</div>`;
     }).join('');
   }).join('');
@@ -6940,6 +6960,64 @@ function toggleUserInfoPanel() {
 }
 function closeUserInfoPanel() {
   document.getElementById('userInfoModal').style.display = 'none';
+  uiHoverHide();
+}
+function openUserFromList(name) {
+  uiHoverHide();
+  closeUserInfoPanel();
+  openMyPageFor(name);
+}
+// 유저 리스트 호버 카드 : 프로필 사진(없으면 이름 첫 글자)이 커서를 부드럽게 따라옵니다. 마우스가 있는 기기에서만.
+const uiHover = { el: null, x: 0, y: 0, tx: 0, ty: 0, raf: 0, on: false };
+function uiHoverEl() {
+  if (!uiHover.el) {
+    uiHover.el = document.createElement('div');
+    uiHover.el.className = 'ui-hovercard';
+    uiHover.el.innerHTML = '<div class="pic"></div><div class="cap"><b></b><span></span></div>';
+    document.body.appendChild(uiHover.el);
+  }
+  return uiHover.el;
+}
+function uiHoverShow(row, e) {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  const name = row.dataset.name, d = (lastRosterMypage || {})[name] || {};
+  const el = uiHoverEl(), pic = el.querySelector('.pic');
+  const fresh = !uiHover.on;
+  const initial = [...name.trim()][0] || '';
+  pic.style.setProperty('--c', d.color || 'var(--point)');
+  pic.style.backgroundImage = 'none'; pic.textContent = initial;
+  if (d.avatar_url) {
+    // 이미지를 다 받은 뒤에 바꿔 끼워서, 못 불러오면 이름 첫 글자를 그대로 둡니다.
+    const img = new Image(), want = name;
+    img.onload = () => { if (uiHover.name === want) { pic.style.backgroundImage = `url('${d.avatar_url}')`; pic.textContent = ''; } };
+    img.src = d.avatar_url;
+  }
+  uiHover.name = name;
+  el.querySelector('.cap b').textContent = name;
+  el.querySelector('.cap span').textContent = [d.role, factionOf(name)].filter(Boolean).join(' · ');
+  uiHover.tx = e.clientX; uiHover.ty = e.clientY;
+  if (fresh) { uiHover.x = uiHover.tx; uiHover.y = uiHover.ty; }
+  uiHover.on = true;
+  el.classList.add('on');
+  if (!uiHover.raf) uiHoverTick();
+}
+function uiHoverMove(e) { uiHover.tx = e.clientX; uiHover.ty = e.clientY; }
+function uiHoverHide() {
+  uiHover.on = false;
+  if (uiHover.el) uiHover.el.classList.remove('on');
+}
+function uiHoverTick() {
+  uiHover.x += (uiHover.tx - uiHover.x) * 0.18;
+  uiHover.y += (uiHover.ty - uiHover.y) * 0.18;
+  const el = uiHover.el;
+  // 카드는 커서 오른쪽에 둬서 이름이 가려지지 않게, 화면 밖으로는 나가지 않게
+  const w = el.offsetWidth || 168, h = el.offsetHeight || 210;
+  let left = uiHover.x + 28, top = uiHover.y - h / 2;
+  if (left + w > window.innerWidth - 12) left = uiHover.x - w - 28;
+  top = Math.max(12, Math.min(window.innerHeight - h - 12, top));
+  el.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+  const moving = Math.abs(uiHover.tx - uiHover.x) + Math.abs(uiHover.ty - uiHover.y) > 0.3;
+  uiHover.raf = (uiHover.on || moving) ? requestAnimationFrame(uiHoverTick) : 0;
 }
 
 // ------------------------------------------------------------------
@@ -6947,11 +7025,14 @@ function closeUserInfoPanel() {
 // 체력/소지품은 운영진만 수정 가능하고, 그 외(표기 이름/색상/스킬 로그)는 본인(캐릭터로
 // 직접 로그인한 사람)만 수정 가능합니다.
 // ------------------------------------------------------------------
-// GM이 유저 접속정보에서 더블클릭해 연 캐릭터 이름(없으면 평소처럼 본인/선택된 행동자 기준)
+// 유저 리스트에서 눌러 연 캐릭터 이름(없으면 평소처럼 본인/선택된 행동자 기준)
 let myPageViewName = null;
+// 남의 마이페이지를 보기만 하는 중(운영진이 아닐 때) : 수정 칸과 재화 · 소지품 · 스킬 로그 · 효과음은 감춥니다.
+function myPageIsView() { return !!myPageViewName && myControlInfo(lastBattleForPanel).scope !== 'all' && myPageViewName !== myLoggedInName(); }
 
 function openMyPageFor(name) {
-  if (myControlInfo(lastBattleForPanel).scope !== 'all') return;
+  // 운영진은 누구의 마이페이지든 수정할 수 있고, 그 외에는 남의 마이페이지를 보기만 합니다(본인이면 평소 마이페이지).
+  if (myControlInfo(lastBattleForPanel).scope !== 'all' && name === myLoggedInName()) { openMyPage(); return; }
   myPageViewName = name;
   skillLogTypeLocal = null;
   document.getElementById('myPageModal').style.display = 'flex';
@@ -6965,8 +7046,8 @@ function myPageTargetChar() {
     const live = lastAllForCards.find(c => c.name === myPageViewName);
     if (live) return live;
     // 전투에 없는 캐릭터는 등록 정보만 보여줍니다(체력은 전투 중에만 있음).
-    const d = lastRosterDetail.find(r => r.name === myPageViewName);
-    return d ? { ...d, current_hp: null, max_hp: null } : null;
+    const d = lastRosterDetail.find(r => r.name === myPageViewName) || (lastRosterMypage || {})[myPageViewName];
+    return d ? { ...d, name: myPageViewName, current_hp: null, max_hp: null } : null;
   }
   const battle = lastBattleForPanel;
   if (battle) {
@@ -7064,8 +7145,10 @@ function renderMyPage() {
   const control = myControlInfo(lastBattleForPanel);
   const isGm = control.scope === 'all';
   const isSelf = !!myLoggedInName();
-  // GM은 남의 마이페이지도 전부 수정할 수 있습니다.
-  const canEdit = isSelf || isGm;
+  const viewOnly = myPageIsView();
+  document.querySelector('#myPageModal .modal-box.mypage').classList.toggle('is-view', viewOnly);
+  // GM은 남의 마이페이지도 전부 수정할 수 있습니다. 러너는 남의 마이페이지를 보기만 합니다.
+  const canEdit = (isSelf || isGm) && !viewOnly;
   const c = myPageTargetChar();
 
   const hpView = document.getElementById('myPageCurrentHpView');
@@ -7113,6 +7196,7 @@ function renderMyPage() {
   renderMyPageHome(c);
 
   const hasHp = c.max_hp != null;
+  document.getElementById('myPageHpCard').style.display = viewOnly && !hasHp ? 'none' : '';
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   document.getElementById('myPageMaxHp').textContent = hasHp ? c.max_hp : '-';
   document.getElementById('myPageHpBar').style.width = Math.max(0, hpRatio * 100) + '%';
@@ -7161,7 +7245,7 @@ function myRoleTickets(name) {
 }
 function renderMyPageRoles(c, canEdit) {
   const box = document.getElementById('myPageRoles');
-  box.innerHTML = MYPAGE_ROLES.map(r => `<button class="${r === c.role ? 'on' : ''}" style="--role-color:${roleColorVar(r)}"
+  box.innerHTML = (myPageIsView() ? [c.role] : MYPAGE_ROLES).map(r => `<button class="${r === c.role ? 'on' : ''}" style="--role-color:${roleColorVar(r)}"
     ${canEdit ? '' : 'disabled'} onclick="onRoleClick('${r}')">${r}</button>`).join('');
 }
 async function onRoleClick(role) {
