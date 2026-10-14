@@ -892,8 +892,6 @@
   .chat-line { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; }
   .chat-body { flex:1; min-width:0; }
   .chat-meta { display:flex; align-items:baseline; gap:0; line-height:1.3; margin-bottom:2px; }
-  .chat-avatar.initial { display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700;
-    color: var(--ac); background: color-mix(in srgb, var(--ac) 16%, #0c0c0d); border-color: color-mix(in srgb, var(--ac) 35%, transparent); }
   /* 이어서 쓴 글 : 프로필·이름 생략, 위 글에 바짝 붙이기 */
   .chat-line.cont { margin-top:-8px; }
   .chat-line.cont .chat-avatar, .chat-line.cont .chat-dot { visibility:hidden; height:0; }
@@ -6586,9 +6584,8 @@ function fmtChat(entry) {
     const c = typeof sfxCharacter === 'function' ? sfxCharacter(entry.nickname) : null;
     const who = c ? displayNameOf(c) : entry.nickname;
     const prof = chatProfileOf(entry.nickname);
-    const ini = shopEsc([...(who || '?').trim()][0] || '?');
     const av = prof.avatar_url ? `<div class="chat-avatar" style="background-image:url('${prof.avatar_url}');"></div>`
-      : `<div class="chat-avatar initial" style="--ac:${prof.color || '#5a5a62'}">${ini}</div>`;
+      : `<div class="chat-avatar"></div>`;
     // 컷인이 있거나 격자 지도(✶ 다시 보기)가 있으면 ▶ 버튼을 둡니다.
     const can = !!entry.fx || !!document.getElementById('gridSection');
     return `<div class="chat-line is-skill"${idAttr}>${av}
@@ -6603,12 +6600,11 @@ function fmtChat(entry) {
   const cls = entry.category === 'system' ? 'is-system' : (isCommand ? 'is-command' : '');
   const isStar = entry.role === 'system' || entry.role === 'gm' || (entry.nickname || '').trim().toLowerCase() === 'gm';
   const profile = chatProfileOf(entry.nickname);
-  const initial = shopEsc([...(entry.nickname || '?').trim()][0] || '?');
   const dot = isStar
     ? `<div class="chat-dot chat-star">✶</div>`
     : (profile.avatar_url
       ? `<div class="chat-avatar" style="background-image:url('${profile.avatar_url}');"></div>`
-      : `<div class="chat-avatar initial" style="--ac:${profile.color || '#5a5a62'}">${initial}</div>`);
+      : `<div class="chat-avatar"></div>`);
   // GM은 양 팀 아군 회의를 같은 탭에서 같이 보므로, 어느 팀 회의인지 작게 표시해줍니다.
   const teamTag = entry.category === 'team' && myControlInfo(lastBattleForPanel).scope === 'all'
     ? ` <span style="color:var(--muted); font-size:12px;">(${entry.team === 'A' ? '1팀' : '2팀'} 회의)</span>`
