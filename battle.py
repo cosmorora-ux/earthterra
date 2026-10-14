@@ -620,7 +620,7 @@ class Battle:
         pending = actor.pending_attacks
         actor.pending_attacks = []
         for entry in pending:
-            self._log(f"[피해 정산] {entry['attacker_name']} → {actor.name}", tag="action")
+            self._log(f"[피해 정산] {entry['attacker_name']} → {actor.name} (공격 수치 {entry['atk']['total']})", tag="action")
             self._resolve_hit(entry["atk"], actor, entry.get("defense_stat_mult", 1.0))
         # 피해 정산이 모두 끝난 뒤, 그동안 맡아둔 회복을 받은 순서대로 적용합니다.
         heals = actor.pending_heals
