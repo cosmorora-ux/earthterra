@@ -2989,23 +2989,22 @@
   /* 행동 전 샤인 · 스킬 ✶ · 전조 줄무늬 · 컷인 효과는 전투 상황을 알려주는 표시라, 기기의 '애니메이션 줄이기' 설정과 상관없이 항상 움직입니다. */
   /* 격자 : 내 팀 차례 + 행동 전 = 샤인(빛이 쉬지 않고 천천히 훑고 지나감), 행동을 마치면 꺼짐. 이동 완료(행동 대기) = 모서리 작은 삼각형 */
   .gmap .gcell.ready::before { content:""; position:absolute; inset:0; z-index:7; pointer-events:none;
-    background: linear-gradient(115deg, transparent 44%, rgba(255,255,255,.5) 50%, transparent 56%) no-repeat; background-size:260% 100%;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); animation: gReadyShine 3.2s linear infinite; animation-delay: var(--shine-phase, 0s); }
+    background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.18) 50%, transparent 58%) no-repeat; background-size:260% 100%;
+    animation: gReadyShine 3.2s linear infinite; animation-delay: var(--shine-phase, 0s); }
   @keyframes gReadyShine { 0% { background-position:100% 0; } 100% { background-position:0% 0; } }
   /* 칸 모서리 표시 : 왼쪽 위 빨간 삼각형 = 받을 피해가 있음(피해 보류), 오른쪽 위 흰 삼각형 = 보호 · 회복 효과를 받는 중 */
   .gmap .gmk { position:absolute; top:0; z-index:9; width:0; height:0; border-style:solid; pointer-events:none; }
   .gmap .gmk.hurt { left:0; border-width:8px 8px 0 0; border-color: var(--role-스트라이커) transparent transparent transparent; }
   .gmap .gmk.buff { right:0; border-width:0 8px 8px 0; border-color: transparent #fff transparent transparent; }
   /* 스킬을 쓰면 그 칸 윗선 위로 ✶가 떠올랐다 사라집니다(지도 틀 위 겹침 층에 띄워, 지도를 다시 그려도 끊기지 않음) */
-  /* ✶ : 작게 나타나 핑그르르 돌며 커진 뒤, 둥실 떠오르며 사라집니다(빛 번짐 없이 흰 별 하나) */
-  .skill-pop { position:absolute; z-index:30; pointer-events:none; font-size:18px; line-height:1; color:#fff;
-    text-shadow: 0 1px 3px rgba(0,0,0,.6); transform-origin:50% 50%; animation: skillPop 2.2s cubic-bezier(.2,.8,.3,1) forwards; }
+  /* ✶ : 칸 윗선에서 살짝 커지며 또렷해졌다가, 짧게 떠오르며 사라집니다(회전 · 튀는 크기 변화 없이 담백하게) */
+  .skill-pop { position:absolute; z-index:30; pointer-events:none; font-size:16px; line-height:1; color:#fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.6); animation: skillPop 1.8s cubic-bezier(.22,.61,.36,1) forwards; }
   @keyframes skillPop {
-    0%   { opacity:0; transform:translate(-50%, -50%) scale(.15) rotate(-240deg); }
-    28%  { opacity:1; transform:translate(-50%, -58%) scale(1.25) rotate(0deg); }
-    38%  { transform:translate(-50%, -62%) scale(1) rotate(0deg); }
-    72%  { opacity:1; transform:translate(-50%, -95%) scale(1) rotate(0deg); }
-    100% { opacity:0; transform:translate(-50%, -125%) scale(.9) rotate(0deg); } }
+    0%   { opacity:0; transform:translate(-50%, -50%) scale(.82); }
+    18%  { opacity:1; transform:translate(-50%, -58%) scale(1); }
+    70%  { opacity:1; transform:translate(-50%, -82%) scale(1); }
+    100% { opacity:0; transform:translate(-50%, -105%) scale(1); } }
   /* 전조 칸 위에 캐릭터가 있어도 줄무늬가 보이게 */
   .gmap td.tel .gcell .gsel:not(.tgt) { background: repeating-linear-gradient(135deg, rgba(255,176,32,.08) 0 2.5px, transparent 2.5px 7.0711px);
     background-size:10px 10px; background-position: var(--tx, 0px) 0; animation: telDrift 2.4s linear infinite; animation-delay: var(--tel-phase, 0s); }
@@ -4235,7 +4234,7 @@ function popSkillMark(name, delayMs) {
   el.style.left = (r.left - fr.left + frame.scrollLeft + r.width / 2) + 'px';
   el.style.top = (r.top - fr.top + frame.scrollTop) + 'px';
   frame.appendChild(el);
-  setTimeout(() => el.remove(), 2300);
+  setTimeout(() => el.remove(), 1900);
 }
 
 function statsTitle(c) {
