@@ -3369,7 +3369,7 @@
 
   /* ================================================================
      체력바(공통) : 카드 · 작은 카드 · 지도 칸 · 칸 툴팁 · 마이페이지가 모두 같은 막대
-     - 어두운 홈 + 은빛 그라데이션 막대 + 윗면 광택, 칸 나눔 눈금(10%마다)
+     - 어두운 홈 + 은빛 그라데이션 막대 + 윗면 광택
      - 체력 60% 이하 호박색, 30% 이하 붉은색(은은하게 숨 쉬는 빛)
      ================================================================ */
   :root {
@@ -3393,11 +3393,6 @@
   .hpbar-fill.mid, .hpbar-fill-sm.mid, .tt-hp .bar i.mid, .idc-hpbar > div.mid, .char-card.v2 .hpbar-fill.mid { background: var(--hp-fill-mid) !important; box-shadow: 0 0 8px rgba(242,169,59,.35); }
   .hpbar-fill.low, .hpbar-fill-sm.low, .tt-hp .bar i.low, .idc-hpbar > div.low, .char-card.v2 .hpbar-fill.low { background: var(--hp-fill-low) !important; animation: hpLowGlow 1.8s ease-in-out infinite; }
   @keyframes hpLowGlow { 0%, 100% { box-shadow: 0 0 6px rgba(226,87,74,.35); } 50% { box-shadow: 0 0 12px rgba(255,110,96,.7); } }
-  /* 칸 나눔 눈금 : 큰 막대(카드 · 마이페이지)에만, 10%마다 */
-  .hpbar-track::after, .idc-hpbar::after {
-    content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:inherit;
-    background: repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), rgba(10,10,12,.55) calc(10% - 1px), rgba(10,10,12,.55) 10%);
-  }
   .hpbar-track, .char-card.v2 .hpbar-track { height:7px !important; }
   .idc-hpbar, .mypage.v2 .idc-hpbar { height:9px; }
   .tt-hp .bar { height:5px; }
@@ -4936,12 +4931,8 @@ function displayNameOf(c) {
 const CARD_INFO_ICON_SVG = UI_INFO_SVG;
 
 // 지금 이 캐릭터 팀의 차례이고, 살아 있고, 아직 이번 라운드 행동을 하지 않았으면 true
-// 카드 샤인 : 참가자는 내 캐릭터 카드에만(내 차례 · 행동 전), 운영진은 차례인 캐릭터 카드 모두에
-function cardShines(c) {
-  if (!isTurnPending(c)) return false;
-  const ctl = myControlInfo(lastBattleForPanel);
-  return ctl.scope === 'all' || (ctl.scope === 'character' && ctl.character.name === c.name);
-}
+// 카드 샤인 : 지금 차례이고 아직 행동하지 않은 캐릭터 카드 모두에(누가 보든 똑같이)
+function cardShines(c) { return isTurnPending(c); }
 function isTurnPending(c) {
   const battle = lastBattleForPanel;
   if (!battle || battle.finished || isDefeatedStatus(c) || c.has_acted) return false;
@@ -8733,7 +8724,7 @@ function makeStatusTag(kind, text, count) {
     if (m) { label = m[1]; num = m[2]; }
   }
   const full = count != null ? label : String(text);
-  return `<span class="stag stag-${kind}" data-tip="${shopEsc(full)}">${cls ? `<i class="${cls}"></i>` : ''}<span class="st-l">${label}</span>${num && count == null ? `<span class="st-n">${num}</span>` : ''}${count != null && count > 1 ? `<span class="st-n st-only">${count}</span>` : ''}</span>`;
+  return `<span class="stag stag-${kind}">${cls ? `<i class="${cls}"></i>` : ''}<span class="st-l">${label}</span>${num && count == null ? `<span class="st-n">${num}</span>` : ''}${count != null && count > 1 ? `<span class="st-n st-only">${count}</span>` : ''}</span>`;
 }
 // 아이콘 폰트가 늦게 로드될 수 있어서, 로드 후 한 번 더 확인하고 화면을 다시 그립니다.
 if (document.fonts && document.fonts.ready) {
