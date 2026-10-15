@@ -2571,6 +2571,31 @@
     .dorm-edit-bar button { height:30px; min-width:30px; padding:0 6px; }
     .dorm-edit-bar .val { min-width:30px; }
   }
+  /* 모바일 · 태블릿 꾸미기 화면 정돈 */
+  @media (max-width:900px) {
+    /* 분류 탭 : 글자가 두 줄로 깨지지 않게 한 줄 + 넘치면 옆으로 밀기 */
+    .dorm-items .member-toptabs.dorm-cattabs { overflow-x:auto; scrollbar-width:none; }
+    .dorm-cattabs button { flex:1 0 auto; padding:11px 12px; white-space:nowrap; font-size:13px; }
+    .dorm-items .member-header { padding-top:12px; padding-bottom:12px; }
+    .dorm-items .dorm-side-body { max-height:60vh; }
+    .dorm-asset.dorm-asset-add { font-size:11px; gap:4px; white-space:nowrap; padding:4px; }
+    .dorm-asset.dorm-asset-add i { font-size:14px; }
+    .dorm-palette-foot { font-size:11.5px; }
+  }
+  /* 태블릿 : 자료 칸이 너무 크지 않게 한 줄에 6개 */
+  @media (min-width:561px) and (max-width:900px) {
+    .dorm-items .dorm-assets { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  }
+  /* 휴대폰 : 고른 소품 막대는 5칸 × 2줄로 고르게(이름 · 썸네일은 방에 표시되니 생략) */
+  @media (max-width:560px) {
+    .dorm-edit-bar.on:not(.placing) { display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:6px; width:100%; box-sizing:border-box; padding:6px; }
+    .dorm-edit-bar.on:not(.placing) .th { display:none; }
+    .dorm-edit-bar.on:not(.placing) button, .dorm-edit-bar.on:not(.placing) .val { width:100%; min-width:0; height:34px; margin:0; }
+    .dorm-edit-bar.on:not(.placing) .val { display:flex; align-items:center; justify-content:center; }
+    .dorm-edit-bar.placing { width:100%; box-sizing:border-box; justify-content:flex-start; }
+    .dorm-edit-bar.placing .hint { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+    .dorm-items .dorm-assets { gap:6px; }
+  }
 
   /* ================================================================
      세로 태블릿·휴대폰 : 왼쪽 메뉴를 화면 아래 탭 바로
@@ -10086,7 +10111,7 @@ function renderDormPalette() {
   document.getElementById('dormHint').textContent = dormCat === 'mine' ? '직접 등록한 가구와 캐릭터 SD입니다. 캐릭터는 클릭 시 등록된 대사가 랜덤 출력됩니다.'
     : dormCat === 'room' ? '고르면 방 바탕이 바뀌어요.'
     : dormCat === 'surface' ? '벽지·바닥은 고르면 방에 딱 맞춰 깔려요. 다시 누르면 걷어내요.'
-    : '고른 뒤 방을 눌러 놓아요. Esc 고르기 취소';
+    : '고른 뒤 방을 눌러 놓아요.' + (window.matchMedia('(hover: none)').matches ? '' : ' Esc 고르기 취소');
   renderDormGrid();
 }
 // ---------- 아이템 추가 (참가자 : 가구 · 캐릭터 SD) ----------
