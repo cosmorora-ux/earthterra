@@ -4562,7 +4562,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.35";
+const EXPECTED_SERVER_BUILD = "2026-10-13.36";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -11464,7 +11464,12 @@ function opsRoomHtml() {
     <div class="ops-card">
       <h3><i class="fa-solid fa-envelope"></i> 편지 시기<span class="sub">러너는 이 기간 안에서 연도만 골라요</span></h3>
       <div class="mail-eras" id="opsMailEras"></div>
-      <div class="ops-hint" style="margin-top:12px;">캐릭터 나이는 1차 입학(空歷 514年) 기준 13~16세(기본 13세)이고, 본인이 마이페이지에서 고르거나 캐릭터 수정에서 바꿀 수 있어요.</div>
+      <div class="ops-hint" style="margin-top:12px;">캐릭터 나이는 1차 입학(空歷 514年) 기준 13~16세(기본 13세)이고, 운영진이 마이페이지나 캐릭터 수정에서 바꿀 수 있어요.</div>
+    </div>
+    <div class="ops-card">
+      <h3><i class="fa-solid fa-hourglass-half"></i> 미행동자 안내<span class="sub">라운드 제한시간이 이만큼 남으면 커맨드 창에 한 번 안내</span></h3>
+      <div class="mail-eras" id="opsRemind"></div>
+      <div class="ops-hint" style="margin-top:12px;">예) 제한시간 1분 남았습니다. 미행동자 하루, 노아, 세린 · 모두 행동했으면 안내하지 않아요.</div>
     </div>
     <div class="ops-card">
       <h3><i class="fa-solid fa-cloud-sun"></i> 배경 · 날씨</h3>
@@ -11500,8 +11505,14 @@ function opsRenderMailEras() {
   const cur = mailData.era_now;
   el.innerHTML = mailData.eras.map(e => `<button class="${e.id === cur ? 'on' : ''}" onclick="socket.emit('mail_era_set', {era:'${e.id}'})">${mailEsc(e.name)} · ${e.from}~${e.to}年</button>`).join('');
 }
+const OPS_REMIND = [[0, '끄기'], [30, '30초'], [60, '1분'], [120, '2분'], [180, '3분'], [300, '5분']];
+function opsRenderRemind() {
+  const el = document.getElementById('opsRemind'); if (!el) return;
+  const cur = opsLastPublic && opsLastPublic.remind_seconds != null ? opsLastPublic.remind_seconds : 60;
+  el.innerHTML = OPS_REMIND.map(([v, t]) => `<button class="${v === cur ? 'on' : ''}" onclick="socket.emit('set_remind_seconds', {seconds:${v}})">${v ? `${t} 남았을 때` : t}</button>`).join('');
+}
 function opsRenderRoomInfo() {
-  opsRenderSwatches(); opsRenderScene(); opsRenderMailEras();
+  opsRenderSwatches(); opsRenderScene(); opsRenderMailEras(); opsRenderRemind();
   const n = document.getElementById('opsRoomName');
   if (n && document.activeElement !== n) n.value = (opsLastPublic && opsLastPublic.room_name) || ROOM_ID;
   const l = document.getElementById('opsGuestLink');

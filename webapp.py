@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.35"
+SERVER_BUILD = "2026-10-13.36"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -658,6 +658,7 @@ def build_public_state(room):
         "server_now": time.time(),
         "server_build": SERVER_BUILD,
         "point_theme": point_theme(),
+        "remind_seconds": remind_seconds(),
     }
     if room.battle_type == "siege":
         payload["site_dice"] = {
@@ -1557,6 +1558,25 @@ sound_effect_volume=existing.get("sound_effect_volume"),
     broadcast_state(room)
 
 
+@socketio.on("set_remind_seconds")
+def on_set_remind_seconds(data):
+    """운영진 : 미행동자 안내 시점(라운드 제한시간이 몇 초 남았을 때)을 정합니다. 0 = 끄기."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    try:
+        sec = int((data or {}).get("seconds"))
+    except (TypeError, ValueError):
+        return
+    if sec not in REMIND_CHOICES:
+        return
+    SITE_SETTINGS["remind_seconds"] = sec
+    safeio.write_json(SITE_SETTINGS_PATH, SITE_SETTINGS, indent=1)
+    for r in list_rooms():
+        broadcast_state(r)
+
+
 @socketio.on("set_point_theme")
 def on_set_point_theme(data):
     """운영진 : 포인트 컬러를 바꾸면 모든 방의 모든 접속자 화면에 바로 적용됩니다."""
@@ -2085,22 +2105,31 @@ ACTION_HANDLERS = {
 
 SITE_TURN_ACTIONS = ("attack", "heal", "defense_settle")
 
-# 마스 레이드 전용 : 라운드 제한시간이 이만큼(초) 남았을 때 미행동자 안내를 커맨드 창에 남깁니다.
-MASS_RAID_REMINDER_THRESHOLDS = (300, 120, 60)  # 5분 / 2분 / 1분
+# 미행동자 안내 : 라운드 제한시간이 이만큼(초) 남았을 때 아직 행동하지 않은 캐릭터를 커맨드 창에 한 번 안내합니다.
+# 운영진이 운영 페이지에서 바꿀 수 있고(0 = 끄기), 기본은 1분입니다. 모든 전투 방식에 같이 적용됩니다.
+REMIND_CHOICES = (0, 30, 60, 120, 180, 300)
+REMIND_DEFAULT = 60
+
+
+def remind_seconds():
+    v = SITE_SETTINGS.get("remind_seconds", REMIND_DEFAULT)
+    return v if v in REMIND_CHOICES else REMIND_DEFAULT
+
+
+def _remind_label(sec):
+    return f"{sec}초" if sec < 60 else f"{sec // 60}분"
 
 
 def _post_mass_raid_reminder(room, battle, threshold):
     unacted = battle.unacted_members()
-    living = [c for c in battle.team_a + battle.team_b if c.is_alive]
-    acted_count = len(living) - len(unacted)
-    minutes = threshold // 60
-    names = ", ".join(unacted) if unacted else "없음"
+    if not unacted:
+        return  # 모두 행동했으면 안내하지 않습니다.
     entry = {
         "time": time.strftime("%H:%M:%S"),
         "nickname": "system",
         "role": "system",
         "category": "system",
-        "text": f"제한시간 {minutes}분 남았습니다. · 미완료: {names}",
+        "text": f"제한시간 {_remind_label(threshold)} 남았습니다. 미행동자 {', '.join(unacted)}",
     }
     room.chat_log.append(_with_chat_id(entry))
     mark_runtime_dirty()
@@ -2118,10 +2147,10 @@ def _mass_raid_round_reminder_check(room):
         room.reminders_round_no = battle.round_no
         room.reminders_sent = set()
     remaining = room.round_deadline - time.time()
-    for threshold in MASS_RAID_REMINDER_THRESHOLDS:
-        if remaining <= threshold and threshold not in room.reminders_sent:
-            room.reminders_sent.add(threshold)
-            _post_mass_raid_reminder(room, battle, threshold)
+    threshold = remind_seconds()
+    if threshold and 0 < remaining <= threshold and threshold not in room.reminders_sent:
+        room.reminders_sent.add(threshold)
+        _post_mass_raid_reminder(room, battle, threshold)
 
 
 def _maybe_resolve_telegraph_damage(room, battle):
@@ -2148,12 +2177,10 @@ def _maybe_resolve_telegraph_damage(room, battle):
 
 
 def _round_reminder_loop():
-    """마스 레이드 방들을 주기적으로 훑어보며 제한시간 임계값(5분/2분/1분) 안내를 보냅니다."""
+    """전투 중인 방들을 주기적으로 훑어보며, 라운드 제한시간이 운영진이 정한 만큼 남으면 미행동자를 안내합니다."""
     while True:
         socketio.sleep(5)
         for room in list(ROOMS.values()):
-            if room.battle_type != "mass_raid":
-                continue
             try:
                 _mass_raid_round_reminder_check(room)
             except Exception as e:
