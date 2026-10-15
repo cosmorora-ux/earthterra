@@ -10764,32 +10764,46 @@ function playHpFx(el, prev, hp) {
   // 서버가 이미 이 캐릭터에 수치(공격·회복·방어·피해 정산)를 띄웠으면 숫자는 다시 띄우지 않습니다.
   const name = (el.dataset.fx || '').replace(/^group:/, '');
   if (Date.now() - (fxRecentNumbers[name] || 0) > 2500) {
-    spawnFxNumber(el, delta < 0 ? 'atk' : 'heal', delta, 0);
+    spawnFxNumber(el, delta < 0 ? 'atk' : 'heal', delta, name);
   }
 }
 // 카드 위에 떠오르는 수치 + 테두리 빛 (kind : atk 빨강 / heal 노랑 / def 파랑)
+// 한 캐릭터에 수치가 여러 개(누적 피해 · 방어 + 피해 등) 생기면, 옆으로 늘어놓지 않고 같은 자리에서 차례대로 하나씩 떠오릅니다.
 var fxRecentNumbers = {};
-function spawnFxNumber(el, kind, value, order) {
-  const flash = document.createElement('div');
-  flash.className = 'fx-flash ' + kind;
-  el.appendChild(flash);
-  setTimeout(() => flash.remove(), 1200);
-  const r = el.getBoundingClientRect();
-  if (!r.width || r.bottom < 0 || r.top > window.innerHeight) return;
-  const f = document.createElement('div');
-  f.className = 'fx-float ' + kind;
-  f.textContent = (value < 0 ? '−' : '+') + Math.abs(value);
-  // 같은 카드에 여러 수치(예: 방어 +113, 피해 −51)가 뜨면 옆으로 나란히 띄웁니다.
-  f.style.left = (r.left + r.width / 2 + order * 72) + 'px';
-  f.style.top = (r.top + Math.min(r.height * 0.35, 60)) + 'px';
-  f.style.animationDelay = (order * 0.22) + 's';
-  document.body.appendChild(f);
-  setTimeout(() => f.remove(), 1300 + order * 220);
+var fxNumQueue = {};          // 캐릭터별 : 다음 숫자를 띄울 수 있는 시각(ms)
+const FX_NUM_GAP = 520;       // 숫자 사이 간격(ms)
+function spawnFxNumber(el, kind, value, who) {
+  const key = who || el.dataset.fx || '';
+  const now = Date.now(), at = Math.max(now, fxNumQueue[key] || 0);
+  fxNumQueue[key] = at + FX_NUM_GAP;
+  setTimeout(() => {
+    // 기다리는 사이 카드가 다시 그려졌으면 새 카드를 찾아 그 위에 띄웁니다.
+    let target = el;
+    if (!target.isConnected && el.dataset.fx) {
+      const esc = s => (window.CSS && CSS.escape) ? CSS.escape(s) : s;
+      target = [...document.querySelectorAll(`[data-fx="${esc(el.dataset.fx)}"]`)].find(e => e.getBoundingClientRect().width > 0) || el;
+    }
+    const flash = document.createElement('div');
+    flash.className = 'fx-flash ' + kind;
+    target.appendChild(flash);
+    setTimeout(() => flash.remove(), 1200);
+    const r = target.getBoundingClientRect();
+    if (!r.width || r.bottom < 0 || r.top > window.innerHeight) return;
+    const f = document.createElement('div');
+    f.className = 'fx-float ' + kind;
+    f.textContent = (value < 0 ? '−' : '+') + Math.abs(value);
+    f.style.left = (r.left + r.width / 2) + 'px';
+    f.style.top = (r.top + Math.min(r.height * 0.35, 60)) + 'px';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 1300);
+  }, at - now);
 }
 // 서버가 로그에서 뽑아 보내는 수치 : [{target, kind, value}]
 function fxElementFor(name) {
   const esc = s => (window.CSS && CSS.escape) ? CSS.escape(s) : s;
-  let el = document.querySelector(`[data-fx="${esc(name)}"]`);
+  // 화면에 보이는 것만(격자 전투에서는 숨겨진 작은 카드 대신 지도 칸 위에 띄웁니다)
+  const shown = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  let el = [...document.querySelectorAll(`[data-fx="${esc(name)}"]`)].find(shown) || null;
   if (!el) {
     const c = (lastAllForCards || []).find(k => k.name === name);
     if (c && c.boss_group) el = document.querySelector(`[data-fx="${esc('group:' + c.name.split(/[ -]/)[0])}"]`)
@@ -10802,13 +10816,11 @@ function fxElementFor(name) {
   return el;
 }
 socket.on('fx_numbers', (list) => {
-  const perTarget = {};
   (list || []).forEach(n => {
     const el = fxElementFor(n.target);
     fxRecentNumbers[n.target] = Date.now();
     if (!el) return;
-    const order = perTarget[n.target] = (perTarget[n.target] == null ? 0 : perTarget[n.target] + 1);
-    spawnFxNumber(el, n.kind, n.value, order);
+    spawnFxNumber(el, n.kind, n.value, n.target);  // 같은 캐릭터 수치는 차례대로(fxNumQueue)
   });
 });
 function countHpText(node, from, to) {
