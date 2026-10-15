@@ -2373,18 +2373,16 @@
   .dorm-tbtn.sm { height:32px; padding:0 14px; font-size:13px; }
   .dorm-gb-list { display:flex; flex-direction:column; gap:8px; }
   /* 방명록 한 장 : 로그창 블록과 같은 모양(상자 · 윗선 빛 한 줄 · 아이콘 칸 + 글 칸, 첫 줄 흰 굵은 글자 · 본문 회색) */
-  .dorm-note { position:relative; padding:9px 12px 10px; border-radius:10px; border:1px solid color-mix(in srgb, var(--nc) 45%, transparent);
+  /* 방명록 한 장 : 로그창 블록 그대로(옅은 상자 + 윗선 빛 한 줄). 빛 색만 글쓴이 본인 컬러 */
+  .dorm-note { position:relative; padding:9px 12px 9px; border-radius:10px; border:1px solid rgba(255,255,255,.06);
     background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)); }
-  /* 테두리 · 윗선 빛 : 글쓴이가 등록한 본인 컬러 */
   .dorm-note::before { content:""; position:absolute; left:16px; right:16px; top:-1px; height:1px; pointer-events:none;
     background: linear-gradient(90deg, transparent, var(--nc), transparent); }
-  /* 머리 : 캐릭터 색 점 · 이름 · 번호 / 본문 / 아래 : 시간 · 고치기 */
-  .dorm-note .gn-h { display:flex; align-items:center; gap:8px; min-width:0; }
-  .dorm-note .gn-dot { width:8px; height:8px; flex:none; border-radius:50%; background: var(--nc); box-shadow:0 0 0 3px color-mix(in srgb, var(--nc) 22%, transparent); }
-  .dorm-note .gn-h b { flex:1; min-width:0; color:#fff; font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .dorm-note .gn-h .no { flex:none; font-size:11px; font-weight:700; color: var(--muted); letter-spacing:.04em; font-variant-numeric: tabular-nums; opacity:.8; }
-  .dorm-note p { margin:6px 0 0; font-size:14px; line-height:1.65; color:#c8cad0; white-space:pre-wrap; word-break:break-word; }
-  .dorm-note .gn-f { display:flex; align-items:center; gap:2px; margin-top:6px; min-height:22px; }
+  .dorm-note .gn-h { display:flex; align-items:baseline; gap:8px; min-width:0; }
+  .dorm-note .gn-h b { flex:1; min-width:0; color:#fff; font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dorm-note .gn-h .no { flex:none; font-family: var(--font-title); font-weight:400; font-size:13px; letter-spacing:.04em; color: var(--muted); }
+  .dorm-note p { margin:4px 0 0; font-size:.94em; line-height:1.65; color:#c8cad0; white-space:pre-wrap; word-break:break-word; }
+  .dorm-note .gn-f { display:flex; align-items:center; gap:2px; margin-top:4px; min-height:22px; }
   .dorm-note .gn-f .t { flex:1; font-size:11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .dorm-note-btn { flex:none; width:24px; height:22px; border:none; border-radius:6px; background:none; color: var(--muted); cursor:pointer; font-size:11px; }
   .dorm-note-btn:hover { color:#fff; background: rgba(255,255,255,.08); }
@@ -2392,9 +2390,16 @@
   .dorm-note:hover .gn-f .dorm-note-btn.del { opacity:1; }
   @media (hover:none) { .dorm-note .gn-f .dorm-note-btn.del { opacity:.7; } }
   .dorm-note-btn.del:hover { color: var(--accent-red); }
-  .modal-box.dorm-modal .dorm-note textarea { display:block; width:100%; margin:8px 0 0; box-sizing:border-box; resize:none; font-size:14px; line-height:1.65; padding:8px 10px; min-height:0; }
-  .dorm-note .gn-edit { display:flex; align-items:center; gap:6px; margin-top:8px; }
+  /* 고치는 중 : 입력칸은 카드 안쪽에 녹아들게(옅은 어둠 + 얇은 선), 버튼은 작은 글자 버튼 */
+  .modal-box.dorm-modal .dorm-note textarea { display:block; width:100%; margin:6px 0 0; box-sizing:border-box; resize:none; min-height:0;
+    font-size:.94em; line-height:1.65; color:#e6e6ea; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background: rgba(0,0,0,.28); box-shadow:none; }
+  .modal-box.dorm-modal .dorm-note textarea:focus { outline:none; border-color: color-mix(in srgb, var(--nc) 55%, rgba(255,255,255,.12)); }
+  .dorm-note .gn-edit { display:flex; align-items:center; gap:4px; margin-top:6px; }
   .dorm-note .gn-edit .sp { flex:1; }
+  .dorm-note .gn-btn { height:26px; padding:0 10px; border-radius:8px; border:1px solid transparent; background:none; color: var(--muted); font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .dorm-note .gn-btn:hover { color:#fff; background: rgba(255,255,255,.06); }
+  .dorm-note .gn-btn.on { color:#fff; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
+  .dorm-note .gn-btn.on:hover { background: rgba(255,255,255,.14); }
   .dorm-asset { aspect-ratio:1; border-radius:8px; background:#0e0e11 center/contain no-repeat; background-origin:content-box; padding:6px; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); cursor:pointer; }
   .dorm-asset:hover { border-color: rgba(255,255,255,.2); }
   .dorm-asset.on { border-color: var(--point); box-shadow: 0 0 0 1px var(--point); }
@@ -10121,9 +10126,9 @@ function dormGuestbookHtml(r) {
       // 카드에 보이는 건 다섯 가지 : 캐릭터 이름 · 캐릭터 색 · 시간 · (내 글이면) 고치기 아이콘 · 번호. 지우기는 고치는 중이나 마우스를 올렸을 때만.
       const delBtn = canDel(e) ? `<button class="dorm-note-btn del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-trash-can"></i></button>` : '';
       return `<article class="dorm-note ${own ? 'mine' : ''} ${editing ? 'editing' : ''}" style="--nc:${color(e.author)}">
-        <div class="gn-h"><span class="gn-dot"></span><b>${mailEsc(e.author)}</b><span class="no">No.${String(list.length - i).padStart(2, '0')}</span></div>
+        <div class="gn-h"><b>${mailEsc(e.author)}</b><span class="no">No.${String(list.length - i).padStart(2, '0')}</span></div>
         ${editing ? `<textarea id="dormGbText" maxlength="300" rows="3" oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
-          <div class="gn-edit">${delBtn}<span class="sp"></span><button class="dorm-tbtn sm" onclick="dormGbEdit(false)">취소</button><button class="dorm-tbtn primary sm" onclick="writeDormGuestbook()">저장</button></div>`
+          <div class="gn-edit">${delBtn}<span class="sp"></span><button class="gn-btn" onclick="dormGbEdit(false)">취소</button><button class="gn-btn on" onclick="writeDormGuestbook()">저장</button></div>`
           : `<p>${mailEsc(e.text)}</p>
         <div class="gn-f"><span class="t">${fmt(e.at)}</span>${own ? '' : delBtn}${own ? `<button class="dorm-note-btn" onclick="dormGbEdit(true)" data-tip="고치기"><i class="fa-solid fa-pen"></i></button>` : ''}</div>`}</article>`; }).join('')
       : emptyHtml('fa-feather-pointed', '아직 방명록이 없어요', me ? '첫 방명록을 남겨 보세요.' : '', null, true)}</div>
