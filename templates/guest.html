@@ -1262,11 +1262,7 @@
     .char-card.v2 .hpbar-wrap .hpbar-track { flex:1; height:7px; }
   }
 
-  /* ================================================================
-     Science 커서 (by ScienceDiscoverer, rw-designer.com/cursor-set/science-cursors-animated · Public Domain) - .cur/.ani를 PNG로 변환해 씁니다.
-     ================================================================ */
-  :root { --cur-arrow: url("/static/cursors/normal_00.png") 0 0; }
-  html, body, * { cursor: var(--cur-arrow), auto; }
+  /* 마우스 커서 : 기본(시스템) 커서를 씁니다. 누를 수 있는 곳은 손가락, 글 입력은 텍스트 커서. */
   a, button, select, label, summary, [onclick], [role="button"],
   input[type="range"], input[type="checkbox"], input[type="color"], input[type="file"], input[type="radio"],
   [style*="cursor:pointer"], [style*="cursor: pointer"],
@@ -1304,15 +1300,15 @@
   .userinfo-eye,
   /* 공용 슬라이더 : 얇은 트랙 + 채워진 부분 + 동그란 손잡이 (--fill 값은 JS가 갱신) */
   input[type="range"].nice-range {
-    cursor: url("/static/cursors/pointer.png") 13 2, pointer !important; }
+    cursor: pointer !important; }
   input:not([type]), input[type="text"], input[type="number"], input[type="password"], input[type="search"],
-  textarea, [contenteditable="true"] { cursor: url("/static/cursors/text.png") 16 16, text !important; }
-  button:disabled, input:disabled, select:disabled, [disabled] { cursor: url("/static/cursors/not-allowed.png") 15 15, not-allowed !important; }
-  [style*="cursor:default"], [style*="cursor: default"] { cursor: var(--cur-arrow), default !important; }
-  [style*="cursor:help"], [data-tip-help] { cursor: url("/static/cursors/help.png") 0 0, help !important; }
+  textarea, [contenteditable="true"] { cursor: text !important; }
+  button:disabled, input:disabled, select:disabled, [disabled] { cursor: not-allowed !important; }
+  [style*="cursor:default"], [style*="cursor: default"] { cursor: default !important; }
+  [style*="cursor:help"], [data-tip-help] { cursor: help !important; }
   [style*="cursor:move"], [style*="cursor:grab"] { cursor: move !important; }
-  [style*="cursor:crosshair"] { cursor: url("/static/cursors/crosshair.png") 16 16, crosshair !important; }
-  body.is-busy, body.is-busy * { cursor: url("/static/cursors/wait.png") 16 16, wait !important; }
+  [style*="cursor:crosshair"] { cursor: crosshair !important; }
+  body.is-busy, body.is-busy * { cursor: wait !important; }
 
   /* ================================================================
      타이포그래피 : 크기 · 행간 · 자간을 함께 맞춥니다.
@@ -10721,21 +10717,6 @@ socket.on('chat_deleted', (d) => {
   lastTeamChat = lastTeamChat.filter(e => e.id !== d.id);
   document.querySelectorAll(`[data-chat-id="${d.id}"]`).forEach(el => el.remove());
 });
-</script>
-<script>
-// Science 커서 : 기본 화살표(원자 회전 20장면)를 50ms마다 바꿔서 움직이는 커서처럼 보이게 합니다.
-// (브라우저는 .ani 움직이는 커서를 지원하지 않아서, 장면별 PNG를 CSS 변수로 갈아 끼웁니다)
-(function animateArrowCursor() {
-  const N = 20, MS = 50, root = document.documentElement;
-  const urls = Array.from({ length: N }, (_, i) => `/static/cursors/normal_${String(i).padStart(2, '0')}.png`);
-  urls.forEach(u => { const im = new Image(); im.src = u; });
-  let i = 0;
-  setInterval(() => {
-    if (document.hidden) return;
-    i = (i + 1) % N;
-    root.style.setProperty('--cur-arrow', `url("${urls[i]}") 0 0`);
-  }, MS);
-})();
 </script>
 <script>
 // ==================================================================
