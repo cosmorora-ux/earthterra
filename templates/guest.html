@@ -1883,8 +1883,27 @@
      ================================================================ */
   body.is-play .teams-col > *:not(#playPage) { display:none !important; }
   /* PLAY 룸은 혼자 하는 플레이라 채팅창 없이 플레이 화면만 넓게 씁니다. */
-  body.is-play .member-col, body.is-play.is-battle .sidebar #sidebarChatBtn, body.is-play.m-chat-open .member-col { display:none !important; }
-  body.is-play .pl-wrap { max-width:860px; }
+  body.is-play .member-col .member-panel:not(#playLogPanel) { display:none !important; }
+  .pl-logpanel .member-header { justify-content:flex-start; gap:10px; }
+  .pl-logpanel .member-header b { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; }
+  .pl-logpanel .member-header span { color: var(--muted); font-size:13px; }
+  .pl-lp-body { flex:1; min-height:0; overflow-y:auto; padding:6px 16px 16px; scrollbar-width:thin; }
+  .pl-lp-body .lp-era { position:sticky; top:0; z-index:1; padding:12px 2px 6px; font-size:12px; font-weight:800; color: var(--muted); letter-spacing:.04em;
+    background: linear-gradient(180deg, var(--panel) 70%, transparent); }
+  .pl-lp-body .lp-row { display:grid; grid-template-columns: 22px 1fr auto; gap:10px; align-items:center; padding:9px 2px; border-top:1px solid rgba(255,255,255,.05); }
+  .pl-lp-body .lp-era + .lp-row { border-top:none; }
+  .pl-lp-body .lp-row:last-child { animation: plIn .4s ease; }
+  .pl-lp-body .n { color:#6c6c73; font-size:11.5px; font-variant-numeric: tabular-nums; text-align:right; }
+  .pl-lp-body .ttl b { display:block; font-size:13.5px; }
+  .pl-lp-body .ttl span { display:block; color: var(--muted); font-size:12.5px; line-height:1.45; margin-top:1px; }
+  .pl-lp-body .d { font-weight:700; font-size:13px; font-variant-numeric: tabular-nums; }
+  .pl-lp-body .d.up { color: var(--point); } .pl-lp-body .d.down { color:#ff8a80; } .pl-lp-body .d.zero { color:#6c6c73; }
+  /* 한 글자씩 떠오르기 (누르면 바로 다 보임) */
+  .pl-wrap .tc { opacity:0; filter: blur(3px); animation: plCh .5s ease forwards; }
+  .pl-wrap .pl-fade[style*="animation-delay"] { opacity:0; animation: plIn .5s ease forwards; }
+  .pl-wrap.pl-skip .tc, .pl-wrap.pl-skip .pl-fade { animation:none !important; opacity:1 !important; filter:none !important; }
+  @keyframes plCh { from { opacity:0; filter: blur(3px); } to { opacity:1; filter: blur(0); } }
+  @media (prefers-reduced-motion: reduce) { .pl-wrap .tc { animation-duration:.01s; } }
   body.is-play .breadcrumb-row .grid-notice, body.is-play #formatLabel, body.is-play #roundInfo, body.is-play .topbar .sep, body.is-play #roundTimerLabel, body.is-play .m-battle-tools { display:none !important; }
   .play-page { flex:1; min-height:0; overflow-y:auto; scrollbar-width:thin; }
   .pl-wrap { max-width:760px; margin:0 auto; padding:4px 2px 40px; display:flex; flex-direction:column; gap:14px; }
@@ -1955,10 +1974,6 @@
   .pl-res button span { color: var(--muted); font-size:13px; line-height:1.5; }
   .pl-res button.on { border-color: rgba(var(--point-rgb),.55); background: rgba(var(--point-rgb),.10); }
   .pl-memory { margin-top:14px; padding:12px 14px; border-radius:12px; background: rgba(var(--point-rgb),.07); color:#cfcfe0; font-size:14px; line-height:1.7; }
-  .pl-tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:12px; }
-  .pl-tabs button { background:none; border:none; color: var(--muted); font: inherit; font-size:14px; font-weight:600; padding:8px 12px 10px; cursor:pointer; position:relative; }
-  .pl-tabs button.on { color: var(--text); }
-  .pl-tabs button.on::after { content:''; position:absolute; left:8px; right:8px; bottom:-1px; height:2px; background: var(--point); border-radius:2px; }
   .pl-log { display:flex; flex-direction:column; }
   .pl-log .row { display:grid; grid-template-columns: 44px 1fr auto; gap:12px; align-items:center; padding:10px 4px; border-top:1px solid rgba(255,255,255,.05); font-size:13.5px; }
   .pl-log .row:first-child { border-top:none; }
@@ -1967,8 +1982,6 @@
   .pl-log .ttl span { color: var(--muted); font-size:12.5px; }
   .pl-log .d { font-weight:700; font-variant-numeric: tabular-nums; font-size:13px; }
   .pl-log .d.up { color: var(--point); } .pl-log .d.down { color:#ff8a80; } .pl-log .d.zero { color:#6c6c73; }
-  .pl-board .row { grid-template-columns: 1fr auto auto auto; }
-  .pl-board .me b { color: var(--point); }
   .pl-none { color: var(--muted); font-size:13.5px; padding:14px 4px; }
   @keyframes plIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
   @media (max-width:900px) {
@@ -4225,6 +4238,7 @@
   </div>
 </div>
 {% endif %}
+{% if battle_type == 'play' %}<div class="member-panel panel pl-logpanel" id="playLogPanel"><div class="member-header"><b>Log</b><span>지나온 사건</span></div><div class="pl-lp-body" id="playLogBody"></div></div>{% endif %}
 <div class="member-panel panel">
   <div class="member-header">
     <b id="memberTitle">Chat</b>
@@ -4718,7 +4732,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.41";
+const EXPECTED_SERVER_BUILD = "2026-10-13.42";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -12067,54 +12081,82 @@ if (window.ResizeObserver) {
 
 // ==================================================================
 // PLAY 룸 : LOOP 생존 시뮬레이션 — 무작위 사건에서 선택을 이어 가며 전쟁 이후까지 살아남습니다.
-// 체력 변동은 고른 뒤에만 서버가 알려 줘요(고르기 전에는 선택지 문장만 와요).
+// 생명 변동은 고른 뒤에만 서버가 알려 줘요(고르기 전에는 선택지 문장만 와요).
+// 새로 나타나는 글(사건 · 결과 · 죽음 · 엔딩)은 한 글자씩 부드럽게 떠오르고, 화면을 누르면 바로 다 보여요.
+// 오른쪽(휴대폰은 아래 기록 버튼) 기록판에는 이번 생애에 지나온 사건이 쌓입니다.
 // ==================================================================
 const IS_PLAY = BATTLE_TYPE === 'play';
-let loopData = null, loopTab = 'log', loopRes = null, loopBusy = false, loopLastKey = '';
+let loopData = null, loopRes = null, loopBusy = false, loopLastKey = '', loopTailMs = 0;
+const loopShown = new Set();   // 이미 한 번 떠오른 글 : 다시 그릴 때는 애니메이션 없이
+const LOOP_CH_MS = 16;         // 글자 사이 간격
 const LOOP_RES = { res: ['공명자', '루프와 공명한 사람. 기대와 의무, 관리의 대상이 됩니다.'], non: ['비공명자', '공명하지 못한 사람. 능력의 유무가 삶의 문을 가릅니다.'] };
 function loopEsc(s) { return mailEsc(s == null ? '' : String(s)); }
 function loopDeltaHtml(d, small) {
   const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'zero';
-  const txt = d > 0 ? `체력 +${d}` : d < 0 ? `체력 −${-d}` : '체력 변화 없음';
+  const txt = d > 0 ? `생명 +${d}` : d < 0 ? `생명 −${-d}` : '생명 변화 없음';
   return small ? `<span class="d ${cls}">${d > 0 ? '+' + d : d < 0 ? '−' + (-d) : '0'}</span>` : `<span class="pl-delta ${cls}"><i class="fa-solid ${d > 0 ? 'fa-heart-circle-plus' : d < 0 ? 'fa-heart-crack' : 'fa-heart'}"></i>${txt}</span>`;
 }
-function loopParas(lines) { return (lines || []).map(t => `<p class="${/^["“]/.test(t) ? 'q' : ''}">${loopEsc(t)}</p>`).join(''); }
+// 글 묶음을 문단으로 : key가 처음 보이는 글이면 한 글자씩 떠오르게. 다 뜨는 데 걸리는 시간(ms)을 같이 돌려줍니다.
+function loopType(lines, key, start, pCls) {
+  const fresh = key && !loopShown.has(key);
+  let t = start || 0;
+  const html = (lines || []).map(line => {
+    const cls = (pCls || '') + (/^["“]/.test(line) ? ' q' : '');
+    if (!fresh) return `<p class="${cls}">${loopEsc(line)}</p>`;
+    const chars = Array.from(line).map(ch => {
+      const h = ch === ' ' ? ' ' : loopEsc(ch);
+      const span = `<span class="tc" style="animation-delay:${t}ms">${h}</span>`;
+      t += ch === ' ' ? LOOP_CH_MS / 2 : LOOP_CH_MS;
+      return span;
+    }).join('');
+    t += 180;  // 문단 사이 숨 고르기
+    return `<p class="${cls}">${chars}</p>`;
+  }).join('');
+  return { html, end: fresh ? t : (start || 0), fresh };
+}
+function loopAfter(ms, fresh) { return fresh ? ` style="animation-delay:${ms}ms"` : ''; }
 function renderLoop() {
   const page = document.getElementById('playPage');
   if (!page) return;
   const d = loopData;
+  renderLoopLog();
   if (!d) { page.innerHTML = `<div class="pl-wrap">${emptyHtml('fa-circle-notch fa-spin', 'LOOP를 불러오는 중이에요')}</div>`; return; }
   if (!d.me) { page.innerHTML = `<div class="pl-wrap">${loopHeadHtml(d)}${emptyHtml('fa-infinity', '캐릭터로 입장해 주세요', 'LOOP는 캐릭터마다 자기 생애를 진행해요.')}</div>`; return; }
   const r = d.run;
+  const marks = [];  // 이번에 떠오르기 시작한 글 key : 그린 뒤에 '본 것'으로 표시
   let main = '';
   if (!r) main = loopStartHtml(d);
   else if (r.status === 'ended') main = loopEndedHtml(d, r);
   else {
     main = loopStatusHtml(d, r);
-    if (r.event) main += loopEventHtml(r);
-    if (r.status === 'dead' && r.death) main += loopDeathHtml(r);
-    if (r.status === 'ending' && r.ending) main += loopEndingHtml(r);
+    if (r.event) main += loopEventHtml(r, marks);
+    if (r.status === 'dead' && r.death) main += loopDeathHtml(r, marks);
+    if (r.status === 'ending' && r.ending) main += loopEndingHtml(r, marks);
   }
-  const key = r ? `${r.status}|${r.event ? r.event.id : ''}|${r.count}` : 'none';
+  const key = r ? `${r.status}|${r.event ? r.event.id : ''}|${r.count}|${r.loop_no}` : 'none';
   const scrollTo = key !== loopLastKey ? (r && (r.status === 'result' ? '.pl-result' : r.status === 'dead' ? '.pl-death' : r.status === 'event' && loopLastKey ? '.pl-ev' : '')) : '';
   loopLastKey = key;
   const keep = page.scrollTop;
-  page.innerHTML = `<div class="pl-wrap">${loopHeadHtml(d)}${main}${loopRecordsHtml(d)}</div>`;
+  page.innerHTML = `<div class="pl-wrap">${loopHeadHtml(d)}${main}${loopLivesHtml(d)}</div>`;
   page.scrollTop = keep;
+  marks.forEach(k => loopShown.add(k));
   if (scrollTo) { const el = page.querySelector(scrollTo); if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: scrollTo === '.pl-ev' ? 'start' : 'center' }), 60); }
 }
+// 떠오르는 중에 화면을 누르면 남은 글을 한 번에 보여 줍니다.
+function loopSkip() { const w = document.querySelector('#playPage .pl-wrap'); if (w) w.classList.add('pl-skip'); }
 function loopHeadHtml(d) {
   const r = d.run;
   const pills = [];
-  if (r) {
-    pills.push(`<span class="pl-pill"><i class="fa-solid fa-user"></i>${loopEsc(d.me)} · ${loopEsc((LOOP_RES[r.res] || [''])[0])}</span>`);
-    pills.push(`<span class="pl-pill">${r.life_no}번째 생애</span>`);
-    if (r.loop_no) pills.push(`<span class="pl-pill loop"><i class="fa-solid fa-infinity"></i>루프 ${r.loop_no}</span>`);
-  } else if (d.me) pills.push(`<span class="pl-pill"><i class="fa-solid fa-user"></i>${loopEsc(d.me)}</span>`);
+  const nation = (r && r.nation) || d.nation;
+  if (r) pills.push(`<span class="pl-pill"><i class="fa-solid fa-user"></i>${loopEsc(d.me)} · ${loopEsc((LOOP_RES[r.res] || [''])[0])}</span>`);
+  else if (d.me) pills.push(`<span class="pl-pill"><i class="fa-solid fa-user"></i>${loopEsc(d.me)}</span>`);
+  if (d.me) pills.push(`<span class="pl-pill"><i class="fa-solid fa-flag"></i>${nation ? loopEsc(nation) : '출신 미정'}</span>`);
+  if (r) pills.push(`<span class="pl-pill">${r.life_no}번째 생애</span>`);
+  if (r && r.loop_no) pills.push(`<span class="pl-pill loop"><i class="fa-solid fa-infinity"></i>루프 ${r.loop_no}</span>`);
   return `<div class="pl-box glow pl-head"><div class="pl-logo"><small>SURVIVAL SIMULATION</small>Loop</div><div class="pl-sub">생존 시뮬레이션</div><div class="pl-life">${pills.join('')}</div></div>`;
 }
 function loopStatusHtml(d, r) {
-  const max = d.hp_max || 7;
+  const max = d.hp_max || 5;
   const pips = Array.from({ length: max }, (_, i) => `<i class="${i < r.hp ? 'on' : ''}"></i>`).join('');
   const nowIdx = r.eras.indexOf(r.era.id);
   const eraById = Object.fromEntries((d.eras || []).map(e => [e.id, e]));
@@ -12124,85 +12166,110 @@ function loopStatusHtml(d, r) {
     return `<span class="pl-era ${st}">${e.no}${st === 'now' ? `<em>${loopEsc(e.name)} · ${Math.min(r.era_step + (r.status === 'event' ? 1 : 0), r.era_len)}/${r.era_len}</em>` : ''}</span>`;
   }).join('');
   return `<div class="pl-box pl-stat">
-    <span class="pl-k">체력</span><div class="pl-hp ${r.hp <= 1 ? 'low' : ''}">${pips}<b>${r.hp}<span> / ${max}</span></b></div>
+    <span class="pl-k">생명</span><div class="pl-hp ${r.hp <= 1 ? 'low' : ''}">${pips}<b>${r.hp}<span> / ${max}</span></b></div>
     ${(r.mood || []).length ? `<div class="pl-mood">${r.mood.map(loopEsc).join('<br>')}</div>` : ''}
     <span class="pl-k">시대</span><div class="pl-eras">${eras}</div></div>`;
 }
-function loopEventHtml(r) {
+function loopEventHtml(r, marks) {
   const ev = r.event, res = r.result;
   const done = r.status !== 'event';
-  const choices = ev.choices.map((c, i) => `<button class="pl-ch ${c.picked ? 'picked' : ''}" ${done || loopBusy ? 'disabled' : ''} onclick="loopChoose('${ev.id}', ${i})"><span class="k">${'ABC'[i]}</span><span>${loopEsc(c.label)}</span></button>`).join('');
+  const base = `${r.life_no}|${r.loop_no}|${r.count - (done ? 1 : 0)}|${ev.id}`;
+  const story = loopType(ev.story, 'ev|' + base, 0);
+  loopTailMs = story.end;
+  if (story.fresh) marks.push('ev|' + base);
+  const memory = r.memory && r.loop_no && (r.count === 0 || (r.count === 1 && done)) ? `<div class="pl-memory pl-fade"${loopAfter(story.end, story.fresh)}><i class="fa-solid fa-infinity"></i> 대부분의 기억은 흐릿합니다. 다만 한 장면만은 선명합니다 — <b>${loopEsc(r.memory)}</b>.</div>` : '';
+  const choices = ev.choices.map((c, i) => `<button class="pl-ch ${c.picked ? 'picked' : ''}" ${done || loopBusy ? 'disabled' : ''} onclick="event.stopPropagation(); loopChoose('${ev.id}', ${i})"><span class="k">${'ABC'[i]}</span><span>${loopEsc(c.label)}</span></button>`).join('');
   let resHtml = '';
   if (res) {
-    const tw = res.twist ? `<div class="tw"><i class="fa-solid ${res.twist.kind === 'risk' ? 'fa-bolt' : 'fa-leaf'}"></i>${loopEsc(res.twist.text)}</div>` : '';
-    resHtml = `<div class="pl-result">${loopDeltaHtml(res.delta)}${loopParas(res.text)}${tw}</div>`;
-    if (r.status === 'result') resHtml += `<div class="pl-actions"><button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_next')">다음 사건<i class="fa-solid fa-arrow-right"></i></button></div>`;
+    const rk = 'res|' + base;
+    const rt = loopType(res.text, rk, 260);
+    if (rt.fresh) marks.push(rk);
+    let tw = '';
+    if (res.twist) {
+      const tt = loopType([res.twist.text], rk + '|tw', rt.end + 200);
+      tw = `<div class="tw"><i class="fa-solid ${res.twist.kind === 'risk' ? 'fa-bolt' : 'fa-leaf'} pl-fade"${loopAfter(rt.end + 120, rt.fresh)}></i>${tt.html}</div>`;
+      if (tt.fresh) marks.push(rk + '|tw');
+    }
+    loopTailMs = rt.fresh ? rt.end + (res.twist ? 900 : 200) : 0;
+    resHtml = `<div class="pl-result"><span class="pl-fade"${loopAfter(0, rt.fresh)}>${loopDeltaHtml(res.delta)}</span>${rt.html}${tw}</div>`;
+    if (r.status === 'result') resHtml += `<div class="pl-actions pl-fade"${loopAfter(rt.end + (res.twist ? 900 : 200), rt.fresh)}><button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="event.stopPropagation(); loopEmit('loop_next')">다음 사건<i class="fa-solid fa-arrow-right"></i></button></div>`;
   }
-  const memory = r.memory && r.count === 0 && r.loop_no ? `<div class="pl-memory"><i class="fa-solid fa-infinity"></i> 대부분의 기억은 흐릿합니다. 다만 한 장면만은 선명합니다 — <b>${loopEsc(r.memory)}</b>.</div>` : '';
-  return `<div class="pl-box glow pl-ev"><div class="pl-ev-meta"><span class="pl-ev-no">EVENT ${loopEsc(ev.id)}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span></div>
-    <h2 class="pl-ev-title">${loopEsc(ev.title)}</h2><div class="pl-story">${loopParas(ev.story)}</div>${memory}
-    <div class="pl-choices">${choices}</div>${resHtml}</div>`;
+  return `<div class="pl-box glow pl-ev" onclick="loopSkip()"><div class="pl-ev-meta"><span class="pl-ev-no">EVENT ${loopEsc(ev.id)}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span></div>
+    <h2 class="pl-ev-title">${loopEsc(ev.title)}</h2><div class="pl-story">${story.html}</div>${memory}
+    <div class="pl-choices pl-fade"${loopAfter(story.end + 150, story.fresh)}>${choices}</div>${resHtml}</div>`;
 }
-function loopDeathHtml(r) {
-  const d = r.death;
-  const lines = d.text.map((t, i) => `<p style="animation-delay:${0.25 + i * 0.35}s">${loopEsc(t)}</p>`).join('');
-  return `<div class="pl-box glow pl-death ${d.kind === 'loop' ? 'loop' : ''}"><div class="t">${d.kind === 'loop' ? 'LOOP' : 'DEATH'}</div><h3>${loopEsc(d.title)}</h3>${lines}
-    <div class="at">${loopEsc(d.at)}에서 · ${r.count}개의 사건을 지나왔습니다</div>
-    <div class="pl-actions"><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>생애 종료</button>
-    <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'loop' })"><i class="fa-solid fa-infinity"></i>루프 진입</button></div>
-    <div class="at" style="margin-top:12px">생애 종료 : 기록을 남기고 끝냅니다 · 루프 진입 : 기억 일부를 안고 전쟁 이전의 평행 세계에서 다시 시작합니다</div></div>`;
+function loopDeathHtml(r, marks) {
+  const d = r.death, k = `death|${r.life_no}|${r.loop_no}|${r.count}`;
+  const tx = loopType(d.text, k, loopTailMs + 500);
+  if (tx.fresh) marks.push(k);
+  return `<div class="pl-box glow pl-death ${d.kind === 'loop' ? 'loop' : ''}" onclick="loopSkip()"><div class="t">${d.kind === 'loop' ? 'LOOP' : 'DEATH'}</div><h3>${loopEsc(d.title)}</h3>${tx.html}
+    <div class="pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><div class="at">${loopEsc(d.at)}에서 · ${r.count}개의 사건을 지나왔습니다</div>
+    <div class="pl-actions"><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="event.stopPropagation(); loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>생애 종료</button>
+    <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="event.stopPropagation(); loopEmit('loop_death', { mode: 'loop' })"><i class="fa-solid fa-infinity"></i>루프 진입</button></div>
+    <div class="at" style="margin-top:12px">생애 종료 : 기록을 남기고 끝냅니다 · 루프 진입 : 기억 일부를 안고 전쟁 이전의 평행 세계에서 다시 시작합니다</div></div></div>`;
 }
-function loopEndingHtml(r) {
-  const e = r.ending;
-  return `<div class="pl-box glow pl-death loop"><div class="t">SURVIVED</div><h3>${loopEsc(e.title)}</h3>${e.text.map((t, i) => `<p style="animation-delay:${0.2 + i * 0.35}s">${loopEsc(t)}</p>`).join('')}
-    <div class="at">${r.count}개의 사건을 견뎠습니다 · 남은 체력 ${r.hp}</div>
-    <div class="pl-actions"><button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_finish')"><i class="fa-solid fa-book"></i>기록 남기기</button></div></div>`;
+function loopEndingHtml(r, marks) {
+  const e = r.ending, k = `ending|${r.life_no}|${r.loop_no}`;
+  const tx = loopType(e.text, k, 400);
+  if (tx.fresh) marks.push(k);
+  return `<div class="pl-box glow pl-death loop" onclick="loopSkip()"><div class="t">SURVIVED</div><h3>${loopEsc(e.title)}</h3>${tx.html}
+    <div class="pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><div class="at">${r.count}개의 사건을 견뎠습니다 · 남은 생명 ${r.hp}</div>
+    <div class="pl-actions"><button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="event.stopPropagation(); loopEmit('loop_finish')"><i class="fa-solid fa-book"></i>기록 남기기</button></div></div></div>`;
 }
 function loopEndedHtml(d, r) {
   const last = (d.lives || [])[0];
   const survived = r.outcome === 'survived';
   return `<div class="pl-box glow pl-death ${survived ? 'loop' : ''}"><div class="t">${survived ? 'SURVIVED' : 'RECORD'}</div><h3>${survived ? '전쟁 이후에 도달했습니다' : '생애가 끝났습니다'}</h3>
-    <p style="animation-delay:.1s">${last ? `${last.count}개의 사건 · ${last.loop_no ? `루프 ${last.loop_no} · ` : ''}${survived ? '생존' : loopEsc((last.death || {}).at || '') + '에서 사망'}` : ''}</p>
+    <p>${last ? `${last.count}개의 사건 · ${last.loop_no ? `루프 ${last.loop_no} · ` : ''}${survived ? '생존' : loopEsc((last.death || {}).at || '') + '에서 사망'}` : ''}</p>
     <div class="pl-actions"><button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_reset')"><i class="fa-solid fa-seedling"></i>새 생애 시작</button></div></div>`;
 }
 function loopStartHtml(d) {
   const res = Object.entries(LOOP_RES).map(([k, [t, ds]]) => `<button class="${loopRes === k ? 'on' : ''}" onclick="loopRes='${k}'; renderLoop()"><b>${t}</b><span>${ds}</span></button>`).join('');
-  return `<div class="pl-box glow pl-intro"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span><span>${(d.lives || []).length + 1}번째 생애</span></div>
-    <h2 class="pl-ev-title">새 생애를 시작합니다</h2>${loopParas(d.intro)}
-    <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res">${res}</div>
-    <div class="pl-actions"><button class="pl-btn primary" ${!loopRes || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_start', { res: loopRes })">생애 시작<i class="fa-solid fa-arrow-right"></i></button></div></div>`;
+  const intro = loopType(d.intro, 'intro', 0);
+  if (intro.fresh) loopShown.add('intro');
+  return `<div class="pl-box glow pl-intro" onclick="loopSkip()"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span><span>${(d.lives || []).length + 1}번째 생애</span></div>
+    <h2 class="pl-ev-title">새 생애를 시작합니다</h2>${intro.html}
+    <div class="pl-fade"${loopAfter(intro.end + 100, intro.fresh)}><div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res">${res}</div>
+    <div class="pl-actions"><button class="pl-btn primary" ${!loopRes || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_start', { res: loopRes })">생애 시작<i class="fa-solid fa-arrow-right"></i></button></div></div></div>`;
 }
-function loopRecordsHtml(d) {
-  const r = d.run;
-  const tabs = [['log', '지나온 사건'], ['lives', '지난 생애'], ['board', '모두의 기록']];
-  let body = '';
-  if (loopTab === 'log') {
-    const log = (r && r.log) || [];
-    body = log.length ? `<div class="pl-log">${log.slice().reverse().map(l => `<div class="row"><span class="era">${loopEsc(((d.eras || []).find(e => e.id === l.era) || {}).no || '')}</span><span class="ttl"><b>${loopEsc(l.title)}</b><span>${loopEsc(l.choice)}</span></span>${loopDeltaHtml(l.delta, true)}</div>`).join('')}</div>`
-      : `<div class="pl-none">아직 지나온 사건이 없어요.</div>`;
-  } else if (loopTab === 'lives') {
-    const lives = d.lives || [];
-    body = lives.length ? `<div class="pl-log">${lives.map(l => `<div class="row"><span class="era">${loopEsc(((d.eras || []).find(e => e.id === l.era) || {}).no || '')}</span><span class="ttl"><b>${l.life_no}번째 생애${l.loop_no ? ` · 루프 ${l.loop_no}` : ''} · ${l.outcome === 'survived' ? '생존' : '사망'}</b><span>${loopEsc((LOOP_RES[l.res] || [''])[0])} · ${l.outcome === 'survived' ? '전쟁 이후까지' : loopEsc((l.death || {}).at || '') + '에서'}</span></span><span class="d zero">${l.count}사건</span></div>`).join('')}</div>`
-      : `<div class="pl-none">아직 끝난 생애가 없어요.</div>`;
-  } else {
-    const st = { event: '진행 중', result: '진행 중', dead: '사망', ending: '생존', ended: '기록 완료', idle: '대기' };
-    const board = d.board || [];
-    body = board.length ? `<div class="pl-log pl-board">${board.map(b => `<div class="row ${b.name === d.me ? 'me' : ''}"><span class="ttl"><b>${loopEsc(b.name)}</b><span>${st[b.status] || ''}${b.era && b.status !== 'ended' && b.status !== 'idle' ? ` · 시대 ${loopEsc(b.era)}` : ''}${b.hp != null && b.status !== 'idle' ? ` · 체력 ${b.hp}` : ''}</span></span><span class="d zero">최고 ${b.best}</span><span class="d zero">생존 ${b.survived}</span><span class="d ${b.loops ? 'up' : 'zero'}">루프 ${b.loops}</span></div>`).join('')}</div>`
-      : `<div class="pl-none">아직 아무도 플레이하지 않았어요.</div>`;
-  }
-  return `<div class="pl-box pl-rec"><div class="pl-tabs">${tabs.map(([k, t]) => `<button class="${loopTab === k ? 'on' : ''}" onclick="loopTab='${k}'; renderLoop()">${t}</button>`).join('')}</div>${body}</div>`;
+// 지난 생애 : 끝난 생애가 있을 때만 아래에 보여요.
+function loopLivesHtml(d) {
+  const lives = d.lives || [];
+  if (!lives.length) return '';
+  const eraNo = id => ((d.eras || []).find(e => e.id === id) || {}).no || '';
+  return `<div class="pl-box pl-rec"><div class="pl-k" style="margin-bottom:6px">지난 생애</div><div class="pl-log">${lives.map(l => `<div class="row"><span class="era">${loopEsc(eraNo(l.era))}</span><span class="ttl"><b>${l.life_no}번째 생애${l.loop_no ? ` · 루프 ${l.loop_no}` : ''} · ${l.outcome === 'survived' ? '생존' : '사망'}</b><span>${loopEsc((LOOP_RES[l.res] || [''])[0])} · ${l.outcome === 'survived' ? '전쟁 이후까지' : loopEsc((l.death || {}).at || '') + '에서'}</span></span><span class="d zero">${l.count}사건</span></div>`).join('')}</div></div>`;
+}
+// 오른쪽 기록판 : 이번 생애에 지나온 사건(오래된 것부터 아래로 쌓이고, 새 사건이 생기면 맨 아래로).
+function renderLoopLog() {
+  const body = document.getElementById('playLogBody');
+  if (!body) return;
+  const d = loopData, r = d && d.run;
+  const log = (r && r.log) || [];
+  if (!log.length) { body.innerHTML = emptyHtml('fa-scroll', '아직 지나온 사건이 없어요', '사건을 고를 때마다 여기에 기록돼요.', null, true); return; }
+  const eraBy = Object.fromEntries(((d && d.eras) || []).map(e => [e.id, e]));
+  let last = null, html = '';
+  log.forEach((l, i) => {
+    if (l.era !== last) { const e = eraBy[l.era] || {}; html += `<div class="lp-era">${loopEsc(e.no || '')}. ${loopEsc(e.name || '')}</div>`; last = l.era; }
+    html += `<div class="lp-row"><span class="n">${i + 1}</span><span class="ttl"><b>${loopEsc(l.title)}</b><span>${loopEsc(l.choice)}</span></span>${loopDeltaHtml(l.delta, true)}</div>`;
+  });
+  const atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+  const grew = (body.dataset.n | 0) !== log.length;
+  body.innerHTML = html;
+  body.dataset.n = log.length;
+  if (grew || atEnd) body.scrollTop = body.scrollHeight;
 }
 function loopEmit(ev, data) { if (loopBusy) return; loopBusy = true; renderLoop(); socket.emit(ev, data || {}); }
 function loopChoose(id, idx) { loopEmit('loop_choose', { event: id, idx }); }
 if (IS_PLAY) {
   socket.on('loop_data', d => { loopData = d; loopBusy = false; renderLoop(); });
-  socket.on('loop_board', d => { if (loopData) { loopData.board = d.board; if (loopTab === 'board') renderLoop(); } });
   socket.on('loop_result', r => { loopBusy = false; if (r && !r.ok) uiToast(r.message); });
   socket.on('joined', () => socket.emit('loop_state'));
   socket.on('connect', () => setTimeout(() => socket.emit('loop_state'), 400));
   document.addEventListener('DOMContentLoaded', () => {
     const b = document.getElementById('sidebarBattleBtn');
     if (b) { b.dataset.tip = 'LOOP'; const i = b.querySelector('i'); if (i) i.className = 'fa-solid fa-infinity'; }
+    const c = document.getElementById('sidebarChatBtn');
+    if (c) { c.dataset.tip = '기록'; const i = c.querySelector('i'); if (i) i.className = 'fa-solid fa-scroll'; }
     renderLoop();
   });
 }

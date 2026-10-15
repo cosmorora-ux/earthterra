@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.41"
+SERVER_BUILD = "2026-10-13.42"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2902,7 +2902,7 @@ def _emit_mail_data(sid):
 
 # ==================================================================
 # PLAY 룸 : LOOP 생존 시뮬레이션 (loop_game.py) — 캐릭터마다 자기 생애를 진행합니다.
-# 체력 변동은 고른 뒤에만 보냅니다. 모두의 기록에는 사건 내용 없이 숫자만 담습니다.
+# 생명 변동은 고른 뒤에만 보냅니다. 출신(진영)은 캐릭터 정보의 nation 칸을 씁니다.
 # ==================================================================
 def _emit_loop_data(sid):
     me, is_gm, room = _mail_identity(sid)
@@ -2912,12 +2912,14 @@ def _emit_loop_data(sid):
     data = book.view(me) if me else {"run": None, "lives": [], "loops": 0, "intro": [], "eras": []}
     data["me"] = me
     data["is_gm"] = is_gm
-    data["board"] = book.board()
+    data["nation"] = _loop_nation(room, me)
     socketio.emit("loop_data", data, to=sid)
 
 
-def _loop_broadcast_board(room):
-    socketio.emit("loop_board", {"board": loop_mod.shared_book().board()}, to=room_channel(room.id, "all"))
+def _loop_nation(room, me):
+    """캐릭터 정보의 출신(진영) : 使徒 / Void, 정하지 않았으면 빈칸."""
+    entry = room.game.db.characters.get(me) if me else None
+    return ((entry or {}).get("nation") or "").strip()
 
 
 def _loop_action(fn, *args):
@@ -2932,7 +2934,6 @@ def _loop_action(fn, *args):
     except loop_mod.LoopError as e:
         emit("loop_result", {"ok": False, "message": str(e)})
     _emit_loop_data(request.sid)
-    _loop_broadcast_board(room)
 
 
 @socketio.on("loop_state")
@@ -2942,7 +2943,9 @@ def on_loop_state(data=None):
 
 @socketio.on("loop_start")
 def on_loop_start(data):
-    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""))
+    me, is_gm, room = _mail_identity(request.sid)
+    nation = _loop_nation(room, me) if room is not None else ""
+    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""), nation)
 
 
 @socketio.on("loop_choose")

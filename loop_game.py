@@ -5,10 +5,11 @@ loop_game.py
 PLAY 룸 「LOOP : 생존 시뮬레이션」 진행 상태.
 
 - 캐릭터마다 지금 생애(run) 하나와 지난 생애 기록(lives)을 가집니다. 모든 PLAY 룸이 같은 기록을 씁니다.
-- 체력은 5로 시작해 0~7 사이를 오갑니다. 0이 되면 사망합니다.
+- 생명은 5로 시작해 0~5 사이를 오갑니다(최대 5). 0이 되면 사망합니다.
+- 출신(진영)에 따라 이야기 속 {조국} · {적} 자리가 바뀝니다.
 - 시대 I → V 순서로 사건이 이어지고, V의 사건을 모두 견디면 '전쟁 이후' 엔딩입니다.
 - 죽으면 '생애 종료'(기록만 남김) 또는 '루프 진입'(VI. 회귀 → IV. 전쟁 → V. 종전으로 다시)을 고릅니다.
-- 체력 변동은 고른 뒤에만 알려 줍니다(고르기 전 화면에는 선택지 문장만 보냅니다).
+- 생명 변동은 고른 뒤에만 알려 줍니다(고르기 전 화면에는 선택지 문장만 보냅니다).
 loop_runs.json에 저장됩니다(서버 컴퓨터별 실데이터라 git에 올리지 않음).
 """
 
@@ -22,7 +23,7 @@ import safeio
 from loop_events import ERAS, EVENTS, MOOD, DEATH, ENDING, INTRO, ERA_RISK, RISK_TEXT, LUCK_TEXT
 
 RUNS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "loop_runs.json")
-HP_START, HP_MAX, HP_MIN = 5, 7, 0
+HP_START, HP_MAX, HP_MIN = 5, 5, 0
 MAX_LIVES = 30            # 캐릭터마다 남기는 지난 생애 수
 RESONANCE = ("res", "non")
 EVENT_BY_ID = {e["id"]: e for e in EVENTS}
@@ -34,6 +35,17 @@ LOOP_KEEP_TAGS = {"LOOP_CONTACT", "LOOP_NOTES", "LOOP_ALLY", "TRUTH", "FRACTURE_
 
 class LoopError(Exception):
     pass
+
+
+NATIONS = ("使徒", "Void")
+
+
+def _fmt(text, run):
+    """이야기 속 {조국} · {적} 자리를 캐릭터 출신으로 채웁니다."""
+    n = run.get("nation") or ""
+    home = n if n in NATIONS else "조국"
+    enemy = (NATIONS[1] if n == NATIONS[0] else NATIONS[0]) if n in NATIONS else "적국"
+    return text.replace("{조국}", home).replace("{적}", enemy)
 
 
 def _mood(hp):
@@ -89,7 +101,7 @@ class LoopBook:
         return self.data.setdefault(name, {"run": None, "lives": [], "loops": 0})
 
     # ── 진행 ──────────────────────────────────────────────
-    def start(self, name, res):
+    def start(self, name, res, nation=""):
         if res not in RESONANCE:
             raise LoopError("공명 여부를 골라 주세요.")
         with self.lock:
@@ -97,6 +109,7 @@ class LoopBook:
             if e["run"] and e["run"]["status"] not in ("ended",):
                 raise LoopError("이미 진행 중인 생애가 있어요.")
             e["run"] = self._new_run(res, loop_no=0, eras=FIRST_LIFE_ERAS, life_no=len(e["lives"]) + 1)
+            e["run"]["nation"] = nation if nation in NATIONS else ""
             self._next_event(e["run"])
             self.save()
 
@@ -146,10 +159,10 @@ class LoopBook:
             for t in ch.get("tags", []):
                 if t not in run["tags"]:
                     run["tags"].append(t)
-            text = list(ch["result"].split("\n"))
+            text = [_fmt(t, run) for t in ch["result"].split("\n")]
             for x in ev.get("extra", []):
                 if x.get("at") == "result" and x.get("choice") == idx and _when_ok(x.get("when", {}), run):
-                    text += x["text"]
+                    text += [_fmt(t, run) for t in x["text"]]
             # 시대의 위험 / 행운 : 선택과 상관없이 덮치는 일. 이미 쓰러진 경우는 건너뜁니다.
             twist = None
             if run["hp"] > HP_MIN:
@@ -205,6 +218,7 @@ class LoopBook:
                 memory = run["death"]["at"] if run.get("death") else None
                 e["run"] = self._new_run(run["res"], loop_no=run["loop_no"] + 1, eras=LOOP_LIFE_ERAS,
                                          life_no=run["life_no"], tags=sorted(set(tags)), memory=memory)
+                e["run"]["nation"] = run.get("nation", "")
                 self._next_event(e["run"])
             else:
                 run["status"] = "ended"
@@ -250,8 +264,9 @@ class LoopBook:
         for x in ev.get("extra", []):
             if x.get("at") == "story" and _when_ok(x.get("when", {}), run):
                 story += x["text"]
+        story = [_fmt(t, run) for t in story]
         # 체력 변동은 고른 뒤에만 : 고르기 전에는 선택지 문장만 보냅니다.
-        choices = [{"label": c["label"]} for c in ev["choices"]]
+        choices = [{"label": _fmt(c["label"], run)} for c in ev["choices"]]
         if run["result"] is not None:
             choices[run["result"]["choice"]]["picked"] = True
         return {"id": ev["id"], "title": ev["title"], "era": self._era_view(ev["era"]), "story": story, "choices": choices}
@@ -265,7 +280,7 @@ class LoopBook:
                    "eras": [self._era_view(i) for i in sorted(ERAS)], "run": None}
             if not run:
                 return out
-            r = {"status": run["status"], "hp": run["hp"], "res": run["res"], "loop_no": run["loop_no"], "life_no": run["life_no"],
+            r = {"status": run["status"], "hp": run["hp"], "res": run["res"], "nation": run.get("nation", ""), "loop_no": run["loop_no"], "life_no": run["life_no"],
                  "count": run["count"], "log": run["log"], "mood": _mood(run["hp"]), "eras": run["eras"], "memory": run.get("memory")}
             era_now = run["eras"][min(run["era_i"], len(run["eras"]) - 1)]
             r["era"] = self._era_view(era_now)
@@ -285,21 +300,6 @@ class LoopBook:
                 r["outcome"] = run.get("outcome")
             out["run"] = r
             return out
-
-    def board(self):
-        """모두의 기록 : 이름 · 지금 상태 · 이번 생애 견딘 사건 수 · 최고 기록 · 루프 횟수(사건 내용은 넣지 않음)."""
-        with self.lock:
-            rows = []
-            for name, e in self.data.items():
-                run = e.get("run")
-                best = max([l["count"] for l in e.get("lives", [])] + [run["count"] if run else 0])
-                survived = sum(1 for l in e.get("lives", []) if l["outcome"] == "survived")
-                rows.append({"name": name, "status": run["status"] if run else "idle",
-                             "count": run["count"] if run else 0, "hp": run["hp"] if run and run["status"] not in ("ended",) else None,
-                             "era": ERAS[run["eras"][min(run["era_i"], len(run["eras"]) - 1)]]["no"] if run else None,
-                             "best": best, "loops": e.get("loops", 0), "lives": len(e.get("lives", [])), "survived": survived})
-            rows.sort(key=lambda x: (-x["best"], x["name"]))
-            return rows
 
 
 _BOOK = None
