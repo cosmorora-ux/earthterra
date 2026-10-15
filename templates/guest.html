@@ -1882,6 +1882,9 @@
      PLAY 룸 : LOOP 생존 시뮬레이션 — 전투 칸 자리에 플레이 화면을 띄웁니다.
      ================================================================ */
   body.is-play .teams-col > *:not(#playPage) { display:none !important; }
+  /* PLAY 룸은 혼자 하는 플레이라 채팅창 없이 플레이 화면만 넓게 씁니다. */
+  body.is-play .member-col, body.is-play.is-battle .sidebar #sidebarChatBtn, body.is-play.m-chat-open .member-col { display:none !important; }
+  body.is-play .pl-wrap { max-width:860px; }
   body.is-play .breadcrumb-row .grid-notice, body.is-play #formatLabel, body.is-play #roundInfo, body.is-play .topbar .sep, body.is-play #roundTimerLabel, body.is-play .m-battle-tools { display:none !important; }
   .play-page { flex:1; min-height:0; overflow-y:auto; scrollbar-width:thin; }
   .pl-wrap { max-width:760px; margin:0 auto; padding:4px 2px 40px; display:flex; flex-direction:column; gap:14px; }
@@ -3568,7 +3571,7 @@
   <div class="gate-wrap">
     <div class="gate-eyebrow">EARTHTERRA</div>
     <div class="gate-box">
-      <div class="gate-title">Login</div>
+      <div class="gate-title">{% if battle_type == 'play' %}Loop{% else %}Login{% endif %}</div>
       <div class="gate-room"><i class="fa-solid fa-door-open"></i><span id="gateRoomName">{{ room_id }}</span></div>
       <div class="gate-wait"><i class="fa-solid fa-circle-notch fa-spin"></i>접속 중입니다</div>
       <div class="gate-form" style="display:contents">
@@ -4715,7 +4718,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.40";
+const EXPECTED_SERVER_BUILD = "2026-10-13.41";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';

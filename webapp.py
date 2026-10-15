@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.40"
+SERVER_BUILD = "2026-10-13.41"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2906,7 +2906,7 @@ def _emit_mail_data(sid):
 # ==================================================================
 def _emit_loop_data(sid):
     me, is_gm, room = _mail_identity(sid)
-    if room is None:
+    if room is None or room.battle_type != "play":
         return
     book = loop_mod.shared_book()
     data = book.view(me) if me else {"run": None, "lives": [], "loops": 0, "intro": [], "eras": []}
@@ -2922,6 +2922,8 @@ def _loop_broadcast_board(room):
 
 def _loop_action(fn, *args):
     me, is_gm, room = _mail_identity(request.sid)
+    if room is None or room.battle_type != "play":
+        return
     if me is None:
         emit("loop_result", {"ok": False, "message": "캐릭터로 입장해야 플레이할 수 있어요."})
         return
