@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.37"
+SERVER_BUILD = "2026-10-13.38"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2866,7 +2866,8 @@ def _mail_age_info(room, me):
         ages.append(a)
         if name == me:
             mine = a
-    return {"ages": ages, "my_age": mine, "age_base": mailbox_mod.AGE_BASE_YEAR}
+    return {"ages": ages, "my_age": mine, "age_base": mailbox_mod.AGE_BASE_YEAR,
+            "age_min": mailbox_mod.AGE_MIN, "age_max": mailbox_mod.AGE_MAX}
 
 
 @socketio.on("mail_era_set")
@@ -2939,6 +2940,9 @@ def on_mail_send(data):
         blobs.append((blob, ext))
     # 시기(리뉴얼 기간)는 운영진이 정한 지금 기간으로, 쓰는 사람은 연도만 고릅니다.
     era_now = _mail_era_now()
+    # '연도 없음'을 고르면 시기 · 연도 없이 보냅니다(편지함에서는 '시기 없음'으로 묶여요).
+    if data.get("no_year"):
+        era_now = None
     if not (data.get("text") or "").strip() and not blobs:
         emit("mail_result", {"ok": False, "message": "편지 내용을 쓰거나 이미지를 붙여 주세요."})
         return

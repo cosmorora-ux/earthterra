@@ -1649,6 +1649,25 @@
   .mail-eras button:hover { color: var(--text); background: rgba(255,255,255,.08); }
   .mail-eras button.on { color:#fff; background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); }
   .mail-year { display:flex; align-items:center; gap:10px; min-height:34px; flex-wrap:wrap; }
+  /* 연도 칸 : [− 연도 +] · 내 캐릭터 나이 · 전체 나이 폭을 같은 높이 세 칸으로 */
+  .mail-year-grid { display:grid; grid-template-columns: minmax(200px, 1.3fr) 1fr 1fr; gap:8px; transition: opacity .15s; }
+  .mail-year-grid.off { opacity:.35; pointer-events:none; }
+  .mail-year-grid > div { min-height:58px; box-sizing:border-box; border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.03); }
+  .my-step { display:grid; grid-template-columns: 36px 1fr 36px; align-items:center; gap:6px; padding:0 8px; }
+  .my-step button { width:36px; height:36px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.04); color: var(--text); cursor:pointer; font-size:12px; }
+  .my-step button:disabled { opacity:.3; cursor:default; }
+  .my-y { display:flex; flex-direction:column; align-items:center; gap:1px; line-height:1.3; }
+  .my-y b { font-size:15.5px; font-weight:800; white-space:nowrap; }
+  .my-y span { font-size:11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .my-cell { display:flex; flex-direction:column; justify-content:center; gap:2px; padding:8px 14px; line-height:1.3; }
+  .my-cell em { font-style:normal; font-size:11.5px; color: var(--muted); }
+  .my-cell b { font-size:15px; font-weight:700; white-space:nowrap; font-variant-numeric: tabular-nums; }
+  .my-none { display:inline-flex; align-items:center; gap:8px; margin-top:2px; font-size:13px; color:#cfcfd4; cursor:pointer; user-select:none; width:max-content; }
+  .my-none span { color: var(--muted); font-size:12px; }
+  @media (max-width:560px) {
+    .mail-year-grid { grid-template-columns: 1fr 1fr; }
+    .mail-year-grid .my-step { grid-column: 1 / -1; }
+  }
   .mail-year b { font-size:15px; min-width:96px; text-align:center; }
   .mail-year button { width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); cursor:pointer; font-size:12px; }
   .mail-year button:disabled { opacity:.35; cursor:default; }
@@ -4579,7 +4598,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.37";
+const EXPECTED_SERVER_BUILD = "2026-10-13.38";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -9476,7 +9495,7 @@ var Weather = (function () {
 // 우체통 : 캐릭터끼리 편지. 받는 사람 지정 / 랜덤, 익명 보내기. 운영진은 전체 편지를 볼 수 있습니다.
 // ==================================================================
 let mailData = null, mailTab = 'inbox', mailOpenId = null;
-const mailDraft = { mode: 'pick', to: [], q: '', anon: true, text: '', images: [], era: null, year: null };
+const mailDraft = { mode: 'pick', to: [], q: '', anon: true, text: '', images: [], era: null, year: null, noYear: false };
 // 편지의 시기 : 대분류(1차 러닝 · 1~2차 리뉴얼 · 2차 러닝 · 2~3차 리뉴얼 · 3차 기간) → 리뉴얼 기간만 연도를 고릅니다.
 // 목록은 서버(mailbox.ERAS)가 보내 주고, 처음에는 지금 마이룸 기간의 러닝을 골라 둡니다.
 function mailEras() { return (mailData && mailData.eras) || []; }
@@ -9493,22 +9512,28 @@ function mailEnsureEra() {
 }
 // 나이 : 캐릭터 정보의 나이 = 1차 입학(空歷 514年) 때 나이. 고른 해에 맞춰 더하거나 뺍니다.
 function mailAgeAt(age, year) { return age == null ? null : age + (year - ((mailData && mailData.age_base) || 514)); }
-function mailAgeHtml(year) {
+// 나이 안내 : 내 캐릭터 = 내 1차 나이 + (고른 해 − 514), 전체 나이 폭 = 1차 기준 13~16세(4살 차이)에 같은 만큼 더한 범위
+function mailAgeCells(year) {
   const d = mailData || {};
-  const ages = (d.ages || []).map(a => mailAgeAt(a, year));
+  const lo = d.age_min != null ? d.age_min : 13, hi = d.age_max != null ? d.age_max : 16;
   const fmt = a => a < 0 ? '출생 전' : `${a}세`;
-  const mine = d.my_age != null ? fmt(mailAgeAt(d.my_age, year)) : '나이 미등록';
-  const range = ages.length ? (Math.min(...ages) === Math.max(...ages) ? fmt(ages[0]) : `${fmt(Math.min(...ages))} ~ ${fmt(Math.max(...ages))}`) : '등록된 나이가 없어요';
-  return `<div class="mail-ages"><span><em>내 캐릭터</em><b>${mine}</b></span><span><em>전체 나이 폭</em><b>${range}</b></span></div>`;
+  const mine = d.my_age != null ? fmt(mailAgeAt(d.my_age, year)) : '-';
+  const range = `${fmt(mailAgeAt(lo, year))} ~ ${fmt(mailAgeAt(hi, year))}`;
+  return `<div class="my-cell"><em>내 캐릭터</em><b>${mine}</b></div><div class="my-cell"><em>전체 나이 폭</em><b>${range}</b></div>`;
 }
 function mailEraHtml() {
   mailEnsureEra();
   const e = mailEra(mailDraft.era); if (!e) return '';
-  return `<div class="mail-year">
-      <button onclick="mailStepYear(-1)" ${mailDraft.year <= e.from ? 'disabled' : ''} aria-label="이전 해"><i class="fa-solid fa-minus"></i></button>
-      <b>空歷 ${mailDraft.year}年</b>
-      <button onclick="mailStepYear(1)" ${mailDraft.year >= e.to ? 'disabled' : ''} aria-label="다음 해"><i class="fa-solid fa-plus"></i></button>
-      <span class="rng">${e.from} ~ ${e.to}年 중</span></div>${mailAgeHtml(mailDraft.year)}`;
+  const off = mailDraft.noYear;
+  return `<div class="mail-year-grid ${off ? 'off' : ''}">
+      <div class="my-step">
+        <button onclick="mailStepYear(-1)" ${off || mailDraft.year <= e.from ? 'disabled' : ''} aria-label="이전 해"><i class="fa-solid fa-minus"></i></button>
+        <div class="my-y"><b>空歷 ${mailDraft.year}年</b><span>${e.from} ~ ${e.to}年</span></div>
+        <button onclick="mailStepYear(1)" ${off || mailDraft.year >= e.to ? 'disabled' : ''} aria-label="다음 해"><i class="fa-solid fa-plus"></i></button>
+      </div>
+      ${mailAgeCells(mailDraft.year)}
+    </div>
+    <label class="my-none"><input type="checkbox" ${off ? 'checked' : ''} onchange="mailDraft.noYear=this.checked; mailRefreshEra()"> 연도 없음 <span>(시기 · 연도 없이 보내요)</span></label>`;
 }
 function mailStepYear(d) { const e = mailEra(mailDraft.era); if (!e) return; mailDraft.year = Math.max(e.from, Math.min(e.to, (mailDraft.year || e.from) + d)); mailRefreshEra(); }
 function mailRefreshEra() { const el = document.getElementById('mailEraBox'); if (el) el.innerHTML = mailEraHtml(); }
@@ -9682,17 +9707,17 @@ function mailComposeHtml(d) {
   // ① 받는 사람 ② 연도 ③ 내용 순서로 칸을 나누고, 아래 보내기 줄은 늘 화면 아래에 붙어 있어요.
   return `<div class="mail-form">
     <section class="mf-sec">
-      <header class="mf-h"><span class="mf-n">1</span><b>받는 사람</b><span class="mf-aside" id="mailToCnt">${mailToAside()}</span></header>
+      <header class="mf-h"><span class="mf-n">1</span><b>연도</b><span class="mf-aside">${era ? mailEsc(era.name) : ''}</span></header>
+      <div id="mailEraBox">${mailEraHtml()}</div>
+    </section>
+    <section class="mf-sec">
+      <header class="mf-h"><span class="mf-n">2</span><b>받는 사람</b><span class="mf-aside" id="mailToCnt">${mailToAside()}</span></header>
       <div class="mail-seg"><button class="${pick ? 'on' : ''}" onclick="mailDraft.mode='pick'; renderMail()"><i class="fa-solid fa-user"></i> 직접 고르기</button>
         <button class="${pick ? '' : 'on'}" onclick="mailDraft.mode='random'; renderMail()"><i class="fa-solid fa-shuffle"></i> 랜덤</button></div>
       ${pick ? `<div class="mf-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="이름 검색" value="${mailEsc(mailDraft.q)}" oninput="mailDraft.q=this.value; mailRefreshNames()" autocomplete="off"></div>
         <div class="mail-picked" id="mailPicked">${mailPickedHtml()}</div>
         <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
         : `<div class="mail-rand"><i class="fa-solid fa-shuffle"></i><span>등록된 캐릭터 중 한 명에게 무작위로 보내요.<br>누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</span></div>`}
-    </section>
-    <section class="mf-sec">
-      <header class="mf-h"><span class="mf-n">2</span><b>연도</b><span class="mf-aside">${era ? mailEsc(era.name) : ''}</span></header>
-      <div id="mailEraBox">${mailEraHtml()}</div>
     </section>
     <section class="mf-sec">
       <header class="mf-h"><span class="mf-n">3</span><b>내용</b><span class="mf-aside mail-count" id="mailCount">${mailDraft.text.length} / 2000</span></header>
@@ -9743,7 +9768,7 @@ function sendLetter() {
   mailEnsureEra();
   document.getElementById('mailSendBtn').disabled = true;
   socket.emit('mail_send', { to: pick ? mailDraft.to : [], random: !pick, anonymous: pick ? false : mailDraft.anon, text,
-    year: mailDraft.year,
+    year: mailDraft.noYear ? null : mailDraft.year, no_year: !!mailDraft.noYear,
     images: mailDraft.images.map(it => ({ data: it.buf })) });
 }
 
