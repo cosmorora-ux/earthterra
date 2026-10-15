@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.43"
+SERVER_BUILD = "2026-10-13.44"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2902,7 +2902,7 @@ def _emit_mail_data(sid):
 
 # ==================================================================
 # PLAY 룸 : LOOP 생존 시뮬레이션 (loop_game.py) — 캐릭터마다 자기 생애를 진행합니다.
-# 생명 변동은 고른 뒤에만 보냅니다. 출신(진영)은 캐릭터 정보의 nation 칸을 씁니다.
+# 체력 · 정신 변동은 고른 뒤에만 보냅니다. 출신 국가는 마이페이지 출신지, 진영(使徒 / Void)은 캐릭터 정보의 진영 칸을 씁니다.
 # ==================================================================
 def _emit_loop_data(sid):
     me, is_gm, room = _mail_identity(sid)
@@ -2912,14 +2912,23 @@ def _emit_loop_data(sid):
     data = book.view(me) if me else {"run": None, "lives": [], "loops": 0, "intro": [], "eras": []}
     data["me"] = me
     data["is_gm"] = is_gm
-    data["nation"] = _loop_nation(room, me)
+    data["country"] = _loop_country(room, me)
+    data["faction"] = _loop_faction(room, me)
     socketio.emit("loop_data", data, to=sid)
 
 
-def _loop_nation(room, me):
-    """캐릭터 정보의 출신(진영) : 使徒 / Void, 정하지 않았으면 빈칸."""
+def _loop_country(room, me):
+    """출신 국가 : 마이페이지 출신지(맵 '장소id:구역')가 아르카디아 · 노바 구역이면 그 나라, 아니면 빈칸(생애 시작 때 고름)."""
     entry = room.game.db.characters.get(me) if me else None
-    return ((entry or {}).get("nation") or "").strip()
+    home = ((entry or {}).get("hometown") or "").split(":")[0]
+    return home if home in loop_mod.COUNTRIES else ""
+
+
+def _loop_faction(room, me):
+    """진영 : 캐릭터 정보의 진영 칸(使徒 / Void). 전쟁 때의 포지션이에요."""
+    entry = room.game.db.characters.get(me) if me else None
+    f = ((entry or {}).get("nation") or "").strip()
+    return f if f in loop_mod.FACTIONS else ""
 
 
 def _loop_action(fn, *args):
@@ -2943,9 +2952,12 @@ def on_loop_state(data=None):
 
 @socketio.on("loop_start")
 def on_loop_start(data):
+    # 출신 국가는 출신지가 정해져 있으면 그것, 아니면 화면에서 고른 것. 진영은 캐릭터 정보에서.
     me, is_gm, room = _mail_identity(request.sid)
-    nation = _loop_nation(room, me) if room is not None else ""
-    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""), nation)
+    if room is None:
+        return
+    country = _loop_country(room, me) or str((data or {}).get("country") or "")
+    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""), country, _loop_faction(room, me))
 
 
 @socketio.on("loop_choose")

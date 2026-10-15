@@ -1995,6 +1995,13 @@
   .pl-res button b { display:block; font-size:15px; margin-bottom:3px; }
   .pl-res button span { color: var(--muted); font-size:13px; line-height:1.5; }
   .pl-res button.on { border-color: rgba(var(--point-rgb),.55); background: rgba(var(--point-rgb),.10); }
+  .pl-res button b em { font-style:normal; margin-left:8px; padding:2px 8px; border-radius:8px; font-size:11.5px; font-weight:700; background: rgba(255,255,255,.07); color:#bdbdc3; vertical-align:2px; }
+  .pl-res button b em.up { background: rgba(var(--point-rgb),.16); color: var(--point); }
+  .pl-res.locked button:disabled { cursor:default; opacity:.45; }
+  .pl-res.locked button.on:disabled { opacity:1; }
+  .pl-k-note { margin-left:8px; font-size:12px; font-weight:500; color: var(--muted); letter-spacing:0; }
+  div.pl-k-note { margin-left:0; font-size:13px; }
+  div.pl-k-note b { color: var(--text); }
   .pl-memory { margin-top:14px; padding:12px 14px; border-radius:12px; background: rgba(var(--point-rgb),.07); color:#cfcfe0; font-size:14px; line-height:1.7; }
   .pl-log { display:flex; flex-direction:column; }
   .pl-log .row { display:grid; grid-template-columns: 44px 1fr auto; gap:12px; align-items:center; padding:10px 4px; border-top:1px solid rgba(255,255,255,.05); font-size:13.5px; }
@@ -4759,7 +4766,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.43";
+const EXPECTED_SERVER_BUILD = "2026-10-13.44";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -12115,11 +12122,13 @@ if (window.ResizeObserver) {
 // 오른쪽(휴대폰은 아래 기록 버튼) 기록판에는 이번 생애에 지나온 사건이 쌓입니다.
 // ==================================================================
 const IS_PLAY = BATTLE_TYPE === 'play';
-let loopData = null, loopRes = null, loopBusy = false, loopLastKey = '', loopTailMs = 0;
+let loopData = null, loopRes = null, loopCountry = null, loopBusy = false, loopLastKey = '', loopTailMs = 0;
 const loopShown = new Set();   // 이미 한 번 떠오른 글 : 다시 그릴 때는 애니메이션 없이
 const LOOP_CH_MS = 16;         // 글자 사이 간격
 const LOOP_RES = { res: ['공명자', '루프와 공명한 사람. 기대와 의무, 관리의 대상이 됩니다.'], non: ['비공명자', '공명하지 못한 사람. 능력의 유무가 삶의 문을 가릅니다.'] };
 const LOOP_STAT = { hp: ['체력', 'fa-heart'], mind: ['정신', 'fa-brain'] };
+const LOOP_COUNTRY = { arcadia: ['아르카디아 연방', '공명자가 기득권, 비공명자가 비기득권인 나라.'], nova: ['노바 공화국', '비공명자가 기득권, 공명자가 비기득권인 나라.'] };
+function loopPriv(country, res) { return (country === 'arcadia' && res === 'res') || (country === 'nova' && res === 'non'); }
 function loopEsc(s) { return mailEsc(s == null ? '' : String(s)); }
 function loopSign(d) { return d > 0 ? '+' + d : d < 0 ? '−' + (-d) : '0'; }
 // 결과 칩 : 체력 · 정신 각각(둘 다 그대로면 '변화 없음' 하나)
@@ -12191,10 +12200,11 @@ function loopSkip() { const p = document.getElementById('playPage'); if (p) p.cl
 function loopHeadHtml(d) {
   const r = d.run;
   const pills = [];
-  const nation = (r && r.nation) || d.nation;
-  if (r) pills.push(`<span class="pl-pill"><i class="fa-solid fa-user"></i>${loopEsc(d.me)} · ${loopEsc((LOOP_RES[r.res] || [''])[0])}</span>`);
-  else if (d.me) pills.push(`<span class="pl-pill"><i class="fa-solid fa-user"></i>${loopEsc(d.me)}</span>`);
-  if (d.me) pills.push(`<span class="pl-pill"><i class="fa-solid fa-flag"></i>${nation ? loopEsc(nation) : '출신 미정'}</span>`);
+  const country = (r && r.country) || d.country, faction = (r && r.faction) || d.faction;
+  if (d.me) pills.push(`<span class="pl-pill"><i class="fa-solid fa-user"></i>${loopEsc(d.me)}</span>`);
+  if (country) pills.push(`<span class="pl-pill"><i class="fa-solid fa-flag"></i>${loopEsc((LOOP_COUNTRY[country] || [''])[0])}</span>`);
+  if (r) pills.push(`<span class="pl-pill"><i class="fa-solid fa-wave-square"></i>${loopEsc((LOOP_RES[r.res] || [''])[0])} · ${r.privileged ? '기득권' : '비기득권'}</span>`);
+  if (faction) pills.push(`<span class="pl-pill"><i class="fa-solid fa-shield-halved"></i>${loopEsc(faction)}</span>`);
   if (r) pills.push(`<span class="pl-pill">${r.life_no}번째 생애</span>`);
   if (r && r.loop_no) pills.push(`<span class="pl-pill loop"><i class="fa-solid fa-infinity"></i>루프 ${r.loop_no}</span>`);
   return `<div class="pl-box glow pl-head"><div class="pl-logo"><small>SURVIVAL SIMULATION</small>Loop</div><div class="pl-sub">생존 시뮬레이션</div><div class="pl-life">${pills.join('')}</div></div>`;
@@ -12271,20 +12281,27 @@ function loopEndedHtml(d, r) {
     dock: `<div class="pl-actions"><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_reset')"><i class="fa-solid fa-seedling"></i>새 생애 시작</button></div>` };
 }
 function loopStartHtml(d) {
-  const res = Object.entries(LOOP_RES).map(([k, [t, ds]]) => `<button class="${loopRes === k ? 'on' : ''}" onclick="event.stopPropagation(); loopRes='${k}'; renderLoop()"><b>${t}</b><span>${ds}</span></button>`).join('');
+  const fixed = d.country || '';
+  const country = fixed || loopCountry;
+  const res = Object.entries(LOOP_RES).map(([k, [t, ds]]) => `<button class="${loopRes === k ? 'on' : ''}" onclick="event.stopPropagation(); loopRes='${k}'; renderLoop()"><b>${t}${country ? `<em class="${loopPriv(country, k) ? 'up' : ''}">${loopPriv(country, k) ? '기득권' : '비기득권'}</em>` : ''}</b><span>${ds}</span></button>`).join('');
+  const countries = Object.entries(LOOP_COUNTRY).map(([k, [t, ds]]) => `<button class="${country === k ? 'on' : ''}" ${fixed ? 'disabled' : ''} onclick="event.stopPropagation(); loopCountry='${k}'; renderLoop()"><b>${t}</b><span>${ds}</span></button>`).join('');
   const intro = loopType(d.intro, 'intro', 0);
   if (intro.fresh) loopShown.add('intro');
+  const ready = loopRes && country;
   return { main: `<div class="pl-box glow pl-intro"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span><span>${(d.lives || []).length + 1}번째 생애</span></div>
     <h2 class="pl-ev-title">새 생애를 시작합니다</h2>${intro.html}
-    <div class="pl-fade"${loopAfter(intro.end + 100, intro.fresh)}><div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res">${res}</div></div></div>`,
-    dock: `<div class="pl-actions pl-fade"${loopAfter(intro.end + 100, intro.fresh)}><button class="pl-btn primary wide" ${!loopRes || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_start', { res: loopRes })">${loopRes ? '생애 시작' : '공명 여부를 골라 주세요'}<i class="fa-solid fa-arrow-right"></i></button></div>` };
+    <div class="pl-fade"${loopAfter(intro.end + 100, intro.fresh)}>
+      <div class="pl-k" style="margin-top:18px">출신 국가${fixed ? '<span class="pl-k-note">마이페이지 출신지로 정해져요</span>' : ''}</div><div class="pl-res ${fixed ? 'locked' : ''}">${countries}</div>
+      <div class="pl-k" style="margin-top:16px">이번 생애의 당신은</div><div class="pl-res">${res}</div>
+      ${d.faction ? `<div class="pl-k-note" style="margin-top:12px"><i class="fa-solid fa-shield-halved"></i> 전쟁이 시작되면 <b>${loopEsc(d.faction)}</b>의 편에 섭니다.</div>` : ''}</div></div>`,
+    dock: `<div class="pl-actions pl-fade"${loopAfter(intro.end + 100, intro.fresh)}><button class="pl-btn primary wide" ${!ready || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_start', { res: loopRes, country: loopCountry || '' })">${ready ? '생애 시작' : !country ? '출신 국가를 골라 주세요' : '공명 여부를 골라 주세요'}<i class="fa-solid fa-arrow-right"></i></button></div>` };
 }
 // 지난 생애 : 끝난 생애가 있을 때만 아래에 보여요.
 function loopLivesHtml(d) {
   const lives = d.lives || [];
   if (!lives.length) return '';
   const eraNo = id => ((d.eras || []).find(e => e.id === id) || {}).no || '';
-  return `<div class="pl-box pl-rec"><div class="pl-k" style="margin-bottom:6px">지난 생애</div><div class="pl-log">${lives.map(l => `<div class="row"><span class="era">${loopEsc(eraNo(l.era))}</span><span class="ttl"><b>${l.life_no}번째 생애${l.loop_no ? ` · 루프 ${l.loop_no}` : ''} · ${l.outcome === 'survived' ? '생존' : (l.death || {}).kind === 'mind' ? '정신 붕괴' : '사망'}</b><span>${loopEsc((LOOP_RES[l.res] || [''])[0])} · ${l.outcome === 'survived' ? '전쟁 이후까지' : loopEsc((l.death || {}).at || '') + '에서'}</span></span><span class="d zero">${l.count}사건</span></div>`).join('')}</div></div>`;
+  return `<div class="pl-box pl-rec"><div class="pl-k" style="margin-bottom:6px">지난 생애</div><div class="pl-log">${lives.map(l => `<div class="row"><span class="era">${loopEsc(eraNo(l.era))}</span><span class="ttl"><b>${l.life_no}번째 생애${l.loop_no ? ` · 루프 ${l.loop_no}` : ''} · ${l.outcome === 'survived' ? '생존' : (l.death || {}).kind === 'mind' ? '정신 붕괴' : '사망'}</b><span>${l.country ? loopEsc((LOOP_COUNTRY[l.country] || [''])[0]) + ' · ' : ''}${loopEsc((LOOP_RES[l.res] || [''])[0])} · ${l.outcome === 'survived' ? '전쟁 이후까지' : loopEsc((l.death || {}).at || '') + '에서'}</span></span><span class="d zero">${l.count}사건</span></div>`).join('')}</div></div>`;
 }
 // 오른쪽 기록판 : 이번 생애에 지나온 사건(오래된 것부터 아래로 쌓이고, 새 사건이 생기면 맨 아래로).
 function renderLoopLog() {
