@@ -382,6 +382,19 @@
   .shop-tab .cnt { display:inline-block; min-width:16px; padding:0 4px; border-radius:8px; background: var(--accent-red); color:#fff; font-size:11px; margin-left:4px; }
   .shop-body { flex:1 1 auto; min-height:0; overflow-y:auto; padding-right:4px; }
   .shop-empty { color: var(--muted); text-align:center; padding:40px 0; font-size:14px; }
+  /* 빈 화면(공통) : 아이콘 상자 · 제목 · 설명 · (필요하면) 버튼. 상점 · 소지품 · 우체통 · 공지 · 마이룸 · 맵이 모두 같은 모양 */
+  .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center; padding:48px 20px; color: var(--muted); min-height:220px; box-sizing:border-box; }
+  .empty-state .es-ic { width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;
+    background: rgba(var(--point-rgb), .08); border:1px solid rgba(var(--point-rgb), .2); color: var(--point); font-size:21px; }
+  .empty-state .es-t { font-size:15px; font-weight:700; color: var(--text); line-height:1.5; }
+  .empty-state .es-d { font-size:13px; line-height:1.65; color: var(--muted); max-width:340px; }
+  .empty-state .es-btn { margin-top:14px; height:38px; padding:0 16px; border-radius:10px; border:1px solid rgba(var(--point-rgb), .4); background: rgba(var(--point-rgb), .12);
+    color: var(--text); font-size:13.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-family:inherit; }
+  .empty-state .es-btn:hover { background: rgba(var(--point-rgb), .2); }
+  .empty-state .es-btn i { color: var(--point); }
+  .empty-state.sm { min-height:0; padding:28px 16px; }
+  .empty-state.sm .es-ic { width:44px; height:44px; font-size:17px; margin-bottom:6px; }
+  .empty-state.sm .es-t { font-size:14px; }
   .shop-item { display:flex; align-items:center; gap:12px; padding:10px; border:1px solid var(--card-border); border-radius:10px; margin-bottom:8px; background:rgba(255,255,255,.015); }
   .shop-icon { width:40px; height:40px; flex:none; border-radius:8px; background:#0c0c0d; border:1px solid var(--card-border);
     background-size:contain; background-position:center; background-repeat:no-repeat; image-rendering: pixelated;
@@ -1612,7 +1625,8 @@
   .mail-top { display:flex; align-items:center; gap:8px; }
   .mail-who { font-weight:700; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .mail-who.anon { color: var(--muted); font-weight:600; }
-  .mail-time { margin-left:auto; flex:none; font-size:12px; color: var(--muted); }
+  .mail-time { margin-left:auto; flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:1px; font-size:11.5px; color: var(--muted); line-height:1.35; font-variant-numeric: tabular-nums; }
+  .mail-time b { font-weight:600; color:#bdbdc3; font-size:12px; }
   .mail-prev { margin-top:3px; font-size:13.5px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .mail-item.unread .mail-prev { color:#cfcfd4; }
   .mail-dot { width:7px; height:7px; border-radius:50%; background: var(--point); flex:none; }
@@ -1633,13 +1647,13 @@
   .mail-eras button { height:34px; padding:0 14px; border-radius:10px; border:1px solid transparent; background: rgba(255,255,255,.05); color: var(--muted); font-size:13px; cursor:pointer; }
   .mail-eras button:hover { color: var(--text); background: rgba(255,255,255,.08); }
   .mail-eras button.on { color:#fff; background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); }
-  .mail-year { display:flex; align-items:center; gap:10px; margin-top:10px; min-height:34px; }
+  .mail-year { display:flex; align-items:center; gap:10px; min-height:34px; flex-wrap:wrap; }
   .mail-year b { font-size:15px; min-width:96px; text-align:center; }
   .mail-year button { width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); cursor:pointer; font-size:12px; }
   .mail-year button:disabled { opacity:.35; cursor:default; }
   .mail-year .rng { font-size:12px; color: var(--muted); margin-left:4px; }
   .mail-year .era-name { font-size:13px; color: var(--muted); margin-right:4px; padding:0 10px; height:34px; display:inline-flex; align-items:center; border-radius:10px; background: rgba(255,255,255,.04); }
-  .mail-ages { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .mail-ages { display:flex; flex-wrap:wrap; gap:8px; }
   .mail-ages span { display:inline-flex; align-items:baseline; gap:8px; padding:8px 12px; border-radius:10px; background: rgba(255,255,255,.03); border:1px solid var(--line); }
   .mail-ages em { font-style:normal; font-size:12px; color: var(--muted); }
   .mail-ages b { font-size:14px; }
@@ -1647,21 +1661,38 @@
   .mail-letter .txt { font-size:15.5px; line-height:1.85; white-space:pre-wrap; word-break:break-word; color:#e8e8ec; min-height:120px; }
   .mail-letter .from { margin-top:26px; text-align:right; font-size:13px; color: var(--muted); }
   .mail-letter .from b { color: var(--text); font-weight:700; font-size:15px; margin-left:4px; }
-  .mail-letter .date { text-align:right; font-size:12px; color:#6f6f76; margin-top:4px; }
+  .mail-letter .date { display:flex; flex-direction:column; align-items:flex-end; gap:2px; font-size:12px; color:#6f6f76; margin-top:6px; font-variant-numeric: tabular-nums; }
+  .mail-letter .date .y { color: var(--muted); font-weight:600; }
+  .mail-letter .date .r i { margin-right:5px; font-size:11px; }
   .mail-actions { display:flex; justify-content:space-between; align-items:center; margin-top:14px; }
   .mail-del { display:inline-flex; align-items:center; gap:6px; background:none; border:none; color: var(--muted); font-size:13px; cursor:pointer; padding:6px 0; }
   .mail-del:hover { color: var(--accent-red); }
   /* 편지 쓰기 */
-  .mail-form { display:flex; flex-direction:column; gap:14px; padding-bottom:12px; }
+  .mail-form { display:flex; flex-direction:column; gap:12px; padding-bottom:0; }
+  /* 편지 쓰기 : 받는 사람 · 연도 · 내용을 번호 붙은 칸으로 나누고, 보내기 줄은 아래에 붙여 둡니다 */
+  .mf-sec { display:flex; flex-direction:column; gap:10px; padding:16px; border-radius:16px; border:1px solid var(--line); background: rgba(255,255,255,.02); }
+  .mf-h { display:flex; align-items:center; gap:8px; min-height:22px; }
+  .mf-h b { font-size:14px; color: var(--text); font-weight:700; }
+  .mf-n { width:20px; height:20px; flex:none; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;
+    background: rgba(var(--point-rgb), .16); color: var(--point); }
+  .mf-aside { margin-left:auto; font-size:12.5px; color: var(--muted); white-space:nowrap; }
+  .mf-aside b { color: var(--text); font-weight:700; }
+  .mf-search { position:relative; }
+  .mf-search i { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:12px; color: var(--muted); pointer-events:none; }
+  .modal-box.mail-modal .mf-search input { width:100%; padding-left:36px; }
+  .mail-picked:empty { display:none; }
+  .mail-none { font-size:13px; color: var(--muted); padding:4px 2px; }
+  .mf-hint { font-size:12px; color: var(--muted); display:flex; align-items:center; gap:6px; }
+  .mf-hint i { font-size:11px; }
   .mail-label { font-size:13px; color: var(--muted); font-weight:600; margin-bottom:8px; }
   .mail-seg { display:flex; gap:6px; }
   .mail-seg button { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; background: rgba(255,255,255,.05); border:1px solid transparent;
     color: var(--muted); border-radius:10px; padding:10px 12px; font-size:14px; cursor:pointer; }
   .mail-seg button:hover { color: var(--text); background: rgba(255,255,255,.08); }
   .mail-seg button.on { color:#fff; background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); }
-  .mail-names { display:flex; flex-wrap:wrap; gap:6px; max-height:132px; overflow-y:auto; margin-top:8px; }
+  .mail-names { display:flex; flex-wrap:wrap; align-content:flex-start; gap:6px; max-height:148px; overflow-y:auto; padding:10px; border-radius:12px; border:1px solid var(--line); background: rgba(0,0,0,.22); }
   .mail-name { background: rgba(255,255,255,.05); border:1px solid transparent; color:#cfcfd4; border-radius:999px; padding:5px 12px; font-size:13px; cursor:pointer; }
-  .mail-picked { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px; min-height:26px; }
+  .mail-picked { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
   .mail-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 6px 3px 10px; border-radius:999px; background: rgba(var(--point-rgb),.18); color:#dbe4ff; font-size:12.5px; font-weight:600; }
   .mail-chip button { width:18px; height:18px; border:none; border-radius:50%; background:none; color:#aebcff; cursor:pointer; font-size:10px; }
   .mail-chip button:hover { background: rgba(255,255,255,.12); color:#fff; }
@@ -1669,10 +1700,14 @@
   .mail-anon.off { color: var(--muted); cursor:default; }
   .mail-name:hover { background: rgba(255,255,255,.09); }
   .mail-name.on { background: var(--point); color:#fff; }
-  .mail-rand { font-size:13px; color: var(--muted); line-height:1.7; padding:12px 14px; border-radius:12px; background: rgba(255,255,255,.03); }
+  .mail-rand { display:flex; gap:10px; align-items:flex-start; font-size:13px; color: var(--muted); line-height:1.7; padding:12px 14px; border-radius:12px; background: rgba(255,255,255,.03); }
+  .mail-rand i { color: var(--point); margin-top:5px; font-size:12px; }
   .modal-box.mail-modal textarea.mail-text { width:100%; min-height:200px; resize:vertical; font-size:15px; line-height:1.75; padding:14px 16px; }
-  .mail-foot { display:flex; align-items:center; gap:12px; }
-  .mail-imgrow { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .mail-foot { position:sticky; bottom:0; z-index:2; display:flex; align-items:center; gap:12px; padding:14px 2px 2px; margin-top:-2px;
+    background: linear-gradient(to bottom, rgba(20,20,22,0), var(--panel) 34%); }
+  .mail-foot .mail-send { margin-left:auto; height:42px; padding:0 20px; }
+  .mail-anon.off i { margin-right:6px; font-size:12px; }
+  .mail-imgrow { display:flex; flex-wrap:wrap; gap:8px; }
   .mail-attach { height:64px; min-width:64px; padding:0 14px; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
     border-radius:10px; border:1px dashed var(--line); background: rgba(255,255,255,.03); color: var(--muted); font-size:12px; cursor:pointer; }
   .mail-attach i { font-size:16px; }
@@ -1689,7 +1724,7 @@
   .mail-imgs img { width:100%; display:block; max-height:420px; object-fit:contain; }
   .mail-imgs:not(.n1) img { height:100%; aspect-ratio:1/1; object-fit:cover; }
   .mail-anon { display:inline-flex; align-items:center; gap:8px; font-size:13.5px; color:#cfcfd4; cursor:pointer; user-select:none; }
-  .mail-count { margin-left:auto; font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .mail-count { font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .mail-send { display:inline-flex; align-items:center; gap:7px; }
   @media (max-width:1180px) {
     .modal-box.mail-modal { width:100vw; max-width:none; height:100%; max-height:none; border-radius:0; border:none;
@@ -4431,7 +4466,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.32";
+const EXPECTED_SERVER_BUILD = "2026-10-13.33";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -7110,6 +7145,50 @@ function fsExit() {
   }
 })();
 function toggleFullscreen() { fsActive() ? fsExit() : fsEnter(); }
+// ---------- 스마트폰 · 태블릿 : 탭이 여럿인 화면은 본문을 옆으로 쓱 밀어 이웃 탭으로 넘깁니다 ----------
+// [본문, 그 본문의 탭 줄]. 지도 · 마이룸 방 · 옆으로 스크롤되는 칸 · 입력칸에서 시작한 밀기는 건드리지 않아요.
+const SWIPE_TABS = [
+  ['#shopBody', '#shopTabs'], ['#mailBody', '#mailTabs'], ['#opsBody', '#opsTabs'], ['#dormPalette', '#dormCatTabs'],
+  ['.member-panel:not(.dorm-side) > .member-body', '.member-panel:not(.dorm-side) > .member-toptabs'],
+];
+(function swipeTabs() {
+  if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) return;
+  let st = null;
+  const skip = (el, stop) => {
+    if (el.closest('input, textarea, select, [contenteditable="true"], .map-frame, #gridSection, .wm-stage, .zoom-ctl, .dorm-edit-bar, .no-swipe')) return true;
+    // 옆으로 스크롤되는 칸 안이면(표 · 칩 줄 등) 그 칸의 스크롤에 맡깁니다.
+    for (let n = el; n && n !== stop; n = n.parentElement) {
+      if (n.scrollWidth > n.clientWidth + 4 && /auto|scroll/.test(getComputedStyle(n).overflowX)) return true;
+    }
+    return false;
+  };
+  document.addEventListener('touchstart', (e) => {
+    st = null;
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0], target = e.target;
+    for (const [bodySel, tabsSel] of SWIPE_TABS) {
+      const body = target.closest && target.closest(bodySel);
+      if (!body || !body.offsetParent) continue;
+      if (skip(target, body)) return;
+      const tabs = document.querySelector(tabsSel);
+      if (tabs && tabs.offsetParent) st = { x: t.clientX, y: t.clientY, at: Date.now(), tabs };
+      return;
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (!st) return;
+    const t = e.changedTouches[0], dx = t.clientX - st.x, dy = t.clientY - st.y, tabs = st.tabs, quick = Date.now() - st.at < 700;
+    st = null;
+    if (!quick) return;
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    const btns = [...tabs.querySelectorAll('button')].filter(b => b.offsetParent && !b.disabled);
+    const cur = btns.findIndex(b => b.classList.contains('active') || b.classList.contains('on'));
+    const next = btns[cur + (dx < 0 ? 1 : -1)];
+    if (cur < 0 || !next) return;
+    next.click();
+    next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, { passive: true });
+})();
 ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, () => {
   const btn = document.getElementById('sidebarFullscreenBtn');
   if (btn) btn.classList.toggle('active', fsActive());
@@ -7410,17 +7489,17 @@ document.addEventListener('pointerdown', (e) => { if (homeMenu.open && !e.target
 document.addEventListener('keydown', (e) => { if (homeMenu.open && e.key === 'Escape') closeHomeMenu(); });
 window.addEventListener('resize', () => homeMenu.open && closeHomeMenu());
 document.addEventListener('scroll', (e) => { if (homeMenu.open && !(e.target.closest && e.target.closest('.home-menu'))) closeHomeMenu(); }, true);
-// 나이 : 1차 입학(空歷 514年) 때 나이 13~16세(정하지 않으면 13세). 본인과 운영진이 고를 수 있어요.
+// 나이 : 1차 입학(空歷 514年) 때 나이 13~16세(정하지 않으면 13세). 운영진만 고를 수 있고, 참가자는 보기만 해요.
 const MYPAGE_AGES = [13, 14, 15, 16];
 function renderMyPageAge(c) {
   const el = document.getElementById('myPageAge'); if (!el) return;
   if (!c) { el.innerHTML = ''; return; }
   const cur = ((lastRosterMypage || {})[c.name] || {}).age || 13;
-  if (!canEditMyPage()) { el.innerHTML = `<button class="on" disabled style="--nc:var(--point)">1차 ${cur}세</button>`; return; }
+  if (!canEditMyPage() || !dormIsGm()) { el.innerHTML = `<button class="on" disabled style="--nc:var(--point)">1차 ${cur}세</button>`; return; }
   el.innerHTML = MYPAGE_AGES.map(a => `<button class="${a === cur ? 'on' : ''}" style="--nc:var(--point)" data-tip="1차(空歷 514年) 때 나이" onclick="setMyPageAge(${a})">${a}세</button>`).join('');
 }
 function setMyPageAge(a) {
-  if (!canEditMyPage()) return;
+  if (!canEditMyPage() || !dormIsGm()) return;
   const name = myPageEditName();
   socket.emit('set_my_skill_log', { name, age: a });
   if (name && lastRosterMypage[name]) lastRosterMypage[name].age = a;
@@ -8054,7 +8133,7 @@ function renderShop() {
   // 입력 중인 칸이 있으면(운영진 편집) 다시 그리지 않아 입력이 끊기지 않게 합니다.
   if (body.contains(document.activeElement) && ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
   const scroll = body.scrollTop;
-  if (!lastShop) { body.innerHTML = '<div class="shop-empty">상점 정보를 불러오는 중...</div>'; return; }
+  if (!lastShop) { body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '상점을 불러오는 중이에요'); return; }
   if (shopTab === 'shop') body.innerHTML = renderShopList(target, data);
   else if (shopTab === 'inventory') body.innerHTML = renderShopInventory(target, data);
   else if (shopTab === 'items') body.innerHTML = renderShopItemsAdmin();
@@ -8065,7 +8144,7 @@ function renderShop() {
 
 function renderShopList(target, data) {
   const items = lastShop.items || [];
-  if (!items.length) return '<div class="shop-empty">판매 중인 상품이 없어요.</div>';
+  if (!items.length) return emptyHtml('fa-store', '판매 중인 상품이 없어요', '운영진이 상품을 올리면 여기에 보여요.');
   const points = data ? (data.points || 0) : 0;
   return items.map(it => {
     const can = !!target && points >= it.price;
@@ -8081,10 +8160,16 @@ function renderShopList(target, data) {
   }).join('').replace(/^/, '<div class="shop-grid">') + '</div>' + '';
 }
 
+// 빈 화면(공통) : 아이콘 · 제목 · 설명 · 버튼([글자, onclick, 아이콘])
+function emptyHtml(icon, title, desc, btn, small) {
+  return `<div class="empty-state${small ? ' sm' : ''}"><span class="es-ic"><i class="fa-solid ${icon}"></i></span><b class="es-t">${title}</b>`
+    + (desc ? `<span class="es-d">${desc}</span>` : '')
+    + (btn ? `<button type="button" class="es-btn" onclick="${btn[1]}">${btn[2] ? `<i class="fa-solid ${btn[2]}"></i>` : ''}${btn[0]}</button>` : '') + '</div>';
+}
 function renderShopInventory(target, data) {
-  if (!target) return `<div class="shop-empty">위에서 캐릭터를 골라 주세요.</div>`;
+  if (!target) return emptyHtml('fa-user', '캐릭터를 골라 주세요', '위에서 캐릭터를 고르면 그 캐릭터의 소지품이 보여요.');
   const owned = Object.entries((data && data.items) || {}).filter(([, n]) => n > 0);
-  if (!owned.length) return '<div class="shop-empty">가진 아이템이 없어요. 상점에서 구매해 보세요.</div>';
+  if (!owned.length) return emptyHtml('fa-briefcase', '아직 소지품이 없어요', '상점에서 아이템을 사면 여기에 모여요.', ['상점 둘러보기', "setShopTab('shop')", 'fa-store']);
   const statKeys = lastShop.stat_keys || [];
   return owned.map(([id, n]) => {
     const it = shopItemById(id);
@@ -8126,14 +8211,14 @@ function renderShopItemsAdmin() {
   return `<div class="shop-toolbar"><span>고치면 바로 저장돼요 · 아이콘 칸을 누르면 아이콘을 고를 수 있어요</span>
       <div style="flex:1"></div><button class="shop-btn" onclick="shopAddItem()"><i class="fa-solid fa-plus"></i> 상품 추가</button></div>
     <div class="shop-edit-head"><span>아이콘</span><span>이름</span><span>가격(P)</span><span>효과</span><span>사용 시점</span><span>수치</span><span></span></div>
-    ${rows || '<div class="shop-empty">상품이 없어요.</div>'}`;
+    ${rows || emptyHtml('fa-tags', '상품이 없어요', '위에서 새 상품을 추가해 주세요.', null, true)}`;
 }
 
 let shopWalletQuery = '';
 function renderShopWallets() {
   const q = shopWalletQuery.trim().toLowerCase();
   const names = (lastRoster || []).filter(n => !q || n.toLowerCase().includes(q));
-  if (!names.length) return '<div class="shop-empty">등록된 캐릭터가 없어요.</div>';
+  if (!names.length) return emptyHtml('fa-users', '등록된 캐릭터가 없어요');
   const itemOpts = (lastShop.items || []).map(it => `<option value="${it.id}">${shopEsc(it.name)}</option>`).join('');
   const rows = names.map(n => {
     const d = lastRosterMypage[n] || {};
@@ -8157,12 +8242,12 @@ function renderShopWallets() {
       <span>전원 P</span><input type="number" id="shopBulkPoints" value="100">
       <button class="shop-btn ghost sm" onclick="shopBulkPoints(1)"><i class="fa-solid fa-plus"></i> 지급</button>
       <button class="shop-btn ghost sm" onclick="shopBulkPoints(-1)"><i class="fa-solid fa-minus"></i> 차감</button></div>
-    ${rows || '<div class="shop-empty">검색 결과가 없어요.</div>'}`;
+    ${rows || emptyHtml('fa-magnifying-glass', '검색 결과가 없어요', '다른 이름으로 찾아보세요.', null, true)}`;
 }
 
 function renderShopRequests() {
   const reqs = lastShopRequests || [];
-  if (!reqs.length) return '<div class="shop-empty">들어온 요청이 없어요.</div>';
+  if (!reqs.length) return emptyHtml('fa-inbox', '들어온 요청이 없어요', '참가자가 아이템 사용을 요청하면 여기에 쌓여요.');
   return reqs.map(r => `<div class="shop-req ${r.done ? 'done' : ''}">
       <span class="when">${shopEsc(r.time)}</span>
       <div class="what"><b>${shopEsc(r.character)}</b> · ${shopEsc(r.item_name)}${r.memo ? `<div class="memo">${shopEsc(r.memo)}</div>` : ''}</div>
@@ -8412,7 +8497,7 @@ function renderNotices() {
   editor.style.display = noticeEditing ? 'flex' : 'none';
   if (noticeEditing) return;
   if (!lastNotices.length) {
-    list.innerHTML = `<div class="shop-empty">아직 공지사항이 없어요.${gm ? ' 위의 "새 공지"로 첫 공지를 써 보세요.' : ''}</div>`;
+    list.innerHTML = emptyHtml('fa-bullhorn', '아직 공지사항이 없어요', gm ? '위의 "새 공지"로 첫 공지를 써 보세요.' : '새 공지가 올라오면 여기에 보여요.');
     return;
   }
   const seen = noticeSeenAt();
@@ -9292,11 +9377,11 @@ function mailAgeHtml(year) {
 function mailEraHtml() {
   mailEnsureEra();
   const e = mailEra(mailDraft.era); if (!e) return '';
-  return `<div class="mail-year"><span class="era-name">${mailEsc(e.name)}</span>
+  return `<div class="mail-year">
       <button onclick="mailStepYear(-1)" ${mailDraft.year <= e.from ? 'disabled' : ''} aria-label="이전 해"><i class="fa-solid fa-minus"></i></button>
       <b>空歷 ${mailDraft.year}年</b>
       <button onclick="mailStepYear(1)" ${mailDraft.year >= e.to ? 'disabled' : ''} aria-label="다음 해"><i class="fa-solid fa-plus"></i></button>
-      <span class="rng">${e.from} ~ ${e.to}年</span></div>${mailAgeHtml(mailDraft.year)}`;
+      <span class="rng">${e.from} ~ ${e.to}年 중</span></div>${mailAgeHtml(mailDraft.year)}`;
 }
 function mailStepYear(d) { const e = mailEra(mailDraft.era); if (!e) return; mailDraft.year = Math.max(e.from, Math.min(e.to, (mailDraft.year || e.from) + d)); mailRefreshEra(); }
 function mailRefreshEra() { const el = document.getElementById('mailEraBox'); if (el) el.innerHTML = mailEraHtml(); }
@@ -9333,6 +9418,13 @@ function mailEsc(t) { return shopEsc(t); }
 function mailTime(at) {
   return etStamp(new Date(at * 1000));
 }
+// 실제로 보낸 시각(현실 날짜) : 26.10.01 PM 3:12
+function mailRealTime(at) {
+  const d = new Date(at * 1000), p = n => String(n).padStart(2, '0'), h = d.getHours();
+  return `${String(d.getFullYear()).slice(2)}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${h < 12 ? 'AM' : 'PM'} ${h % 12 || 12}:${p(d.getMinutes())}`;
+}
+// 편지 속 연도(설정상 공력) : 空歷 520年
+function mailYearLabel(l) { const e = l && mailEra(l.era); return e ? `空歷 ${l.year != null ? l.year : e.from}年` : ''; }
 function updateMailDot() {
   const dot = document.getElementById('mailDot');
   if (dot) dot.classList.toggle('on', !!(mailData && mailData.unread > 0));
@@ -9386,7 +9478,7 @@ function renderMail() {
   document.getElementById('mailMe').innerHTML = d.me ? `<b>${mailEsc(d.me)}</b>의 우체통` : '';
   if (!d.me) {
     tabsEl.innerHTML = '';
-    body.innerHTML = `<div class="mail-empty"><i class="fa-solid fa-circle-notch fa-spin"></i>우체통을 불러오는 중입니다.</div>`;
+    body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '우체통을 불러오는 중이에요');
     return;
   }
   const tabs = [['inbox', 'fa-solid fa-inbox', '받은 편지', d.unread], ['outbox', 'fa-solid fa-paper-plane', '보낸 편지'], ['write', 'fa-solid fa-pen', '편지 쓰기']];
@@ -9397,8 +9489,9 @@ function renderMail() {
   const open = mailOpenId && list.find(l => l.id === mailOpenId);
   if (open) { body.innerHTML = mailLetterHtml(open, d); return; }
   if (!list.length) {
-    const msg = mailTab === 'inbox' ? '아직 받은 편지가 없어요.' : mailTab === 'outbox' ? '아직 보낸 편지가 없어요.' : '편지가 없어요.';
-    body.innerHTML = `<div class="mail-empty"><i class="fa-regular fa-envelope-open"></i>${msg}</div>`;
+    body.innerHTML = mailTab === 'inbox' ? emptyHtml('fa-inbox', '아직 받은 편지가 없어요', '누군가 편지를 보내면 여기에 모여요.')
+      : mailTab === 'outbox' ? emptyHtml('fa-paper-plane', '아직 보낸 편지가 없어요', '첫 편지를 써 보세요.', ['편지 쓰기', "setMailTab('write')", 'fa-pen'])
+      : emptyHtml('fa-envelope-open', '편지가 없어요');
     return;
   }
   // 시기(대분류 · 연도) 순으로 쌓기 : 늦은 시기가 위, 같은 시기 안에서는 최근 편지가 위. 시기가 없는 옛 편지는 맨 아래.
@@ -9422,7 +9515,7 @@ function mailItemHtml(l) {
     const badges = (l.anonymous && mailTab !== 'inbox' ? '<span class="mail-badge">익명</span>' : '') + (l.random && mailTab !== 'outbox' ? '<span class="mail-badge">랜덤</span>' : '');
     return `<div class="mail-item ${unread ? 'unread' : ''}" onclick="openLetter('${l.id}')">
       <div class="mail-ic"><i class="fa-solid ${unread ? 'fa-envelope' : 'fa-envelope-open'}"></i></div>
-      <div class="mail-main"><div class="mail-top">${who}${badges}<span class="mail-time">${mailTime(l.at)}</span>${unread ? '<span class="mail-dot"></span>' : ''}</div>
+      <div class="mail-main"><div class="mail-top">${who}${badges}<span class="mail-time">${mailYearLabel(l) ? `<b>${mailYearLabel(l)}</b>` : ''}<span>${mailRealTime(l.at)}</span></span>${unread ? '<span class="mail-dot"></span>' : ''}</div>
       <div class="mail-prev">${(l.images || []).length ? `<i class="fa-regular fa-image"></i>${l.images.length > 1 ? `${l.images.length}장${l.text ? ' · ' : ''}` : ''}` : ''}${l.text ? mailEsc(l.text.replace(/\s+/g, ' ')) : (l.images || []).length === 1 ? '이미지' : ''}</div></div></div>`;
 }
 function openLetter(id) {
@@ -9438,7 +9531,7 @@ function mailLetterHtml(l, d) {
   const canDelete = mailTab !== 'all' || d.is_gm;
   return `<button class="mail-back" onclick="mailOpenId=null; renderMail()"><i class="fa-solid fa-chevron-left"></i> 목록으로</button>
     <div class="mail-letter">${mailEraLabel(l) ? `<div class="era">${mailEsc(mailEraLabel(l))}</div>` : ''}<div class="to">To.<b>${toName}</b></div>${l.text ? `<div class="txt">${mailEsc(l.text)}</div>` : ''}${(l.images || []).length ? `<div class="mail-imgs n${Math.min(l.images.length, 4)}">${l.images.map(u => `<a href="${mailEsc(u)}" target="_blank" rel="noopener"><img src="${mailEsc(u)}" alt="" loading="lazy"></a>`).join('')}</div>` : ''}
-      <div class="from">From.<b>${fromName}</b></div><div class="date">${mailTime(l.at)}</div></div>
+      <div class="from">From.<b>${fromName}</b></div><div class="date">${mailYearLabel(l) ? `<span class="y">${mailYearLabel(l)}</span>` : ''}<span class="r"><i class="fa-regular fa-clock"></i>${mailRealTime(l.at)} 발송</span></div></div>
     <div class="mail-actions"><span style="display:flex;align-items:center;gap:10px;">
       ${canDelete ? `<button class="mail-del" onclick="deleteLetter('${l.id}')"><i class="fa-solid fa-trash-can"></i> ${mailTab === 'all' ? '편지 지우기' : '내 목록에서 지우기'}</button>` : ''}
       ${many && mailTab === 'outbox' ? `<span class="mail-badge">${l.to_list.length}명 중 ${l.read_count || 0}명 읽음</span>` : ''}${l.anonymous ? '<span class="mail-badge">익명 편지</span>' : ''}${l.random ? '<span class="mail-badge">랜덤 편지</span>' : ''}</span>
@@ -9456,30 +9549,44 @@ function mailComposeHtml(d) {
   const q = mailDraft.q.trim().toLowerCase();
   const names = roster.filter(n => !q || n.toLowerCase().includes(q));
   const pick = mailDraft.mode === 'pick';
+  mailEnsureEra();
+  const era = mailEra(mailDraft.era);
+  const touch = window.matchMedia('(hover: none)').matches;
+  // ① 받는 사람 ② 연도 ③ 내용 순서로 칸을 나누고, 아래 보내기 줄은 늘 화면 아래에 붙어 있어요.
   return `<div class="mail-form">
-    <div><div class="mail-label">받는 사람</div>
+    <section class="mf-sec">
+      <header class="mf-h"><span class="mf-n">1</span><b>받는 사람</b><span class="mf-aside" id="mailToCnt">${mailToAside()}</span></header>
       <div class="mail-seg"><button class="${pick ? 'on' : ''}" onclick="mailDraft.mode='pick'; renderMail()"><i class="fa-solid fa-user"></i> 직접 고르기</button>
         <button class="${pick ? '' : 'on'}" onclick="mailDraft.mode='random'; renderMail()"><i class="fa-solid fa-shuffle"></i> 랜덤</button></div>
-      ${pick ? `<input type="text" style="margin-top:10px" placeholder="이름 검색" value="${mailEsc(mailDraft.q)}" oninput="mailDraft.q=this.value; mailRefreshNames()" autocomplete="off">
+      ${pick ? `<div class="mf-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="이름 검색" value="${mailEsc(mailDraft.q)}" oninput="mailDraft.q=this.value; mailRefreshNames()" autocomplete="off"></div>
         <div class="mail-picked" id="mailPicked">${mailPickedHtml()}</div>
         <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
-        : `<div class="mail-rand" style="margin-top:10px">등록된 캐릭터 중 한 명에게 무작위로 보내요. 누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</div>`}
-    </div>
-    <div><div class="mail-label">연도</div><div id="mailEraBox">${mailEraHtml()}</div></div>
-    <div><div class="mail-label">내용</div>
-      <textarea class="mail-text" id="mailText" maxlength="2000" placeholder="편지를 써 주세요. 이미지는 붙여넣기(Ctrl+V)나 끌어다 놓기로도 붙일 수 있어요." onpaste="mailOnPaste(event)"
+        : `<div class="mail-rand"><i class="fa-solid fa-shuffle"></i><span>등록된 캐릭터 중 한 명에게 무작위로 보내요.<br>누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</span></div>`}
+    </section>
+    <section class="mf-sec">
+      <header class="mf-h"><span class="mf-n">2</span><b>연도</b><span class="mf-aside">${era ? mailEsc(era.name) : ''}</span></header>
+      <div id="mailEraBox">${mailEraHtml()}</div>
+    </section>
+    <section class="mf-sec">
+      <header class="mf-h"><span class="mf-n">3</span><b>내용</b><span class="mf-aside mail-count" id="mailCount">${mailDraft.text.length} / 2000</span></header>
+      <textarea class="mail-text" id="mailText" maxlength="2000" placeholder="편지를 써 주세요." onpaste="mailOnPaste(event)"
         ondragover="event.preventDefault()" ondrop="if(event.dataTransfer.files.length){event.preventDefault(); mailAddImages(event.dataTransfer.files);}" oninput="mailDraft.text=this.value; document.getElementById('mailCount').textContent=this.value.length+' / 2000'">${mailEsc(mailDraft.text)}</textarea>
       <div class="mail-imgrow" id="mailImgs">${mailImagesHtml()}</div>
-      <input type="file" id="mailImgFile" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none" onchange="mailAddImages(this.files); this.value=''"></div>
+      <div class="mf-hint"><i class="fa-regular fa-image"></i>이미지는 ${MAIL_IMG_MAX}장까지 붙일 수 있어요${touch ? '.' : ' (붙여넣기 Ctrl+V · 끌어다 놓기도 돼요).'}</div>
+      <input type="file" id="mailImgFile" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none" onchange="mailAddImages(this.files); this.value=''">
+    </section>
     <div class="mail-foot">
-      ${pick ? `<span class="mail-anon off">이름을 밝혀서 보내요</span>`
+      ${pick ? `<span class="mail-anon off"><i class="fa-solid fa-signature"></i>이름을 밝혀서 보내요</span>`
         : `<label class="mail-anon"><input type="checkbox" ${mailDraft.anon ? 'checked' : ''} onchange="mailDraft.anon=this.checked"> 익명으로 보내기</label>`}
-      <span class="mail-count" id="mailCount">${mailDraft.text.length} / 2000</span>
       <button class="btn mail-send" id="mailSendBtn" onclick="sendLetter()"><i class="fa-solid fa-paper-plane"></i> 보내기</button>
     </div></div>`;
 }
+function mailToAside() {
+  if (mailDraft.mode !== 'pick') return '무작위 1명';
+  return mailDraft.to.length ? `<b>${mailDraft.to.length}명</b> 골랐어요` : '여러 명 고를 수 있어요';
+}
 function mailNamesHtml(names) {
-  if (!names.length) return '<span class="mail-me">찾는 이름이 없어요.</span>';
+  if (!names.length) return '<span class="mail-none">찾는 이름이 없어요.</span>';
   return names.map(n => `<button class="mail-name ${mailDraft.to.includes(n) ? 'on' : ''}" onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})">${mailDraft.to.includes(n) ? '<i class="fa-solid fa-check"></i> ' : ''}${mailEsc(n)}</button>`).join('');
 }
 // 직접 고르기는 여러 명을 고를 수 있어요 (한 사람에게 한 통씩 가요)
@@ -9489,8 +9596,8 @@ function mailToggleTo(n) {
   mailRefreshNames();
 }
 function mailPickedHtml() {
-  if (!mailDraft.to.length) return '<span class="mail-me">이름을 눌러 받는 사람을 골라요. 여러 명 고를 수 있어요.</span>';
-  return `<span class="mail-me">${mailDraft.to.length}명</span>` + mailDraft.to.map(n => `<span class="mail-chip">${mailEsc(n)}<button onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})" aria-label="빼기"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
+  if (!mailDraft.to.length) return '';
+  return mailDraft.to.map(n => `<span class="mail-chip">${mailEsc(n)}<button onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})" aria-label="빼기"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
 }
 function mailRefreshNames() {
   const el = document.getElementById('mailNames');
@@ -9498,6 +9605,7 @@ function mailRefreshNames() {
   const q = mailDraft.q.trim().toLowerCase();
   el.innerHTML = mailNamesHtml((mailData.roster || []).filter(n => n !== mailData.me && (!q || n.toLowerCase().includes(q))));
   const pk = document.getElementById('mailPicked'); if (pk) pk.innerHTML = mailPickedHtml();
+  const tc = document.getElementById('mailToCnt'); if (tc) tc.innerHTML = mailToAside();
 }
 function sendLetter() {
   const text = (mailDraft.text || '').trim();
@@ -9659,7 +9767,7 @@ function renderDorm() {
   box.dataset.view = dormView;
   renderDormTop();
   const body = document.getElementById('dormBody');
-  if (!dormData) { body.innerHTML = '<div class="dorm-empty"><i class="fa-solid fa-house"></i>불러오는 중…</div>'; return; }
+  if (!dormData) { body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '마이룸을 불러오는 중이에요'); return; }
   if (dormView === 'manage' && dormIsGm()) { body.innerHTML = dormManageHtml(); return; }
   if (dormView === 'room' && dormRoom) { renderDormRoom(body); syncDormMusic(); return; }
   body.innerHTML = dormHallsHtml();
@@ -9737,15 +9845,16 @@ function renderDormTop() {
     segs.push(`<span class="sep mid">▶</span><div class="seg mid">${P.no}차 ${mailEsc(P.name)} · ${mailEsc(P.unit)} ${(dormData.halls || []).length}개</div>`);
     if (mine) right = `<button class="dorm-tbtn primary" onclick="openDormRoom(${mailEsc(JSON.stringify(me))})" data-tip="내 방"><i class="fa-solid fa-door-open"></i><span class="t">내 방</span></button>`;
   }
-  const tools = `<button class="dorm-tbtn icon" onclick="openDormCredits()" data-tip="도트 자료 출처"><i class="fa-solid fa-circle-info"></i></button>`
-    + (dormIsGm() ? `<button class="dorm-tbtn icon ${dormView === 'manage' ? 'on' : ''}" onclick="setDormView(dormView === 'manage' ? 'halls' : 'manage')" data-tip="마이룸 관리"><i class="fa-solid fa-sliders"></i></button>` : '');
+  // 방 안에서는 출처 버튼 없이 꾸미기(취소 · 저장) 버튼만 둡니다. 출처는 목록 화면에서 볼 수 있어요.
+  const tools = (dormView === 'room' ? '' : `<button class="dorm-tbtn icon" onclick="openDormCredits()" data-tip="도트 자료 출처"><i class="fa-solid fa-circle-info"></i></button>`)
+    + (dormIsGm() && dormView !== 'room' ? `<button class="dorm-tbtn icon ${dormView === 'manage' ? 'on' : ''}" onclick="setDormView(dormView === 'manage' ? 'halls' : 'manage')" data-tip="마이룸 관리"><i class="fa-solid fa-sliders"></i></button>` : '');
   el.innerHTML = segs.join('') + `<div class="spacer"></div><div class="dorm-tools-r">${right}${tools}</div>`;
 }
 
 function dormHallsHtml() {
   const me = dormMe(), P = dormP();
   const halls = dormData.halls || [];
-  if (!halls.length) return `<div class="dorm-empty"><i class="fa-solid fa-building"></i>아직 ${mailEsc(josa(P.name, '이', '가'))} 없어요.<br>운영진이 ${mailEsc(josa(P.unit, '을', '를'))} 만들고 방을 배정하면 여기에 보여요.</div>`;
+  if (!halls.length) return emptyHtml('fa-building', `아직 ${mailEsc(josa(P.name, '이', '가'))} 없어요`, `운영진이 ${mailEsc(josa(P.unit, '을', '를'))} 만들고 방을 배정하면 여기에 보여요.`);
   return '<div class="dorm-halls">' + halls.map((h, hi) => {
     const n = (h.slots || []).filter(Boolean).length;
     const canRename = dormIsGm() || (me && (h.slots || []).includes(me));
@@ -9771,7 +9880,7 @@ function dormScale(frame, base) {
 }
 function renderDormRoom(body) {
   const r = dormRoom;
-  if (r.loading) { body.innerHTML = '<div class="dorm-empty">불러오는 중…</div>'; return; }
+  if (r.loading) { body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '방을 불러오는 중이에요'); return; }
   // 방명록을 쓰는 중(입력칸에 커서)이면 입력칸은 그대로 두고 나머지만 새로 그립니다.
   // 모바일은 키보드가 올라오면 화면 크기가 바뀌어 다시 그리게 되는데, 입력칸까지 새로 만들면 키보드가 바로 닫혀요.
   const gb = document.getElementById('dormGbText'), gbSide = body.querySelector('.dorm-side');
@@ -9989,7 +10098,7 @@ function dormGuestbookHtml(r) {
         ${canDel(e) ? `<button class="dorm-note-del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}
         <p>${mailEsc(e.text)}</p>
         <footer><i class="dot"></i><b>${mailEsc(e.author)}</b><span>${fmt(e.at)}${e.edited ? ' · 수정됨' : ''}</span></footer></article>`).join('')
-      : '<div class="dorm-gb-empty"><i class="fa-solid fa-feather-pointed"></i>아직 방명록이 없어요.</div>'}</div>
+      : emptyHtml('fa-feather-pointed', '아직 방명록이 없어요', me ? '첫 방명록을 남겨 보세요.' : '', null, true)}</div>
   </div>`;
 }
 
@@ -10194,7 +10303,7 @@ function renderDormGrid() {
       ${mine && canManage(a) ? `<button class="dorm-asset-edit" onclick="openDormAddModal('${a.id}')" data-tip="수정"><i class="fa-solid fa-pen"></i></button>` : ''}</div>`).join('');
   const addTile = mine ? `<button class="dorm-asset dorm-asset-add" onclick="openDormAddModal()"><i class="fa-solid fa-plus"></i><span>아이템 추가</span></button>` : '';
   el.innerHTML = (list.length || mine) ? `<div class="dorm-assets">${addTile}${tiles}</div>`
-    : `<div class="dorm-gb-empty"><i class="fa-solid fa-box-open"></i>${all.length ? '찾는 자료가 없어요.' : '이 종류의 도트 자료가 아직 없어요.'}</div>`;
+    : (all.length ? emptyHtml('fa-magnifying-glass', '찾는 자료가 없어요', '다른 세트나 이름으로 찾아보세요.', null, true) : emptyHtml('fa-box-open', '이 종류의 자료가 아직 없어요', '', null, true));
   const cnt = document.getElementById('dormItemCnt'); if (cnt) cnt.textContent = `${dormEdit.items.length} / 150`;
   renderDormEditBar();
 }
@@ -10332,7 +10441,7 @@ function openDormCredits() {
   document.getElementById('dormCreditBody').innerHTML = cr.length ? cr.map(c => `<div class="dorm-credit"><div class="t">${mailEsc(c.title)}</div>
     <div class="m">${c.author ? `제작 ${mailEsc(c.author)}` : ''}${c.license ? ` · ${mailEsc(c.license)}` : ''} · 자료 ${count(c.id)}개</div>
     ${/^https?:\/\//.test(c.url) ? `<div class="m"><a href="${mailEsc(c.url)}" target="_blank" rel="noopener">${mailEsc(c.url)}</a></div>` : ''}</div>`).join('')
-    : '<div class="dorm-empty" style="padding:30px 0">아직 등록된 출처가 없어요.</div>';
+    : emptyHtml('fa-circle-info', '아직 등록된 출처가 없어요', '', null, true);
 }
 
 // ---------- 관리 (운영진) ----------
@@ -11344,7 +11453,7 @@ function renderWorld() {
     ? `<button class="dorm-tbtn" onclick="worldEditMode=false; worldDraft=null; renderWorld()" data-tip="취소"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
        <button class="dorm-tbtn primary" onclick="saveWorld()" data-tip="저장"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`
     : `<button class="dorm-tbtn" onclick="startWorldEdit()" data-tip="맵 편집"><i class="fa-solid fa-pen-ruler"></i><span class="t">편집</span></button>`;
-  if (!worldData) { body.innerHTML = '<div class="wm-empty">불러오는 중…</div>'; return; }
+  if (!worldData) { body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '맵을 불러오는 중입니다'); return; }
   if (worldEditMode) { document.getElementById('worldTopSeg').textContent = '편집'; body.innerHTML = worldEditHtml(); return; }
   const places = worldData.places || [];
   if (!worldSel || !places.some(p => p.id === worldSel)) worldSel = (places.find(p => !p.locked) || places[0] || {}).id || null;
@@ -11445,7 +11554,7 @@ function setWorldUnlocked(k) {
 
 function worldMapHtml(places, sel) {
   const gm = worldIsGm(), n = worldData.unlocked || 0;
-  if (!places.length) return `<div class="wm-card"><div class="wm-empty"><i class="fa-solid fa-map"></i>아직 등록된 장소가 없습니다.${gm ? '<br>오른쪽 위 편집에서 장소를 추가해 주세요.' : ''}</div></div>`;
+  if (!places.length) return `<div class="wm-card">${emptyHtml('fa-map', '아직 등록된 장소가 없습니다', gm ? '오른쪽 위 편집에서 장소를 추가해 주세요.' : '장소가 공개되면 여기에 보입니다.')}</div>`;
   const nodes = places.map((p, idx) => {
     const locked = !!p.locked, gmlock = gm && p.chapter > n;
     const label = locked ? '???' : (p.en || p.name);
@@ -11460,7 +11569,7 @@ function worldDetailInner(sel) {
   const gm = worldIsGm(), n = worldData.unlocked || 0;
   let detail = '';
   if (sel && sel.locked) {
-    detail = `<div class="wm-empty"><i class="fa-solid fa-lock"></i>아직 해금되지 않은 장소입니다.${sel.chapter ? `<br>Chapter ${sel.chapter}에서 공개됩니다.` : ''}</div>`;
+    detail = emptyHtml('fa-lock', '아직 해금되지 않은 장소입니다', sel.chapter ? `Chapter ${sel.chapter}에서 공개됩니다.` : '', null, true);
   } else if (sel) {
     const tags = [sel.sub ? `<span class="tag pt">${worldEsc(sel.sub)}</span>` : '',
       sel.chapter ? `<span class="tag">Chapter ${sel.chapter}부터${gm && sel.chapter > n ? ' · 미공개' : ''}</span>` : ''].join('');
@@ -11600,7 +11709,7 @@ function worldEditHtml() {
       <button class="ops-btn icon" onclick="event.stopPropagation(); worldMove('places',${i},-1)" data-tip="앞으로"><i class="fa-solid fa-angle-left"></i></button>
       <button class="ops-btn icon" onclick="event.stopPropagation(); worldMove('places',${i},1)" data-tip="뒤로"><i class="fa-solid fa-angle-right"></i></button>
       <button class="ops-btn icon" onclick="event.stopPropagation(); worldDel('places',${i})" data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>`).join('');
-  const editor = !p ? '<div class="wm-empty">장소를 추가해 주세요.</div>' : `
+  const editor = !p ? emptyHtml('fa-location-dot', '장소를 추가해 주세요', '', null, true) : `
     <div class="ops-field"><span class="lb">아이콘 이미지</span><div class="wm-imgpick"><span class="pv" style="${p.image ? `background-image:url('${worldEsc(p.image)}')` : ''}"></span>
       <label class="ops-btn"><i class="fa-solid fa-image"></i> 이미지 삽입<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="worldPlaceImage(event,'${p.id}')"></label>
       ${p.image ? `<button class="ops-btn" onclick="worldDraft.places[${worldEditIdx}].image=null; renderWorld()">이미지 삭제</button>` : ''}</div></div>

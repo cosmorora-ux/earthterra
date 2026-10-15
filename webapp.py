@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.32"
+SERVER_BUILD = "2026-10-13.33"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -1401,8 +1401,8 @@ def on_set_my_skill_log(data):
             entry["nation"] = nation
         elif not nation:
             entry.pop("nation", None)
-    # 나이 : 본인도 고칠 수 있어요(1차 기준 13~16세)
-    if "age" in data:
+    # 나이 : 운영진만 정할 수 있어요(1차 기준 13~16세). 참가자가 보낸 값은 무시합니다.
+    if "age" in data and _require_gm_or_guest_gm(request.sid) is not None:
         age = mailbox_mod.clean_age(data.get("age"))
         if age is not None:
             entry["age"] = age
