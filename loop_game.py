@@ -5,11 +5,11 @@ loop_game.py
 PLAY 룸 「LOOP : 생존 시뮬레이션」 진행 상태.
 
 - 캐릭터마다 지금 생애(run) 하나와 지난 생애 기록(lives)을 가집니다. 모든 PLAY 룸이 같은 기록을 씁니다.
-- 생명은 5로 시작해 0~5 사이를 오갑니다(최대 5). 0이 되면 사망합니다.
+- 체력과 정신은 각각 5로 시작해 0~5 사이를 오갑니다. 체력이 0이면 사망, 정신이 0이면 정신 붕괴입니다.
 - 출신(진영)에 따라 이야기 속 {조국} · {적} 자리가 바뀝니다.
 - 시대 I → V 순서로 사건이 이어지고, V의 사건을 모두 견디면 '전쟁 이후' 엔딩입니다.
 - 죽으면 '생애 종료'(기록만 남김) 또는 '루프 진입'(VI. 회귀 → IV. 전쟁 → V. 종전으로 다시)을 고릅니다.
-- 생명 변동은 고른 뒤에만 알려 줍니다(고르기 전 화면에는 선택지 문장만 보냅니다).
+- 체력 · 정신 변동은 고른 뒤에만 알려 줍니다(고르기 전 화면에는 선택지 문장만 보냅니다).
 loop_runs.json에 저장됩니다(서버 컴퓨터별 실데이터라 git에 올리지 않음).
 """
 
@@ -20,10 +20,11 @@ import threading
 import time
 
 import safeio
-from loop_events import ERAS, EVENTS, MOOD, DEATH, ENDING, INTRO, ERA_RISK, RISK_TEXT, LUCK_TEXT
+from loop_events import ERAS, EVENTS, MOOD, MOOD_MIND, DEATH, ENDING, INTRO, ERA_RISK, RISK_TEXT, LUCK_TEXT
 
 RUNS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "loop_runs.json")
 HP_START, HP_MAX, HP_MIN = 5, 5, 0
+MIND_START, MIND_MAX = 5, 5   # 정신 : 0이 되면 무너집니다(정신 붕괴)
 MAX_LIVES = 30            # 캐릭터마다 남기는 지난 생애 수
 RESONANCE = ("res", "non")
 EVENT_BY_ID = {e["id"]: e for e in EVENTS}
@@ -48,9 +49,9 @@ def _fmt(text, run):
     return text.replace("{조국}", home).replace("{적}", enemy)
 
 
-def _mood(hp):
-    for limit, lines in MOOD:
-        if hp >= limit:
+def _mood(v, table=MOOD):
+    for limit, lines in table:
+        if v >= limit:
             return lines
     return []
 
@@ -114,7 +115,7 @@ class LoopBook:
             self.save()
 
     def _new_run(self, res, loop_no, eras, life_no, tags=(), memory=None):
-        return {"res": res, "hp": HP_START, "eras": list(eras), "era_i": 0, "step": 0, "tags": list(tags),
+        return {"res": res, "hp": HP_START, "mind": MIND_START, "eras": list(eras), "era_i": 0, "step": 0, "tags": list(tags),
                 "seen": [], "log": [], "event": None, "status": "event", "result": None, "death": None,
                 "loop_no": loop_no, "life_no": life_no, "memory": memory, "started": time.time(), "count": 0}
 
@@ -154,8 +155,9 @@ class LoopBook:
             if not isinstance(idx, int) or not 0 <= idx < len(ev["choices"]):
                 raise LoopError("선택지를 다시 골라 주세요.")
             ch = ev["choices"][idx]
-            before = run["hp"]
+            before, mbefore = run["hp"], run.get("mind", MIND_START)
             run["hp"] = max(HP_MIN, min(HP_MAX, before + ch["hp"]))
+            run["mind"] = max(0, min(MIND_MAX, mbefore + ch.get("mind", 0)))
             for t in ch.get("tags", []):
                 if t not in run["tags"]:
                     run["tags"].append(t)
@@ -163,28 +165,32 @@ class LoopBook:
             for x in ev.get("extra", []):
                 if x.get("at") == "result" and x.get("choice") == idx and _when_ok(x.get("when", {}), run):
                     text += [_fmt(t, run) for t in x["text"]]
-            # 시대의 위험 / 행운 : 선택과 상관없이 덮치는 일. 이미 쓰러진 경우는 건너뜁니다.
+            # 시대의 위험 / 행운 : 선택과 상관없이 덮치는 일(위험 문장마다 체력 또는 정신). 이미 쓰러진 경우는 건너뜁니다.
             twist = None
-            if run["hp"] > HP_MIN:
+            if run["hp"] > HP_MIN and run["mind"] > 0:
                 risk, luck = ERA_RISK.get(ev["era"], (0, 0))
                 roll = random.random()
                 if roll < risk:
-                    run["hp"] = max(HP_MIN, run["hp"] - 1)
-                    twist = {"kind": "risk", "text": random.choice(RISK_TEXT.get(ev["era"]) or ["예기치 못한 일이 겹쳤다."])}
-                elif roll < risk + luck and run["hp"] < HP_MAX:
-                    run["hp"] += 1
-                    twist = {"kind": "luck", "text": random.choice(LUCK_TEXT)}
-            run["result"] = {"choice": idx, "delta": run["hp"] - before, "base": run["hp"] - before - (0 if not twist else (-1 if twist["kind"] == "risk" else 1)),
-                             "twist": twist, "text": text}
-            run["log"].append({"id": ev["id"], "title": ev["title"], "era": ev["era"], "choice": ch["label"],
-                               "delta": run["hp"] - before, "hp": run["hp"]})
+                    stat, line = random.choice(RISK_TEXT.get(ev["era"]) or [("hp", "예기치 못한 일이 겹쳤다.")])
+                    run[stat] = max(0, run[stat] - 1)
+                    twist = {"kind": "risk", "stat": stat, "text": line}
+                elif roll < risk + luck:
+                    room = [k for k, mx in (("hp", HP_MAX), ("mind", MIND_MAX)) if run[k] < mx]
+                    if room:
+                        stat = min(room, key=lambda k: run[k])   # 더 모자란 쪽을 채워요
+                        run[stat] += 1
+                        twist = {"kind": "luck", "stat": stat, "text": random.choice(LUCK_TEXT[stat])}
+            dh, dm = run["hp"] - before, run["mind"] - mbefore
+            run["result"] = {"choice": idx, "delta": dh, "dmind": dm, "twist": twist, "text": text}
+            run["log"].append({"id": ev["id"], "title": ev["title"], "era": ev["era"], "choice": _fmt(ch["label"], run),
+                               "delta": dh, "dmind": dm, "hp": run["hp"], "mind": run["mind"]})
             run["step"] += 1
             run["count"] += 1
-            if run["hp"] <= HP_MIN:
+            if run["hp"] <= HP_MIN or run["mind"] <= 0:
                 run["status"] = "dead"
-                kind = ev.get("kind", "life")
+                kind = ev.get("kind", "life") if run["hp"] <= HP_MIN else "mind"
                 if "LOOP_CONTACT" in run["tags"] or run["loop_no"] > 0:
-                    kind = "loop" if kind == "life" or random.random() < 0.5 else kind
+                    kind = "loop" if kind == "life" or (kind != "mind" and random.random() < 0.5) else kind
                 run["death"] = {"kind": kind if kind in DEATH else "life", "at": ev["title"], "era": ev["era"]}
             else:
                 run["status"] = "result"
@@ -201,7 +207,7 @@ class LoopBook:
     def _archive(self, e, run, outcome):
         era_last = run["log"][-1]["era"] if run["log"] else run["eras"][0]
         e["lives"].insert(0, {"life_no": run["life_no"], "loop_no": run["loop_no"], "res": run["res"], "outcome": outcome,
-                              "count": run["count"], "era": era_last, "hp": run["hp"],
+                              "count": run["count"], "era": era_last, "hp": run["hp"], "mind": run.get("mind"),
                               "death": run.get("death"), "log": run["log"], "ended": time.time()})
         del e["lives"][MAX_LIVES:]
 
@@ -275,13 +281,13 @@ class LoopBook:
         with self.lock:
             e = self._entry(name) if name in self.data else {"run": None, "lives": [], "loops": 0}
             run = e["run"]
-            out = {"intro": INTRO, "hp_max": HP_MAX, "hp_start": HP_START, "loops": e.get("loops", 0),
+            out = {"intro": INTRO, "hp_max": HP_MAX, "hp_start": HP_START, "mind_max": MIND_MAX, "loops": e.get("loops", 0),
                    "lives": [{k: l[k] for k in ("life_no", "loop_no", "res", "outcome", "count", "era", "hp", "death", "log", "ended")} for l in e["lives"][:MAX_LIVES]],
                    "eras": [self._era_view(i) for i in sorted(ERAS)], "run": None}
             if not run:
                 return out
-            r = {"status": run["status"], "hp": run["hp"], "res": run["res"], "nation": run.get("nation", ""), "loop_no": run["loop_no"], "life_no": run["life_no"],
-                 "count": run["count"], "log": run["log"], "mood": _mood(run["hp"]), "eras": run["eras"], "memory": run.get("memory")}
+            r = {"status": run["status"], "hp": run["hp"], "mind": run.get("mind", MIND_START), "res": run["res"], "nation": run.get("nation", ""), "loop_no": run["loop_no"], "life_no": run["life_no"],
+                 "count": run["count"], "log": run["log"], "mood": _mood(run["hp"]), "mood_mind": _mood(run.get("mind", MIND_START), MOOD_MIND), "eras": run["eras"], "memory": run.get("memory")}
             era_now = run["eras"][min(run["era_i"], len(run["eras"]) - 1)]
             r["era"] = self._era_view(era_now)
             r["era_step"] = run["step"]
@@ -289,7 +295,7 @@ class LoopBook:
             if run["status"] in ("event", "result", "dead") and run["event"]:
                 r["event"] = self._event_view(run)
             if run["result"] is not None and run["status"] in ("result", "dead"):
-                r["result"] = {k: run["result"].get(k) for k in ("choice", "delta", "base", "twist", "text")}
+                r["result"] = {k: run["result"].get(k) for k in ("choice", "delta", "dmind", "twist", "text")}
             if run["status"] == "dead" and run.get("death"):
                 d = DEATH[run["death"]["kind"]]
                 r["death"] = {"title": d["title"], "text": d["text"], "at": run["death"]["at"], "kind": run["death"]["kind"]}
