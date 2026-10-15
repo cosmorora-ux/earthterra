@@ -3204,9 +3204,11 @@
   /* 행동 전 샤인 · 스킬 ✶ · 전조 줄무늬 · 컷인 효과는 전투 상황을 알려주는 표시라, 기기의 '애니메이션 줄이기' 설정과 상관없이 항상 움직입니다. */
   /* 격자 : 내 팀 차례 + 행동 전 = 샤인(빛이 쉬지 않고 천천히 훑고 지나감), 행동을 마치면 꺼짐. 이동 완료(행동 대기) = 모서리 작은 삼각형 */
   .gmap .gcell.ready::before { content:""; position:absolute; inset:0; z-index:7; pointer-events:none;
-    background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.18) 50%, transparent 58%) no-repeat; background-size:260% 100%;
-    animation: gReadyShine 3.2s linear infinite; animation-delay: var(--shine-phase, 0s); }
-  @keyframes gReadyShine { 0% { background-position:100% 0; } 100% { background-position:0% 0; } }
+    background:
+      linear-gradient(115deg, transparent 42%, rgba(255,255,255,.18) 50%, transparent 58%) 50% 0 / 260% 100% no-repeat,
+      linear-gradient(135deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 50%) 0 0 / 100% 100% no-repeat;
+    animation: gReadyShine 3.2s linear infinite !important; animation-delay: var(--shine-phase, 0s); animation-play-state: running !important; }
+  @keyframes gReadyShine { 0% { background-position:100% 0, 0 0; } 100% { background-position:0% 0, 0 0; } }
   /* 칸 모서리 표시 : 왼쪽 위 빨간 삼각형 = 받을 피해가 있음(피해 보류), 오른쪽 위 흰 삼각형 = 보호 · 회복 효과를 받는 중 */
   .gmap .gmk { position:absolute; top:0; z-index:9; width:0; height:0; border-style:solid; pointer-events:none; }
   .gmap .gmk.hurt { left:0; border-width:8px 8px 0 0; border-color: var(--role-스트라이커) transparent transparent transparent; }
@@ -3412,9 +3414,15 @@
   .char-card.turn-pending, .char-card.v2.turn-pending { border-color: var(--card-border); }
   .compact-card.turn-pending { outline:none; }
   .char-card, .compact-card { position:relative; }
+  /* 애니메이션을 꺼 둔 컴퓨터(윈도우 '애니메이션 효과' 끔 · 동작 줄이기)에서도 보이게 :
+     - 움직이는 빛 줄기(가운데에서 시작) + 늘 깔려 있는 은은한 광택 · 안쪽 빛 테두리를 같이 둡니다.
+     - 동작 줄이기 설정이어도 애니메이션을 끄지 않습니다(!important). */
   .turn-shine { position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:inherit;
-    background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.16) 50%, transparent 60%) no-repeat; background-size:260% 100%;
-    animation: gReadyShine 3.2s linear infinite; }
+    background:
+      linear-gradient(115deg, transparent 40%, rgba(255,255,255,.16) 50%, transparent 60%) 50% 0 / 260% 100% no-repeat,
+      linear-gradient(135deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,0) 45%) 0 0 / 100% 100% no-repeat;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), inset 0 0 24px rgba(255,255,255,.05);
+    animation: gReadyShine 3.2s linear infinite !important; animation-play-state: running !important; }
   .char-card.v2.selected-target, .char-card.selected-target { border-color: var(--point) !important; box-shadow: 0 0 0 1px var(--point), 0 0 18px rgba(var(--point-rgb), .25) !important; }
   .compact-card.selected-target { outline:1px solid var(--point); }
   /* 커맨드 보내기(과녁) 버튼 : 못 누를 때는 어두운 포인트 컬러 대신 무채색 */
@@ -6537,7 +6545,14 @@ setChatFilter('general');
 // 하나뿐이라, 탭을 옮길 때마다 해당 탭의 마운트 지점으로 DOM을 그대로 옮겨서 재사용합니다.
 // 입력창은 탭과 무관하게 항상 같은 자리(패널 맨 아래)에 고정되어 계속 보입니다.
 const MEMBER_TAB_TITLES = { chat: 'Chat', log: 'Log', meeting: 'Council', spectate: 'Spectators' };
+// 탭마다 보던 스크롤 자리를 기억 : 다시 오면 보던 자리 그대로, 맨 아래(최신)를 보고 있었거나 처음 열면 최신 대화로.
+const memberScroll = {};
 function setMemberTab(view) {
+  const prevView = typeof currentMemberView !== 'undefined' ? currentMemberView : null;
+  const prevEl = prevView ? activeChatScroller() : null;
+  if (prevView && prevEl && prevEl.offsetParent) {
+    memberScroll[prevView] = { top: prevEl.scrollTop, bottom: prevEl.scrollHeight - prevEl.scrollTop - prevEl.clientHeight < 40 };
+  }
   currentMemberView = view;
   setTimeout(updateJumpBottom, 0);  // 탭을 바꾸면 그 탭의 스크롤 위치로 '맨 아래로' 버튼을 다시 판단
   const titleEl = document.getElementById('memberTitle');
@@ -6573,6 +6588,13 @@ function setMemberTab(view) {
   } else if (view === 'chat' && chatFilter !== 'general') {
     setChatFilter('general');
   }
+  const restore = () => {
+    const el = activeChatScroller(); if (!el) return;
+    const st = memberScroll[view];
+    el.scrollTop = !st || st.bottom ? el.scrollHeight : Math.min(st.top, el.scrollHeight);
+    updateJumpBottom();
+  };
+  restore(); requestAnimationFrame(restore);
 }
 setMemberTab('chat');
 
