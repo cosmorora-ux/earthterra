@@ -4541,7 +4541,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.34";
+const EXPECTED_SERVER_BUILD = "2026-10-13.35";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -9582,7 +9582,7 @@ function mailItemHtml(l) {
     else if (mailTab === 'outbox') who = (l.to_list || []).length > 1 ? `<span class="mail-who">To. ${mailEsc(l.to_list[0])} 외 ${l.to_list.length - 1}명</span>`
       : l.to ? `<span class="mail-who">To. ${mailEsc(l.to)}</span>` : '<span class="mail-who anon">To. 누군가 (랜덤)</span>';
     else who = `<span class="mail-who">${mailEsc(l.from)} → ${mailEsc(l.to)}</span>`;
-    const badges = (l.anonymous && mailTab !== 'inbox' ? '<span class="mail-badge">익명</span>' : '') + (l.random && mailTab !== 'outbox' ? '<span class="mail-badge">랜덤</span>' : '');
+    const badges = (l.anonymous && mailTab !== 'inbox' ? '<span class="mail-badge">익명</span>' : '') + (l.random && mailTab !== 'outbox' ? '<span class="mail-badge">랜덤</span>' : '') + (mailTab === 'outbox' && l.random && (l.send_count || 1) > 1 ? `<span class="mail-badge">${l.send_count}통</span>` : '');
     return `<div class="mail-item ${unread ? 'unread' : ''}" onclick="openLetter('${l.id}')">
       <div class="mail-ic"><i class="fa-solid ${unread ? 'fa-envelope' : 'fa-envelope-open'}"></i></div>
       <div class="mail-main"><div class="mail-top">${who}${badges}<span class="mail-time">${mailYearLabel(l) ? `<b>${mailYearLabel(l)}</b>` : ''}<span>${mailRealTime(l.at)}</span></span>${unread ? '<span class="mail-dot"></span>' : ''}</div>

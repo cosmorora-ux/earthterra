@@ -157,11 +157,11 @@ class Mailbox:
                     l["hide_to"] = True
                 if l["from"] == name:
                     l["hide_from"] = True
-                    # 한 번에 여러 명에게 보낸 편지는 보낸 편지함에서 한 통이라, 지우면 같이 지웁니다.
-                    if l.get("batch"):
-                        for x in self.letters:
-                            if x.get("batch") == l["batch"] and x["from"] == name:
-                                x["hide_from"] = True
+                    # 같은 내용의 편지(여러 명에게 보냈거나 따로따로 같은 글을 보낸 것)는 보낸 편지함에서 한 통이라, 지우면 같이 지웁니다.
+                    key = self._same_key(l)
+                    for x in self.letters:
+                        if x["from"] == name and self._same_key(x) == key:
+                            x["hide_from"] = True
                 gone = [x for x in self.letters if x["hide_to"] and x["hide_from"]]
                 self.letters = [x for x in self.letters if not (x["hide_to"] and x["hide_from"])]
                 self._forget_images(gone)
@@ -182,6 +182,12 @@ class Mailbox:
             except OSError:
                 pass
 
+    @staticmethod
+    def _same_key(l):
+        """보낸 편지함에서 한 통으로 묶는 기준 : 내용(글 · 이미지) · 시기 · 연도 · 익명/랜덤이 모두 같으면 같은 편지."""
+        return (l.get("text") or "", tuple(l.get("images") or ()), l.get("era"), l.get("year"),
+                bool(l.get("anonymous")), bool(l.get("random")))
+
     # ---- 화면에 보낼 목록 (익명/랜덤은 보는 사람에 따라 가립니다) ----
     @staticmethod
     def _view(l, me, is_gm):
@@ -194,24 +200,28 @@ class Mailbox:
 
     def payload(self, me, is_gm=False):
         inbox = [self._view(l, me, is_gm) for l in self.letters if l["to"] == me and not l["hide_to"]]
+        # 보낸 편지함 : 같은 내용이면(한 번에 여러 명 · 따로따로 보낸 같은 글 모두) 한 통으로 묶고, 받는 사람을 모아 보여요.
         outbox = []
-        batches = {}
+        groups = {}
         for l in self.letters:
             if l["from"] != me or l["hide_from"]:
                 continue
             v = self._view(l, me, is_gm)
-            v["to_list"] = [v["to"]] if v["to"] else []
-            v["read_count"] = 1 if l["read"] else 0
-            b = l.get("batch")
-            if b and b in batches:
-                g = batches[b]
-                if v["to"]:
-                    g["to_list"].append(v["to"])
-                g["read_count"] += v["read_count"]
+            key = self._same_key(l)
+            g = groups.get(key)
+            if g is None:
+                v["to_list"] = [v["to"]] if v["to"] else []
+                v["read_count"] = 1 if l["read"] else 0
+                v["send_count"] = 1
+                groups[key] = v
+                outbox.append(v)
                 continue
-            if b:
-                batches[b] = v
-            outbox.append(v)
+            g["send_count"] += 1
+            if v["to"] and v["to"] not in g["to_list"]:
+                g["to_list"].append(v["to"])
+                g["read_count"] += 1 if l["read"] else 0
+            g["at"] = max(g["at"], v["at"])  # 가장 최근에 보낸 시각
+        outbox.sort(key=lambda v: v["at"])
         data = {"me": me, "inbox": inbox[::-1], "outbox": outbox[::-1], "eras": eras_payload(),
                 "unread": sum(1 for l in inbox if not l["read"])}
         if is_gm:
