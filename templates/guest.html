@@ -2371,17 +2371,22 @@
   .dorm-gb-write .row { display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
   .dorm-gb-write .n { font-size:12px; color: var(--muted); }
   .dorm-tbtn.sm { height:32px; padding:0 14px; font-size:13px; }
-  .dorm-gb-list { display:flex; flex-direction:column; gap:10px; }
-  .dorm-note { position:relative; padding:14px 16px 12px; border-radius:12px; background: rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.05);
-    border-top:2px solid var(--nc); }
-  .dorm-note.mine { background: rgba(var(--point-rgb),.07); }
-  .dorm-note .no { font-size:11.5px; font-weight:700; color: var(--muted); letter-spacing:.06em; font-variant-numeric: tabular-nums; }
-  .dorm-note p { margin:6px 0 10px; font-size:14.5px; line-height:1.7; color:#e6e6ea; white-space:pre-wrap; word-break:break-word; }
-  .dorm-note footer { display:flex; align-items:center; gap:6px; justify-content:flex-end; font-size:12px; color: var(--muted); }
-  .dorm-note footer .dot { width:6px; height:6px; border-radius:50%; background: var(--nc); }
-  .dorm-note footer b { color:#cfcfd4; font-weight:700; margin-right:4px; }
-  .dorm-note-del { position:absolute; top:8px; right:8px; width:24px; height:24px; border:none; border-radius:6px; background:none; color: var(--muted); cursor:pointer; opacity:0; font-size:12px; }
+  .dorm-gb-list { display:flex; flex-direction:column; gap:8px; }
+  /* 방명록 한 장 : 로그창 블록과 같은 모양(상자 · 윗선 빛 한 줄 · 아이콘 칸 + 글 칸, 첫 줄 흰 굵은 글자 · 본문 회색) */
+  .dorm-note { position:relative; padding:9px 12px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.06);
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)); --lb-glow: var(--nc); }
+  .dorm-note::before { content:""; position:absolute; left:16px; right:16px; top:-1px; height:1px; pointer-events:none;
+    background: linear-gradient(90deg, transparent, var(--lb-glow), transparent); }
+  .dorm-note.mine { --lb-glow: var(--point); }
+  .dorm-note .gn-h { display:grid; grid-template-columns:20px minmax(0,1fr) auto auto; column-gap:6px; align-items:baseline; }
+  .dorm-note .gn-h .li { text-align:center; font-size:11px; color:#d7d8de; opacity:.9; }
+  .dorm-note .gn-h b { color:#fff; font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dorm-note .gn-h .t { font-size:12px; color: var(--muted); font-weight:400; margin-left:6px; }
+  .dorm-note .gn-h .no { font-size:11px; font-weight:700; color: var(--muted); letter-spacing:.04em; font-variant-numeric: tabular-nums; opacity:.8; }
+  .dorm-note p { margin:4px 0 0 26px; font-size:.94em; line-height:1.65; color:#c8cad0; white-space:pre-wrap; word-break:break-word; }
+  .dorm-note-del { width:22px; height:22px; margin-left:4px; border:none; border-radius:6px; background:none; color: var(--muted); cursor:pointer; opacity:0; font-size:11px; align-self:center; }
   .dorm-note:hover .dorm-note-del { opacity:1; }
+  @media (hover:none) { .dorm-note-del { opacity:.7; } }
   .dorm-note-del:hover { color: var(--accent-red); background: rgba(255,255,255,.06); }
   .dorm-asset { aspect-ratio:1; border-radius:8px; background:#0e0e11 center/contain no-repeat; background-origin:content-box; padding:6px; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); cursor:pointer; }
   .dorm-asset:hover { border-color: rgba(255,255,255,.2); }
@@ -10104,10 +10109,10 @@ function dormGuestbookHtml(r) {
       <div class="row"><span class="n">${mine ? '내 방명록 고치기' : '방명록 쓰기'}</span><button class="dorm-tbtn primary sm" onclick="writeDormGuestbook()">${mine ? '고치기' : '남기기'}</button></div></div>`
       : ''}
     <div class="dorm-side-body dorm-gb-list">${list.length ? list.map((e, i) => `<article class="dorm-note ${e.author === me ? 'mine' : ''}" style="--nc:${color(e.author)}">
-        <span class="no">No.${String(list.length - i).padStart(2, '0')}</span>
-        ${canDel(e) ? `<button class="dorm-note-del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}
-        <p>${mailEsc(e.text)}</p>
-        <footer><i class="dot"></i><b>${mailEsc(e.author)}</b><span>${fmt(e.at)}${e.edited ? ' · 수정됨' : ''}</span></footer></article>`).join('')
+        <div class="gn-h"><i class="li fa-solid fa-feather-pointed"></i><b>${mailEsc(e.author)}<span class="t">${fmt(e.at)}${e.edited ? ' · 수정됨' : ''}</span></b>
+          <span class="no">No.${String(list.length - i).padStart(2, '0')}</span>
+          ${canDel(e) ? `<button class="dorm-note-del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-xmark"></i></button>` : '<span></span>'}</div>
+        <p>${mailEsc(e.text)}</p></article>`).join('')
       : emptyHtml('fa-feather-pointed', '아직 방명록이 없어요', me ? '첫 방명록을 남겨 보세요.' : '', null, true)}</div>
   </div>`;
 }
