@@ -95,7 +95,7 @@ class Mailbox:
     def save(self):
         safeio.write_json(self.path, {"letters": self.letters}, indent=1)
 
-    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True, images=(), dry_run=False, era=None, year=None, batch=None):
+    def send(self, sender, to, text, anonymous=False, random_pick=False, candidates=(), check_cooldown=True, images=(), dry_run=False, era=None, year=None, batch=None, exclude=()):
         text = (text or "").strip()
         images = list(images or [])[:MAX_IMAGES]
         if not text and not images:
@@ -107,14 +107,13 @@ class Mailbox:
             if check_cooldown and now - self._last_send.get(sender, 0) < SEND_COOLDOWN:
                 raise MailError("조금 있다가 다시 보내 주세요.")
             if random_pick:
-                pool = [c for c in candidates if c != sender]
+                pool = [c for c in candidates if c != sender and c not in exclude]  # 랜덤 여러 통은 서로 다른 사람에게
                 if not pool:
                     raise MailError("편지를 받을 수 있는 캐릭터가 없어요.")
                 to = random.choice(pool)
             elif not to or to not in candidates:
                 raise MailError("받는 사람을 찾을 수 없어요.")
-            if to == sender:
-                raise MailError("자기 자신에게는 보낼 수 없어요.")
+            # 나에게 보내기(테스트용)는 직접 고르기에서만 됩니다. 랜덤은 나를 뽑지 않아요.
             if dry_run:  # 보낼 수 있는지만 확인(첨부 이미지를 저장하기 전에)
                 return None
             letter = {

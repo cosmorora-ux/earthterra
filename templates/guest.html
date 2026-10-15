@@ -1642,8 +1642,24 @@
     background: linear-gradient(180deg, #19191d 0%, #141417 100%); }
   .mail-letter .to { font-size:13px; color: var(--muted); margin-bottom:18px; }
   .mail-letter .era { font-size:12px; color: var(--muted); letter-spacing:.02em; margin-bottom:10px; }
-  .mail-group { font-size:12px; font-weight:700; color: var(--muted); padding:14px 4px 6px; letter-spacing:.02em; }
-  .mail-group:first-child { padding-top:2px; }
+  /* 편지함 묶음 : 리뉴얼 기간(제목) → 空歷 연도(부제목) → 블록 (로그창처럼 은은한 상자 + 위쪽 빛줄) */
+  .mail-list { gap:0; }
+  .mail-grp + .mail-grp { margin-top:22px; }
+  .mg-h { font-size:15px; font-weight:800; color: var(--text); padding:0 4px; letter-spacing:.01em; }
+  .mg-y { font-size:12px; font-weight:600; color: var(--muted); padding:10px 4px 6px; font-variant-numeric: tabular-nums; }
+  .mg-h + .mg-block { margin-top:8px; }
+  .mg-block { position:relative; border-radius:16px; background: rgba(255,255,255,.025); overflow:hidden; }
+  .mg-block::before { content:''; position:absolute; left:16px; right:16px; top:0; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.55), transparent); }
+  .mg-block .mail-item { border:none; border-radius:0; background:transparent; }
+  .mg-block .mail-item + .mail-item { border-top:1px solid rgba(255,255,255,.06); }
+  .mg-block .mail-item:hover { background: rgba(255,255,255,.04); }
+  /* 랜덤 편지 받는 사람 수 · 나에게 칩 */
+  .mail-rcount { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  .mail-rcount > span { font-size:13px; color: var(--muted); margin-right:4px; }
+  .mail-rcount button { min-width:46px; padding:0 10px; height:34px; border-radius:10px; border:1px solid transparent; background: rgba(255,255,255,.05); color: var(--muted); font-size:13px; font-weight:600; cursor:pointer; font-variant-numeric: tabular-nums; }
+  .mail-rcount button:hover { color: var(--text); background: rgba(255,255,255,.08); }
+  .mail-rcount button.on { color:#fff; background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); }
+  .mail-name.self { font-weight:700; }
   .mail-eras { display:flex; flex-wrap:wrap; gap:6px; }
   .mail-eras button { height:34px; padding:0 14px; border-radius:10px; border:1px solid transparent; background: rgba(255,255,255,.05); color: var(--muted); font-size:13px; cursor:pointer; }
   .mail-eras button:hover { color: var(--text); background: rgba(255,255,255,.08); }
@@ -4598,7 +4614,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.38";
+const EXPECTED_SERVER_BUILD = "2026-10-13.39";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -9495,7 +9511,7 @@ var Weather = (function () {
 // 우체통 : 캐릭터끼리 편지. 받는 사람 지정 / 랜덤, 익명 보내기. 운영진은 전체 편지를 볼 수 있습니다.
 // ==================================================================
 let mailData = null, mailTab = 'inbox', mailOpenId = null;
-const mailDraft = { mode: 'pick', to: [], q: '', anon: true, text: '', images: [], era: null, year: null, noYear: false };
+const mailDraft = { mode: 'pick', to: [], q: '', anon: true, text: '', images: [], era: null, year: null, noYear: false, randomCount: 1 };
 // 편지의 시기 : 대분류(1차 러닝 · 1~2차 리뉴얼 · 2차 러닝 · 2~3차 리뉴얼 · 3차 기간) → 리뉴얼 기간만 연도를 고릅니다.
 // 목록은 서버(mailbox.ERAS)가 보내 주고, 처음에는 지금 마이룸 기간의 러닝을 골라 둡니다.
 function mailEras() { return (mailData && mailData.eras) || []; }
@@ -9649,13 +9665,21 @@ function renderMail() {
   // 시기(대분류 · 연도) 순으로 쌓기 : 늦은 시기가 위, 같은 시기 안에서는 최근 편지가 위. 시기가 없는 옛 편지는 맨 아래.
   const eraIdx = l => { const i = mailEras().findIndex(e => e.id === l.era); return i < 0 ? -1 : i; };
   const sorted = list.slice().sort((a, b) => (eraIdx(b) - eraIdx(a)) || ((b.year || 0) - (a.year || 0)) || (b.at - a.at));
-  let lastGroup = null;
-  body.innerHTML = '<div class="mail-list">' + sorted.map(l => {
-    const g = mailEraLabel(l) || '시기 없음';
-    const head = g !== lastGroup ? `<div class="mail-group">${mailEsc(g)}</div>` : '';
-    lastGroup = g;
-    return head + mailItemHtml(l);
-  }).join('') + '</div>';
+  // 리뉴얼 기간 = 제목, 空歷 연도 = 부제목, 그 연도의 편지들은 블록 하나에 담습니다.
+  const groups = [];
+  sorted.forEach(l => {
+    const e = mailEra(l.era);
+    const eraName = e ? e.name : '시기 없음';
+    const yearName = e ? (l.year != null ? `空歷 ${l.year}年` : '연도 없음') : '';
+    let g = groups[groups.length - 1];
+    if (!g || g.era !== eraName) { g = { era: eraName, years: [] }; groups.push(g); }
+    let y = g.years[g.years.length - 1];
+    if (!y || y.name !== yearName) { y = { name: yearName, items: [] }; g.years.push(y); }
+    y.items.push(l);
+  });
+  body.innerHTML = '<div class="mail-list">' + groups.map(g => `<section class="mail-grp"><div class="mg-h">${mailEsc(g.era)}</div>`
+    + g.years.map(y => (y.name ? `<div class="mg-y">${mailEsc(y.name)}</div>` : '') + `<div class="mg-block">${y.items.map(mailItemHtml).join('')}</div>`).join('')
+    + '</section>').join('') + '</div>';
 }
 function mailItemHtml(l) {
     const unread = mailTab === 'inbox' && !l.read;
@@ -9667,7 +9691,7 @@ function mailItemHtml(l) {
     const badges = (l.anonymous && mailTab !== 'inbox' ? '<span class="mail-badge">익명</span>' : '') + (l.random && mailTab !== 'outbox' ? '<span class="mail-badge">랜덤</span>' : '') + (mailTab === 'outbox' && l.random && (l.send_count || 1) > 1 ? `<span class="mail-badge">${l.send_count}통</span>` : '');
     return `<div class="mail-item ${unread ? 'unread' : ''}" onclick="openLetter('${l.id}')">
       <div class="mail-ic"><i class="fa-solid ${unread ? 'fa-envelope' : 'fa-envelope-open'}"></i></div>
-      <div class="mail-main"><div class="mail-top">${who}${badges}<span class="mail-time">${mailYearLabel(l) ? `<b>${mailYearLabel(l)}</b>` : ''}<span>${mailRealTime(l.at)}</span></span>${unread ? '<span class="mail-dot"></span>' : ''}</div>
+      <div class="mail-main"><div class="mail-top">${who}${badges}<span class="mail-time">${mailRealTime(l.at)}</span>${unread ? '<span class="mail-dot"></span>' : ''}</div>
       <div class="mail-prev">${(l.images || []).length ? `<i class="fa-regular fa-image"></i>${l.images.length > 1 ? `${l.images.length}장${l.text ? ' · ' : ''}` : ''}` : ''}${l.text ? mailEsc(l.text.replace(/\s+/g, ' ')) : (l.images || []).length === 1 ? '이미지' : ''}</div></div></div>`;
 }
 function openLetter(id) {
@@ -9717,7 +9741,8 @@ function mailComposeHtml(d) {
       ${pick ? `<div class="mf-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="이름 검색" value="${mailEsc(mailDraft.q)}" oninput="mailDraft.q=this.value; mailRefreshNames()" autocomplete="off"></div>
         <div class="mail-picked" id="mailPicked">${mailPickedHtml()}</div>
         <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
-        : `<div class="mail-rand"><i class="fa-solid fa-shuffle"></i><span>등록된 캐릭터 중 한 명에게 무작위로 보내요.<br>누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</span></div>`}
+        : `<div class="mail-rcount"><span>몇 명에게</span>${[1, 2, 3, 4, 5].map(n => `<button class="${mailDraft.randomCount === n ? 'on' : ''}" onclick="mailDraft.randomCount=${n}; renderMail()">${n}명</button>`).join('')}</div>
+          <div class="mail-rand"><i class="fa-solid fa-shuffle"></i><span>등록된 캐릭터 중 서로 다른 ${mailDraft.randomCount}명에게 무작위로 한 통씩 보내요.<br>누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</span></div>`}
     </section>
     <section class="mf-sec">
       <header class="mf-h"><span class="mf-n">3</span><b>내용</b><span class="mf-aside mail-count" id="mailCount">${mailDraft.text.length} / 2000</span></header>
@@ -9734,12 +9759,15 @@ function mailComposeHtml(d) {
     </div></div>`;
 }
 function mailToAside() {
-  if (mailDraft.mode !== 'pick') return '무작위 1명';
+  if (mailDraft.mode !== 'pick') return `무작위 ${mailDraft.randomCount}명`;
   return mailDraft.to.length ? `<b>${mailDraft.to.length}명</b> 골랐어요` : '여러 명 고를 수 있어요';
 }
 function mailNamesHtml(names) {
-  if (!names.length) return '<span class="mail-none">찾는 이름이 없어요.</span>';
-  return names.map(n => `<button class="mail-name ${mailDraft.to.includes(n) ? 'on' : ''}" onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})">${mailDraft.to.includes(n) ? '<i class="fa-solid fa-check"></i> ' : ''}${mailEsc(n)}</button>`).join('');
+  const me = mailData && mailData.me;
+  // 맨 앞 : 나에게 보내기(편지가 어떻게 보이는지 확인해 볼 때)
+  const self = me && !mailDraft.q.trim() ? `<button class="mail-name self ${mailDraft.to.includes(me) ? 'on' : ''}" onclick="mailToggleTo(${mailEsc(JSON.stringify(me))})">${mailDraft.to.includes(me) ? '<i class="fa-solid fa-check"></i> ' : '<i class="fa-solid fa-user-pen"></i> '}나에게</button>` : '';
+  if (!names.length) return self || '<span class="mail-none">찾는 이름이 없어요.</span>';
+  return self + names.map(n => `<button class="mail-name ${mailDraft.to.includes(n) ? 'on' : ''}" onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})">${mailDraft.to.includes(n) ? '<i class="fa-solid fa-check"></i> ' : ''}${mailEsc(n)}</button>`).join('');
 }
 // 직접 고르기는 여러 명을 고를 수 있어요 (한 사람에게 한 통씩 가요)
 function mailToggleTo(n) {
@@ -9749,7 +9777,7 @@ function mailToggleTo(n) {
 }
 function mailPickedHtml() {
   if (!mailDraft.to.length) return '';
-  return mailDraft.to.map(n => `<span class="mail-chip">${mailEsc(n)}<button onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})" aria-label="빼기"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
+  return mailDraft.to.map(n => `<span class="mail-chip">${n === (mailData && mailData.me) ? '나에게' : mailEsc(n)}<button onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})" aria-label="빼기"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
 }
 function mailRefreshNames() {
   const el = document.getElementById('mailNames');
@@ -9767,7 +9795,7 @@ function sendLetter() {
   if (pick && !mailDraft.to.length) { showShopToast('받는 사람을 골라 주세요.'); return; }
   mailEnsureEra();
   document.getElementById('mailSendBtn').disabled = true;
-  socket.emit('mail_send', { to: pick ? mailDraft.to : [], random: !pick, anonymous: pick ? false : mailDraft.anon, text,
+  socket.emit('mail_send', { to: pick ? mailDraft.to : [], random: !pick, random_count: mailDraft.randomCount, anonymous: pick ? false : mailDraft.anon, text,
     year: mailDraft.noYear ? null : mailDraft.year, no_year: !!mailDraft.noYear,
     images: mailDraft.images.map(it => ({ data: it.buf })) });
 }

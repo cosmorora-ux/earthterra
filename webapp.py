@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.38"
+SERVER_BUILD = "2026-10-13.39"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2911,10 +2911,14 @@ def on_mail_send(data):
     if me is None:
         emit("mail_result", {"ok": False, "message": "캐릭터로 로그인해야 편지를 보낼 수 있어요."})
         return
-    # 직접 고르기 : 여러 명에게 한 통씩(익명 불가) / 랜덤 : 한 명에게(익명이 기본, 끌 수 있음)
+    # 직접 고르기 : 여러 명에게 한 통씩(익명 불가, 나에게 보내기 가능) / 랜덤 : 1~5명에게(서로 다른 사람, 익명이 기본)
     is_random = bool(data.get("random"))
     if is_random:
-        targets, anonymous = [""], bool(data.get("anonymous", True))
+        try:
+            n = max(1, min(5, int(data.get("random_count") or 1)))
+        except (TypeError, ValueError):
+            n = 1
+        targets, anonymous = [""] * n, bool(data.get("anonymous", True))
     else:
         raw = data.get("to")
         raw = raw if isinstance(raw, list) else [raw]
@@ -2966,15 +2970,16 @@ def on_mail_send(data):
                 _store_images()
             sent.append(box.send(me, t, data.get("text"), anonymous=anonymous, random_pick=is_random,
                                  candidates=_mail_candidates(room), check_cooldown=(i == 0), images=images,
-                                 era=era_now, year=data.get("year"), batch=batch))
+                                 era=era_now, year=data.get("year"), batch=batch,
+                                 exclude=[l["to"] for l in sent]))
     except mailbox_mod.MailError as e:
         if not sent:
             emit("mail_result", {"ok": False, "message": str(e)})
             return
     if is_random:
-        msg = "랜덤으로 누군가에게 편지를 보냈어요."
+        msg = "랜덤으로 누군가에게 편지를 보냈어요." if len(sent) == 1 else f"랜덤으로 {len(sent)}명에게 편지를 보냈어요."
     elif len(sent) == 1:
-        msg = f"{sent[0]['to']}에게 편지를 보냈어요."
+        msg = "나에게 편지를 보냈어요." if sent[0]["to"] == me else f"{sent[0]['to']}에게 편지를 보냈어요."
     else:
         msg = f"{sent[0]['to']} 외 {len(sent) - 1}명에게 편지를 보냈어요."
     emit("mail_result", {"ok": True, "message": msg})
