@@ -4178,6 +4178,26 @@ const BATTLE_TYPE = "{{ battle_type }}";
 const GRID_SIZE = {{ grid_size }};
 
 const socket = io();
+// ---------- 연출 순서표 : 컷인 · 피해/회복 숫자 · 라운드 띠가 한꺼번에 터지지 않게 하나씩 차례로 ----------
+// fxSchedule(할 일, 그 연출이 차지하는 시간 ms) : 앞 연출이 끝나면(+ 짧은 쉼) 다음 연출이 시작됩니다.
+// 창이 가려져 있으면(다른 탭) 쌓아 두지 않고 버립니다. 너무 많이 밀리면 오래된 숫자부터 건너뜁니다.
+var fxQ = [], fxBusyUntil = 0, fxPumpTimer = null;
+function fxSchedule(fn, dur, kind) {
+  if (document.hidden) return;
+  if (fxQ.length > 40) fxQ = fxQ.filter(t => t.kind !== 'num');
+  fxQ.push({ fn, dur: dur || 0, kind: kind || '' });
+  fxPump();
+}
+function fxPump() {
+  if (fxPumpTimer || !fxQ.length) return;
+  fxPumpTimer = setTimeout(() => {
+    fxPumpTimer = null;
+    const t = fxQ.shift();
+    try { t.fn(); } catch (e) { console.warn(e); }
+    fxBusyUntil = Date.now() + t.dur;
+    fxPump();
+  }, Math.max(0, fxBusyUntil - Date.now()));
+}
 // 올리는 파일 크기 기준(사이트 전체 공통, 서버 webapp.py와 같게) : 이미지 15MB, 소리(음악 · 효과음) 20MB
 var UPLOAD_IMG_MB = 15, UPLOAD_AUDIO_MB = 20, UPLOAD_IMG_BYTES = UPLOAD_IMG_MB * 1024 * 1024, UPLOAD_AUDIO_BYTES = UPLOAD_AUDIO_MB * 1024 * 1024;
 // 접속 기기 : 운영진 유저 리스트에 PC · 태블릿 · 모바일과 운영체제 · 브라우저를 보여주는 용도(운영진에게만 전달)
@@ -7893,8 +7913,11 @@ function hideSkillCutin() {
   document.getElementById('skillCutin').className = 'skill-cutin';
 }
 socket.on('skill_cutin', (d) => {
-  const c = sfxCharacter(d.actor);
-  showSkillCutin({ ...d, actor: c ? displayNameOf(c) : d.actor });
+  // 여러 명이 거의 동시에 스킬을 써도 컷인은 한 명씩 : 앞 컷인(3초)이 끝난 뒤 다음 사람
+  fxSchedule(() => {
+    const c = sfxCharacter(d.actor);
+    showSkillCutin({ ...d, actor: c ? displayNameOf(c) : d.actor });
+  }, 3300, 'cutin');
 });
 
 // 효과음은 지금은 등록(파일 업로드)/미리듣기만 지원합니다 - 행동마다 실제로 재생하는 기능은
@@ -10757,10 +10780,7 @@ function playHpFx(el, prev, hp) {
   }
   const num = el.querySelector('.hpnum, .chp-sm, .site-hp');
   if (num) countHpText(num, prev, hp);
-  el.classList.remove('fx-hit');
-  void el.offsetWidth;
-  if (delta < 0) el.classList.add('fx-hit');
-  setTimeout(() => el.classList.remove('fx-hit'), 400);
+  // 흔들림 · 숫자는 연출 순서표(fxSchedule)에서 차례가 오면 함께 나옵니다.
   // 서버가 이미 이 캐릭터에 수치(공격·회복·방어·피해 정산)를 띄웠으면 숫자는 다시 띄우지 않습니다.
   const name = (el.dataset.fx || '').replace(/^group:/, '');
   if (Date.now() - (fxRecentNumbers[name] || 0) > 2500) {
@@ -10770,13 +10790,9 @@ function playHpFx(el, prev, hp) {
 // 카드 위에 떠오르는 수치 + 테두리 빛 (kind : atk 빨강 / heal 노랑 / def 파랑)
 // 한 캐릭터에 수치가 여러 개(누적 피해 · 방어 + 피해 등) 생기면, 옆으로 늘어놓지 않고 같은 자리에서 차례대로 하나씩 떠오릅니다.
 var fxRecentNumbers = {};
-var fxNumQueue = {};          // 캐릭터별 : 다음 숫자를 띄울 수 있는 시각(ms)
-const FX_NUM_GAP = 520;       // 숫자 사이 간격(ms)
+const FX_NUM_GAP = 420;       // 숫자 사이 간격(ms) : 캐릭터가 달라도 하나씩 차례로
 function spawnFxNumber(el, kind, value, who) {
-  const key = who || el.dataset.fx || '';
-  const now = Date.now(), at = Math.max(now, fxNumQueue[key] || 0);
-  fxNumQueue[key] = at + FX_NUM_GAP;
-  setTimeout(() => {
+  fxSchedule(() => {
     // 기다리는 사이 카드가 다시 그려졌으면 새 카드를 찾아 그 위에 띄웁니다.
     let target = el;
     if (!target.isConnected && el.dataset.fx) {
@@ -10787,6 +10803,8 @@ function spawnFxNumber(el, kind, value, who) {
     flash.className = 'fx-flash ' + kind;
     target.appendChild(flash);
     setTimeout(() => flash.remove(), 1200);
+    // 맞은 순간에 맞춰 살짝 흔들림
+    if (value < 0 && target.classList) { target.classList.remove('fx-hit'); void target.offsetWidth; target.classList.add('fx-hit'); setTimeout(() => target.classList.remove('fx-hit'), 400); }
     const r = target.getBoundingClientRect();
     if (!r.width || r.bottom < 0 || r.top > window.innerHeight) return;
     const f = document.createElement('div');
@@ -10796,7 +10814,7 @@ function spawnFxNumber(el, kind, value, who) {
     f.style.top = (r.top + Math.min(r.height * 0.35, 60)) + 'px';
     document.body.appendChild(f);
     setTimeout(() => f.remove(), 1300);
-  }, at - now);
+  }, FX_NUM_GAP, 'num');
 }
 // 서버가 로그에서 뽑아 보내는 수치 : [{target, kind, value}]
 function fxElementFor(name) {
@@ -10820,7 +10838,7 @@ socket.on('fx_numbers', (list) => {
     const el = fxElementFor(n.target);
     fxRecentNumbers[n.target] = Date.now();
     if (!el) return;
-    spawnFxNumber(el, n.kind, n.value, n.target);  // 같은 캐릭터 수치는 차례대로(fxNumQueue)
+    spawnFxNumber(el, n.kind, n.value, n.target);  // 연출 순서표(fxSchedule)에서 하나씩 차례로
   });
 });
 function countHpText(node, from, to) {
@@ -10844,13 +10862,17 @@ function maybeShowRoundBanner(battle) {
   const prev = fxLastRound;
   fxLastRound = r;
   if (prev == null || prev === r || FX_REDUCED) return;
-  const snd = (lastSfxDefaults || {}).round;
-  if (snd && snd.url && sfxVolume > 0) playSfx(snd.url, ((snd.volume != null ? snd.volume : 100) / 100) * (sfxVolume / 100));
-  const el = document.createElement('div');
-  el.className = 'fx-round';
-  el.innerHTML = `<b>ROUND ${r}</b><span>${battle.round_first_team === battle.current_turn_team ? '선공' : '후공'} · ${battle.current_turn_team}</span>`;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2000);
+  const sub = `${battle.round_first_team === battle.current_turn_team ? '선공' : '후공'} · ${battle.current_turn_team}`;
+  // 앞 연출(컷인 · 숫자)이 다 끝난 뒤에 라운드 띠
+  fxSchedule(() => {
+    const snd = (lastSfxDefaults || {}).round;
+    if (snd && snd.url && sfxVolume > 0) playSfx(snd.url, ((snd.volume != null ? snd.volume : 100) / 100) * (sfxVolume / 100));
+    const el = document.createElement('div');
+    el.className = 'fx-round';
+    el.innerHTML = `<b>ROUND ${r}</b><span>${sub}</span>`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+  }, 2100, 'round');
 }
 </script>
 <script>
