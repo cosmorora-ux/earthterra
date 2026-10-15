@@ -3364,6 +3364,48 @@
     .map-bg-btn .t { display:none; }
     .map-bg-btn { padding:0; width:34px; height:34px; justify-content:center; margin-left:4px; }
   }
+
+  /* ================================================================
+     체력바(공통) : 카드 · 작은 카드 · 지도 칸 · 칸 툴팁 · 마이페이지가 모두 같은 막대
+     - 어두운 홈 + 은빛 그라데이션 막대 + 윗면 광택, 칸 나눔 눈금(10%마다)
+     - 체력 60% 이하 호박색, 30% 이하 붉은색(은은하게 숨 쉬는 빛)
+     ================================================================ */
+  :root {
+    --hp-fill: linear-gradient(90deg, #aeb3be 0%, #e9ebf0 70%, #ffffff 100%);
+    --hp-fill-mid: linear-gradient(90deg, #c9790e 0%, #f2a93b 70%, #ffc76b 100%);
+    --hp-fill-low: linear-gradient(90deg, #a92c25 0%, #e2574a 70%, #ff7a6e 100%);
+    --hp-track: rgba(255,255,255,.07);
+  }
+  .hpbar-track, .hpbar-track-sm, .char-card.v2 .hpbar-track, .tt-hp .bar, .idc-hpbar, .mypage.v2 .idc-hpbar {
+    position:relative; overflow:hidden; border-radius:999px !important; background: var(--hp-track) !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  .hpbar-fill, .hpbar-fill-sm, .char-card.v2 .hpbar-fill, .tt-hp .bar i, .idc-hpbar > div, .mypage.v2 .idc-hpbar > div {
+    position:relative; height:100%; border-radius:999px; background: var(--hp-fill) !important;
+    box-shadow: 0 0 8px rgba(255,255,255,.22); transition: width .45s cubic-bezier(.4,0,.2,1), background .3s;
+  }
+  /* 윗면 광택 */
+  .hpbar-fill::after, .hpbar-fill-sm::after, .tt-hp .bar i::after, .idc-hpbar > div::after {
+    content:""; position:absolute; left:0; right:0; top:0; height:45%; border-radius:999px 999px 0 0; background: linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0)); pointer-events:none;
+  }
+  .hpbar-fill.mid, .hpbar-fill-sm.mid, .tt-hp .bar i.mid, .idc-hpbar > div.mid, .char-card.v2 .hpbar-fill.mid { background: var(--hp-fill-mid) !important; box-shadow: 0 0 8px rgba(242,169,59,.35); }
+  .hpbar-fill.low, .hpbar-fill-sm.low, .tt-hp .bar i.low, .idc-hpbar > div.low, .char-card.v2 .hpbar-fill.low { background: var(--hp-fill-low) !important; animation: hpLowGlow 1.8s ease-in-out infinite; }
+  @keyframes hpLowGlow { 0%, 100% { box-shadow: 0 0 6px rgba(226,87,74,.35); } 50% { box-shadow: 0 0 12px rgba(255,110,96,.7); } }
+  /* 칸 나눔 눈금 : 큰 막대(카드 · 마이페이지)에만, 10%마다 */
+  .hpbar-track::after, .idc-hpbar::after {
+    content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:inherit;
+    background: repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), rgba(10,10,12,.55) calc(10% - 1px), rgba(10,10,12,.55) 10%);
+  }
+  .hpbar-track, .char-card.v2 .hpbar-track { height:7px !important; }
+  .idc-hpbar, .mypage.v2 .idc-hpbar { height:9px; }
+  .tt-hp .bar { height:5px; }
+  .fx-hp-ghost { border-radius:999px; }
+  /* 지도 칸 아래 체력 띠 : 같은 색 체계, 얇게 */
+  .gmap .ghp { background: rgba(0,0,0,.5); box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
+  .gmap .ghp > div { background: var(--hp-fill); box-shadow: 0 0 6px rgba(255,255,255,.25); }
+  .gmap .ghp > div.mid { background: var(--hp-fill-mid); box-shadow: 0 0 6px rgba(242,169,59,.35); }
+  .gmap .ghp > div.low { background: var(--hp-fill-low); animation: hpLowGlow 1.8s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .hpbar-fill.low, .hpbar-fill-sm.low, .tt-hp .bar i.low, .idc-hpbar > div.low, .gmap .ghp > div.low { animation:none; } }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}">
@@ -4663,7 +4705,7 @@ function renderSiteStatusCard(battle) {
         <div class="site-title">${groupLabel}${diceText}</div>
         <div class="site-hp">${totalCurrent}/${totalMax}</div>
       </div>
-      <div class="hpbar-track" style="margin-top:8px;"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
+      <div class="hpbar-track" style="margin-top:8px;"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '')}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
     `;
     el.classList.toggle('is-defeated', mobs.every(isDefeatedStatus));
     el.style.display = '';
@@ -4690,7 +4732,7 @@ function renderSiteStatusCard(battle) {
       <div class="site-title">${displayNameOf(site)}${diceText}${statusTagFor(site)}</div>
       <div class="site-hp">${site.current_hp}/${site.max_hp}</div>
     </div>
-    <div class="hpbar-track" style="margin-top:8px;"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
+    <div class="hpbar-track" style="margin-top:8px;"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '')}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
     ${badges.length ? `<div class="cbadges" style="margin-top:8px;">${badges.join('&nbsp;&nbsp;')}</div>` : ''}
     ${navHtml}
   `;
@@ -4838,7 +4880,7 @@ function renderCompactCardHtml(c) {
       <div class="cname-sm">${displayNameOf(c)}${statusTagFor(c)}</div>
       <div class="chp-sm">${c.current_hp}/${c.max_hp}</div>
     </div>
-    <div class="hpbar-track-sm"><div class="hpbar-fill-sm ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
+    <div class="hpbar-track-sm"><div class="hpbar-fill-sm ${hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '')}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
     <div class="cbadges-sm">${badges.join('&nbsp;&nbsp;')}</div>
   </div>`;
 }
@@ -4926,7 +4968,7 @@ function renderCardHtml(c) {
         </div>
         <div class="hpbar-wrap">
           <div class="hpnum"><b>${c.current_hp}</b><span>/${c.max_hp}</span></div>
-          <div class="hpbar-track"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : ''}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
+          <div class="hpbar-track"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '')}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
         </div>
       </div>
     </div>
@@ -7606,6 +7648,7 @@ function renderMyPage() {
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   document.getElementById('myPageMaxHp').textContent = hasHp ? c.max_hp : '-';
   document.getElementById('myPageHpBar').style.width = Math.max(0, hpRatio * 100) + '%';
+  document.getElementById('myPageHpBar').className = hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '');
 
   if (isGm && !hasHp) {
     // 전투에 없는 캐릭터 : 체력은 표시만(-), 소지품은 GM이 수정 가능
