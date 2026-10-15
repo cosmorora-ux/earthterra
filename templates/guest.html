@@ -2539,7 +2539,8 @@
     color: rgba(var(--point-rgb),.85); }
   .dorm-card .dorm-new::before { content:""; width:5px; height:5px; border-radius:50%; background: rgba(var(--point-rgb),.85); }
   .dorm-card .row1 { align-items:center; }
-  .char-card.dorm-card.mine { border-color: rgba(255,255,255,.42); }
+  /* 내 방 : 테두리 대신 PVP 대상 카드처럼 위쪽에만 포인트 빛 한 줄(.tgt-line) */
+  .char-card.dorm-card.mine { border-color: var(--card-border); }
   .char-card.dorm-card.empty { cursor:default; background:transparent; border-style:dashed; opacity:.55; }
   .char-card.dorm-card.empty .cname { color: var(--muted); font-weight:600; }
   .dorm-card.empty .dorm-portrait { background:none; border-color:transparent; color:#3a3a42; font-size:24px; }
@@ -9988,7 +9989,7 @@ function dormHallsHtml() {
       ${canRename ? `<button class="dorm-rename" onclick="renameDormHall('${h.id}')" data-tip="${mailEsc(P.unit)} 이름 바꾸기"><i class="fa-solid fa-pen"></i></button>` : ''}
       <span class="cnt">${n} / ${dormData.hall_size}</span></h2>
     <div class="dorm-cards holo-zone">${(h.slots || []).map((nm, i) => nm
-      ? `<div class="char-card dorm-card ${nm === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(nm))})">
+      ? `<div class="char-card dorm-card ${nm === me ? 'mine' : ''}" onclick="openDormRoom(${mailEsc(JSON.stringify(nm))})">${nm === me ? '<span class="tgt-line" aria-hidden="true"></span>' : ''}
           <div class="row1"><span class="cname">${mailEsc(nm)}</span>${dormIsNew(nm) ? '<span class="dorm-new">NEW</span>' : ''}</div>
           <div class="dorm-portrait">${dormMiniHtml(nm, 150, 112)}</div></div>`
       : `<div class="char-card dorm-card empty"><div class="row1"><span class="cname">빈 방</span></div>
