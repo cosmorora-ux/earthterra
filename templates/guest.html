@@ -88,11 +88,15 @@
   /* ---------- 다크모드 툴팁 (title 속성 대신 data-tip 사용, 스탯 툴팁과 같은 스타일) ---------- */
   [data-tip] { position:relative; }
   /* 툴팁은 화면 맨 위 레이어에 띄워서, 팝업(마이페이지 등) 영역에 잘리지 않고 글자가 다 보이게 합니다. */
+  /* 툴팁(공통) : 마우스를 올리면 뜨는 모든 설명(일반 · 카드 스탯 · 격자 칸)이 같은 모양 — 알림 토스트와 같은 어두운 상자 */
   #floatTip {
-    position:fixed; left:0; top:0; display:none; max-width:min(420px, calc(100vw - 16px));
-    background:#0c0c0d; border:1px solid var(--card-border); color:var(--text);
-    border-radius:10px; padding:8px 12px; font-size:14px; line-height:1.45; white-space:normal; word-break:keep-all;
-    box-shadow:0 6px 18px rgba(0,0,0,.5); z-index:10000; pointer-events:none;
+    position:fixed; left:0; top:0; display:none; max-width:min(420px, calc(100vw - 16px)); z-index:10000; pointer-events:none;
+    white-space:normal; word-break:keep-all;
+  }
+  #floatTip, .stat-tip {
+    background: rgba(22,22,26,.97); border:1px solid rgba(255,255,255,.12); color: var(--text);
+    border-radius:10px; padding:7px 11px; font-size:13px; font-weight:500; line-height:1.5;
+    box-shadow:0 10px 26px rgba(0,0,0,.5); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   }
 
   /* ================================================================
@@ -161,7 +165,7 @@
   .idc-close:hover { color: var(--text); }
   .mypage-cols { display:grid; grid-template-columns:1fr 1fr; gap:36px; }
   /* 남의 마이페이지(보기 전용) : 프로필(진영 제외) · 체력 · 재화 · 소지품 · 마이룸 */
-  .modal-box.mypage.is-view .idc-logout, .modal-box.mypage.is-view .mp-tagrow:has(#myPageNation), .modal-box.mypage.is-view .mypage-cols > .mypage-col:last-child { display:none !important; }
+  .modal-box.mypage.is-view .idc-logout, .modal-box.mypage.is-view .mp-logout-bottom, .modal-box.mypage.is-view .mp-tagrow:has(#myPageNation), .modal-box.mypage.is-view .mypage-cols > .mypage-col:last-child { display:none !important; }
   .modal-box.mypage.is-view .mypage-cols { grid-template-columns:1fr; }
   .modal-box.mypage.is-view .mypage-roles button:disabled.on { opacity:1; }
   .modal-box.mypage.is-view .mp-click { cursor:default; }
@@ -846,8 +850,7 @@
   .hpbar-fill { height:100%; background:#d8d8dc; }
   .hpbar-fill.low { background: var(--accent-red); }
   .hpnum { font-size:13px; color: var(--muted); white-space:nowrap; }
-  .stat-tip { position:absolute; z-index:30; bottom:calc(100% + 8px); right:0; background:#0c0c0d; border:1px solid var(--card-border);
-              border-radius:10px; padding:8px 12px; font-size:14px; white-space:nowrap; display:none; box-shadow:0 6px 18px rgba(0,0,0,.5); }
+  .stat-tip { position:absolute; z-index:30; bottom:calc(100% + 8px); right:0; white-space:nowrap; display:none; }
   .cavatar-sm .stat-tip { right:auto; left:0; }
   .cavatar:hover .stat-tip, .cavatar-sm:hover .stat-tip { display:block; }
   .card-info-icon {
@@ -2658,12 +2661,13 @@
 
   /* 세로 태블릿·휴대폰 : 하단 탭 = 전투 · 기숙사 · 상점 · 소식(공지+우체통) · 마이페이지(로그인 전에는 로그인) */
   .m-news-btn, .sidebar .m-news-btn, .m-battle-tools, .topbar .m-battle-tools, .idc-logout { display:none; }
-  .idc-logout { align-items:center; gap:6px; margin-left:auto; margin-right:6px; height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--line);
-    background: rgba(255,255,255,.05); color:#cfcfd4; font-size:13px; cursor:pointer; }
-  .idc-logout:hover { background: rgba(255,255,255,.1); color:#fff; }
+  /* 로그아웃 : 한눈에 보이게 붉은색 */
+  .idc-logout { align-items:center; gap:6px; margin-left:auto; margin-right:6px; height:34px; padding:0 12px; border-radius:10px; border:1px solid rgba(226,87,74,.5);
+    background: rgba(226,87,74,.14); color:#ff8a80; font-size:13px; font-weight:600; cursor:pointer; }
+  .idc-logout:hover { background: rgba(226,87,74,.26); color:#fff; }
   .mp-logout-bottom { display:none; align-items:center; justify-content:center; gap:8px; width:100%; max-width:none; height:46px; margin:28px auto 0;
-    border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--muted); font-size:15px; font-weight:600; cursor:pointer; flex:none; }
-  .mp-logout-bottom:hover { color:#ff7a7a; border-color: rgba(255,122,122,.4); }
+    border-radius:12px; border:1px solid rgba(226,87,74,.5); background: rgba(226,87,74,.14); color:#ff8a80; font-size:15px; font-weight:700; cursor:pointer; flex:none; }
+  .mp-logout-bottom:hover { background: rgba(226,87,74,.26); color:#fff; }
   .news-sheet { position:absolute; left:12px; right:12px; bottom:calc(76px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; padding:6px;
     border-radius:16px; background:#17171a; border:1px solid var(--line); box-shadow: 0 18px 50px rgba(0,0,0,.55); }
   .news-sheet button { position:relative; display:flex; align-items:center; gap:12px; height:52px; padding:0 14px; border:none; border-radius:12px; background:none;
@@ -3394,7 +3398,7 @@
   <div class="modal-box mapbg-modal panel">
     <div class="modal-title">지도 배경 · 몹 이미지 설정</div>
     <div class="mapbg-preview" id="mapBgPreview" onclick="document.getElementById('mapBgFileInput').click()">
-      <div class="dim" id="mapBgPreviewDim"></div><span id="mapBgPreviewText">클릭해서 배경 이미지 올리기 (최대 6MB)</span>
+      <div class="dim" id="mapBgPreviewDim"></div><span id="mapBgPreviewText">클릭해서 배경 이미지 올리기 (최대 15MB)</span>
     </div>
     <input type="file" id="mapBgFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onMapBgFileChosen(event)">
     <div class="mapbg-row">
@@ -3506,7 +3510,7 @@
   <div class="modal-box mapbg-modal panel">
     <div class="modal-title">배경 · 날씨</div>
     <div class="mapbg-preview" id="scenePreview" onclick="document.getElementById('sceneFileInput').click()">
-      <div class="dim" id="scenePreviewDim"></div><span id="scenePreviewText">클릭해서 화면 배경 올리기 (png·apng·gif·webp·jpg, 최대 12MB)</span>
+      <div class="dim" id="scenePreviewDim"></div><span id="scenePreviewText">클릭해서 화면 배경 올리기 (png·apng·gif·webp·jpg, 최대 15MB)</span>
     </div>
     <input type="file" id="sceneFileInput" accept="image/png,image/apng,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onSceneFileChosen(event)">
     <div class="mapbg-row">
@@ -3572,7 +3576,7 @@
   <div class="modal-box mapbg-modal panel">
     <div class="modal-title">라운드 트랙 배경</div>
     <div class="mapbg-preview" id="trackBgPreview" onclick="document.getElementById('trackBgFileInput').click()">
-      <div class="dim" id="trackBgPreviewDim"></div><span id="trackBgPreviewText">클릭해서 배경 이미지 올리기 (최대 6MB)</span>
+      <div class="dim" id="trackBgPreviewDim"></div><span id="trackBgPreviewText">클릭해서 배경 이미지 올리기 (최대 15MB)</span>
     </div>
     <input type="file" id="trackBgFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" onchange="onTrackBgFileChosen(event)">
     <div class="mapbg-row">
@@ -3629,7 +3633,7 @@
       <button data-v="chara" onclick="dormAddSetType('chara')"><i class="fa-solid fa-user"></i> 캐릭터 SD</button>
     </div>
     <div class="dorm-add-drop" id="dormAddDrop" onclick="document.getElementById('dormAddFile').click()">
-      <img id="dormAddPreview" alt="" style="display:none;"><span id="dormAddEmpty"><i class="fa-solid fa-image"></i><br>클릭해서 이미지 삽입<br><small>PNG · GIF · WEBP / 최대 2MB</small></span>
+      <img id="dormAddPreview" alt="" style="display:none;"><span id="dormAddEmpty"><i class="fa-solid fa-image"></i><br>클릭해서 이미지 삽입<br><small>PNG · GIF · WEBP / 최대 15MB</small></span>
     </div>
     <input type="file" id="dormAddFile" accept="image/png,image/gif,image/webp" style="display:none" onchange="onDormAddFile(event)">
     <div id="dormAddNameBox">
@@ -3799,7 +3803,7 @@
       </div>
       <div class="mp-card idc-room" id="myPageRoomBox" style="display:none;">
         <div class="idc-room-head"><span class="mp-k"><i class="fa-solid fa-house"></i> 마이룸</span><span class="idc-room-sub" id="myPageRoomSub"></span></div>
-        <div class="idc-room-prev" id="myPageRoomPrev" title="눌러서 방으로 가기"></div>
+        <div class="idc-room-prev" id="myPageRoomPrev" data-tip="눌러서 방으로 가기"></div>
         <div class="idc-room-past" id="myPageRoomPast"></div>
       </div>
     </div>
@@ -3832,7 +3836,7 @@
     <div id="myPageSkillImage" style="display:none;">
       <div class="mypage-fx-image" id="myPageSkillImageBox" onclick="if(canEditMyPage()) document.getElementById('mySkillImageInput').click()">
         <img id="myPageSkillImagePreview" alt="" style="display:none;">
-        <span id="myPageSkillImageEmpty"><i class="fa-solid fa-upload"></i><br>클릭해서 이미지 올리기<br><small>png · apng · gif · webp / 5MB까지</small></span>
+        <span id="myPageSkillImageEmpty"><i class="fa-solid fa-upload"></i><br>클릭해서 이미지 올리기<br><small>png · apng · gif · webp / 15MB까지</small></span>
       </div>
       <div style="margin-top:8px;">
         <button class="idc-textbtn" id="myPageSkillImageClear" onclick="clearSkillLogImage()"><i class="fa-solid fa-trash"></i> 이미지 삭제</button>
@@ -4094,6 +4098,8 @@ const BATTLE_TYPE = "{{ battle_type }}";
 const GRID_SIZE = {{ grid_size }};
 
 const socket = io();
+// 올리는 파일 크기 기준(사이트 전체 공통, 서버 webapp.py와 같게) : 이미지 15MB, 소리(음악 · 효과음) 20MB
+var UPLOAD_IMG_MB = 15, UPLOAD_AUDIO_MB = 20, UPLOAD_IMG_BYTES = UPLOAD_IMG_MB * 1024 * 1024, UPLOAD_AUDIO_BYTES = UPLOAD_AUDIO_MB * 1024 * 1024;
 // 접속 기기 : 운영진 유저 리스트에 PC · 태블릿 · 모바일과 운영체제 · 브라우저를 보여주는 용도(운영진에게만 전달)
 const MY_DEVICE = (() => {
   const ua = navigator.userAgent || '';
@@ -4476,7 +4482,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.33";
+const EXPECTED_SERVER_BUILD = "2026-10-13.34";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -7727,7 +7733,7 @@ function onSkillImageChosen(event) {
   event.target.value = '';
   if (!file || !canEditMyPage()) return;
   if (!/\.(png|apng|gif|webp)$/i.test(file.name)) { showError('png(apng)/gif/webp 이미지만 올릴 수 있어요.'); return; }
-  if (file.size > 5 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 5MB).'); return; }
+  if (file.size > UPLOAD_IMG_BYTES) { showError(`이미지가 너무 커요 (최대 ${UPLOAD_IMG_MB}MB).`); return; }
   file.arrayBuffer().then(buf => socket.emit('set_my_skill_log', {
     name: myPageEditName(), skill_log_type: 'image', image_data: buf, filename: file.name,
   }));
@@ -7797,7 +7803,7 @@ socket.on('skill_cutin', (d) => {
 // 효과음은 지금은 등록(파일 업로드)/미리듣기만 지원합니다 - 행동마다 실제로 재생하는 기능은
 // 나중에 추가되고, 그때 공통 효과음이 기본이며 여기서 등록한 사람만 자기 행동에 한해 이
 // 파일+음량을 쓰게 됩니다.
-const SOUND_EFFECT_MAX_BYTES = 5 * 1024 * 1024;
+const SOUND_EFFECT_MAX_BYTES = UPLOAD_AUDIO_BYTES;
 const SOUND_EFFECT_MAX_SECONDS = 6;
 
 function onMySoundEffectFileChosen(event) {
@@ -7871,6 +7877,7 @@ function onMyAvatarFileChosen(event) {
   }
   const c = myPageTargetChar();
   if (!c) return;
+  if (file.size > UPLOAD_IMG_BYTES) { showError(`이미지가 너무 커요 (최대 ${UPLOAD_IMG_MB}MB).`); return; }
   const objUrl = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
@@ -8363,7 +8370,7 @@ function renderMapBgModal() {
   const cfg = mapBgCfg();
   const pv = document.getElementById('mapBgPreview');
   pv.style.backgroundImage = cfg.url ? `url('${cfg.url}')` : '';
-  document.getElementById('mapBgPreviewText').textContent = cfg.url ? '클릭해서 다른 이미지로 바꾸기' : '클릭해서 배경 이미지 올리기 (최대 6MB)';
+  document.getElementById('mapBgPreviewText').textContent = cfg.url ? '클릭해서 다른 이미지로 바꾸기' : `클릭해서 배경 이미지 올리기 (최대 ${UPLOAD_IMG_MB}MB)`;
   document.getElementById('mapBgModeFrame').classList.toggle('on', cfg.mode === 'frame');
   document.getElementById('mapBgModeGrid').classList.toggle('on', cfg.mode === 'grid');
   const dim = document.getElementById('mapBgDim'), line = document.getElementById('mapBgLine');
@@ -8387,7 +8394,7 @@ function onMapBgFileChosen(ev) {
   const f = ev.target.files && ev.target.files[0];
   ev.target.value = '';
   if (!f) return;
-  if (f.size > 6 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 6MB).'); return; }
+  if (f.size > UPLOAD_IMG_BYTES) { showError(`이미지가 너무 커요 (최대 ${UPLOAD_IMG_MB}MB).`); return; }
   document.getElementById('mapBgPreviewText').textContent = '올리는 중...';
   f.arrayBuffer().then(buf => socket.emit('set_map_bg', { filename: f.name, data: buf }));
 }
@@ -8433,7 +8440,7 @@ function onBossImgChosen(ev) {
   const f = ev.target.files && ev.target.files[0];
   ev.target.value = '';
   if (!f || !bossImgTargetKey) return;
-  if (f.size > 6 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 6MB).'); return; }
+  if (f.size > UPLOAD_IMG_BYTES) { showError(`이미지가 너무 커요 (최대 ${UPLOAD_IMG_MB}MB).`); return; }
   f.arrayBuffer().then(buf => socket.emit('set_boss_image', { key: bossImgTargetKey, filename: f.name, data: buf }));
 }
 // ==================================================================
@@ -8625,7 +8632,7 @@ function makeStatusTag(kind, text, count) {
     if (m) { label = m[1]; num = m[2]; }
   }
   const full = count != null ? label : String(text);
-  return `<span class="stag stag-${kind}" title="${shopEsc(full)}">${cls ? `<i class="${cls}"></i>` : ''}<span class="st-l">${label}</span>${num && count == null ? `<span class="st-n">${num}</span>` : ''}${count != null && count > 1 ? `<span class="st-n st-only">${count}</span>` : ''}</span>`;
+  return `<span class="stag stag-${kind}" data-tip="${shopEsc(full)}">${cls ? `<i class="${cls}"></i>` : ''}<span class="st-l">${label}</span>${num && count == null ? `<span class="st-n">${num}</span>` : ''}${count != null && count > 1 ? `<span class="st-n st-only">${count}</span>` : ''}</span>`;
 }
 // 아이콘 폰트가 늦게 로드될 수 있어서, 로드 후 한 번 더 확인하고 화면을 다시 그립니다.
 if (document.fonts && document.fonts.ready) {
@@ -8724,7 +8731,7 @@ function onSfxDefaultFileChosen(ev) {
   const f = ev.target.files && ev.target.files[0];
   ev.target.value = '';
   if (!f || !sfxDefaultTargetKind) return;
-  if (f.size > 5 * 1024 * 1024) { showError('파일이 너무 커요 (최대 5MB).'); return; }
+  if (f.size > UPLOAD_AUDIO_BYTES) { showError(`파일이 너무 커요 (최대 ${UPLOAD_AUDIO_MB}MB).`); return; }
   f.arrayBuffer().then(buf => socket.emit('set_default_sfx', { kind: sfxDefaultTargetKind, filename: f.name, data: buf }));
 }
 // ==================================================================
@@ -8934,7 +8941,7 @@ function renderTrackBgModal() {
   if (document.getElementById('trackBgModal').style.display !== 'flex') return;
   const cfg = Object.assign({ url: null, dim: 45 }, lastTrackBg || {});
   document.getElementById('trackBgPreview').style.backgroundImage = cfg.url ? `url('${cfg.url}')` : '';
-  document.getElementById('trackBgPreviewText').textContent = cfg.url ? '클릭해서 다른 이미지로 바꾸기' : '클릭해서 배경 이미지 올리기 (최대 6MB)';
+  document.getElementById('trackBgPreviewText').textContent = cfg.url ? '클릭해서 다른 이미지로 바꾸기' : `클릭해서 배경 이미지 올리기 (최대 ${UPLOAD_IMG_MB}MB)`;
   const dim = document.getElementById('trackBgDim');
   if (document.activeElement !== dim) dim.value = cfg.dim;
   paintRange(dim);
@@ -8952,7 +8959,7 @@ function onTrackBgFileChosen(ev) {
   const f = ev.target.files && ev.target.files[0];
   ev.target.value = '';
   if (!f) return;
-  if (f.size > 6 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 6MB).'); return; }
+  if (f.size > UPLOAD_IMG_BYTES) { showError(`이미지가 너무 커요 (최대 ${UPLOAD_IMG_MB}MB).`); return; }
   document.getElementById('trackBgPreviewText').textContent = '올리는 중...';
   f.arrayBuffer().then(buf => socket.emit('set_track_bg', { filename: f.name, data: buf }));
 }
@@ -8981,7 +8988,7 @@ function renderSceneModal() {
   if (!m || m.style.display !== 'flex') return;
   const cfg = sceneCfg();
   document.getElementById('scenePreview').style.backgroundImage = cfg.url ? `url('${cfg.url}')` : '';
-  document.getElementById('scenePreviewText').textContent = cfg.url ? '클릭해서 다른 이미지로 바꾸기' : '클릭해서 화면 배경 올리기 (png·apng·gif·webp·jpg, 최대 12MB)';
+  document.getElementById('scenePreviewText').textContent = cfg.url ? '클릭해서 다른 이미지로 바꾸기' : `클릭해서 화면 배경 올리기 (png·apng·gif·webp·jpg, 최대 ${UPLOAD_IMG_MB}MB)`;
   const dim = document.getElementById('sceneDim');
   if (document.activeElement !== dim) dim.value = cfg.dim;
   paintRange(dim); onSceneDimSlider();
@@ -9000,7 +9007,7 @@ function onSceneFileChosen(ev) {
   const f = ev.target.files && ev.target.files[0];
   ev.target.value = '';
   if (!f) return;
-  if (f.size > 12 * 1024 * 1024) { showError('이미지가 너무 커요 (최대 12MB).'); return; }
+  if (f.size > UPLOAD_IMG_BYTES) { showError(`이미지가 너무 커요 (최대 ${UPLOAD_IMG_MB}MB).`); return; }
   document.getElementById('scenePreviewText').textContent = '올리는 중...';
   f.arrayBuffer().then(buf => socket.emit('set_scene', { filename: f.name, data: buf }));
 }
@@ -9388,14 +9395,14 @@ function mailEraHtml() {
 }
 function mailStepYear(d) { const e = mailEra(mailDraft.era); if (!e) return; mailDraft.year = Math.max(e.from, Math.min(e.to, (mailDraft.year || e.from) + d)); mailRefreshEra(); }
 function mailRefreshEra() { const el = document.getElementById('mailEraBox'); if (el) el.innerHTML = mailEraHtml(); }
-// 편지 첨부 이미지 : 4장까지, 장당 5MB (png · jpg · gif · webp). 파일 고르기 · 붙여넣기(Ctrl+V) · 끌어다 놓기 모두 돼요.
-const MAIL_IMG_MAX = 4, MAIL_IMG_BYTES = 5 * 1024 * 1024;
+// 편지 첨부 이미지 : 4장까지, 장당 15MB(사이트 공통 이미지 기준) (png · jpg · gif · webp). 파일 고르기 · 붙여넣기(Ctrl+V) · 끌어다 놓기 모두 돼요.
+const MAIL_IMG_MAX = 4, MAIL_IMG_BYTES = UPLOAD_IMG_BYTES;
 function mailAddImages(files) {
   const list = [...(files || [])].filter(f => f && /^image\/(png|jpe?g|gif|webp)$/.test(f.type));
   if (!list.length) { if (files && files.length) showShopToast('png · jpg · gif · webp 이미지만 붙일 수 있어요.'); return; }
   list.forEach(f => {
     if (mailDraft.images.length >= MAIL_IMG_MAX) { showShopToast(`이미지는 ${MAIL_IMG_MAX}장까지 붙일 수 있어요.`); return; }
-    if (f.size > MAIL_IMG_BYTES) { showShopToast(`${f.name || '이미지'}는 5MB가 넘어서 붙일 수 없어요.`); return; }
+    if (f.size > MAIL_IMG_BYTES) { showShopToast(`${f.name || '이미지'}는 ${UPLOAD_IMG_MB}MB가 넘어서 붙일 수 없어요.`); return; }
     const item = { name: f.name || 'image', url: URL.createObjectURL(f), buf: null };
     mailDraft.images.push(item);
     f.arrayBuffer().then(b => { item.buf = b; });
@@ -9805,7 +9812,7 @@ function pickDormMusic() { document.getElementById('dormMusicFile').click(); }
 function onDormMusicFile(ev) {
   const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
   if (!f) return;
-  if (f.size > 12 * 1024 * 1024) { showShopToast('음악 파일이 너무 커요 (최대 12MB).'); return; }
+  if (f.size > UPLOAD_AUDIO_BYTES) { showShopToast(`음악 파일이 너무 커요 (최대 ${UPLOAD_AUDIO_MB}MB).`); return; }
   showShopToast('음악을 올리는 중…');
   f.arrayBuffer().then(buf => socket.emit('dorm_music_upload', { owner: dormRoom.owner, filename: f.name, data: buf }));
 }
@@ -10085,7 +10092,7 @@ function dormGuestbookHtml(r) {
         <div class="bgm-eq" id="dormMusicEq"><span></span><span></span><span></span><span></span></div>
         <div class="t">${music ? mailEsc(music.title) : '<span class="muted">방 음악이 없어요</span>'}</div>
         ${music ? `<button class="dorm-ibtn" id="dormMusicBtn" onclick="toggleDormMusic()"><i class="fa-solid fa-pause"></i></button>` : ''}
-        ${isOwner ? `<button class="dorm-ibtn" onclick="pickDormMusic()" data-tip="${music ? '음악 바꾸기' : '음악 올리기'} (mp3·ogg·wav·m4a, 12MB)"><i class="fa-solid fa-upload"></i></button>
+        ${isOwner ? `<button class="dorm-ibtn" onclick="pickDormMusic()" data-tip="${music ? '음악 바꾸기' : '음악 올리기'} (mp3·ogg·wav·m4a, ${UPLOAD_AUDIO_MB}MB)"><i class="fa-solid fa-upload"></i></button>
           ${music ? `<button class="dorm-ibtn" onclick="clearDormMusic()" data-tip="음악 지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}
           <input type="file" id="dormMusicFile" accept=".mp3,.ogg,.wav,.m4a,audio/*" style="display:none" onchange="onDormMusicFile(event)">` : ''}
       </div>
@@ -10165,7 +10172,7 @@ function dormStageHtml(r, base, s, editing, mini) {
     return `<div class="dorm-surface" style="left:${f[0] * s}px; top:${f[1] * s}px; width:${f[2] * s}px; height:${a.h * sc * s}px; background-image:url('${a.url}');"></div>`;
   }).join('');
   return `<div class="dorm-stage ${editing ? 'editing' : ''} ${mini ? 'mini' : ''}" ${mini ? '' : 'id="dormStage"'} style="width:${W}px; height:${H}px; background:url('${base.url}') 0 0 / 100% 100% no-repeat;">${fitted}
-    ${items.map(({ it, i, a }) => `<div class="dorm-item ${it.f ? 'dflip' : ''} ${a.smooth ? 'smooth' : ''} ${a.category === 'chara' ? 'chara' : ''} ${editing && i === dormSel ? 'sel' : ''}" data-i="${i}" ${a.category === 'chara' && !editing ? '' : `title="${mailEsc(a.name)}"`}
+    ${items.map(({ it, i, a }) => `<div class="dorm-item ${it.f ? 'dflip' : ''} ${a.smooth ? 'smooth' : ''} ${a.category === 'chara' ? 'chara' : ''} ${editing && i === dormSel ? 'sel' : ''}" data-i="${i}" ${a.category === 'chara' && !editing ? '' : `data-tip="${mailEsc(a.name)}"`}
       style="left:${it.x * s}px; top:${it.y * s}px; width:${a.w * dormZ(it, a) * s}px; height:${a.h * dormZ(it, a) * s}px; background-image:url('${a.url}');"></div>`).join('')}
     ${mini ? '' : '<div class="dorm-ghost" id="dormGhost"></div>'}</div>`;
 }
@@ -10258,7 +10265,7 @@ function dormAddSetType(t) {
 function onDormAddFile(ev) {
   const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
   if (!f || !dormAdd || dormAdd.id) return;
-  if (f.size > 2 * 1024 * 1024) { showShopToast('2MB 이하의 이미지만 등록할 수 있습니다.'); return; }
+  if (f.size > UPLOAD_IMG_BYTES) { showShopToast(`${UPLOAD_IMG_MB}MB 이하의 이미지만 등록할 수 있습니다.`); return; }
   if (dormAdd.url) URL.revokeObjectURL(dormAdd.url);
   dormAdd.url = URL.createObjectURL(f); dormAdd.file = f;
   if (!document.getElementById('dormAddName').value.trim()) document.getElementById('dormAddName').value = f.name.replace(/\.[^.]+$/, '').slice(0, 30);
@@ -10476,7 +10483,7 @@ function dormManageHtml() {
   const halls = dormHallsDraft.map((h, hi) => `<div class="dorm-hall-edit">
       <input type="text" value="${mailEsc(h.name)}" placeholder="${mailEsc(MP.unit)} 이름" oninput="dormHallsDraft[${hi}].name=this.value">
       ${[0, 1, 2, 3, 4, 5].map(si => `<select onchange="dormHallsDraft[${hi}].slots[${si}]=this.value||null; renderDorm()">${opt((h.slots || [])[si])}</select>`).join('')}
-      <button class="dorm-x" title="${mailEsc(MP.unit)} 지우기" onclick="dormHallsDraft.splice(${hi},1); renderDorm()"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
+      <button class="dorm-x" data-tip="${mailEsc(MP.unit)} 지우기" onclick="dormHallsDraft.splice(${hi},1); renderDorm()"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
   const crOpt = (cur) => `<option value="">출처 없음</option>` + (dormData.credits || []).map(c => `<option value="${c.id}" ${c.id === cur ? 'selected' : ''}>${mailEsc(c.title)}</option>`).join('');
   const catOpt = (cur) => DORM_CATS.map(([k, t]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t}</option>`).join('');
   const builtinN = (dormData.assets || []).filter(a => a.builtin).length;
@@ -10486,7 +10493,7 @@ function dormManageHtml() {
       <select onchange="socket.emit('dorm_asset_update',{id:'${a.id}',category:this.value})">${catOpt(a.category)}</select>
       <span class="sz">${a.w}×${a.h}</span>
       <select class="cr" onchange="socket.emit('dorm_asset_update',{id:'${a.id}',credit:this.value})">${crOpt(a.credit)}</select>
-      <button class="dorm-x" title="자료 지우기" onclick="uiConfirm('이 자료를 지울까요? 이미 놓인 것도 사라져요.',{title:'자료 지우기',okText:'지우기',danger:true}).then(ok=>ok&&socket.emit('dorm_asset_delete',{id:'${a.id}'}))"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
+      <button class="dorm-x" data-tip="자료 지우기" onclick="uiConfirm('이 자료를 지울까요? 이미 놓인 것도 사라져요.',{title:'자료 지우기',okText:'지우기',danger:true}).then(ok=>ok&&socket.emit('dorm_asset_delete',{id:'${a.id}'}))"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
   const credits = dormCreditsDraft.map((c, ci) => `<div class="dorm-crow">
       <input type="text" value="${mailEsc(c.title)}" placeholder="자료 이름" oninput="dormCreditsDraft[${ci}].title=this.value">
       <input type="text" value="${mailEsc(c.author)}" placeholder="제작자" oninput="dormCreditsDraft[${ci}].author=this.value">
@@ -10507,7 +10514,7 @@ function dormManageHtml() {
         <select onchange="dormUp.credit=this.value">${crOpt(dormUp.credit)}</select>
         <button class="btn" onclick="uploadDormAsset()"><i class="fa-solid fa-upload"></i> 올리기</button>
       </div>
-      <div class="dorm-hint">png·gif·webp (최대 2MB). 방 그림 크기에 맞춘 원본 크기 그대로 올려 주세요${dormUp.nw ? ` → <b style="color:var(--text)">${dormUp.nw}×${dormUp.nh}</b>` : ''}.
+      <div class="dorm-hint">png·gif·webp (최대 ${UPLOAD_IMG_MB}MB). 방 그림 크기에 맞춘 원본 크기 그대로 올려 주세요${dormUp.nw ? ` → <b style="color:var(--text)">${dormUp.nw}×${dormUp.nh}</b>` : ''}.
         "방" 종류로 올리면 방 바탕으로 쓸 수 있어요. 출처를 먼저 아래에 등록하면 자료마다 고를 수 있어요.</div>
       <input type="file" id="dormUpFile" accept="image/png,image/gif,image/webp" style="display:none" onchange="onDormUpFile(event)">
       <div class="dorm-alist">${assets}</div></div>
@@ -10519,7 +10526,7 @@ function dormManageHtml() {
 function onDormUpFile(ev) {
   const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
   if (!f) return;
-  if (f.size > 2 * 1024 * 1024) { showShopToast('이미지가 너무 커요 (최대 2MB).'); return; }
+  if (f.size > UPLOAD_IMG_BYTES) { showShopToast(`이미지가 너무 커요 (최대 ${UPLOAD_IMG_MB}MB).`); return; }
   dormUp.filename = f.name; if (!dormUp.name) dormUp.name = f.name.replace(/\.[^.]+$/, '');
   if (dormUp.url) URL.revokeObjectURL(dormUp.url);
   dormUp.url = URL.createObjectURL(f);
@@ -11316,6 +11323,7 @@ function opsPlayYoutube() {
 function opsPlayMp3() {
   const file = document.getElementById('opsMusicFile').files[0];
   if (!file) { showError('mp3 파일을 골라 주세요.'); return; }
+  if (file.size > UPLOAD_AUDIO_BYTES) { showError(`파일이 너무 커요 (최대 ${UPLOAD_AUDIO_MB}MB).`); return; }
   const fd = new FormData();
   fd.append('room_id', ROOM_ID); fd.append('key', KEY); fd.append('sid', socket.id); fd.append('file', file);
   fetch('/upload_music', { method: 'POST', body: fd }).then(r => r.json()).then(d => {
@@ -11674,7 +11682,7 @@ function worldAddPlace() {
 function worldPlaceImage(ev, id) {
   const f = ev.target.files && ev.target.files[0]; ev.target.value = '';
   if (!f) return;
-  if (f.size > 4 * 1024 * 1024) { showShopToast('4MB 이하의 이미지만 등록할 수 있습니다.'); return; }
+  if (f.size > UPLOAD_IMG_BYTES) { showShopToast(`${UPLOAD_IMG_MB}MB 이하의 이미지만 등록할 수 있습니다.`); return; }
   f.arrayBuffer().then(buf => socket.emit('world_image', { filename: f.name, data: buf, for: id }));
 }
 function worldZoneEditHtml(p) {

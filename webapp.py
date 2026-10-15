@@ -37,13 +37,18 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.33"
+SERVER_BUILD = "2026-10-13.34"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
 # html(templates)을 고치면 서버를 다시 켜지 않아도 브라우저 새로고침(F5)만으로 바로 반영됩니다.
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-socketio = SocketIO(app, async_mode="threading", max_http_buffer_size=16 * 1024 * 1024)
+# 올리는 파일 크기 기준(사이트 전체 공통) : 이미지(움직이는 이미지 포함) 15MB, 소리(음악 · 효과음) 20MB.
+IMAGE_UPLOAD_MAX_BYTES = 15 * 1024 * 1024
+AUDIO_UPLOAD_MAX_BYTES = 20 * 1024 * 1024
+# 편지는 이미지 4장을 한 번에 보내므로 소켓 한 번에 받을 수 있는 크기를 그만큼 넉넉히 둡니다.
+socketio = SocketIO(app, async_mode="threading", max_http_buffer_size=70 * 1024 * 1024)
+app.config["MAX_CONTENT_LENGTH"] = AUDIO_UPLOAD_MAX_BYTES + 1024 * 1024
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 MUSIC_DIR = os.path.join(_THIS_DIR, "static", "music")
@@ -56,12 +61,12 @@ SOUND_EFFECT_DIR = os.path.join(_THIS_DIR, "static", "sound_effects")
 os.makedirs(SOUND_EFFECT_DIR, exist_ok=True)
 SOUND_EFFECT_ALLOWED_EXTS = (".mp3", ".wav", ".ogg", ".m4a", ".aac")
 # 재생은 클라이언트에서 6초로 끊지만, 그와 별개로 업로드 자체도 너무 큰 파일은 막아둡니다.
-SOUND_EFFECT_MAX_BYTES = 5 * 1024 * 1024
+SOUND_EFFECT_MAX_BYTES = AUDIO_UPLOAD_MAX_BYTES
 # 스킬 이펙트(컷인) : 글(제목+본문) 또는 이미지(apng 등 움직이는 이미지 포함)
 SKILL_LOG_DIR = os.path.join(_THIS_DIR, "static", "skill_fx")
 os.makedirs(SKILL_LOG_DIR, exist_ok=True)
 SKILL_LOG_IMAGE_EXTS = (".png", ".apng", ".gif", ".webp")
-SKILL_LOG_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+SKILL_LOG_IMAGE_MAX_BYTES = IMAGE_UPLOAD_MAX_BYTES
 SKILL_LOG_TITLE_MAX = 30
 SKILL_LOG_BODY_MAX = 300
 SKILL_LOG_TAGS = {"b", "strong", "i", "em", "br", "div", "p", "span"}
@@ -297,6 +302,10 @@ def upload_music():
     if not f.filename.lower().endswith(".mp3"):
         return jsonify({"error": "mp3 파일만 업로드할 수 있습니다."}), 400
 
+    f.seek(0, os.SEEK_END)
+    if f.tell() > AUDIO_UPLOAD_MAX_BYTES:
+        return jsonify({"error": f"파일이 너무 큽니다 (최대 {AUDIO_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."}), 400
+    f.seek(0)
     filename = f"{uuid.uuid4().hex}.mp3"
     f.save(os.path.join(MUSIC_DIR, filename))
     return jsonify({"url": url_for("static", filename=f"music/{filename}")})
@@ -324,6 +333,10 @@ def upload_avatar():
     if ext not in AVATAR_ALLOWED_EXTS:
         return jsonify({"error": "투명도를 지원하는 png/webp/gif 이미지만 업로드할 수 있습니다."}), 400
 
+    f.seek(0, os.SEEK_END)
+    if f.tell() > IMAGE_UPLOAD_MAX_BYTES:
+        return jsonify({"error": f"이미지가 너무 큽니다 (최대 {IMAGE_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."}), 400
+    f.seek(0)
     filename = f"{uuid.uuid4().hex}{ext}"
     f.save(os.path.join(AVATAR_DIR, filename))
     avatar_url = url_for("static", filename=f"avatars/{filename}")
@@ -2604,8 +2617,8 @@ def on_shop_admin_request(data):
 MAP_BG_DIR = os.path.join(_THIS_DIR, "static", "map_bg")
 os.makedirs(MAP_BG_DIR, exist_ok=True)
 MAP_BG_ALLOWED_EXTS = (".png", ".webp", ".gif", ".jpg", ".jpeg")
-MAP_BG_MAX_BYTES = 6 * 1024 * 1024
-SCENE_MAX_BYTES = 12 * 1024 * 1024
+MAP_BG_MAX_BYTES = IMAGE_UPLOAD_MAX_BYTES
+SCENE_MAX_BYTES = IMAGE_UPLOAD_MAX_BYTES
 MAP_BG_DEFAULT = {"url": None, "mode": "frame", "dim": 40, "line": 22}
 
 
@@ -2634,7 +2647,7 @@ def on_set_map_bg(data):
             emit("action_error", {"message": "png/jpg/webp/gif 이미지만 올릴 수 있습니다."})
             return
         if len(blob) > MAP_BG_MAX_BYTES:
-            emit("action_error", {"message": "이미지가 너무 큽니다 (최대 6MB)."})
+            emit("action_error", {"message": f"이미지가 너무 큽니다 (최대 {IMAGE_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."})
             return
         filename = f"{uuid.uuid4().hex}{ext}"
         with open(os.path.join(MAP_BG_DIR, filename), "wb") as f:
@@ -2674,7 +2687,7 @@ def on_set_boss_image(data):
             emit("action_error", {"message": "png/jpg/webp/gif 이미지만 올릴 수 있습니다."})
             return
         if len(blob) > MAP_BG_MAX_BYTES:
-            emit("action_error", {"message": "이미지가 너무 큽니다 (최대 6MB)."})
+            emit("action_error", {"message": f"이미지가 너무 큽니다 (최대 {IMAGE_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."})
             return
         filename = f"boss_{uuid.uuid4().hex}{ext}"
         with open(os.path.join(MAP_BG_DIR, filename), "wb") as f:
@@ -2744,7 +2757,7 @@ def on_set_default_sfx(data):
             emit("action_error", {"message": "mp3/wav/ogg/m4a/aac 소리 파일만 올릴 수 있습니다."})
             return
         if len(blob) > SOUND_EFFECT_MAX_BYTES:
-            emit("action_error", {"message": "파일이 너무 큽니다."})
+            emit("action_error", {"message": f"파일이 너무 큽니다 (최대 {AUDIO_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."})
             return
         filename = f"sfx_{kind}_{uuid.uuid4().hex}{ext}"
         with open(os.path.join(SOUND_EFFECT_DIR, filename), "wb") as f:
@@ -2773,7 +2786,7 @@ def on_set_track_bg(data):
             emit("action_error", {"message": "png/jpg/webp/gif 이미지만 올릴 수 있습니다."})
             return
         if len(blob) > MAP_BG_MAX_BYTES:
-            emit("action_error", {"message": "이미지가 너무 큽니다 (최대 6MB)."})
+            emit("action_error", {"message": f"이미지가 너무 큽니다 (최대 {IMAGE_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."})
             return
         filename = f"track_{uuid.uuid4().hex}{ext}"
         with open(os.path.join(MAP_BG_DIR, filename), "wb") as f:
@@ -2975,14 +2988,14 @@ def on_mail_delete(data):
 # ----------------------------------------------------------------------
 DORM_ASSET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "dorm_assets")
 os.makedirs(DORM_ASSET_DIR, exist_ok=True)
-DORM_ASSET_MAX_BYTES = 2 * 1024 * 1024
+DORM_ASSET_MAX_BYTES = IMAGE_UPLOAD_MAX_BYTES
 
 
 # ----------------------------------------------------------------------
 # 맵(일반 룸) : 장소 · 챕터 해금. 러너에게는 잠긴 장소·챕터 내용을 보내지 않으므로 접속마다 따로 보냅니다.
 # ----------------------------------------------------------------------
 WORLD_IMG_DIR = os.path.join(_THIS_DIR, "static", "world")
-WORLD_IMG_MAX_BYTES = 4 * 1024 * 1024
+WORLD_IMG_MAX_BYTES = IMAGE_UPLOAD_MAX_BYTES
 
 
 def _world_broadcast():
@@ -3019,7 +3032,7 @@ def on_world_image(data):
         emit("world_result", {"ok": False, "message": "PNG · JPG · GIF · WEBP 이미지만 등록할 수 있습니다."})
         return
     if len(blob) > WORLD_IMG_MAX_BYTES:
-        emit("world_result", {"ok": False, "message": "4MB 이하의 이미지만 등록할 수 있습니다."})
+        emit("world_result", {"ok": False, "message": f"{IMAGE_UPLOAD_MAX_BYTES // (1024 * 1024)}MB 이하의 이미지만 등록할 수 있습니다."})
         return
     os.makedirs(WORLD_IMG_DIR, exist_ok=True)
     filename = f"{uuid.uuid4().hex}{ext}"
@@ -3123,7 +3136,7 @@ def on_dorm_room_save(data):
 
 DORM_MUSIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "dorm_music")
 os.makedirs(DORM_MUSIC_DIR, exist_ok=True)
-DORM_MUSIC_MAX_BYTES = 12 * 1024 * 1024
+DORM_MUSIC_MAX_BYTES = AUDIO_UPLOAD_MAX_BYTES
 
 
 def _dorm_owner_only(owner):
@@ -3149,7 +3162,7 @@ def on_dorm_music_upload(data):
         emit("dorm_result", {"ok": False, "message": "mp3·ogg·wav·m4a 음악 파일만 올릴 수 있어요."})
         return
     if len(blob) > DORM_MUSIC_MAX_BYTES:
-        emit("dorm_result", {"ok": False, "message": "음악 파일이 너무 커요 (최대 12MB)."})
+        emit("dorm_result", {"ok": False, "message": f"음악 파일이 너무 커요 (최대 {AUDIO_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."})
         return
     filename = f"{uuid.uuid4().hex}{ext}"
     with open(os.path.join(DORM_MUSIC_DIR, filename), "wb") as f:
@@ -3277,7 +3290,7 @@ def on_dorm_asset_upload(data):
         emit("dorm_result", {"ok": False, "message": "png/gif/webp 이미지만 올릴 수 있어요."})
         return
     if len(blob) > DORM_ASSET_MAX_BYTES:
-        emit("dorm_result", {"ok": False, "message": "이미지가 너무 커요 (최대 2MB)."})
+        emit("dorm_result", {"ok": False, "message": f"이미지가 너무 커요 (최대 {IMAGE_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."})
         return
     filename = f"{uuid.uuid4().hex}{ext}"
     try:
@@ -3356,7 +3369,7 @@ def on_set_scene(data):
             emit("action_error", {"message": "png/apng/jpg/webp/gif 이미지만 올릴 수 있습니다."})
             return
         if len(blob) > SCENE_MAX_BYTES:
-            emit("action_error", {"message": "이미지가 너무 큽니다 (최대 12MB)."})
+            emit("action_error", {"message": f"이미지가 너무 큽니다 (최대 {IMAGE_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."})
             return
         filename = f"scene_{uuid.uuid4().hex}{ext}"
         with open(os.path.join(MAP_BG_DIR, filename), "wb") as f:

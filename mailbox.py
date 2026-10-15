@@ -22,9 +22,9 @@ import uuid
 LETTERS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "letters.json")
 MAX_TEXT_LEN = 2000
 MAX_LETTERS = 5000
-# 첨부 이미지 : 편지 한 통에 4장까지, 장당 5MB. 파일 이름은 추측할 수 없는 무작위 이름이라 받는 사람만 주소를 알아요.
+# 첨부 이미지 : 편지 한 통에 4장까지, 장당 15MB(사이트 공통 이미지 기준). 파일 이름은 추측할 수 없는 무작위 이름이라 받는 사람만 주소를 알아요.
 MAX_IMAGES = 4
-IMAGE_MAX_BYTES = 5 * 1024 * 1024
+IMAGE_MAX_BYTES = 15 * 1024 * 1024
 # 편지의 시기(작중 연도, 空歷) : 편지는 리뉴얼 기간에만 씁니다. 지금 기간은 운영진이 정하고,
 # 쓰는 사람은 그 기간 안에서 연도만 고릅니다. (id, 이름, 첫 해, 마지막 해) — 순서 = 작중 시간 순서.
 ERAS = [
