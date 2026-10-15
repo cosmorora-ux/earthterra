@@ -2368,26 +2368,30 @@
   @media (max-width:900px) { .dorm-frame-wrap { flex:none; } .dorm-line-bubble { left:12px; top:56px; max-width:80%; padding:9px 12px; } }
   .dorm-gb-write { padding:12px 16px 14px; border-bottom:1px solid var(--line); }
   .modal-box.dorm-modal .dorm-gb-write textarea { width:100%; resize:none; font-size:14px; line-height:1.65; padding:10px 12px; min-height:0; }
-  .dorm-gb-write .row { display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+  .dorm-gb-write .row { display:flex; align-items:center; justify-content:flex-end; margin-top:8px; }
   .dorm-gb-write .n { font-size:12px; color: var(--muted); }
   .dorm-tbtn.sm { height:32px; padding:0 14px; font-size:13px; }
   .dorm-gb-list { display:flex; flex-direction:column; gap:8px; }
   /* 방명록 한 장 : 로그창 블록과 같은 모양(상자 · 윗선 빛 한 줄 · 아이콘 칸 + 글 칸, 첫 줄 흰 굵은 글자 · 본문 회색) */
-  .dorm-note { position:relative; padding:9px 12px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.06);
-    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)); --lb-glow: var(--nc); }
+  .dorm-note { position:relative; padding:9px 12px 10px; border-radius:10px; border:1px solid color-mix(in srgb, var(--nc) 45%, transparent);
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)); }
+  /* 테두리 · 윗선 빛 : 글쓴이가 등록한 본인 컬러 */
   .dorm-note::before { content:""; position:absolute; left:16px; right:16px; top:-1px; height:1px; pointer-events:none;
-    background: linear-gradient(90deg, transparent, var(--lb-glow), transparent); }
-  .dorm-note.mine { --lb-glow: var(--point); }
-  .dorm-note .gn-h { display:grid; grid-template-columns:20px minmax(0,1fr) auto auto; column-gap:6px; align-items:baseline; }
-  .dorm-note .gn-h .li { text-align:center; font-size:11px; color:#d7d8de; opacity:.9; }
-  .dorm-note .gn-h b { color:#fff; font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .dorm-note .gn-h .t { font-size:12px; color: var(--muted); font-weight:400; margin-left:6px; }
-  .dorm-note .gn-h .no { font-size:11px; font-weight:700; color: var(--muted); letter-spacing:.04em; font-variant-numeric: tabular-nums; opacity:.8; }
+    background: linear-gradient(90deg, transparent, var(--nc), transparent); }
+  .dorm-note .gn-h { display:flex; align-items:baseline; gap:6px; min-width:0; }
+  .dorm-note .gn-h .li { width:20px; flex:none; text-align:center; font-size:11px; color:#d7d8de; opacity:.9; }
+  .dorm-note .gn-h b { flex:1; min-width:0; color:#fff; font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dorm-note .gn-h .t { font-size:12px; color: var(--muted); font-weight:400; margin-left:6px; font-variant-numeric: tabular-nums; }
+  .dorm-note .gn-h .no { flex:none; font-size:11px; font-weight:700; color: var(--muted); letter-spacing:.04em; font-variant-numeric: tabular-nums; opacity:.8; }
   .dorm-note p { margin:4px 0 0 26px; font-size:.94em; line-height:1.65; color:#c8cad0; white-space:pre-wrap; word-break:break-word; }
-  .dorm-note-del { width:22px; height:22px; margin-left:4px; border:none; border-radius:6px; background:none; color: var(--muted); cursor:pointer; opacity:0; font-size:11px; align-self:center; }
-  .dorm-note:hover .dorm-note-del { opacity:1; }
-  @media (hover:none) { .dorm-note-del { opacity:.7; } }
-  .dorm-note-del:hover { color: var(--accent-red); background: rgba(255,255,255,.06); }
+  .dorm-note-btn { flex:none; width:22px; height:22px; border:none; border-radius:6px; background:none; color: var(--muted); cursor:pointer; font-size:10.5px; align-self:center; opacity:.75; }
+  .dorm-note-btn:hover { color:#fff; background: rgba(255,255,255,.08); opacity:1; }
+  .dorm-note-btn.del { opacity:0; }
+  .dorm-note:hover .dorm-note-btn.del { opacity:.75; }
+  @media (hover:none) { .dorm-note-btn.del { opacity:.6; } }
+  .dorm-note-btn.del:hover { color: var(--accent-red); }
+  .modal-box.dorm-modal .dorm-note textarea { display:block; width:calc(100% - 26px); margin:8px 0 0 26px; box-sizing:border-box; resize:none; font-size:14px; line-height:1.65; padding:8px 10px; min-height:0; }
+  .dorm-note .gn-edit { display:flex; justify-content:flex-end; gap:6px; margin-top:8px; }
   .dorm-asset { aspect-ratio:1; border-radius:8px; background:#0e0e11 center/contain no-repeat; background-origin:content-box; padding:6px; image-rendering: pixelated; border:1px solid rgba(255,255,255,.06); cursor:pointer; }
   .dorm-asset:hover { border-color: rgba(255,255,255,.2); }
   .dorm-asset.on { border-color: var(--point); box-shadow: 0 0 0 1px var(--point); }
@@ -9701,7 +9705,7 @@ function closeDorm() {
   syncDormMusic();
 }
 function setDormView(v) { dormView = v; if (v === 'manage') { dormHallsDraft = null; dormCreditsDraft = null; } renderDorm(); }
-function openDormRoom(owner) { dormZoom = 1; dormPan = { x: 0, y: 0 }; dormView = 'room'; dormRoom = { owner, loading: true }; dormEdit = null; dormSel = -1; socket.emit('dorm_room_get', { name: owner }); renderDorm(); }
+function openDormRoom(owner) { dormGbEditing = false; dormZoom = 1; dormPan = { x: 0, y: 0 }; dormView = 'room'; dormRoom = { owner, loading: true }; dormEdit = null; dormSel = -1; socket.emit('dorm_room_get', { name: owner }); renderDorm(); }
 socket.on('dorm_data', (d) => {
   // 기간이 바뀌면 지난 마이룸 목록 · 관리 초안을 새로 받습니다.
   if (dormData && dormData.period && d.period && dormData.period.id !== d.period.id) {
@@ -9901,8 +9905,9 @@ function renderDormRoom(body) {
   const gb = document.getElementById('dormGbText'), gbSide = body.querySelector('.dorm-side');
   if (!dormEdit && gb && document.activeElement === gb && gbSide && body.contains(gb)) {
     const tmp = document.createElement('div'); tmp.innerHTML = dormGuestbookHtml(r);
-    ['.dorm-gb-cnt', '.dorm-roominfo', '.dorm-gb-list'].forEach(sel => {
-      const o = gbSide.querySelector(sel), n = tmp.querySelector(sel); if (o && n) o.replaceWith(n);
+    ['.dorm-roominfo', '.dorm-gb-list'].forEach(sel => {
+      const o = gbSide.querySelector(sel), n = tmp.querySelector(sel);
+      if (o && n && !(o.contains(gb) && dormGbEditing)) o.replaceWith(n);
     });
     dormRenderStage();
     return;
@@ -10088,7 +10093,7 @@ function dormGuestbookHtml(r) {
   const me = r.past ? null : dormLoggedName(), list = r.guestbook || [], mine = me && list.find(e => e.author === me);
   const draft = dormGbDraft[r.owner] != null ? dormGbDraft[r.owner] : (mine ? mine.text : '');
   const canDel = (e) => !r.past && (dormIsGm() || me === e.author || me === r.owner);
-  const fmt = (at) => etDate(new Date(at * 1000));
+  const fmt = (at) => mailRealTime(at);  // 실제 날짜 · 시간(26.10.15 PM 3:12)
   const color = (name) => { const p = (typeof lastRosterMypage !== 'undefined' && lastRosterMypage[name]) || {}; return p.color || '#6b6b73'; };
   const isOwner = !r.past && dormMe() && dormMe() === r.owner;
   const music = r.music;
@@ -10103,25 +10108,39 @@ function dormGuestbookHtml(r) {
       </div>
     </div>` : '';
   return `<div class="member-panel panel dorm-side">
-    <div class="member-header"><b>Guestbook</b><span class="dorm-gb-cnt">${list.length}</span></div>${info}
-    ${me ? `<div class="dorm-gb-write"><textarea id="dormGbText" maxlength="300" rows="3" placeholder="${mine ? '다시 쓰면 내 방명록이 고쳐져요.' : '이 방에 한마디 남겨 주세요. (한 사람당 하나)'}"
+    <div class="member-header"><b>Guestbook</b></div>${info}
+    ${me && !mine ? `<div class="dorm-gb-write"><textarea id="dormGbText" maxlength="300" rows="3" placeholder="방명록을 작성해 주세요."
         oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
-      <div class="row"><span class="n">${mine ? '내 방명록 고치기' : '방명록 쓰기'}</span><button class="dorm-tbtn primary sm" onclick="writeDormGuestbook()">${mine ? '고치기' : '남기기'}</button></div></div>`
+      <div class="row"><button class="dorm-tbtn primary sm" onclick="writeDormGuestbook()">남기기</button></div></div>`
       : ''}
-    <div class="dorm-side-body dorm-gb-list">${list.length ? list.map((e, i) => `<article class="dorm-note ${e.author === me ? 'mine' : ''}" style="--nc:${color(e.author)}">
+    <div class="dorm-side-body dorm-gb-list">${list.length ? list.map((e, i) => {
+      const own = e.author === me, editing = own && dormGbEditing;
+      return `<article class="dorm-note ${own ? 'mine' : ''} ${editing ? 'editing' : ''}" style="--nc:${color(e.author)}">
         <div class="gn-h"><i class="li fa-solid fa-feather-pointed"></i><b>${mailEsc(e.author)}<span class="t">${fmt(e.at)}${e.edited ? ' · 수정됨' : ''}</span></b>
           <span class="no">No.${String(list.length - i).padStart(2, '0')}</span>
-          ${canDel(e) ? `<button class="dorm-note-del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-xmark"></i></button>` : '<span></span>'}</div>
-        <p>${mailEsc(e.text)}</p></article>`).join('')
+          ${own && !editing ? `<button class="dorm-note-btn" onclick="dormGbEdit(true)" data-tip="고치기"><i class="fa-solid fa-pen"></i></button>` : ''}
+          ${canDel(e) && !editing ? `<button class="dorm-note-btn del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-xmark"></i></button>` : ''}</div>
+        ${editing ? `<textarea id="dormGbText" maxlength="300" rows="3" oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
+          <div class="gn-edit"><button class="dorm-tbtn sm" onclick="dormGbEdit(false)">취소</button><button class="dorm-tbtn primary sm" onclick="writeDormGuestbook()">저장</button></div>`
+          : `<p>${mailEsc(e.text)}</p>`}</article>`; }).join('')
       : emptyHtml('fa-feather-pointed', '아직 방명록이 없어요', me ? '첫 방명록을 남겨 보세요.' : '', null, true)}</div>
   </div>`;
 }
 
 function dormLoggedName() { return dormIsGm() ? '운영진' : dormMe(); }
+// 내 방명록 고치기 : 내 글 옆 연필 아이콘을 누르면 그 자리에서 바로 고쳐요.
+let dormGbEditing = false;
+function dormGbEdit(on) {
+  dormGbEditing = !!on;
+  if (!on && dormRoom) delete dormGbDraft[dormRoom.owner];
+  renderDorm();
+  if (on) setTimeout(() => { const t = document.getElementById('dormGbText'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 0);
+}
 function writeDormGuestbook() {
   const el = document.getElementById('dormGbText'); const text = (el ? el.value : '').trim();
-  if (!text) { showShopToast('방명록 내용을 써 주세요.'); return; }
+  if (!text) { showShopToast('방명록을 작성해 주세요.'); return; }
   delete dormGbDraft[dormRoom.owner];
+  dormGbEditing = false;
   socket.emit('dorm_guestbook_write', { owner: dormRoom.owner, text });
 }
 function deleteDormGuestbook(author) {
