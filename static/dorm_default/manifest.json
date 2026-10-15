@@ -41,6 +41,13 @@
 "author": "",
 "license": "",
 "url": ""
+},
+{
+"id": "pk-milsae",
+"title": "밀쉐도트 집꾸미기 고딕풍 · 골드화이트 황실풍",
+"author": "밀쉐 (@mmmm_alsae)",
+"license": "비상업 목적 커뮤니티 꾸미기에만 사용 · 재가공·재판매·색상 보정·상업적 이용 불가",
+"url": "https://x.com/mmmm_alsae"
 }
 ],
 "assets": [
@@ -6661,6 +6668,2604 @@
 "w": 121,
 "h": 145,
 "credit": "pk-themes"
+},
+{
+"id": "mg001",
+"name": "고딕풍 1층 방",
+"category": "room",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/001.png",
+"w": 333,
+"h": 319,
+"credit": "pk-milsae",
+"fit": {
+"wall": [
+0,
+0,
+333
+],
+"floor": [
+0,
+150,
+333
+]
+}
+},
+{
+"id": "mg002",
+"name": "고딕풍 2층 방",
+"category": "room",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/002.png",
+"w": 646,
+"h": 620,
+"credit": "pk-milsae"
+},
+{
+"id": "mg003",
+"name": "고딕풍 벽지 검은대리석",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/003.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mg004",
+"name": "고딕풍 벽지 회색벽돌",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/004.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mg005",
+"name": "고딕풍 벽지 갈색벽돌",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/005.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mg006",
+"name": "고딕풍 벽지 후르츠그린",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/006.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mg007",
+"name": "고딕풍 벽지 검은타일",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/007.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mg008",
+"name": "고딕풍 벽지 베이지타일",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/008.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mg009",
+"name": "고딕풍 바닥 나무마루",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/009.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mg010",
+"name": "고딕풍 바닥 고동마루",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/010.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mg011",
+"name": "고딕풍 바닥 갈색마루",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/011.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mg012",
+"name": "고딕풍 바닥 오크화이트마루",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/012.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mg013",
+"name": "고딕풍 바닥 그을린마루",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/013.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mg014",
+"name": "고딕풍 바닥 메이플마루",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/014.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mg015",
+"name": "고딕풍 바닥 오크마루",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/015.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mg016",
+"name": "고딕풍 바닥 월넛마루",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/016.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mg017",
+"name": "계단-오크-소",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/017.png",
+"w": 92,
+"h": 170,
+"credit": "pk-milsae"
+},
+{
+"id": "mg018",
+"name": "화이트소파-중",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/018.png",
+"w": 158,
+"h": 85,
+"credit": "pk-milsae"
+},
+{
+"id": "mg019",
+"name": "블랙소파-중",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/019.png",
+"w": 158,
+"h": 85,
+"credit": "pk-milsae"
+},
+{
+"id": "mg020",
+"name": "베이지쿠션-2",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/020.png",
+"w": 30,
+"h": 28,
+"credit": "pk-milsae"
+},
+{
+"id": "mg021",
+"name": "베이지쿠션-1",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/021.png",
+"w": 36,
+"h": 24,
+"credit": "pk-milsae"
+},
+{
+"id": "mg022",
+"name": "베이지쿠션-3",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/022.png",
+"w": 36,
+"h": 24,
+"credit": "pk-milsae"
+},
+{
+"id": "mg023",
+"name": "블랙쿠션-3",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/023.png",
+"w": 36,
+"h": 24,
+"credit": "pk-milsae"
+},
+{
+"id": "mg024",
+"name": "블랙쿠션-2",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/024.png",
+"w": 84,
+"h": 29,
+"credit": "pk-milsae"
+},
+{
+"id": "mg025",
+"name": "블랙쿠션-1",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/025.png",
+"w": 36,
+"h": 24,
+"credit": "pk-milsae"
+},
+{
+"id": "mg026",
+"name": "이너 벽 선반 - 대",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/026.png",
+"w": 98,
+"h": 68,
+"credit": "pk-milsae"
+},
+{
+"id": "mg027",
+"name": "이너 벽 선반 - 소",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/027.png",
+"w": 38,
+"h": 41,
+"credit": "pk-milsae"
+},
+{
+"id": "mg028",
+"name": "꽃잎",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/028.png",
+"w": 39,
+"h": 18,
+"credit": "pk-milsae"
+},
+{
+"id": "mg029",
+"name": "화이트 대리석 욕조",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/029.png",
+"w": 79,
+"h": 62,
+"credit": "pk-milsae"
+},
+{
+"id": "mg030",
+"name": "욕조 용품 세트 - 블랙",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/030.png",
+"w": 90,
+"h": 22,
+"credit": "pk-milsae"
+},
+{
+"id": "mg031",
+"name": "욕조 용품 세트 - 화이트",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/031.png",
+"w": 89,
+"h": 22,
+"credit": "pk-milsae"
+},
+{
+"id": "mg032",
+"name": "세면대 세트",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/032.png",
+"w": 79,
+"h": 180,
+"credit": "pk-milsae"
+},
+{
+"id": "mg033",
+"name": "화이트 대리석 세면대 세트",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/033.png",
+"w": 79,
+"h": 92,
+"credit": "pk-milsae"
+},
+{
+"id": "mg034",
+"name": "브라운 거울",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/034.png",
+"w": 28,
+"h": 45,
+"credit": "pk-milsae"
+},
+{
+"id": "mg035",
+"name": "타올 바구니",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/035.png",
+"w": 42,
+"h": 29,
+"credit": "pk-milsae"
+},
+{
+"id": "mg036",
+"name": "월넛 욕조 선반 - 채움",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/036.png",
+"w": 33,
+"h": 52,
+"credit": "pk-milsae"
+},
+{
+"id": "mg037",
+"name": "월넛 선반",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/037.png",
+"w": 33,
+"h": 52,
+"credit": "pk-milsae"
+},
+{
+"id": "mg038",
+"name": "우드 쟁반",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/038.png",
+"w": 44,
+"h": 40,
+"credit": "pk-milsae"
+},
+{
+"id": "mg039",
+"name": "화이트 대리석 세면대",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/039.png",
+"w": 79,
+"h": 75,
+"credit": "pk-milsae"
+},
+{
+"id": "mg040",
+"name": "브라운 우드 가벽",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/040.png",
+"w": 54,
+"h": 167,
+"credit": "pk-milsae"
+},
+{
+"id": "mg041",
+"name": "라탄 원형 카펫-소",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/041.png",
+"w": 50,
+"h": 37,
+"credit": "pk-milsae"
+},
+{
+"id": "mg042",
+"name": "라탄 원형 카펫-소-브라운",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/042.png",
+"w": 50,
+"h": 37,
+"credit": "pk-milsae"
+},
+{
+"id": "mg043",
+"name": "베이지 원형 카펫-중",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/043.png",
+"w": 78,
+"h": 44,
+"credit": "pk-milsae"
+},
+{
+"id": "mg044",
+"name": "베이지 원형 카펫-소",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/044.png",
+"w": 95,
+"h": 269,
+"credit": "pk-milsae"
+},
+{
+"id": "mg045",
+"name": "베이지 원형 카펫 -대",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/045.png",
+"w": 130,
+"h": 79,
+"credit": "pk-milsae"
+},
+{
+"id": "mg046",
+"name": "다크 사각 카펫-대",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/046.png",
+"w": 169,
+"h": 86,
+"credit": "pk-milsae"
+},
+{
+"id": "mg047",
+"name": "다크 사각 카펫-소",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/047.png",
+"w": 55,
+"h": 29,
+"credit": "pk-milsae"
+},
+{
+"id": "mg048",
+"name": "고딕 원형 카펫",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/048.png",
+"w": 110,
+"h": 60,
+"credit": "pk-milsae"
+},
+{
+"id": "mg049",
+"name": "블랙 무드 배드",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/049.png",
+"w": 124,
+"h": 92,
+"credit": "pk-milsae"
+},
+{
+"id": "mg050",
+"name": "검은슬리퍼",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/050.png",
+"w": 16,
+"h": 13,
+"credit": "pk-milsae"
+},
+{
+"id": "mg051",
+"name": "베이지슬리퍼",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/051.png",
+"w": 16,
+"h": 13,
+"credit": "pk-milsae"
+},
+{
+"id": "mg052",
+"name": "블랙 롱 소파",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/052.png",
+"w": 226,
+"h": 130,
+"credit": "pk-milsae"
+},
+{
+"id": "mg053",
+"name": "블랙 무드 의자 -앞면",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/053.png",
+"w": 43,
+"h": 55,
+"credit": "pk-milsae"
+},
+{
+"id": "mg054",
+"name": "블랙 무드 의자 -뒷면",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/054.png",
+"w": 39,
+"h": 48,
+"credit": "pk-milsae"
+},
+{
+"id": "mg055",
+"name": "블랙 원형 작은 테이블",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/055.png",
+"w": 35,
+"h": 33,
+"credit": "pk-milsae"
+},
+{
+"id": "mg056",
+"name": "블랙 라운드 의자-앞면",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/056.png",
+"w": 42,
+"h": 52,
+"credit": "pk-milsae"
+},
+{
+"id": "mg057",
+"name": "블랙 라운드 의자-뒷면",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/057.png",
+"w": 41,
+"h": 47,
+"credit": "pk-milsae"
+},
+{
+"id": "mg058",
+"name": "월넛 의자",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/058.png",
+"w": 26,
+"h": 30,
+"credit": "pk-milsae"
+},
+{
+"id": "mg059",
+"name": "블랙 수납장",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/059.png",
+"w": 40,
+"h": 48,
+"credit": "pk-milsae"
+},
+{
+"id": "mg060",
+"name": "블랙 원형 테이블",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/060.png",
+"w": 61,
+"h": 51,
+"credit": "pk-milsae"
+},
+{
+"id": "mg061",
+"name": "월넛 원형 미니 테이블",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/061.png",
+"w": 42,
+"h": 46,
+"credit": "pk-milsae"
+},
+{
+"id": "mg062",
+"name": "월넛 원형 테이블",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/062.png",
+"w": 111,
+"h": 91,
+"credit": "pk-milsae"
+},
+{
+"id": "mg063",
+"name": "월넛 테이블",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/063.png",
+"w": 98,
+"h": 96,
+"credit": "pk-milsae"
+},
+{
+"id": "mg064",
+"name": "월넛 미니테이블2",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/064.png",
+"w": 80,
+"h": 57,
+"credit": "pk-milsae"
+},
+{
+"id": "mg065",
+"name": "월넛 미니테이블1",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/065.png",
+"w": 70,
+"h": 52,
+"credit": "pk-milsae"
+},
+{
+"id": "mg066",
+"name": "블랙 수납선반",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/066.png",
+"w": 42,
+"h": 76,
+"credit": "pk-milsae"
+},
+{
+"id": "mg067",
+"name": "화이트 대리석 스톨",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/067.png",
+"w": 36,
+"h": 37,
+"credit": "pk-milsae"
+},
+{
+"id": "mg068",
+"name": "블랙 스톨2",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/068.png",
+"w": 56,
+"h": 46,
+"credit": "pk-milsae"
+},
+{
+"id": "mg069",
+"name": "블랙 스톨1",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/069.png",
+"w": 34,
+"h": 35,
+"credit": "pk-milsae"
+},
+{
+"id": "mg070",
+"name": "월넛원형테이블",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/070.png",
+"w": 36,
+"h": 47,
+"credit": "pk-milsae"
+},
+{
+"id": "mg071",
+"name": "남청대형소파",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/071.png",
+"w": 61,
+"h": 83,
+"credit": "pk-milsae"
+},
+{
+"id": "mg072",
+"name": "액자3",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/072.png",
+"w": 27,
+"h": 76,
+"credit": "pk-milsae"
+},
+{
+"id": "mg073",
+"name": "액자2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/073.png",
+"w": 41,
+"h": 73,
+"credit": "pk-milsae"
+},
+{
+"id": "mg074",
+"name": "대리석액자2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/074.png",
+"w": 37,
+"h": 73,
+"credit": "pk-milsae"
+},
+{
+"id": "mg075",
+"name": "대리석액자1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/075.png",
+"w": 37,
+"h": 73,
+"credit": "pk-milsae"
+},
+{
+"id": "mg076",
+"name": "액자1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/076.png",
+"w": 24,
+"h": 44,
+"credit": "pk-milsae"
+},
+{
+"id": "mg077",
+"name": "고딕 벽걸이 액자 세트-대",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/077.png",
+"w": 112,
+"h": 120,
+"credit": "pk-milsae"
+},
+{
+"id": "mg078",
+"name": "고딕 벽걸이 액자 세트-소",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/078.png",
+"w": 42,
+"h": 97,
+"credit": "pk-milsae"
+},
+{
+"id": "mg079",
+"name": "벽 촛불 세트",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/079.png",
+"w": 36,
+"h": 50,
+"credit": "pk-milsae"
+},
+{
+"id": "mg080",
+"name": "벽 촛불1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/080.png",
+"w": 18,
+"h": 42,
+"credit": "pk-milsae"
+},
+{
+"id": "mg081",
+"name": "스탠드조명",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/081.png",
+"w": 28,
+"h": 92,
+"credit": "pk-milsae"
+},
+{
+"id": "mg082",
+"name": "테이블조명",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/082.png",
+"w": 39,
+"h": 37,
+"credit": "pk-milsae"
+},
+{
+"id": "mg083",
+"name": "조명3",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/083.png",
+"w": 44,
+"h": 109,
+"credit": "pk-milsae"
+},
+{
+"id": "mg084",
+"name": "조명2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/084.png",
+"w": 38,
+"h": 115,
+"credit": "pk-milsae"
+},
+{
+"id": "mg085",
+"name": "조명1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/085.png",
+"w": 49,
+"h": 139,
+"credit": "pk-milsae"
+},
+{
+"id": "mg086",
+"name": "전구조명2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/086.png",
+"w": 28,
+"h": 74,
+"credit": "pk-milsae"
+},
+{
+"id": "mg087",
+"name": "전구조명1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/087.png",
+"w": 28,
+"h": 44,
+"credit": "pk-milsae"
+},
+{
+"id": "mg088",
+"name": "통유리창",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/088.png",
+"w": 112,
+"h": 199,
+"credit": "pk-milsae"
+},
+{
+"id": "mg089",
+"name": "반투명가림막2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/089.png",
+"w": 53,
+"h": 169,
+"credit": "pk-milsae"
+},
+{
+"id": "mg090",
+"name": "반투명가림막1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/090.png",
+"w": 144,
+"h": 215,
+"credit": "pk-milsae"
+},
+{
+"id": "mg091",
+"name": "계단-오크",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/091.png",
+"w": 88,
+"h": 129,
+"credit": "pk-milsae"
+},
+{
+"id": "mg092",
+"name": "계단-월넛",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/092.png",
+"w": 88,
+"h": 129,
+"credit": "pk-milsae"
+},
+{
+"id": "mg093",
+"name": "안전가드",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/093.png",
+"w": 58,
+"h": 52,
+"credit": "pk-milsae"
+},
+{
+"id": "mg094",
+"name": "돔형문-브라운",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/094.png",
+"w": 81,
+"h": 169,
+"credit": "pk-milsae"
+},
+{
+"id": "mg095",
+"name": "돔형문-그린",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/095.png",
+"w": 81,
+"h": 163,
+"credit": "pk-milsae"
+},
+{
+"id": "mg096",
+"name": "돔형문-블랙",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/096.png",
+"w": 81,
+"h": 163,
+"credit": "pk-milsae"
+},
+{
+"id": "mg097",
+"name": "틀창",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/097.png",
+"w": 124,
+"h": 206,
+"credit": "pk-milsae"
+},
+{
+"id": "mg098",
+"name": "가벽3",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/098.png",
+"w": 47,
+"h": 167,
+"credit": "pk-milsae"
+},
+{
+"id": "mg099",
+"name": "가벽2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/099.png",
+"w": 157,
+"h": 221,
+"credit": "pk-milsae"
+},
+{
+"id": "mg100",
+"name": "가벽1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/100.png",
+"w": 163,
+"h": 224,
+"credit": "pk-milsae"
+},
+{
+"id": "mg101",
+"name": "커튼-천",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/101.png",
+"w": 131,
+"h": 227,
+"credit": "pk-milsae"
+},
+{
+"id": "mg102",
+"name": "커튼-반투명암막",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/102.png",
+"w": 109,
+"h": 187,
+"credit": "pk-milsae"
+},
+{
+"id": "mg103",
+"name": "커튼-반투명",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/103.png",
+"w": 109,
+"h": 187,
+"credit": "pk-milsae"
+},
+{
+"id": "mg104",
+"name": "갈색병",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/104.png",
+"w": 7,
+"h": 16,
+"credit": "pk-milsae"
+},
+{
+"id": "mg105",
+"name": "디퓨저",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/105.png",
+"w": 11,
+"h": 18,
+"credit": "pk-milsae"
+},
+{
+"id": "mg106",
+"name": "전시용 미니액자",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/106.png",
+"w": 19,
+"h": 28,
+"credit": "pk-milsae"
+},
+{
+"id": "mg107",
+"name": "갈대장식",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/107.png",
+"w": 32,
+"h": 40,
+"credit": "pk-milsae"
+},
+{
+"id": "mg108",
+"name": "사슴장식",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/108.png",
+"w": 22,
+"h": 32,
+"credit": "pk-milsae"
+},
+{
+"id": "mg109",
+"name": "화병3",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/109.png",
+"w": 24,
+"h": 45,
+"credit": "pk-milsae"
+},
+{
+"id": "mg110",
+"name": "화병2",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/110.png",
+"w": 24,
+"h": 45,
+"credit": "pk-milsae"
+},
+{
+"id": "mg111",
+"name": "화병1",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/111.png",
+"w": 23,
+"h": 28,
+"credit": "pk-milsae"
+},
+{
+"id": "mg112",
+"name": "화분2",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/112.png",
+"w": 18,
+"h": 26,
+"credit": "pk-milsae"
+},
+{
+"id": "mg113",
+"name": "노란꽃병",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/113.png",
+"w": 12,
+"h": 18,
+"credit": "pk-milsae"
+},
+{
+"id": "mg114",
+"name": "푸른꽃병",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/114.png",
+"w": 12,
+"h": 16,
+"credit": "pk-milsae"
+},
+{
+"id": "mg115",
+"name": "화분2 (2)",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/115.png",
+"w": 23,
+"h": 26,
+"credit": "pk-milsae"
+},
+{
+"id": "mg116",
+"name": "화분1",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/116.png",
+"w": 25,
+"h": 23,
+"credit": "pk-milsae"
+},
+{
+"id": "mg117",
+"name": "꽃병1",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/117.png",
+"w": 25,
+"h": 47,
+"credit": "pk-milsae"
+},
+{
+"id": "mg118",
+"name": "전시선인장2",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/118.png",
+"w": 34,
+"h": 57,
+"credit": "pk-milsae"
+},
+{
+"id": "mg119",
+"name": "전시선인장1",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/119.png",
+"w": 42,
+"h": 56,
+"credit": "pk-milsae"
+},
+{
+"id": "mg120",
+"name": "전시나무4",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/120.png",
+"w": 76,
+"h": 117,
+"credit": "pk-milsae"
+},
+{
+"id": "mg121",
+"name": "전시나무3",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/121.png",
+"w": 76,
+"h": 108,
+"credit": "pk-milsae"
+},
+{
+"id": "mg122",
+"name": "전시나무2",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/122.png",
+"w": 59,
+"h": 120,
+"credit": "pk-milsae"
+},
+{
+"id": "mg123",
+"name": "전시나무1",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/123.png",
+"w": 61,
+"h": 99,
+"credit": "pk-milsae"
+},
+{
+"id": "mg124",
+"name": "전시용의자",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/124.png",
+"w": 38,
+"h": 53,
+"credit": "pk-milsae"
+},
+{
+"id": "mg125",
+"name": "검정 스탠드",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/125.png",
+"w": 22,
+"h": 28,
+"credit": "pk-milsae"
+},
+{
+"id": "mg126",
+"name": "의자+스탠드+책",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/126.png",
+"w": 38,
+"h": 60,
+"credit": "pk-milsae"
+},
+{
+"id": "mg127",
+"name": "스탠드+책",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/127.png",
+"w": 24,
+"h": 31,
+"credit": "pk-milsae"
+},
+{
+"id": "mg128",
+"name": "접시세트",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/128.png",
+"w": 32,
+"h": 32,
+"credit": "pk-milsae"
+},
+{
+"id": "mg129",
+"name": "책더미3",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/129.png",
+"w": 22,
+"h": 16,
+"credit": "pk-milsae"
+},
+{
+"id": "mg130",
+"name": "책더미2",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/130.png",
+"w": 35,
+"h": 24,
+"credit": "pk-milsae"
+},
+{
+"id": "mg131",
+"name": "책더미1",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/131.png",
+"w": 28,
+"h": 29,
+"credit": "pk-milsae"
+},
+{
+"id": "mg132",
+"name": "체스말-세팅",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/132.png",
+"w": 36,
+"h": 24,
+"credit": "pk-milsae"
+},
+{
+"id": "mg133",
+"name": "체스말",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/133.png",
+"w": 56,
+"h": 26,
+"credit": "pk-milsae"
+},
+{
+"id": "mg134",
+"name": "체스판",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/134.png",
+"w": 42,
+"h": 22,
+"credit": "pk-milsae"
+},
+{
+"id": "mg135",
+"name": "머그컵",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/135.png",
+"w": 13,
+"h": 13,
+"credit": "pk-milsae"
+},
+{
+"id": "mg136",
+"name": "미니초",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/136.png",
+"w": 37,
+"h": 26,
+"credit": "pk-milsae"
+},
+{
+"id": "mg137",
+"name": "미니책장-다크브라운",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/137.png",
+"w": 51,
+"h": 66,
+"credit": "pk-milsae"
+},
+{
+"id": "mg138",
+"name": "책장-다크브라운",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/138.png",
+"w": 53,
+"h": 168,
+"credit": "pk-milsae"
+},
+{
+"id": "mg139",
+"name": "책장-브라운",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/139.png",
+"w": 53,
+"h": 168,
+"credit": "pk-milsae"
+},
+{
+"id": "mg140",
+"name": "미니책장-브라운",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/140.png",
+"w": 51,
+"h": 66,
+"credit": "pk-milsae"
+},
+{
+"id": "mg141",
+"name": "벽걸이화분",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/141.png",
+"w": 40,
+"h": 60,
+"credit": "pk-milsae"
+},
+{
+"id": "mg142",
+"name": "화분4",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/142.png",
+"w": 40,
+"h": 34,
+"credit": "pk-milsae"
+},
+{
+"id": "mg143",
+"name": "유리벽-브라운-3",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/143.png",
+"w": 33,
+"h": 159,
+"credit": "pk-milsae"
+},
+{
+"id": "mg144",
+"name": "유리벽-브라운-2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/144.png",
+"w": 33,
+"h": 159,
+"credit": "pk-milsae"
+},
+{
+"id": "mg145",
+"name": "유리벽-브라운-1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/145.png",
+"w": 33,
+"h": 159,
+"credit": "pk-milsae"
+},
+{
+"id": "mg146",
+"name": "유리벽-그린-3",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/146.png",
+"w": 33,
+"h": 159,
+"credit": "pk-milsae"
+},
+{
+"id": "mg147",
+"name": "유리벽-그린-2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/147.png",
+"w": 33,
+"h": 159,
+"credit": "pk-milsae"
+},
+{
+"id": "mg148",
+"name": "유리벽-그린-1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/148.png",
+"w": 33,
+"h": 159,
+"credit": "pk-milsae"
+},
+{
+"id": "mg149",
+"name": "유리벽-블랙-3",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/149.png",
+"w": 33,
+"h": 159,
+"credit": "pk-milsae"
+},
+{
+"id": "mg150",
+"name": "유리벽-블랙-2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/150.png",
+"w": 33,
+"h": 159,
+"credit": "pk-milsae"
+},
+{
+"id": "mg151",
+"name": "유리벽-블랙-1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-gothic/151.png",
+"w": 33,
+"h": 159,
+"credit": "pk-milsae"
+},
+{
+"id": "mr001",
+"name": "황실풍 1층 방",
+"category": "room",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/001.png",
+"w": 333,
+"h": 319,
+"credit": "pk-milsae",
+"fit": {
+"wall": [
+0,
+0,
+333
+],
+"floor": [
+0,
+150,
+333
+]
+}
+},
+{
+"id": "mr002",
+"name": "황실풍 2층 방",
+"category": "room",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/002.png",
+"w": 646,
+"h": 620,
+"credit": "pk-milsae"
+},
+{
+"id": "mr003",
+"name": "황실풍 벽지 흰대리석",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/003.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mr004",
+"name": "황실풍 벽지 타일벽지",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/004.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mr005",
+"name": "황실풍 벽지 베이지체크",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/005.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mr006",
+"name": "황실풍 벽지 황토벽",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/006.png",
+"w": 333,
+"h": 312,
+"credit": "pk-milsae",
+"slot": "wall"
+},
+{
+"id": "mr007",
+"name": "황실풍 바닥 흰대리석",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/007.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mr008",
+"name": "황실풍 바닥 갈색대리석",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/008.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mr009",
+"name": "황실풍 바닥 골드체크",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/009.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mr010",
+"name": "황실풍 바닥 골드체크2",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/010.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mr011",
+"name": "황실풍 바닥 골드체크3",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/011.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mr012",
+"name": "황실풍 바닥 베이지체크",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/012.png",
+"w": 333,
+"h": 169,
+"credit": "pk-milsae",
+"slot": "floor"
+},
+{
+"id": "mr013",
+"name": "1단원형",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/013.png",
+"w": 112,
+"h": 79,
+"credit": "pk-milsae"
+},
+{
+"id": "mr014",
+"name": "2단원형",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/014.png",
+"w": 96,
+"h": 62,
+"credit": "pk-milsae"
+},
+{
+"id": "mr015",
+"name": "가드",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/015.png",
+"w": 61,
+"h": 59,
+"credit": "pk-milsae"
+},
+{
+"id": "mr016",
+"name": "가리개-1",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/016.png",
+"w": 33,
+"h": 78,
+"credit": "pk-milsae"
+},
+{
+"id": "mr017",
+"name": "가리개-2",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/017.png",
+"w": 35,
+"h": 88,
+"credit": "pk-milsae"
+},
+{
+"id": "mr018",
+"name": "고양이쿠션",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/018.png",
+"w": 36,
+"h": 25,
+"credit": "pk-milsae"
+},
+{
+"id": "mr019",
+"name": "골드 침대보",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/019.png",
+"w": 79,
+"h": 52,
+"credit": "pk-milsae"
+},
+{
+"id": "mr020",
+"name": "골드 탁상",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/020.png",
+"w": 100,
+"h": 77,
+"credit": "pk-milsae"
+},
+{
+"id": "mr021",
+"name": "골드 테이블보",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/021.png",
+"w": 59,
+"h": 41,
+"credit": "pk-milsae"
+},
+{
+"id": "mr022",
+"name": "골드램프",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/022.png",
+"w": 46,
+"h": 54,
+"credit": "pk-milsae"
+},
+{
+"id": "mr023",
+"name": "골드러그1",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/023.png",
+"w": 207,
+"h": 102,
+"credit": "pk-milsae"
+},
+{
+"id": "mr024",
+"name": "골드러그3",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/024.png",
+"w": 207,
+"h": 104,
+"credit": "pk-milsae"
+},
+{
+"id": "mr025",
+"name": "골드롱커튼",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/025.png",
+"w": 60,
+"h": 196,
+"credit": "pk-milsae"
+},
+{
+"id": "mr026",
+"name": "골드미니테이블",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/026.png",
+"w": 44,
+"h": 58,
+"credit": "pk-milsae"
+},
+{
+"id": "mr027",
+"name": "골드벽지1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/027.png",
+"w": 73,
+"h": 185,
+"credit": "pk-milsae"
+},
+{
+"id": "mr028",
+"name": "골드벽지2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/028.png",
+"w": 25,
+"h": 161,
+"credit": "pk-milsae"
+},
+{
+"id": "mr029",
+"name": "골드스톨",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/029.png",
+"w": 68,
+"h": 57,
+"credit": "pk-milsae"
+},
+{
+"id": "mr030",
+"name": "골드중간커튼",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/030.png",
+"w": 60,
+"h": 146,
+"credit": "pk-milsae"
+},
+{
+"id": "mr031",
+"name": "골드체어-뒤",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/031.png",
+"w": 40,
+"h": 53,
+"credit": "pk-milsae"
+},
+{
+"id": "mr032",
+"name": "골드체어-앞",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/032.png",
+"w": 43,
+"h": 60,
+"credit": "pk-milsae"
+},
+{
+"id": "mr033",
+"name": "골드침대",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/033.png",
+"w": 132,
+"h": 113,
+"credit": "pk-milsae"
+},
+{
+"id": "mr034",
+"name": "골드커튼",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/034.png",
+"w": 84,
+"h": 170,
+"credit": "pk-milsae"
+},
+{
+"id": "mr035",
+"name": "골드테탁상",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/035.png",
+"w": 46,
+"h": 62,
+"credit": "pk-milsae"
+},
+{
+"id": "mr036",
+"name": "골드화이트 쿠션",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/036.png",
+"w": 30,
+"h": 21,
+"credit": "pk-milsae"
+},
+{
+"id": "mr037",
+"name": "골드화이트 쿠션세트",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/037.png",
+"w": 73,
+"h": 45,
+"credit": "pk-milsae"
+},
+{
+"id": "mr038",
+"name": "금장식1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/038.png",
+"w": 32,
+"h": 31,
+"credit": "pk-milsae"
+},
+{
+"id": "mr039",
+"name": "금장식4",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/039.png",
+"w": 37,
+"h": 37,
+"credit": "pk-milsae"
+},
+{
+"id": "mr040",
+"name": "다채로운 꽃장식",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/040.png",
+"w": 38,
+"h": 37,
+"credit": "pk-milsae"
+},
+{
+"id": "mr041",
+"name": "대들보",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/041.png",
+"w": 53,
+"h": 173,
+"credit": "pk-milsae"
+},
+{
+"id": "mr042",
+"name": "대들보헤더",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/042.png",
+"w": 50,
+"h": 183,
+"credit": "pk-milsae"
+},
+{
+"id": "mr043",
+"name": "미니 골드 스톨",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/043.png",
+"w": 43,
+"h": 36,
+"credit": "pk-milsae"
+},
+{
+"id": "mr044",
+"name": "미니대들보-다채로운 꽃-1단",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/044.png",
+"w": 38,
+"h": 50,
+"credit": "pk-milsae"
+},
+{
+"id": "mr045",
+"name": "미니대들보-다채로운 꽃-2단",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/045.png",
+"w": 38,
+"h": 70,
+"credit": "pk-milsae"
+},
+{
+"id": "mr046",
+"name": "미니대들보",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/046.png",
+"w": 27,
+"h": 56,
+"credit": "pk-milsae"
+},
+{
+"id": "mr047",
+"name": "미니탁상",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/047.png",
+"w": 27,
+"h": 33,
+"credit": "pk-milsae"
+},
+{
+"id": "mr048",
+"name": "반투명가림막-대형",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/048.png",
+"w": 144,
+"h": 215,
+"credit": "pk-milsae"
+},
+{
+"id": "mr049",
+"name": "반투명가림막-소형",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/049.png",
+"w": 53,
+"h": 169,
+"credit": "pk-milsae"
+},
+{
+"id": "mr050",
+"name": "베이지 방석",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/050.png",
+"w": 51,
+"h": 41,
+"credit": "pk-milsae"
+},
+{
+"id": "mr051",
+"name": "벽 촛불 세트",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/051.png",
+"w": 36,
+"h": 50,
+"credit": "pk-milsae"
+},
+{
+"id": "mr052",
+"name": "벽걸이화분",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/052.png",
+"w": 26,
+"h": 35,
+"credit": "pk-milsae"
+},
+{
+"id": "mr053",
+"name": "벽시계",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/053.png",
+"w": 46,
+"h": 87,
+"credit": "pk-milsae"
+},
+{
+"id": "mr054",
+"name": "벽장",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/054.png",
+"w": 82,
+"h": 183,
+"credit": "pk-milsae"
+},
+{
+"id": "mr055",
+"name": "샹들리에",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/055.png",
+"w": 48,
+"h": 87,
+"credit": "pk-milsae"
+},
+{
+"id": "mr056",
+"name": "솔과 책",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/056.png",
+"w": 48,
+"h": 43,
+"credit": "pk-milsae"
+},
+{
+"id": "mr057",
+"name": "스카이블루 거실소파",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/057.png",
+"w": 96,
+"h": 84,
+"credit": "pk-milsae"
+},
+{
+"id": "mr058",
+"name": "스카이블루 거실의자",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/058.png",
+"w": 61,
+"h": 83,
+"credit": "pk-milsae"
+},
+{
+"id": "mr059",
+"name": "스카이블루 소파-뒤",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/059.png",
+"w": 93,
+"h": 76,
+"credit": "pk-milsae"
+},
+{
+"id": "mr060",
+"name": "스카이블루 쿠션세트",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/060.png",
+"w": 73,
+"h": 45,
+"credit": "pk-milsae"
+},
+{
+"id": "mr061",
+"name": "액자세트1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/061.png",
+"w": 38,
+"h": 58,
+"credit": "pk-milsae"
+},
+{
+"id": "mr062",
+"name": "액자세트2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/062.png",
+"w": 29,
+"h": 81,
+"credit": "pk-milsae"
+},
+{
+"id": "mr063",
+"name": "와인",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/063.png",
+"w": 7,
+"h": 19,
+"credit": "pk-milsae"
+},
+{
+"id": "mr064",
+"name": "욕조",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/064.png",
+"w": 102,
+"h": 82,
+"credit": "pk-milsae"
+},
+{
+"id": "mr065",
+"name": "욕조대리석",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/065.png",
+"w": 111,
+"h": 89,
+"credit": "pk-milsae"
+},
+{
+"id": "mr066",
+"name": "욕조세트",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/066.png",
+"w": 115,
+"h": 100,
+"credit": "pk-milsae"
+},
+{
+"id": "mr067",
+"name": "원형러그",
+"category": "surface",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/067.png",
+"w": 131,
+"h": 74,
+"credit": "pk-milsae"
+},
+{
+"id": "mr068",
+"name": "위스키",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/068.png",
+"w": 23,
+"h": 17,
+"credit": "pk-milsae"
+},
+{
+"id": "mr069",
+"name": "유리캔들",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/069.png",
+"w": 7,
+"h": 10,
+"credit": "pk-milsae"
+},
+{
+"id": "mr070",
+"name": "잠자는 고양이-블랙",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/070.png",
+"w": 25,
+"h": 32,
+"credit": "pk-milsae"
+},
+{
+"id": "mr071",
+"name": "잠자는 고양이-삼색",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/071.png",
+"w": 25,
+"h": 32,
+"credit": "pk-milsae"
+},
+{
+"id": "mr072",
+"name": "잠자는 고양이-화이트",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/072.png",
+"w": 25,
+"h": 32,
+"credit": "pk-milsae"
+},
+{
+"id": "mr073",
+"name": "장신구",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/073.png",
+"w": 29,
+"h": 35,
+"credit": "pk-milsae"
+},
+{
+"id": "mr074",
+"name": "접힌타올",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/074.png",
+"w": 24,
+"h": 15,
+"credit": "pk-milsae"
+},
+{
+"id": "mr075",
+"name": "차주전자 세트",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/075.png",
+"w": 30,
+"h": 23,
+"credit": "pk-milsae"
+},
+{
+"id": "mr076",
+"name": "창문",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/076.png",
+"w": 74,
+"h": 211,
+"credit": "pk-milsae"
+},
+{
+"id": "mr077",
+"name": "책장1",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/077.png",
+"w": 76,
+"h": 181,
+"credit": "pk-milsae"
+},
+{
+"id": "mr078",
+"name": "책장2",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/078.png",
+"w": 75,
+"h": 172,
+"credit": "pk-milsae"
+},
+{
+"id": "mr079",
+"name": "칵테일",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/079.png",
+"w": 9,
+"h": 22,
+"credit": "pk-milsae"
+},
+{
+"id": "mr080",
+"name": "커튼1",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/080.png",
+"w": 53,
+"h": 193,
+"credit": "pk-milsae"
+},
+{
+"id": "mr081",
+"name": "커튼2",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/081.png",
+"w": 53,
+"h": 193,
+"credit": "pk-milsae"
+},
+{
+"id": "mr082",
+"name": "타올",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/082.png",
+"w": 35,
+"h": 25,
+"credit": "pk-milsae"
+},
+{
+"id": "mr083",
+"name": "탁자스탠드",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/083.png",
+"w": 25,
+"h": 29,
+"credit": "pk-milsae"
+},
+{
+"id": "mr084",
+"name": "퇴창",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/084.png",
+"w": 138,
+"h": 215,
+"credit": "pk-milsae"
+},
+{
+"id": "mr085",
+"name": "투명커튼",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/085.png",
+"w": 84,
+"h": 172,
+"credit": "pk-milsae"
+},
+{
+"id": "mr086",
+"name": "틀",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/086.png",
+"w": 71,
+"h": 155,
+"credit": "pk-milsae"
+},
+{
+"id": "mr087",
+"name": "푸른장미꽃병",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/087.png",
+"w": 38,
+"h": 39,
+"credit": "pk-milsae"
+},
+{
+"id": "mr088",
+"name": "피아노",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/088.png",
+"w": 88,
+"h": 103,
+"credit": "pk-milsae"
+},
+{
+"id": "mr089",
+"name": "화이트 거실소파",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/089.png",
+"w": 96,
+"h": 84,
+"credit": "pk-milsae"
+},
+{
+"id": "mr090",
+"name": "화이트 거실의자",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/090.png",
+"w": 61,
+"h": 83,
+"credit": "pk-milsae"
+},
+{
+"id": "mr091",
+"name": "화이트 소파-뒤",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/091.png",
+"w": 93,
+"h": 76,
+"credit": "pk-milsae"
+},
+{
+"id": "mr092",
+"name": "화이트 탁상",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/092.png",
+"w": 100,
+"h": 77,
+"credit": "pk-milsae"
+},
+{
+"id": "mr093",
+"name": "화이트 테이블보",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/093.png",
+"w": 59,
+"h": 41,
+"credit": "pk-milsae"
+},
+{
+"id": "mr094",
+"name": "화이트롱커튼",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/094.png",
+"w": 60,
+"h": 196,
+"credit": "pk-milsae"
+},
+{
+"id": "mr095",
+"name": "화이트중간커튼",
+"category": "wall",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/095.png",
+"w": 60,
+"h": 146,
+"credit": "pk-milsae"
+},
+{
+"id": "mr096",
+"name": "화장대",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/096.png",
+"w": 98,
+"h": 155,
+"credit": "pk-milsae"
+},
+{
+"id": "mr097",
+"name": "화장대받침",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/097.png",
+"w": 44,
+"h": 55,
+"credit": "pk-milsae"
+},
+{
+"id": "mr098",
+"name": "화장대의자",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/098.png",
+"w": 37,
+"h": 37,
+"credit": "pk-milsae"
+},
+{
+"id": "mr099",
+"name": "화장품1",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/099.png",
+"w": 12,
+"h": 15,
+"credit": "pk-milsae"
+},
+{
+"id": "mr100",
+"name": "화장품2",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/100.png",
+"w": 17,
+"h": 11,
+"credit": "pk-milsae"
+},
+{
+"id": "mr101",
+"name": "회전 계단",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/101.png",
+"w": 74,
+"h": 167,
+"credit": "pk-milsae"
+},
+{
+"id": "mr102",
+"name": "흰대리석",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/102.png",
+"w": 47,
+"h": 167,
+"credit": "pk-milsae"
+},
+{
+"id": "mr103",
+"name": "흰장미꽃병",
+"category": "deco",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/103.png",
+"w": 38,
+"h": 39,
+"credit": "pk-milsae"
+},
+{
+"id": "mr104",
+"name": "흰탁상",
+"category": "furniture",
+"set": "밀쉐도트",
+"url": "/static/dorm_default/packs/milsae-royal/104.png",
+"w": 42,
+"h": 57,
+"credit": "pk-milsae"
 }
 ],
 "aliases": {
