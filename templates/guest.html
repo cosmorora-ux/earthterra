@@ -67,13 +67,6 @@
   .panel { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 16px; }
   a { color: inherit; }
 
-  #globalError { display:none; position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:1000;
-                 background:#2a2a30; border:1px solid #4a4a52; color:#fff; align-items:center; gap:8px;
-                 padding:10px 16px; border-radius:10px; font-weight:600; font-size:15px; max-width:90vw;
-                 box-shadow:0 10px 30px rgba(0,0,0,.55); }
-  #globalError.show { display:flex; }
-  #globalError .err-icon { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
-                 border-radius:50%; background:#4a90ff; color:#0b0b0d; font-size:13px; font-weight:800; flex-shrink:0; font-style:normal; }
 
   .btn { background: var(--accent-blue); color: var(--on-accent); border:none; border-radius:8px; padding:8px 16px; font-size:16px; cursor:pointer; font-weight:600; }
 
@@ -469,9 +462,17 @@
   .modal-box.shop-modal .shop-actions input { width:150px; }
   .modal-box.shop-modal .shop-char-pts input[type="number"] { width:90px; font-size:14px; }
   .modal-box.shop-modal .shop-use input { flex:1; min-width:0; }
-  #shopToast { position:fixed; left:50%; bottom:40px; transform:translateX(-50%) translateY(20px); opacity:0; pointer-events:none; z-index:300;
-    background:#1d2a1f; border:1px solid #3ecf6a; color:#cfffd9; padding:10px 18px; border-radius:10px; font-size:14px; transition: all .25s; }
-  #shopToast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  /* 알림 토스트(공통) : 'i' 아이콘 + 글. 오류는 테두리만 붉게 */
+  #shopToast { position:fixed; left:50%; bottom:40px; transform:translate(-50%, 14px); opacity:0; pointer-events:none; z-index:1000;
+    display:flex; align-items:center; gap:10px; width:max-content; max-width:min(520px, calc(100vw - 32px)); box-sizing:border-box;
+    padding:11px 16px 11px 13px; border-radius:12px; background: rgba(22,22,26,.96); border:1px solid rgba(255,255,255,.12);
+    color: var(--text); font-size:14px; font-weight:600; line-height:1.5; word-break:keep-all;
+    box-shadow:0 12px 32px rgba(0,0,0,.5); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transition: opacity .22s ease, transform .22s ease; }
+  #shopToast.show { opacity:1; transform:translate(-50%, 0); }
+  #shopToast .t-ic { flex:none; display:flex; }
+  #shopToast .t-ic svg { width:18px; height:18px; display:block; }
+  #shopToast.err { border-color: rgba(255,110,110,.5); }
+  #shopToast.err .t-ic svg path:first-child { fill:#ff6e6e; fill-opacity:.3; }
   @media (max-width: 640px) {
     .shop-edit, .shop-edit-head { grid-template-columns: 40px 1fr 70px; }
     .shop-edit-head { display:none; }
@@ -638,6 +639,7 @@
   .ui-dialog-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;
     background:rgba(var(--point-rgb),.14); color:#8fb0ff; font-size:18px; margin-bottom:12px; }
   .ui-dialog.danger .ui-dialog-icon { background:rgba(255,90,90,.14); color:#ff8a8a; }
+  .ui-dialog-icon svg { width:22px; height:22px; display:block; }
   .ui-dialog-title { font-size:17px; font-weight:700; margin-bottom:6px; }
   .ui-dialog-msg { font-size:14.5px; line-height:1.55; color: var(--muted); white-space:pre-line; word-break:keep-all; }
   .ui-dialog-input { margin-top:12px; }
@@ -3677,7 +3679,6 @@
     <div class="shop-body" id="shopBody"></div>
   </div>
 </div>
-<div id="globalError"><span class="err-icon">i</span><span id="globalErrorText"></span></div>
 
 <div id="formulaModal" class="modal-overlay">
   <div class="modal-box wide formula-modal panel">
@@ -4454,13 +4455,22 @@ socket.on('joined', () => {
   updateAvatarDots();
 });
 
-function showError(msg) {
-  const el = document.getElementById('globalError');
-  document.getElementById('globalErrorText').textContent = msg;
-  el.classList.add('show');
-  clearTimeout(showError._t);
-  showError._t = setTimeout(() => { el.classList.remove('show'); }, 6000);
+// 'i' 아이콘(운영진이 PVP 카드용으로 디자인한 것) : 알림 토스트 · 안내 창 · 카드 정보에 같이 씁니다.
+var UI_INFO_SVG = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path opacity="0.8" d="M5.9999 11.6004C9.0927 11.6004 11.5999 9.09319 11.5999 6.00039C11.5999 2.9076 9.0927 0.400391 5.9999 0.400391C2.90711 0.400391 0.399902 2.9076 0.399902 6.00039C0.399902 9.09319 2.90711 11.6004 5.9999 11.6004Z" fill="#B3B3B3" fill-opacity="0.2" stroke="white" stroke-width="0.8"/>
+<path d="M6.3 4.74348V8.79948H5.54V4.74348H6.3ZM5.5 3.06348H6.34V3.91148H5.5V3.06348Z" fill="white"/>
+</svg>`;
+// 알림 토스트(공통) : 모든 안내 · 오류 메시지가 같은 모양으로 화면 아래 가운데에 잠깐 떠요. kind : 'info' | 'error'
+function uiToast(msg, kind) {
+  const el = document.getElementById('shopToast'); if (!el || !msg) return;
+  el.className = kind === 'error' ? 'err' : '';
+  el.innerHTML = `<span class="t-ic">${UI_INFO_SVG}</span><span class="t-msg"></span>`;
+  el.querySelector('.t-msg').textContent = msg;
+  void el.offsetWidth; el.classList.add('show');
+  clearTimeout(uiToast._t);
+  uiToast._t = setTimeout(() => el.classList.remove('show'), kind === 'error' ? 4500 : 2600);
 }
+function showError(msg) { uiToast(msg, 'error'); }
 
 socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
@@ -4837,10 +4847,7 @@ function displayNameOf(c) {
 // 카드 우상단의 "스탯 보기" 아이콘 - 마우스를 올리면 stat-tip 툴팁이 뜹니다. 카드마다 이 SVG가
 // 반복되므로, id가 겹치면 안 되는 clipPath(원래 안에 들어있던)는 빼고 넣었습니다(패스 자체가
 // viewBox 안에 다 들어와서 클리핑 없이도 모양은 동일합니다).
-const CARD_INFO_ICON_SVG = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path opacity="0.8" d="M5.9999 11.6004C9.0927 11.6004 11.5999 9.09319 11.5999 6.00039C11.5999 2.9076 9.0927 0.400391 5.9999 0.400391C2.90711 0.400391 0.399902 2.9076 0.399902 6.00039C0.399902 9.09319 2.90711 11.6004 5.9999 11.6004Z" fill="#B3B3B3" fill-opacity="0.2" stroke="white" stroke-width="0.8"/>
-<path d="M6.3 4.74348V8.79948H5.54V4.74348H6.3ZM5.5 3.06348H6.34V3.91148H5.5V3.06348Z" fill="white"/>
-</svg>`;
+const CARD_INFO_ICON_SVG = UI_INFO_SVG;
 
 // 지금 이 캐릭터 팀의 차례이고, 살아 있고, 아직 이번 라운드 행동을 하지 않았으면 true
 function isTurnPending(c) {
@@ -8064,13 +8071,7 @@ function shopTargetName() { return shopIsGm() ? (shopGmTarget || null) : myLogge
 function shopCharData(name) { return name ? (lastRosterMypage[name] || null) : null; }
 function shopItemById(id) { return (lastShop && lastShop.items || []).find(it => it.id === id) || null; }
 
-function showShopToast(msg) {
-  const el = document.getElementById('shopToast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(showShopToast._t);
-  showShopToast._t = setTimeout(() => el.classList.remove('show'), 2600);
-}
+function showShopToast(msg) { uiToast(msg); }
 socket.on('shop_result', (d) => showShopToast(d.message));
 
 function openShop(tab) {
@@ -8852,7 +8853,9 @@ function openUiDialog(opts) {
   const ov = document.getElementById('uiDialog'), box = document.getElementById('uiDialogBox');
   const input = document.getElementById('uiDialogInput');
   box.classList.toggle('danger', !!opts.danger);
-  document.getElementById('uiDialogIcon').innerHTML = `<i class="fa-solid ${opts.icon || (opts.danger ? 'fa-triangle-exclamation' : 'fa-circle-question')}"></i>`;
+  // 안내 · 확인 창의 기본 아이콘은 'i' 아이콘(위험한 동작만 경고 삼각형, 따로 정한 아이콘은 그대로)
+  const ic = opts.icon || (opts.danger ? 'fa-triangle-exclamation' : 'info');
+  document.getElementById('uiDialogIcon').innerHTML = ic === 'info' || ic === 'fa-circle-info' ? UI_INFO_SVG : `<i class="fa-solid ${ic}"></i>`;
   document.getElementById('uiDialogTitle').textContent = opts.title || '확인';
   document.getElementById('uiDialogMsg').textContent = opts.message || '';
   document.getElementById('uiDialogOk').textContent = opts.okText || '확인';
