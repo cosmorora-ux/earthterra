@@ -102,6 +102,11 @@
   ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.28); border:2px solid transparent; background-clip: padding-box; }
   ::-webkit-scrollbar-button { display:none; width:0; height:0; }
   ::-webkit-scrollbar-corner { background: transparent; }
+  /* 모바일 · 태블릿 : 스크롤바를 숨겨 자리를 차지하지 않게(손으로 밀어 움직이니 막대가 필요 없고, 막대 자리 때문에 지도 · 그리드가 한쪽으로 치우치지 않게) */
+  @media (hover: none) and (pointer: coarse) {
+    * { scrollbar-width: none; }
+    ::-webkit-scrollbar { display:none; width:0; height:0; }
+  }
 
   /* ================================================================
      Science 커서 (by ScienceDiscoverer, rw-designer.com/cursor-set/science-cursors-animated · Public Domain) - .cur/.ani를 PNG로 변환해 씁니다.
