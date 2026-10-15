@@ -3418,8 +3418,13 @@
       linear-gradient(135deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,0) 45%) 0 0 / 100% 100% no-repeat;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), inset 0 0 24px rgba(255,255,255,.05);
     animation: gReadyShine 3.2s linear infinite !important; animation-play-state: running !important; }
-  .char-card.v2.selected-target, .char-card.selected-target { border-color: var(--point) !important; box-shadow: 0 0 0 1px var(--point), 0 0 18px rgba(var(--point-rgb), .25) !important; }
-  .compact-card.selected-target { outline:1px solid var(--point); }
+  /* 커맨드 대상 카드 : 전체 테두리 대신 로그창처럼 위쪽에만 빛 한 줄(포인트 컬러) + 아래로 은은하게 번지는 빛 */
+  .char-card.v2.selected-target, .char-card.selected-target { border-color: var(--card-border) !important; box-shadow:none !important; }
+  .compact-card.selected-target { outline:none; }
+  .tgt-line { position:absolute; left:18px; right:18px; top:-1px; height:2px; z-index:4; pointer-events:none; border-radius:2px;
+    background: linear-gradient(90deg, transparent, var(--point) 30%, var(--point) 70%, transparent); box-shadow: 0 0 10px rgba(var(--point-rgb), .7); }
+  .tgt-line::after { content:""; position:absolute; left:10%; right:10%; top:1px; height:26px; pointer-events:none;
+    background: radial-gradient(ellipse at 50% 0%, rgba(var(--point-rgb), .28), transparent 70%); }
   /* 커맨드 보내기(과녁) 버튼 : 못 누를 때는 어두운 포인트 컬러 대신 무채색 */
   #cmdSendBtn:disabled, #commandSendBar.cmd-off .send-btn { background: rgba(255,255,255,.07) !important; color:#6c6c73 !important; opacity:1 !important; box-shadow:none !important; }
 </style>
@@ -4888,7 +4893,7 @@ function renderCompactCardHtml(c) {
   if (c.pending_heals) badges.push(makeStatusTag('heal', `회복 +${c.pending_heals}`));
   if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`, c.interceptors.length));
   if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`, 1));
-  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">${cardShines(c) ? '<span class="turn-shine" aria-hidden="true"></span>' : ''}
+  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">${cardShines(c) ? '<span class="turn-shine" aria-hidden="true"></span>' : ''}${isTarget ? '<span class="tgt-line" aria-hidden="true"></span>' : ''}
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">
         ${canSeeStats ? `<div class="stat-tip">${statsTitle(c)}</div>` : ''}
@@ -4967,7 +4972,7 @@ function renderCardHtml(c) {
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = charStatusBadges(c);
 
-  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">${cardShines(c) ? '<span class="turn-shine" aria-hidden="true"></span>' : ''}
+  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">${cardShines(c) ? '<span class="turn-shine" aria-hidden="true"></span>' : ''}${isTarget ? '<span class="tgt-line" aria-hidden="true"></span>' : ''}
     <div class="row1">
       <div>
         <span class="cname">${displayNameOf(c)}</span>
