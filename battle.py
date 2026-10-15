@@ -1538,7 +1538,10 @@ class Battle:
         actor = self.find_character(name)
         if actor is None:
             raise BattleError("대상이 존재하지 않습니다.")
-        self._check_actor_turn(actor)
+        # 일괄 시간 초과(운영진)는 '지금 턴을 막고 있는' 캐릭터만 넘기므로 턴 검사를 하지 않습니다.
+        # (라운드 끝에 남아 있는, 후공을 선언한 상대팀 메딕도 함께 넘길 수 있어야 합니다)
+        if not _batch:
+            self._check_actor_turn(actor)
 
         ok, reason = self.timeout_skill.can_use(actor)
         if not ok:
@@ -1554,19 +1557,30 @@ class Battle:
             self._log(f"{actor.name} 시간 초과", tag="wait")
         self._check_finish()
 
-    def perform_timeout_unacted_runners(self):
+    def perform_timeout_unacted_runners(self, all_teams: bool = False):
         """
-        1팀(러너)이면서 아직 행동하지 않아 턴 진행을 막고 있는 캐릭터를 일괄로 시간 초과 처리합니다.
+        아직 행동하지 않아 턴 진행을 막고 있는 캐릭터를 일괄로 시간 초과 처리합니다.
         (운영진이 응답 없는 러너를 한 번에 넘기기 위한 기능)
+        all_teams=False : 1팀(러너)만 — 공성전 · 마스 레이드(2팀은 운영진이 조작)
+        all_teams=True  : 양 팀 모두 — PVP(두 팀 모두 러너)
         """
-        names = [name for name in self.unacted_members() if name in {c.name for c in self.team_a}]
+        pool = {c.name for c in (self.team_a + self.team_b if all_teams else self.team_a)}
+        names = [name for name in self.unacted_members() if name in pool]
         if not names:
-            return
+            raise BattleError("지금 시간 초과로 넘길 미행동자가 없습니다.")
         # 되돌리기 한 번에 전부 돌아오도록 기록은 한 번만, 로그도 한 줄로 묶어서 남깁니다.
         self._push_history()
+        done = []
         for name in names:
-            self.perform_timeout(name, _batch=True)
-        self._log(f"시간 초과 : {', '.join(names)}", tag="wait")
+            try:
+                self.perform_timeout(name, _batch=True)
+                done.append(name)
+            except BattleError:
+                continue  # 넘길 수 없는 캐릭터(이미 행동 등)는 건너뜁니다.
+        if not done:
+            self.history.pop()
+            raise BattleError("지금 시간 초과로 넘길 수 있는 캐릭터가 없습니다.")
+        self._log(f"시간 초과 : {', '.join(done)}", tag="wait")
 
     def perform_flee(self, name: str):
         """

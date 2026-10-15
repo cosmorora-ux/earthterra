@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.36"
+SERVER_BUILD = "2026-10-13.37"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2086,7 +2086,7 @@ ACTION_HANDLERS = {
     "dodge": lambda battle, p: battle.perform_dodge(p["name"]),
     "heal": lambda battle, p: battle.perform_heal(p["healer"], p["target"]),
     "timeout": lambda battle, p: battle.perform_timeout(p["name"]),
-    "timeout_unacted_runners": lambda battle, p: battle.perform_timeout_unacted_runners(),
+    "timeout_unacted_runners": lambda battle, p: battle.perform_timeout_unacted_runners(all_teams=bool(p.get("all_teams"))),
     "flee": lambda battle, p: battle.perform_flee(p["name"]),
     "defense_settle": lambda battle, p: battle.perform_defense_settle(p["name"]),
     "move": lambda battle, p: battle.perform_move(p["name"], int(p["x"]), int(p["y"])),
@@ -2289,6 +2289,9 @@ def on_battle_action(data):
         return
 
     payload = data.get("payload", {})
+    if action_type == "timeout_unacted_runners":
+        # PVP는 두 팀 모두 러너라 지금 차례인 팀(어느 팀이든)의 미행동자를 넘깁니다.
+        payload = {"all_teams": room.battle_type == "pvp"}
 
     # 공성전/레이드에서 GM이 거점(2팀) 캐릭터로 행동하면, 결과를 바로 공개하지 않고
     # 운영진 로그에만 미리 보여줍니다. 마음에 들면 "공개하기"로 러너에게 알리고,
