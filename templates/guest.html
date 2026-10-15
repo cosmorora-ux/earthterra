@@ -2514,7 +2514,7 @@
   }
   @media (max-width:560px) {
     .dorm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dorm-portrait { height:96px; }
-    /* 맨 윗줄 : 가운데 관 이름은 빼고(Dorm ▶ 방 주인), 이름은 길면 말줄임, 버튼은 아이콘만 */
+    /* 맨 윗줄 : 가운데 관 이름 · 목록 화면의 '1차 기숙사 · 관 n개'는 빼고(Dorm ▶ 방 주인), 이름은 길면 말줄임, 버튼은 아이콘만 */
     .topbar.v2.dorm-topbar { gap:8px; padding:10px 12px; }
     .dorm-topbar .mid { display:none !important; }
     .dorm-topbar .seg { min-width:0; overflow:hidden; text-overflow:ellipsis; }
@@ -9734,7 +9734,7 @@ function renderDormTop() {
   } else if (dormView === 'manage') {
     segs.push('<span class="sep">▶</span><div class="seg">관리</div>');
   } else if (dormData) {
-    segs.push(`<span class="sep">▶</span><div class="seg">${P.no}차 ${mailEsc(P.name)} · ${mailEsc(P.unit)} ${(dormData.halls || []).length}개</div>`);
+    segs.push(`<span class="sep mid">▶</span><div class="seg mid">${P.no}차 ${mailEsc(P.name)} · ${mailEsc(P.unit)} ${(dormData.halls || []).length}개</div>`);
     if (mine) right = `<button class="dorm-tbtn primary" onclick="openDormRoom(${mailEsc(JSON.stringify(me))})" data-tip="내 방"><i class="fa-solid fa-door-open"></i><span class="t">내 방</span></button>`;
   }
   const tools = `<button class="dorm-tbtn icon" onclick="openDormCredits()" data-tip="도트 자료 출처"><i class="fa-solid fa-circle-info"></i></button>`
