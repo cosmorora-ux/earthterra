@@ -2553,6 +2553,17 @@
   .dorm-edit-bar button.del:hover { color: var(--accent-red); }
   .dorm-edit-bar .val { min-width:44px; text-align:center; font-weight:700; color: var(--text); font-variant-numeric: tabular-nums; }
   @media (max-width:900px) { .dorm-edit-bar { bottom:8px; } .dorm-edit-bar .nm { max-width:80px; } .dorm-edit-bar button.txt { display:none; } }
+  /* 좁은 화면 : 방 그림을 가리지 않게 뒤로가기 · 확대/축소 · 맞춤은 방 위 한 줄로, 방 주인 대사와 꾸미기 막대는 방 아래로 뺍니다 */
+  @media (max-width:900px) {
+    .dorm-frame-wrap { display:grid; grid-template-columns:auto minmax(0, 1fr); grid-template-areas: "back zoom" "frame frame" "line line" "bar bar"; gap:8px; }
+    .dorm-frame-wrap .map-frame.dorm-frame { grid-area:frame; }
+    .dorm-back { position:static; grid-area:back; width:34px; height:34px; border-radius:10px; }
+    .zoom-ctl, .dorm-frame-wrap:has(.dorm-edit-bar) .zoom-ctl { position:static; grid-area:zoom; justify-self:end; align-self:center; padding:2px; border-radius:10px; }
+    .zoom-ctl button { width:32px; height:28px; font-size:13px; }
+    .zoom-ctl .z { min-width:38px; }
+    .dorm-line-bubble { position:static; grid-area:line; max-width:none; border-radius:12px; }
+    .dorm-edit-bar { position:static; grid-area:bar; transform:none; justify-self:center; max-width:100%; box-shadow:none; }
+  }
   /* 휴대폰 : 버튼이 많아서 두 줄로 나눠 칸 안에 들어가게 */
   @media (max-width:560px) {
     .dorm-edit-bar.on { flex-wrap:wrap; justify-content:center; width:calc(100% - 16px); row-gap:6px; padding:6px; }
