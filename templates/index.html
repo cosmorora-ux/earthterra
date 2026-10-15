@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rooms</title>
+<link rel="manifest" href="/manifest.webmanifest?start={{ request.full_path|urlencode }}">
+<meta name="theme-color" content="#050505">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="EarthTerrA">
+<link rel="apple-touch-icon" href="/static/apple_touch_icon.png">
+<link rel="icon" type="image/png" href="/static/app_icon_192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=42dot+Sans:wght@300..800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -20,6 +28,11 @@
   html[data-point="yellow"] { --accent-blue:#e2b23c; --point-rgb:240,200,98; --on-accent:#17171a; }
   * { box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
   :focus:not(:focus-visible) { outline: none; }
+  /* 모바일 · 태블릿 : 글자를 꾹 눌러도 선택 · 복사(검색 메뉴)가 뜨지 않게. 입력칸은 그대로 선택돼요. */
+  @media (hover: none) and (pointer: coarse) {
+    body { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+    input, textarea, select, [contenteditable="true"] { -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
+  }
   input, select, textarea, button { font-family: inherit; }
   body { font-family: "42dot Sans", "Pretendard", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
   .wrap { max-width: 720px; margin: 0 auto; padding: 56px 20px 64px; }
@@ -290,6 +303,30 @@ document.addEventListener('pointerdown', (e) => {
   document.body.appendChild(r);
   setTimeout(() => r.remove(), 600);
 }, true);
+// ---------- 전체 화면 : 모바일 · 태블릿은 첫 터치 때 주소창 없이 전체 화면으로 바꿉니다 ----------
+// (브라우저 정책상 터치 같은 사용자 동작이 있어야만 전체 화면이 돼요. 아이폰 Safari는 전체 화면을 지원하지 않아
+//  '홈 화면에 추가'로 열어야 주소창이 사라집니다.)
+function fsActive() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function fsEnter() {
+  const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen;
+  if (!f) return;
+  try { const r = f.call(d, { navigationUI: 'hide' }); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+}
+function fsExit() {
+  const f = document.exitFullscreen || document.webkitExitFullscreen;
+  if (!f) return;
+  try { const r = f.call(document); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+}
+(function autoFullscreen() {
+  const touch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  const installed = window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone;
+  if (!touch || installed) return;
+  const d = document.documentElement;
+  if (d.requestFullscreen || d.webkitRequestFullscreen) {
+    const once = () => { document.removeEventListener('pointerup', once, true); if (!fsActive()) fsEnter(); };
+    document.addEventListener('pointerup', once, true);
+  }
+})();
 </script>
 </body>
 </html>

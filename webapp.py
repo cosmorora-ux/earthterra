@@ -37,7 +37,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.31"
+SERVER_BUILD = "2026-10-13.32"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -184,6 +184,26 @@ def post_system_chat(room, text: str, nickname: str = "system"):
 # ----------------------------------------------------------------------
 # 페이지 라우트
 # ----------------------------------------------------------------------
+@app.route("/manifest.webmanifest")
+def web_manifest():
+    """홈 화면에 추가하면 주소창 없이(전체 화면) 열리도록 하는 앱 정보. 추가한 그 페이지(방 주소)에서 바로 열립니다."""
+    start = request.args.get("start") or "/"
+    if not start.startswith("/") or start.startswith("//") or "\\" in start:
+        start = "/"
+    resp = jsonify({
+        "name": "EarthTerrA", "short_name": "EarthTerrA",
+        "start_url": start, "scope": "/", "display": "fullscreen",
+        "display_override": ["fullscreen", "standalone"],
+        "orientation": "any", "background_color": "#050505", "theme_color": "#050505",
+        "icons": [
+            {"src": "/static/app_icon_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+            {"src": "/static/app_icon_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
+        ],
+    })
+    resp.headers["Content-Type"] = "application/manifest+json"
+    return resp
+
+
 @app.route("/")
 def index():
     rooms_view = [

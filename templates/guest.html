@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>참가자 화면 - {{ room_id }}</title>
+<link rel="manifest" href="/manifest.webmanifest?start={{ request.full_path|urlencode }}">
+<meta name="theme-color" content="#050505">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="EarthTerrA">
+<link rel="apple-touch-icon" href="/static/apple_touch_icon.png">
+<link rel="icon" type="image/png" href="/static/app_icon_192.png">
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <link rel="stylesheet" as="style" crossorigin
   href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -45,6 +53,11 @@
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   :focus:not(:focus-visible) { outline: none; }
+  /* 모바일 · 태블릿 : 글자를 꾹 눌러도 선택 · 복사(검색 메뉴)가 뜨지 않게. 입력칸은 그대로 선택돼요. */
+  @media (hover: none) and (pointer: coarse) {
+    body { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+    input, textarea, select, [contenteditable="true"] { -webkit-user-select:text; user-select:text; -webkit-touch-callout:default; }
+  }
   input, select, textarea, button { font-family: inherit; }
   body { font-family: "42dot Sans", "Pretendard", -apple-system, "Segoe UI", "Malgun Gothic", sans-serif; margin:0; background: var(--bg); color: var(--text); }
   .shell {
@@ -4377,7 +4390,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.31";
+const EXPECTED_SERVER_BUILD = "2026-10-13.32";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -7024,19 +7037,42 @@ let musicVolume = parseInt(localStorage.getItem('musicVolume') || '70', 10);
   refreshVolumeUi();
 })();
 
-function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  } else {
-    document.exitFullscreen().catch(() => {});
-  }
+// ---------- 전체 화면 : 모바일 · 태블릿은 첫 터치 때 주소창 없이 전체 화면으로 바꿉니다 ----------
+// (브라우저 정책상 터치 같은 사용자 동작이 있어야만 전체 화면이 돼요. 아이폰 Safari는 전체 화면을 지원하지 않아
+//  '홈 화면에 추가'로 열어야 주소창이 사라집니다.)
+function fsActive() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function fsEnter() {
+  const d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen;
+  if (!f) return;
+  try { const r = f.call(d, { navigationUI: 'hide' }); if (r && r.catch) r.catch(() => {}); } catch (e) {}
 }
-document.addEventListener('fullscreenchange', () => {
-  const btn = document.getElementById('sidebarFullscreenBtn');
-  if (btn) {
-    btn.classList.toggle('active', !!document.fullscreenElement);
+function fsExit() {
+  const f = document.exitFullscreen || document.webkitExitFullscreen;
+  if (!f) return;
+  try { const r = f.call(document); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+}
+(function autoFullscreen() {
+  const touch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  const installed = window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone;
+  if (!touch || installed) return;
+  const d = document.documentElement;
+  if (d.requestFullscreen || d.webkitRequestFullscreen) {
+    const once = () => { document.removeEventListener('pointerup', once, true); if (!fsActive()) fsEnter(); };
+    document.addEventListener('pointerup', once, true);
+  } else if (/iPhone|iPod/.test(navigator.userAgent)) {
+    // 아이폰 : 한 번만 안내합니다.
+    let shown = null; try { shown = localStorage.getItem('a2hsHintShown'); } catch (e) {}
+    if (!shown) setTimeout(() => {
+      try { localStorage.setItem('a2hsHintShown', '1'); } catch (e) {}
+      if (typeof showShopToast === 'function') showShopToast('주소창 없이 보려면 Safari 공유 버튼에서 \'홈 화면에 추가\'를 눌러 그 아이콘으로 열어 주세요.');
+    }, 4000);
   }
-});
+})();
+function toggleFullscreen() { fsActive() ? fsExit() : fsEnter(); }
+['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, () => {
+  const btn = document.getElementById('sidebarFullscreenBtn');
+  if (btn) btn.classList.toggle('active', fsActive());
+}));
 
 // 등록된 캐릭터 전원을 보여주고, 지금 그 이름으로 접속 중이면 초록 점을 켭니다.
 function renderUserInfoList() {
