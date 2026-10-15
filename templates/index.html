@@ -66,7 +66,7 @@
   .field { width:100%; background:#0c0c0d; color: var(--text); border:1px solid var(--card-border); border-radius:10px;
     padding:12px 14px; font-size:15px; margin-bottom:14px; outline:none; }
   .field:focus { border-color:#4a4a52; }
-  .types { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+  .types { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
   @media (max-width:640px) { .types { grid-template-columns:1fr; } .room-card { flex-wrap:wrap; } }
   .room-card.lounge { border-color: rgba(var(--point-rgb),.35); }
   .room-card.lounge .ico i { color: rgb(var(--point-rgb)); }
@@ -210,10 +210,10 @@
   {% if rooms %}
     {% for room in rooms %}
     <div class="room-card{% if room.battle_type == 'lounge' %} lounge{% endif %}">
-      <div class="ico"><i class="fa-solid {% if room.battle_type == 'lounge' %}fa-house{% elif room.battle_type == 'siege' %}fa-chess-rook{% elif room.battle_type == 'mass_raid' %}fa-border-all{% else %}fa-people-arrows{% endif %}"></i></div>
+      <div class="ico"><i class="fa-solid {% if room.battle_type == 'lounge' %}fa-house{% elif room.battle_type == 'siege' %}fa-chess-rook{% elif room.battle_type == 'mass_raid' %}fa-border-all{% elif room.battle_type == 'play' %}fa-infinity{% else %}fa-people-arrows{% endif %}"></i></div>
       <div class="info">
         <div class="room-name">{{ room.name }}</div>
-        <div class="room-type">{% if room.battle_type == 'lounge' %}마이룸 · 우체통 · 상점{% else %}{{ room.battle_type_label }}{% endif %}</div>
+        <div class="room-type">{% if room.battle_type == 'lounge' %}마이룸 · 우체통 · 상점{% elif room.battle_type == 'play' %}PLAY · LOOP 생존 시뮬레이션{% else %}{{ room.battle_type_label }}{% endif %}</div>
       </div>
       <div class="actions">
         <a class="btn primary" href="{{ room.guest_url }}"><i class="fa-solid fa-right-to-bracket"></i> 입장</a>
@@ -248,6 +248,11 @@
           <input type="radio" name="battle_type" value="mass_raid">
           <div class="t"><i class="fa-solid fa-border-all"></i>마스 레이드</div>
           <div class="d">격자 지도에서 보스 대 러너 최대 30인. 민첩에 따라 1~6칸 이동해요.</div>
+        </label>
+        <label class="type-option">
+          <input type="radio" name="battle_type" value="play">
+          <div class="t"><i class="fa-solid fa-infinity"></i>PLAY</div>
+          <div class="d">LOOP : 생존 시뮬레이션. 무작위 사건에서 선택을 이어 가며 전쟁 이후까지 살아남아요.</div>
         </label>
       </div>
       <div class="create-row"><button type="submit" class="btn primary"><i class="fa-solid fa-plus"></i> 방 만들기</button></div>

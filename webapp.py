@@ -28,6 +28,7 @@ import notices as notices_mod
 import mailbox as mailbox_mod
 import dorm as dorm_mod
 import world as world_mod
+import loop_game as loop_mod
 from battle import Battle, BattleError, cell_label
 from database import CharacterDatabase, shared_db
 from rooms import (
@@ -37,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.39"
+SERVER_BUILD = "2026-10-13.40"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -1821,8 +1822,8 @@ def on_preview_teams(data):
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
-    if room.battle_type == "lounge":
-        emit("action_error", {"message": "일반 룸에서는 전투를 할 수 없어요."})
+    if room.battle_type in ("lounge", "play"):
+        emit("action_error", {"message": "일반 룸 · PLAY 룸에서는 전투를 할 수 없어요."})
         return
     room.preview_teams = {
         "team_a": data.get("team_a", []),
@@ -1888,8 +1889,8 @@ def on_start_battle(data):
     if room is None:
         emit("action_error", {"message": "권한이 없습니다."})
         return
-    if room.battle_type == "lounge":
-        emit("action_error", {"message": "일반 룸에서는 전투를 할 수 없어요."})
+    if room.battle_type in ("lounge", "play"):
+        emit("action_error", {"message": "일반 룸 · PLAY 룸에서는 전투를 할 수 없어요."})
         return
     # 공성전 · 마스 레이드는 러너 팀(1팀)이 항상 선공입니다(마스 레이드 전조 피해도 이 순서를 전제로 합니다).
     forced_first_team = Battle.TEAM_A if room.battle_type in ("siege", "mass_raid") else None
@@ -2897,6 +2898,80 @@ def _emit_mail_data(sid):
     data.update(_mail_age_info(room, me))
     data["is_gm"] = is_gm
     socketio.emit("mail_data", data, to=sid)
+
+
+# ==================================================================
+# PLAY 룸 : LOOP 생존 시뮬레이션 (loop_game.py) — 캐릭터마다 자기 생애를 진행합니다.
+# 체력 변동은 고른 뒤에만 보냅니다. 모두의 기록에는 사건 내용 없이 숫자만 담습니다.
+# ==================================================================
+def _emit_loop_data(sid):
+    me, is_gm, room = _mail_identity(sid)
+    if room is None:
+        return
+    book = loop_mod.shared_book()
+    data = book.view(me) if me else {"run": None, "lives": [], "loops": 0, "intro": [], "eras": []}
+    data["me"] = me
+    data["is_gm"] = is_gm
+    data["board"] = book.board()
+    socketio.emit("loop_data", data, to=sid)
+
+
+def _loop_broadcast_board(room):
+    socketio.emit("loop_board", {"board": loop_mod.shared_book().board()}, to=room_channel(room.id, "all"))
+
+
+def _loop_action(fn, *args):
+    me, is_gm, room = _mail_identity(request.sid)
+    if me is None:
+        emit("loop_result", {"ok": False, "message": "캐릭터로 입장해야 플레이할 수 있어요."})
+        return
+    try:
+        fn(me, *args)
+    except loop_mod.LoopError as e:
+        emit("loop_result", {"ok": False, "message": str(e)})
+    _emit_loop_data(request.sid)
+    _loop_broadcast_board(room)
+
+
+@socketio.on("loop_state")
+def on_loop_state(data=None):
+    _emit_loop_data(request.sid)
+
+
+@socketio.on("loop_start")
+def on_loop_start(data):
+    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""))
+
+
+@socketio.on("loop_choose")
+def on_loop_choose(data):
+    data = data or {}
+    try:
+        idx = int(data.get("idx"))
+    except (TypeError, ValueError):
+        idx = -1
+    _loop_action(loop_mod.shared_book().choose, str(data.get("event") or ""), idx)
+
+
+@socketio.on("loop_next")
+def on_loop_next(data=None):
+    _loop_action(loop_mod.shared_book().next)
+
+
+@socketio.on("loop_death")
+def on_loop_death(data):
+    mode = "loop" if (data or {}).get("mode") == "loop" else "end"
+    _loop_action(loop_mod.shared_book().after_death, mode)
+
+
+@socketio.on("loop_finish")
+def on_loop_finish(data=None):
+    _loop_action(loop_mod.shared_book().finish)
+
+
+@socketio.on("loop_reset")
+def on_loop_reset(data=None):
+    _loop_action(loop_mod.shared_book().reset)
 
 
 @socketio.on("mail_list")
