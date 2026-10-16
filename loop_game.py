@@ -871,6 +871,16 @@ class LoopBook:
             choices[run["result"]["choice"]]["picked"] = True
         return {"id": ev["id"], "title": ev["title"], "era": self._era_view(ev["era"]), "story": story, "choices": choices}
 
+    @staticmethod
+    def _end_view(l, C):
+        if l.get("outcome") in ("survived", "paused"):
+            key = "pause" if l.get("outcome") == "paused" else "loop" if l.get("loop_no") else "first"
+            x = C.texts["ending"].get(key) or C.texts["ending"]["first"]
+            return {"tag": "TO BE CONTINUED" if key == "pause" else "SURVIVED", "title": x["title"], "text": x["text"]}
+        dk = (l.get("death") or {}).get("kind") or "life"
+        d = C.texts["death"].get(dk) or C.texts["death"]["life"]
+        return {"tag": "LOOP" if dk == "loop" else "COLLAPSE" if dk == "mind" else "DEATH", "kind": dk, "title": d["title"], "text": d["text"]}
+
     def view(self, name):
         with self.lock:
             C = content()
@@ -884,6 +894,9 @@ class LoopBook:
                          for l in e["lives"][:MAX_LIVES]],
                    "res_fixed": self.fixed_res(e),
                    "eras": [self._era_view(i) for i in C.eras], "run": None}
+            # 지난 운명 카드 : 그 운명이 끝났을 때의 장면(사망 · 엔딩 문장)
+            for lv, src in zip(out["lives"], e["lives"][:MAX_LIVES]):
+                lv["end"] = self._end_view(src, C)
             if not run:
                 return out
             r = {"status": run["status"], "hp": run["hp"], "mind": run.get("mind", C.rules["mind_start"]), "res": run["res"],
