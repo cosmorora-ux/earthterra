@@ -2257,6 +2257,7 @@
   .mail-preview i { color: var(--point); }
   /* PLAY 룸(LOOP)에는 맵을 달아 둡니다(챕터 없음 · 학교 잠김) */
   body.is-play.is-battle .sidebar #sidebarMapBtn { display:flex !important; }
+  body.is-play #sidebarUserListBtn, body.is-play .m-battle-tools, body.is-play .m-userlist-btn { display:none !important; }
 
   /* ================================================================
      맵 (일반 룸) : 장소가 선 위에 놓인 세계 지도 + 고른 장소 설명 + 스토리 챕터 해금 트랙
@@ -8164,6 +8165,7 @@ function toggleUserInfoHidden(name) {
 }
 
 function toggleUserInfoPanel() {
+  if (BATTLE_TYPE === 'play') return;   // LOOP 방 : 유저 리스트 없이
   renderUserInfoList();
   document.getElementById('userInfoModal').style.display = 'flex';
 }
@@ -12579,6 +12581,7 @@ function worldZonesHtml(p) {
 function worldZoneOf(pid, i) { const p = ((worldData && worldData.places) || []).find(x => x.id === pid); return p && p.zones ? [p, p.zones[i]] : [null, null]; }
 // 출신지 : 마이페이지에서 고른 '장소id:구역번호'
 function worldHomeNames(pid, i) {
+  if (BATTLE_TYPE === 'play') return [];   // LOOP 방 : 맵에 누구의 출신지인지 보이지 않게
   const key = `${pid}:${i}`;
   return Object.entries(lastRosterMypage || {}).filter(([, d]) => d && d.hometown === key).map(([n]) => n).sort((a, b) => a.localeCompare(b, 'ko'));
 }
