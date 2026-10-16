@@ -2,18 +2,16 @@
 <rect width="120" height="120" fill="url(#g)"/>
 <circle cx="60" cy="60" r="44" fill="none" stroke="#e9c05b" stroke-width="1" opacity=".35"/>
 <circle cx="60" cy="60" r="38" fill="none" stroke="#e9c05b" stroke-width="1.6" opacity=".55" stroke-dasharray="2 3"/>
+<!-- 각진 날개 : 위로 치켜든 세 겹의 날 (직선 위주, 형체 없는 날개) -->
 <g fill="url(#w)">
-<!-- 왼쪽 날개 : 깃털 다섯 겹 -->
-<path d="M56 54 C46 44 32 38 16 38 C24 42 30 46 34 50 C28 49 22 50 16 52 C24 54 30 56 35 59 C29 60 24 62 19 66 C27 66 33 66 38 66 C34 69 31 72 28 77 C36 74 44 70 50 66 C54 62 56 58 56 54 Z"/>
-<!-- 오른쪽 날개 -->
-<path d="M64 54 C74 44 88 38 104 38 C96 42 90 46 86 50 C92 49 98 50 104 52 C96 54 90 56 85 59 C91 60 96 62 101 66 C93 66 87 66 82 66 C86 69 89 72 92 77 C84 74 76 70 70 66 C66 62 64 58 64 54 Z"/>
+<polygon points="55,62 18,30 30,30 56,52"/>
+<polygon points="54,68 16,46 29,44 55,59"/>
+<polygon points="54,74 20,62 32,58 54,66"/>
+<polygon points="65,62 102,30 90,30 64,52"/>
+<polygon points="66,68 104,46 91,44 65,59"/>
+<polygon points="66,74 100,62 88,58 66,66"/>
 </g>
-<g stroke="#14120c" stroke-width="1" opacity=".55" fill="none">
-<path d="M52 52 C44 47 34 44 24 43"/><path d="M50 57 C43 55 34 55 26 56"/><path d="M50 62 C44 62 36 64 30 67"/>
-<path d="M68 52 C76 47 86 44 96 43"/><path d="M70 57 C77 55 86 55 94 56"/><path d="M70 62 C76 62 84 64 90 67"/>
-</g>
-<!-- 가운데 방패 + 작은 별 -->
-<path d="M60 42 L71 47 V60 C71 69 66 75 60 79 C54 75 49 69 49 60 V47 Z" fill="#1a160c" stroke="url(#w)" stroke-width="2"/>
-<path d="M60 51 L62.6 57.4 L69.4 57.6 L64 61.8 L66 68.4 L60 64.6 L54 68.4 L56 61.8 L50.6 57.6 L57.4 57.4 Z" fill="url(#w)"/>
-<path d="M60 22 L62 28 L60 31 L58 28 Z" fill="#e9c05b" opacity=".8"/>
+<!-- 가운데 마름모 심장 -->
+<polygon points="60,40 69,58 60,84 51,58" fill="#1a160c" stroke="url(#w)" stroke-width="2" stroke-linejoin="miter"/>
+<polygon points="60,50 64,58 60,70 56,58" fill="url(#w)"/>
 </svg>

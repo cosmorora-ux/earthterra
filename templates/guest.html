@@ -2006,12 +2006,16 @@
   /* 음악 : 컴퓨터는 메뉴 탭(사이드바)의 소리 버튼에서 음소거 · 음량만. 휴대폰 · 태블릿은 기기 음량으로 조절하니 숨겨요. */
   .member-top, .bgm-player { display:none !important; }
   .sb-sound { position:relative; display:flex; justify-content:center; }
-  .sb-sound-pop { position:absolute; left:calc(100% + 14px); bottom:0; display:none; align-items:center; gap:10px; padding:10px 14px 10px 10px; border-radius:12px; background: var(--panel, #151518); border:1px solid rgba(255,255,255,.08); box-shadow: 0 12px 30px rgba(0,0,0,.45); z-index:200; white-space:nowrap; }
+  .sb-sound-pop { position:absolute; left:calc(100% + 14px); top:50%; transform:translateY(-50%); height:48px; box-sizing:border-box; display:none; align-items:center; gap:10px; padding:10px 14px 10px 10px; border-radius:12px; background: var(--panel, #151518); border:1px solid rgba(255,255,255,.08); box-shadow: 0 12px 30px rgba(0,0,0,.45); z-index:200; white-space:nowrap; }
   .sb-sound.open .sb-sound-pop { display:flex; }
   .sb-sound.open #sidebarSoundBtn { color:#fff; background: rgba(255,255,255,.06); }
-  .sb-mute { width:32px; height:32px; border:none; border-radius:10px; background: rgba(255,255,255,.05); color: var(--text); cursor:pointer; font-size:13px; }
+  .sb-mute { display:inline-flex; align-items:center; justify-content:center; flex:none; width:32px; height:32px; padding:0; border:none; border-radius:10px; background: rgba(255,255,255,.05); color: var(--text); cursor:pointer; font-size:13px; }
   .sb-mute:hover { background: rgba(255,255,255,.1); }
   .sb-sound-pop input[type=range].nice-range { width:120px; }
+  #sbEq { width:16px; height:14px; }
+  #sbEq.playing span { background: var(--point); animation: bgmEq 1s ease-in-out infinite; }
+  #sbEq.playing span:nth-child(2) { animation-delay:-.4s; } #sbEq.playing span:nth-child(3) { animation-delay:-.7s; } #sbEq.playing span:nth-child(4) { animation-delay:-.2s; }
+  #sbEq.muted span { height:12%; background:#5a5a62; }
   .sb-vol-num { min-width:24px; text-align:right; font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; }
   @media (max-width:900px), (hover:none) and (pointer:coarse) { .sb-sound { display:none !important; } }
   .pl-scroll { flex:1; min-height:0; overflow-y:auto; scrollbar-width:thin; }
@@ -4312,7 +4316,7 @@
   <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <div class="sidebar-grow"></div>
   <div class="sb-sound" id="sbSound"><button class="sidebar-icon" id="sidebarSoundBtn" onclick="toggleSoundPop(event)" aria-label="음악 음량"><i class="fa-solid fa-volume-high"></i></button>
-    <div class="sb-sound-pop" id="sbSoundPop" onclick="event.stopPropagation()"><button type="button" class="sb-mute" id="sbMuteBtn" onclick="toggleMusicMute()" aria-label="음소거"><i class="fa-solid fa-volume-high"></i></button>
+    <div class="sb-sound-pop" id="sbSoundPop" onclick="event.stopPropagation()"><button type="button" class="sb-mute" onclick="toggleMusicMute()" aria-label="음소거" data-tip="음소거"><span class="bgm-eq" id="sbEq"><span></span><span></span><span></span><span></span></span></button>
       <input type="range" class="nice-range" id="sbVolSlider" min="0" max="100" oninput="onVolumeChange(this.value)" aria-label="음악 음량"><span class="sb-vol-num" id="sbVolNum"></span></div></div>
   <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
 </div>
@@ -8987,7 +8991,8 @@ function refreshVolumeUi() {
   if (sbs) { sbs.value = musicVolume; paintRange(sbs); }
   const sbn = document.getElementById('sbVolNum'); if (sbn) sbn.textContent = musicVolume;
   const sbIcon = musicVolume === 0 ? 'fa-volume-xmark' : (musicVolume < 40 ? 'fa-volume-low' : 'fa-volume-high');
-  ['sbMuteBtn', 'sidebarSoundBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.innerHTML = `<i class="fa-solid ${sbIcon}"></i>`; });
+  ['sidebarSoundBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.innerHTML = `<i class="fa-solid ${sbIcon}"></i>`; });
+  try { updateMusicStatusText(); } catch (e) {}   // 팝업 막대도 바로 맞춰요
   const num = document.getElementById('musicVolumeNum');
   if (num) num.textContent = musicVolume;
   const btn = document.getElementById('musicMuteBtn');
@@ -9037,8 +9042,15 @@ function updateMusicStatusText() {
   statusEl.parentElement.title = title;
   if (player) player.classList.toggle('playing', playing);
   if (kicker) kicker.textContent = playing ? 'NOW PLAYING' : 'PAUSED';
+  sbEqSync(playing);
 }
 setInterval(updateMusicStatusText, 1000);
+// 사이드바 음량 팝업의 막대(마이룸 음악과 같은 모양) : 음악이 나오면 움직이고, 음소거면 납작하게
+function sbEqSync(playing) {
+  const eq = document.getElementById('sbEq'); if (!eq) return;
+  eq.classList.toggle('muted', musicVolume === 0);
+  eq.classList.toggle('playing', !!playing && musicVolume > 0);
+}
 // 브라우저는 사용자가 화면을 한 번 누르기 전까지 소리 자동 재생을 막아요(그래서 노래가 안 나왔어요).
 // 처음 누르거나 키를 칠 때, 나와야 하는데 멈춰 있는 배경음악 · 방 음악을 다시 틀어요.
 function musicKick() {
