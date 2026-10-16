@@ -2115,7 +2115,17 @@
   .pl-ch.picked .k { background: var(--point); color: var(--on-accent, #fff); }
   /* 고른 답과 결과 : 이야기 카드 아래, 선택지가 있던 자리 쪽에 따로 */
   .pl-answer { display:flex; flex-direction:column; gap:8px; }
-  .pl-answer .pl-picked { margin:0; padding:14px 16px; border:1px solid rgba(var(--point-rgb),.25); }
+  .pl-answer .pl-picked { margin:0; padding:14px 16px; background: rgba(255,255,255,.03); border:1px solid var(--line); }
+  .pl-answer .pl-picked .k { background: rgba(255,255,255,.08); color:#cfcfd4; }
+  /* 변화 표시 : 상자 없이, 아이콘 · 이름은 회색, 숫자만 색 */
+  .pl-delta, .pl-delta.up, .pl-delta.down, .pl-delta.zero, .pl-delta.mind.up, .pl-delta.asset.up, .pl-delta.asset.down, .pl-delta.asset.strain.up, .pl-delta.asset.strain.down {
+    background:none !important; padding:0 !important; height:auto !important; color:#8d8d95 !important; font-weight:600; gap:5px; }
+  .pl-deltas { gap:4px 14px; }
+  .pl-delta b { font-weight:800; }
+  .pl-delta.up b { color: var(--point); } .pl-delta.down b { color:#ff8a80; } .pl-delta.mind.up b { color:#7fe0d0; }
+  .pl-delta.asset.down b { color:#bdbdc3; } .pl-delta.asset.strain.up b { color:#c9b0ff; } .pl-delta.asset.strain.down b { color:#7fe0d0; }
+  .pl-lp-body .dd .d { color:#8d8d95 !important; } .pl-lp-body .dd .d i { color:#8d8d95; opacity:.8; }
+  .pl-lp-body .d.up b { color: var(--point); } .pl-lp-body .d.down b { color:#ff8a80; } .pl-lp-body .d.mind.up b { color:#7fe0d0; }
   .pl-answer .pl-result { margin:0; padding:18px 18px; background: rgba(255,255,255,.025); }
   .pl-result { margin:12px -14px 0; padding:16px 14px; border-radius:12px; background: rgba(0,0,0,.25); animation: plIn .35s ease; }
   .pl-result p { margin:0 0 6px; font-size:15px; line-height:1.75; color:#e6e6ea; }
@@ -12803,7 +12813,7 @@ const LOOP_ASSETS = [['wealth', 'fa-coins'], ['intel', 'fa-lightbulb'], ['talent
 const LOOP_ASSET_NAME = { wealth: '재산', intel: '지능', talent: '재능', strain: '균열 압력' };
 function loopAssetName(k, r) { return k === 'talent' ? ((r && r.talent_name) || '재능') : LOOP_ASSET_NAME[k]; }
 function loopGainHtml(g, r) {
-  return Object.entries(g || {}).filter(([, v]) => v).map(([k, v]) => `<span class="pl-delta asset ${k} ${v > 0 ? 'up' : 'down'}"><i class="fa-solid ${(LOOP_ASSETS.find(a => a[0] === k) || [0, 'fa-house-crack'])[1]}"></i>${loopEsc(loopAssetName(k, r))} ${loopSign(v)}</span>`).join('');
+  return Object.entries(g || {}).filter(([, v]) => v).map(([k, v]) => `<span class="pl-delta asset ${k} ${v > 0 ? 'up' : 'down'}"><i class="fa-solid ${(LOOP_ASSETS.find(a => a[0] === k) || [0, 'fa-house-crack'])[1]}"></i>${loopEsc(loopAssetName(k, r))} <b>${loopSign(v)}</b></span>`).join('');
 }
 const LOOP_COUNTRY = { arcadia: ['아르카디아 연방', '공명자가 기득권, 비공명자가 비기득권인 나라.'], nova: ['노바 공화국', '비공명자가 기득권, 공명자가 비기득권인 나라.'] };
 function loopPriv(country, res) { return (country === 'arcadia' && res === 'res') || (country === 'nova' && res === 'non'); }
@@ -12811,12 +12821,12 @@ function loopEsc(s) { return mailEsc(s == null ? '' : String(s)); }
 function loopSign(d) { return d > 0 ? '+' + d : d < 0 ? '−' + (-d) : '0'; }
 // 결과 칩 : 체력 · 정신 각각(둘 다 그대로면 '변화 없음' 하나)
 function loopDeltaHtml(dh, dm) {
-  const chip = (k, d) => `<span class="pl-delta ${k} ${d > 0 ? 'up' : 'down'}"><i class="fa-solid ${LOOP_STAT[k][1]}"></i>${LOOP_STAT[k][0]} ${loopSign(d)}</span>`;
+  const chip = (k, d) => `<span class="pl-delta ${k} ${d > 0 ? 'up' : 'down'}"><i class="fa-solid ${LOOP_STAT[k][1]}"></i>${LOOP_STAT[k][0]} <b>${loopSign(d)}</b></span>`;
   const out = (dh ? chip('hp', dh) : '') + (dm ? chip('mind', dm) : '');
   return `<div class="pl-deltas">${out || '<span class="pl-delta zero"><i class="fa-solid fa-minus"></i>체력 · 정신 그대로</span>'}</div>`;
 }
 function loopMiniDelta(dh, dm) {
-  const one = (k, d) => `<span class="d ${k} ${d > 0 ? 'up' : d < 0 ? 'down' : 'zero'}"><i class="fa-solid ${LOOP_STAT[k][1]}"></i>${loopSign(d)}</span>`;
+  const one = (k, d) => `<span class="d ${k} ${d > 0 ? 'up' : d < 0 ? 'down' : 'zero'}"><i class="fa-solid ${LOOP_STAT[k][1]}"></i><b>${loopSign(d)}</b></span>`;
   // 변동이 있는 것만 적어요(둘 다 그대로면 아무것도 안 붙어요).
   const out = (dh ? one('hp', dh) : '') + (dm ? one('mind', dm) : '');
   return out ? `<span class="dd">${out}</span>` : '';
