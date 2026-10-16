@@ -4287,6 +4287,81 @@
     height:32px !important; font-size:13px; padding:0 30px 0 10px !important; background-position: right 10px center !important; }
   .la-d { padding:0 24px 0 8px !important; background-position: right 8px center !important; }
   .action-bar-bottom select, .gm-bar-fields select { height:40px !important; }
+
+  /* ================================================================
+     디자인 시스템 v1 — 화면 전체가 같은 부품을 쓰도록 맞추는 마지막 층.
+     토큰 : 모서리(카드 16 · 안쪽 상자 12 · 조작 칸/버튼/칩 10), 높이(작게 32 · 기본 38 · 크게 44),
+            글자(12 · 13.5 · 15), 면(옅은 상자 .035 · 조작 칸 .05 · 호버 .09), 선(--line), 강조(--point / --accent-blue).
+     부품 : 버튼(주 · 보조 · 위험 · 아이콘), 입력 칸, 체크박스, 칩, 카드, 빈 화면.
+     ================================================================ */
+  :root {
+    --ds-r-card:16px; --ds-r-box:12px; --ds-r-ctl:10px;
+    --ds-h-sm:32px; --ds-h:38px; --ds-h-lg:44px;
+    --ds-fs-xs:12px; --ds-fs-sm:13.5px; --ds-fs-md:15px;
+    --ds-surface:rgba(255,255,255,.035); --ds-ctl:rgba(255,255,255,.05); --ds-ctl-hover:rgba(255,255,255,.09);
+    --ds-line:rgba(255,255,255,.08); --ds-line-strong:rgba(255,255,255,.16);
+    --ds-danger:#ff8a80; --ds-placeholder:#6c6c74;
+  }
+  /* ── 버튼 : 주(채움) ── */
+  .btn, .btn-primary, .shop-btn, .ops-btn.primary, .pl-btn.primary, .dorm-tbtn.primary, .mail-send, .mp-preview-btn.primary {
+    display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    border:1px solid transparent !important; border-radius: var(--ds-r-ctl) !important;
+    background: var(--accent-blue) !important; color: var(--on-accent, #fff) !important;
+    font-family:inherit; font-size: var(--ds-fs-sm); font-weight:700; letter-spacing:-0.005em; cursor:pointer;
+    transition: filter .15s, background-color .15s, opacity .15s; }
+  .btn, .btn-primary, .shop-btn { min-height: var(--ds-h-sm); padding:0 16px; }
+  .btn:hover:not(:disabled), .btn-primary:hover:not(:disabled), .shop-btn:hover:not(:disabled), .ops-btn.primary:hover:not(:disabled),
+  .pl-btn.primary:hover:not(:disabled), .dorm-tbtn.primary:hover:not(:disabled), .mail-send:hover:not(:disabled) { filter: brightness(1.1); }
+  /* ── 버튼 : 보조(옅은 면 + 선) ── */
+  .btn-plain, .ops-btn:not(.primary):not(.icon):not(.danger), .pl-btn:not(.primary), .dorm-tbtn:not(.primary), .shop-btn.ghost, .mp-preview-btn, .gm-bar-ctrl button {
+    display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    border:1px solid var(--ds-line) !important; border-radius: var(--ds-r-ctl) !important;
+    background: var(--ds-ctl) !important; color: var(--text) !important;
+    font-family:inherit; font-size: var(--ds-fs-sm); font-weight:600; cursor:pointer; transition: background-color .15s, border-color .15s; }
+  .btn-plain { min-height: var(--ds-h-sm); padding:0 14px; }
+  .btn-plain:hover:not(:disabled), .ops-btn:not(.primary):not(.icon):not(.danger):hover:not(:disabled), .pl-btn:not(.primary):hover:not(:disabled),
+  .dorm-tbtn:not(.primary):hover:not(:disabled), .shop-btn.ghost:hover:not(:disabled), .mp-preview-btn:hover:not(:disabled), .gm-bar-ctrl button:hover:not(:disabled) {
+    background: var(--ds-ctl-hover) !important; border-color: var(--ds-line-strong) !important; }
+  /* ── 버튼 : 위험 ── */
+  .shop-btn.danger, .ops-btn.danger:not(.icon) { background: transparent !important; border:1px solid rgba(255,138,128,.35) !important; color: var(--ds-danger) !important; font-weight:600; }
+  .shop-btn.danger:hover, .ops-btn.danger:not(.icon):hover { background: rgba(255,138,128,.08) !important; }
+  /* ── 버튼 : 아이콘만 ── */
+  .shop-ico-btn, .dorm-ibtn, .ops-btn.icon, .mail-back, .sb-mute {
+    width: var(--ds-h-sm) !important; height: var(--ds-h-sm) !important; padding:0 !important; flex:none;
+    display:inline-flex !important; align-items:center; justify-content:center;
+    border:none !important; border-radius: var(--ds-r-ctl) !important; background: transparent !important; color: var(--muted) !important;
+    font-size:13px; cursor:pointer; transition: background-color .15s, color .15s; }
+  .shop-ico-btn:hover:not(:disabled), .dorm-ibtn:hover:not(:disabled), .ops-btn.icon:hover:not(:disabled), .mail-back:hover, .sb-mute:hover { background: var(--ds-ctl-hover) !important; color:#fff !important; }
+  .shop-ico-btn.danger:hover, .ops-btn.icon.danger:hover { color: var(--ds-danger) !important; background: rgba(255,138,128,.08) !important; }
+  .dorm-ibtn { background: var(--ds-ctl) !important; color: var(--text) !important; }
+  /* ── 비활성 ── */
+  .btn:disabled, .btn-primary:disabled, .btn-plain:disabled, .shop-btn:disabled, .ops-btn:disabled, .pl-btn:disabled, .dorm-tbtn:disabled, .mail-send:disabled,
+  .shop-ico-btn:disabled, .dorm-ibtn:disabled { opacity:.4; filter:none !important; cursor:not-allowed; }
+  /* ── 입력 칸 : 한 줄 · 여러 줄 ── */
+  input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):not(.idc-inline):not(.nice-range),
+  textarea:not(.rich) {
+    border-radius: var(--ds-r-ctl) !important; border:1px solid var(--ds-line) !important; background-color: var(--ds-ctl) !important;
+    color: var(--text); font-family:inherit; transition: border-color .15s, background-color .15s; }
+  textarea:not(.rich) { border-radius: var(--ds-r-box) !important; }
+  input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):not(.idc-inline):hover:not(:focus):not(:disabled),
+  textarea:not(.rich):hover:not(:focus):not(:disabled) { border-color: var(--ds-line-strong) !important; }
+  input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):focus,
+  textarea:not(.rich):focus { outline:none !important; border-color: rgba(var(--point-rgb),.6) !important; background-color: rgba(255,255,255,.06) !important; box-shadow:none !important; }
+  input::placeholder, textarea::placeholder, [contenteditable][data-placeholder]:empty::before { color: var(--ds-placeholder) !important; opacity:1; }
+  input:disabled, textarea:disabled { opacity:.5; }
+  /* 리치 편집기 · 스킬 로그 칸 등 묶음 상자도 같은 선 · 모서리 */
+  .idc-editor, .mypage.v2 .idc-editor { border:1px solid var(--ds-line) !important; border-radius: var(--ds-r-box) !important; background: var(--ds-ctl) !important; }
+  /* ── 체크박스 · 라디오 : 포인트 색 ── */
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--point); width:16px; height:16px; cursor:pointer; }
+  /* ── 칩 · 배지 ── */
+  .mail-badge, .la-badge, .notice-card-head .pin, .pl-end-stamp, .pl-peek-tag, .la-item em, .la-blk-row .b em {
+    border-radius: var(--ds-r-ctl) !important; font-size:11.5px; font-weight:700; }
+  /* ── 카드 · 상자 ── */
+  .ops-card, .mp-card, .notice-card, .shop-item, .wm-card, .la-ch-card, .ops-card.la-blk-row { border-radius: var(--ds-r-card) !important; border-color: var(--ds-line) !important; }
+  .pl-box { border-radius: var(--ds-r-card); }
+  .pl-picked, .pl-result, .pl-narr, .mail-preview, .la-memo, .idc-room-prev, .mypage-fx-image { border-radius: var(--ds-r-box) !important; }
+  /* ── 빈 화면 : 아이콘 상자도 같은 모서리 ── */
+  .empty-state .es-ic { border-radius: var(--ds-r-box) !important; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}{% if battle_type == 'play' %} is-play{% endif %}">
