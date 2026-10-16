@@ -13034,7 +13034,7 @@ function loopMiniHtml(d, r) {
   return `<span class="pl-mini">${dots('hp', r.hp, d.hp_max || 5)}${dots('mind', r.mind, d.mind_max || 5)}<span class="pm era"><i class="fa-solid fa-hourglass-half"></i><b>${loopEsc(e.no || '')}</b><em>${Math.min(r.era_step + (r.status === 'event' ? 1 : 0), r.era_len)}/${r.era_len}</em></span></span>`;
 }
 function loopStatusHtml(d, r) {
-  loopNarrHtml(r, [...(r.mood || []), ...(r.mood_mind || [])]);
+  loopNarrHtml(r);
   if (loopFold) return '';
   const bar = (k, v, max) => `<div class="pl-hp ${k} ${v <= 1 ? 'low' : ''}">${Array.from({ length: max }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}<b>${v}<span> / ${max}</span></b></div>`;
   const nowIdx = r.eras.indexOf(r.era.id);
@@ -13062,15 +13062,29 @@ function loopStatusHtml(d, r) {
 // 몸 · 마음 상태 문장 : 화면에 붙여 두지 않고, 상태가 바뀔 때만 잠깐 팝업으로 알려 줘요(처음 들어왔을 때는 조용히).
 var loopNarrLast = null, loopNarrTimer = null, loopNarrQ = [];
 const loopSentences = lines => lines.join(' ').split(/(?<=[.!?。…])\s+/).map(t => t.trim()).filter(Boolean);
-function loopNarrHtml(r, mood) {
-  const all = loopSentences(mood), key = `${r.life_no}|${r.loop_no}`, txt = all.join(' ');
-  const prev = loopNarrLast; loopNarrLast = { key, txt, all };
-  if (!txt || !prev || prev.key !== key || prev.txt === txt) return '';
-  // 새로 생긴 문장만, 한 문장씩 차례로
-  const fresh = all.filter(t => !prev.all.includes(t));
-  loopNarrQ = (fresh.length ? fresh : all).map(t => ({ t, low: r.hp <= 1 || r.mind <= 1 }));
-  clearTimeout(loopNarrTimer); loopNarrNext();
+function loopNarrHtml(r) {
+  // 체력 · 정신 각각 문장 단계가 바뀐 순간(그 지점을 넘겼을 때)에만, 새로 생긴 문장만 한 번씩.
+  const key = `${r.life_no}|${r.loop_no}`, hp = (r.mood || []).join(' '), mind = (r.mood_mind || []).join(' ');
+  const prev = loopNarrLast; loopNarrLast = { key, hp, mind };
+  if (!prev || prev.key !== key) return '';
+  const fresh = [];
+  [[hp, prev.hp], [mind, prev.mind]].forEach(([now, was]) => {
+    if (!now || now === was) return;
+    const old = loopSentences([was]);
+    loopSentences([now]).forEach(t => { if (!old.includes(t) && !fresh.includes(t)) fresh.push(t); });
+  });
+  if (!fresh.length) return '';
+  const low = r.hp <= 1 || r.mind <= 1;
+  fresh.forEach(t => { if (!loopNarrQ.some(x => x.t === t)) loopNarrQ.push({ t, low }); });
+  const el = document.getElementById('loopNarrPop');
+  if (!el || !el.classList.contains('on')) { clearTimeout(loopNarrTimer); loopNarrTimer = setTimeout(loopNarrNext, 80); }   // 화면을 다 그린 뒤 자리 잡기
   return '';
+}
+// 팝업은 아래쪽 고정 버튼(다음 사건 · 선택지) 바로 위에 떠요.
+function loopNarrPlace(el) {
+  const dock = document.querySelector('#playPage .pl-dock');
+  const top = dock && dock.offsetParent ? dock.getBoundingClientRect().top : window.innerHeight - 36;
+  el.style.bottom = Math.max(16, Math.round(window.innerHeight - top + 14)) + 'px';
 }
 function loopNarrNext() {
   let el = document.getElementById('loopNarrPop');
@@ -13080,7 +13094,7 @@ function loopNarrNext() {
   const show = () => {
     el.className = it.low ? 'low' : '';
     el.innerHTML = `<i class="fa-solid ${it.ic || 'fa-feather-pointed'}"></i><p>${loopEsc(it.t)}</p>`;
-    void el.offsetWidth; el.classList.add('on');
+    loopNarrPlace(el); void el.offsetWidth; el.classList.add('on');
     loopNarrTimer = setTimeout(() => { el.classList.remove('on'); loopNarrTimer = setTimeout(loopNarrNext, 380); }, 2600);
   };
   if (el.classList.contains('on')) { el.classList.remove('on'); loopNarrTimer = setTimeout(show, 380); } else show();
