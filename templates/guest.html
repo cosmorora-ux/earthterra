@@ -2498,6 +2498,11 @@
   .wm-zone .ttl b { font-size:16px; font-weight:600; letter-spacing:-0.01em; }
   .wm-zone .ttl span { font-size:11px; color:#9a9aa2; font-variant-numeric: tabular-nums; flex:none; }
   .wm-zone .foot { }
+  /* 자세히 보기 : 화살표만, 누르는 자리는 넉넉하게 */
+  .wm-zone .ttl { align-items:center; }
+  .wm-go { flex:none; width:44px; height:44px; margin:-8px -10px -8px 0; display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:12px;
+    background:none; color: var(--point); font-size:15px; cursor:pointer; transition: background .15s, transform .15s; }
+  .wm-go:hover { background: rgba(var(--point-rgb),.12); transform: translateX(2px); }
   .wm-zone .foot p { margin:0 0 10px; min-height:3.2em; font-size:12px; line-height:1.6; color:#c9c9cf; white-space:pre-wrap; }
   .wm-zone .foot p.muted { color:#6c6c74; }
   .wm-zone dl { margin:0; }
@@ -4548,7 +4553,7 @@
   </div>
 </div>
 <div id="worldPage" class="world-page">
-  <div class="topbar v2 panel world-topbar"><div class="seg world-brand">World</div><span class="sep">▶</span><div class="seg" id="worldTopSeg">맵</div>
+  <div class="topbar v2 panel world-topbar"><div class="seg world-brand">Pangaea</div><span class="sep">▶</span><div class="seg" id="worldTopSeg">맵</div>
     <div class="spacer"></div><div class="dorm-tools-r" id="worldTools"></div></div>
   <div class="world-body" id="worldBody"></div>
 </div>
@@ -12786,11 +12791,10 @@ function worldZonesHtml(p) {
   return `<div class="wm-zones">${zs.map((z, i) => {
     const info = (z.info || []).filter(r => r.k || r.v);
     return `<article class="wm-zone" style="--i:${i}" onclick="worldZoneToast('${p.id}',${i})">
-      <div class="cap"><span>${i + 1}구역 — ${worldEsc(p.name)}</span></div>
+      <div class="cap"><span>${worldEsc(z.title || `${i + 1}구역`)}</span></div>
       <div class="img ${z.image ? '' : 'empty'}" style="${z.image ? `background-image:url('${worldEsc(z.image)}')` : ''}">${z.image ? '' : `${WM_NOSIGNAL}<span>No Signal</span>`}</div>
-      <div class="ttl"><b>${worldEsc(z.title || `${i + 1}구역`)}</b><span>${String(i + 1).padStart(2, '0')} / ${String(zs.length).padStart(2, '0')}</span></div>
-      <div class="foot">${z.desc ? `<p class="clamp">${worldEsc(z.desc)}</p>
-          <button class="wm-more" onclick="event.stopPropagation(); openWorldZone('${p.id}',${i})">자세히 보기<i class="fa-solid fa-arrow-right"></i></button>` : '<p class="muted">구역 설명이 아직 없습니다.</p>'}
+      <div class="ttl"><b>${i + 1}구역</b>${z.desc ? `<button class="wm-go" onclick="event.stopPropagation(); openWorldZone('${p.id}',${i})" aria-label="자세히 보기" data-tip="자세히 보기"><i class="fa-solid fa-arrow-right"></i></button>` : ''}</div>
+      <div class="foot">${z.desc ? `<p class="clamp">${worldEsc(z.desc)}</p>` : '<p class="muted">구역 설명이 아직 없습니다.</p>'}
         ${info.length ? `<dl>${info.map(r => `<div><dt>${worldEsc(r.k)}</dt><dd>${worldEsc(r.v)}</dd></div>`).join('')}</dl>` : ''}
         ${z.ref ? `<div class="wm-ref"><i class="fa-solid fa-circle-info"></i>${worldEsc(z.ref)}</div>` : ''}</div>
     </article>`;
