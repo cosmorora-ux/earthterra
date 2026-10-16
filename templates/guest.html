@@ -12546,6 +12546,8 @@ function renderLoop() {
   if (!page) return;
   const d = loopData;
   renderLoopLog();
+  // 시작 화면 연출이 흐르는 동안에는 다시 그리지 않아요(다시 그리면 타이핑이 끊겨요). 끝나면 저절로 정돈돼요.
+  if (d && d.me && !d.run && loopIntroStage === 'opening' && page.querySelector('.pl-intro.opening .pl-quote')) return;
   if (!d || !d.me) {
     page.innerHTML = `<div class="pl-scroll"><div class="pl-wrap">${d ? loopHeadHtml(d) : ''}${!d ? emptyHtml('fa-circle-notch fa-spin', 'LOOP를 불러오는 중이에요') : emptyHtml('fa-infinity', '캐릭터로 입장해 주세요', 'LOOP는 캐릭터마다 자기 생애를 진행해요.')}</div></div>`;
     return;
@@ -12757,6 +12759,12 @@ function loopStartHtml(d) {
       <span class="prc-d">${ds}</span>
       <button class="prc-go" ${loopBusy ? 'disabled' : ''} onclick="event.stopPropagation(); loopRes='${k}'; loopEmit('loop_start', { res: '${k}' })">운명 시작<i class="fa-solid fa-arrow-right"></i></button></div>`).join('');
   // 연출 : 처음에는 문구만 가운데에 크게(영어가 메인, 한국어가 서브) → 잠시 뒤 작아지며 제자리로 → 제목 · 카드가 떠올라요.
+  // 로그인 화면이 아직 덮고 있으면 연출을 아껴 두었다가, 화면이 보이는 순간 시작해요.
+  const gate = document.getElementById('loginGate');
+  if (!loopShown.has('intro|en') && gate && gate.classList.contains('on')) {
+    setTimeout(() => { if (loopData && !loopData.run) renderLoop(); }, 200);
+    return { main: '<div class="pl-box pl-intro opening"></div>', dock: '' };
+  }
   const en = loopType(['— Life and death are inevitable. Destiny is a phenomenon beyond defiance.'], 'intro|en', 400, '', 38);
   const ko = loopType(['삶과 죽음은 필연. 운명은 거부할 수 없는 현상이다.'], 'intro|ko', en.end + 450, '', 45);
   if (en.fresh) { loopShown.add('intro|en'); loopShown.add('intro|ko'); loopIntroStage = 'opening'; loopIntroTimer(ko.end + 1400); }
