@@ -5703,7 +5703,8 @@ function tickClock() {
   const h24 = now.getHours();
   const ampm = h24 < 12 ? 'AM' : 'PM';
   const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-  el.textContent = `${etDate(now)} ${etTime(h24, now.getMinutes(), now.getSeconds())}`;
+  const t = `${etDate(now)} ${etTime(h24, now.getMinutes(), now.getSeconds())}`;
+  if (el.textContent !== t) el.textContent = t;   // 글자가 바뀔 때만 그려요
 }
 setInterval(tickClock, 200);
 tickClock();
@@ -12285,8 +12286,11 @@ function applyPointTheme() {
   document.documentElement.classList.add('ovs');
   const mk = cls => { const d = document.createElement('div'); d.className = 'ovs-thumb ' + cls; document.body.appendChild(d); return d; };
   let tv, th, curY = null, curX = null, hideT = null, drag = null, raf = 0;
-  const canY = n => n.scrollHeight > n.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowY);
-  const canX = n => n.scrollWidth > n.clientWidth + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowX);
+  // 스크롤 되는 칸인지(overflow 설정)는 요소마다 한 번만 읽어 기억해요 : 마우스를 움직일 때마다 스타일을 다시 계산하지 않게
+  const ovY = new WeakMap(), ovX = new WeakMap();
+  const isOv = (m, n, k) => { let v = m.get(n); if (v === undefined) { v = /(auto|scroll)/.test(getComputedStyle(n)[k]); m.set(n, v); } return v; };
+  const canY = n => n.scrollHeight > n.clientHeight + 1 && isOv(ovY, n, 'overflowY');
+  const canX = n => n.scrollWidth > n.clientWidth + 1 && isOv(ovX, n, 'overflowX');
   const find = (t, can) => { for (let n = t; n && n.nodeType === 1 && n !== document.documentElement; n = n.parentElement) if (can(n)) return n; return null; };
   function place() {
     [[tv, curY, 'y'], [th, curX, 'x']].forEach(([t, el, ax]) => {
@@ -13735,7 +13739,6 @@ if (IS_PLAY) {
   socket.on('loop_data', d => { bootReady('state'); loopData = d; loopBusy = false; loopSyncPoint(d); loopTopSub(d); renderLoop(); });
   socket.on('loop_result', r => { loopBusy = false; if (r && !r.ok) uiToast(r.message); });
   socket.on('joined', () => socket.emit('loop_state'));
-  socket.on('connect', () => setTimeout(() => socket.emit('loop_state'), 400));
   document.addEventListener('DOMContentLoaded', () => {
     const b = document.getElementById('sidebarBattleBtn');
     if (b) { b.dataset.tip = 'LOOP'; const i = b.querySelector('i'); if (i) i.className = 'fa-solid fa-infinity'; }
