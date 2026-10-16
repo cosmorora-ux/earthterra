@@ -12530,7 +12530,9 @@ function loopDeltaHtml(dh, dm) {
 }
 function loopMiniDelta(dh, dm) {
   const one = (k, d) => `<span class="d ${k} ${d > 0 ? 'up' : d < 0 ? 'down' : 'zero'}"><i class="fa-solid ${LOOP_STAT[k][1]}"></i>${loopSign(d)}</span>`;
-  return `<span class="dd">${one('hp', dh || 0)}${one('mind', dm || 0)}</span>`;
+  // 변동이 있는 것만 적어요(둘 다 그대로면 아무것도 안 붙어요).
+  const out = (dh ? one('hp', dh) : '') + (dm ? one('mind', dm) : '');
+  return out ? `<span class="dd">${out}</span>` : '';
 }
 // 글 묶음을 문단으로 : key가 처음 보이는 글이면 한 글자씩 떠오르게. 다 뜨는 데 걸리는 시간(ms)을 같이 돌려줍니다.
 function loopType(lines, key, start, pCls, ms) {
