@@ -5462,7 +5462,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.65";
+const EXPECTED_SERVER_BUILD = "2026-10-13.66";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   const notice = document.getElementById('serverRestartNotice');
@@ -12755,7 +12755,7 @@ function worldMapHtml(places, sel) {
     const label = locked ? '???' : (p.en || p.name || '');
     return `<div class="wm-node ${p.id === worldSel ? 'sel' : ''} ${locked ? 'locked' : ''} ${sealed ? 'sealed' : ''} ${gmlock ? 'gmlock' : ''}" data-id="${p.id}" style="--i:${idx}" onclick="worldPick('${p.id}')">
       <span class="nm ${!locked && !p.en ? 'ko' : ''} ${label.length > 12 ? 'long' : ''}">${worldEsc(label)}</span>
-      <span class="ic" style="${!locked && p.image ? `background-image:url('${worldEsc(p.image)}')` : ''}">${locked ? '<i class="fa-solid fa-lock"></i>' : (p.image ? '' : '<i class="fa-solid fa-location-dot"></i>')}${sealed ? '<em class="seal"><i class="fa-solid fa-lock"></i></em>' : ''}</span>
+      <span class="ic" style="${!locked && p.image ? `background-image:url('${worldEsc(p.image)}')` : ''}">${locked ? '<i class="fa-solid fa-lock"></i>' : (p.image ? '' : '<i class="fa-solid fa-location-dot"></i>')}</span>
       <span class="sb">${locked ? '' : worldEsc(p.sub || '')}</span></div>`;
   }).join('');
   return `<div class="wm-card"><div class="wm-sky"><span class="gx-orbit o2" aria-hidden="true"></span><span class="gx-orbit o1" aria-hidden="true"></span><div class="wm-stage"><div class="wm-row">${nodes}<span class="wm-fill"></span></div></div></div><div id="wmDetail">${worldDetailInner(sel)}</div></div>`;

@@ -75,7 +75,7 @@ DEFAULT_WORLD = {
          "image": "/static/world_default/arcadia.svg",
          "desc": "여러 주(州)가 하나로 모인 연방 국가입니다. 상징색은 노랑입니다.\n장소 설명은 편집에서 바꿀 수 있습니다.",
          "info": [{"k": "체제", "v": "연방제"}, {"k": "상징색", "v": "노랑"}, {"k": "수도", "v": "-"}, {"k": "특징", "v": "-"}]},
-        {"zones": ZONE_DEFAULTS["nexus"], "id": "nexus", "name": "넥서스 아카데미", "en": "NEXUS ACADEMY", "sub": "학교", "chapter": 0,
+        {"zones": ZONE_DEFAULTS["nexus"], "id": "nexus", "name": "넥서스 아카데미", "en": "NEXUS", "sub": "아카데미", "chapter": 0,
          "image": "/static/world_default/nexus.svg",
          "desc": "아르카디아 연방과 노바 공화국 사이에 자리한 학교입니다. 두 국가의 학생들이 함께 지냅니다.\n장소 설명은 편집에서 바꿀 수 있습니다.",
          "info": [{"k": "구분", "v": "교육 기관"}, {"k": "위치", "v": "두 국가의 경계"}, {"k": "기숙사", "v": "관별 6인실"}, {"k": "특징", "v": "-"}]},
@@ -114,10 +114,13 @@ class World:
             d = json.loads(json.dumps(DEFAULT_WORLD))
         self.places = d.get("places", [])
         migrated = False
-        short_en = {"ARCADIA FEDERATION": "ARCADIA", "NOVA REPUBLIC": "NOVA"}   # 맵 글자가 너무 길어 줄였어요
+        short_en = {"ARCADIA FEDERATION": "ARCADIA", "NOVA REPUBLIC": "NOVA", "NEXUS ACADEMY": "NEXUS"}   # 맵 글자가 너무 길어 줄였어요
         for p in self.places:
             if p.get("en") in short_en:
                 p["en"] = short_en[p["en"]]
+                migrated = True
+            if p.get("id") == "nexus" and p.get("sub") == "학교":
+                p["sub"] = "아카데미"
                 migrated = True
         for p in self.places:  # 구역이 없던 예전 장소에도 1~4구역 자리를 만들고, 새 칸(참고 · 한 줄 문구)을 채웁니다
             p["zones"] = _clean_zones(p.get("zones"))
