@@ -1929,7 +1929,7 @@
   .pl-picked .k i { font-size:11px; }
   .pl-lp-body .lp-gain { display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
   .pl-lp-body .lp-gain em.strain.up { color:#c9b0ff !important; } .pl-lp-body .lp-gain em.strain.down { color:#7fe0d0 !important; }
-  .pl-lp-body .lp-gain em { font-style:normal; font-size:11px; font-weight:700; color: var(--point); } .pl-lp-body .lp-gain em.down { color:#9a9aa3; }
+  .pl-lp-body .lp-gain em { font-style:normal; font-size:11px; font-weight:700; color: var(--point); margin-right:8px; } .pl-lp-body .lp-gain em.down { color:#9a9aa3; }
   /* 프롤로그 · 균열 압력 */
   .pl-pro p { color:#dcdce1; }
   .pl-view { margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.06); }
@@ -2114,6 +2114,8 @@
   .pl-btn.primary:hover { filter: brightness(1.08); }
   .pl-btn:disabled { opacity:.4; cursor:default; }
   .pl-death { text-align:center; padding:34px 24px; }
+  .pl-endpage { min-height:min(62vh, 560px); display:flex; flex-direction:column; justify-content:center; padding:48px 28px !important; animation: plIn .8s ease; }
+  .pl-endpage h3 { font-size:28px; margin:14px 0 24px; }
   .pl-death .t { font-family: var(--font-title); font-size:13px; letter-spacing:.3em; color:#ff8a80; }
   .pl-death h3 { font-size:24px; margin:10px 0 18px; }
   .pl-death.loop .t { color: var(--point); }
@@ -12699,6 +12701,7 @@ function loopType(lines, key, start, pCls, ms) {
   return { html, end: fresh ? t : (start || 0), fresh };
 }
 function loopAfter(ms, fresh) { return fresh ? ` style="animation-delay:${ms}ms"` : ''; }
+var loopEndPage = {};   // 사망 · 엔딩 장면을 단독 페이지로 넘긴 생애
 function renderLoop() {
   const page = document.getElementById('playPage');
   if (!page) return;
@@ -12718,14 +12721,22 @@ function renderLoop() {
   else if (r.status === 'ended') { const x = loopEndedHtml(d, r); main = x.main; dock = x.dock; }
   else if (r.status === 'prologue') { const x = loopPrologueHtml(d, r, marks); main = x.main; dock = x.dock; }
   else {
-    main = loopStatusHtml(d, r);
-    if (r.event) { const x = loopEventHtml(r, marks); main += x.main; dock = x.dock; }
-    if (r.status === 'dead' && r.death) { const x = loopDeathHtml(r, marks); main += x.main; dock = x.dock; }
-    if (r.status === 'ending' && r.ending) { const x = loopEndingHtml(r, marks); main += x.main; dock = x.dock; }
+    // 사망 · 정신 붕괴 · 엔딩은 따로 한 장 : 먼저 마지막 사건의 결과를 보여 주고, '계속'을 누르면 그 장면만 단독으로.
+    const endKey = `${r.life_no}|${r.loop_no}|${r.count}|${r.status}`;
+    const isEnd = (r.status === 'dead' && r.death) || (r.status === 'ending' && r.ending);
+    if (isEnd && (loopEndPage[endKey] || !r.event)) {
+      loopTailMs = 0;
+      const x = r.status === 'dead' ? loopDeathHtml(r, marks) : loopEndingHtml(r, marks);
+      main = x.main.replace('class="pl-box glow pl-death', 'class="pl-box glow pl-endpage pl-death'); dock = x.dock;
+    } else {
+      main = loopStatusHtml(d, r);
+      if (r.event) { const x = loopEventHtml(r, marks); main += x.main; dock = x.dock; }
+      if (isEnd) dock = `<div class="pl-actions pl-fade"${loopAfter(loopTailMs + 300, loopTailMs > 0)}><button class="pl-btn primary wide" onclick="event.stopPropagation(); loopEndPage['${endKey}'] = true; loopLastKey = ''; renderLoop()">계속<i class="fa-solid fa-arrow-right"></i></button></div>`;
+    }
   }
-  const key = r ? `${r.status}|${r.event ? r.event.id : ''}|${r.count}|${r.loop_no}` : 'none';
+  const key = r ? `${r.status}|${r.event ? r.event.id : ''}|${r.count}|${r.loop_no}|${loopEndPage[`${r.life_no}|${r.loop_no}|${r.count}|${r.status}`] ? 'p' : ''}` : 'none';
   const changed = key !== loopLastKey;
-  const scrollTo = changed ? (r && (r.status === 'result' ? '.pl-result' : r.status === 'dead' ? '.pl-death' : r.status === 'event' && (loopLastKey || window.matchMedia('(max-width:900px)').matches) ? 'top' : '')) : '';
+  const scrollTo = changed ? (r && (r.status === 'result' ? '.pl-result' : r.status === 'dead' ? '.pl-result' : r.status === 'event' && (loopLastKey || window.matchMedia('(max-width:900px)').matches) ? 'top' : '')) : '';
   loopLastKey = key;
   if (changed) page.classList.remove('pl-skip');
   const old = page.querySelector('.pl-scroll');
