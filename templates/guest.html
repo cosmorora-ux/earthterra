@@ -1997,29 +1997,8 @@
   @keyframes kcIn { 0% { opacity:0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.4); filter: blur(6px); } 60% { opacity:1; filter: blur(0); } 100% { opacity:1; transform:none; } }
   .pl-intro:not(.opening) .pl-quote .sc { opacity:1; animation:none; color:inherit; text-shadow:none; }
   .pl-intro:not(.opening) .pl-quote .kc { animation:none; opacity:1; transform:none; filter:none; }
-  /* 우주 배경 */
-  .pl-cosmos { position:absolute; inset:0; overflow:hidden; border-radius:16px; pointer-events:none; }
-  .pl-intro:not(.opening) .pl-cosmos { animation: cosmosOut .9s ease forwards; }
-  .pl-intro.done .pl-cosmos { display:none; }
-  @keyframes cosmosOut { to { opacity:0; transform: scale(1.06); } }
-  .pl-cosmos .nebula { position:absolute; left:50%; top:50%; width:900px; height:600px; transform: translate(-50%,-50%); background: radial-gradient(closest-side, rgba(var(--point-rgb),.22), rgba(var(--point-rgb),.06) 55%, transparent 75%); filter: blur(10px); animation: nebula 8s ease-in-out infinite alternate; }
-  @keyframes nebula { from { opacity:.55; transform: translate(-50%,-50%) scale(.92); } to { opacity:1; transform: translate(-50%,-50%) scale(1.08); } }
-  .pl-cosmos .stars { position:absolute; left:0; top:0; width:1px; height:1px; border-radius:50%; animation: twinkle 3.2s ease-in-out infinite alternate, drift 60s linear infinite; }
-  .pl-cosmos .stars.s2 { animation-duration: 2.1s, 40s; animation-delay: -1s, 0s; }
-  @keyframes twinkle { from { opacity:.35; } to { opacity:1; } }
-  @keyframes drift { from { transform: translate(0,0); } to { transform: translate(-60px, 30px); } }
-  .pl-cosmos .ring { position:absolute; left:50%; top:50%; border-radius:50%; border:1px solid rgba(var(--point-rgb),.28); transform: translate(-50%,-50%) rotateX(72deg) rotateZ(0); }
-  .pl-cosmos .r1 { width:520px; height:520px; animation: orbit 26s linear infinite; }
-  .pl-cosmos .r2 { width:760px; height:760px; border-color: rgba(var(--point-rgb),.16); border-style:dashed; animation: orbit 44s linear infinite reverse; }
-  .pl-cosmos .r3 { width:300px; height:300px; border-color: rgba(255,255,255,.1); animation: orbit 18s linear infinite; }
-  .pl-cosmos .ring::after { content:''; position:absolute; top:-3px; left:50%; width:6px; height:6px; border-radius:50%; background: var(--point); box-shadow: 0 0 12px var(--point); }
-  @keyframes orbit { to { transform: translate(-50%,-50%) rotateX(72deg) rotateZ(360deg); } }
-  .pl-cosmos .comet { position:absolute; top:18%; left:-20%; width:140px; height:1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.8)); transform: rotate(-18deg); animation: comet 6s ease-in 1.2s infinite; opacity:0; }
-  @keyframes comet { 0% { opacity:0; transform: translate(0,0) rotate(-18deg); } 8% { opacity:1; } 30% { opacity:0; transform: translate(900px, 290px) rotate(-18deg); } 100% { opacity:0; } }
-  .pl-intro.opening .pl-quote { position:relative; z-index:1; }
-  @media (prefers-reduced-motion: reduce) { .pl-cosmos .stars, .pl-cosmos .ring, .pl-cosmos .comet, .pl-cosmos .nebula { animation:none; } }
   /* opening : 문구만 가운데에 크게 */
-  .pl-intro.opening { min-height:min(74vh, 680px); display:flex; flex-direction:column; justify-content:center; background: radial-gradient(ellipse at 50% 50%, rgba(var(--point-rgb),.06), transparent 70%), #07070b; overflow:hidden; }
+  .pl-intro.opening { min-height:min(74vh, 680px); display:flex; flex-direction:column; justify-content:center; background:none; }
   .pl-intro.opening::before { opacity:0; }
   .pl-intro.opening .pl-intro-top, .pl-intro.opening .pl-intro-rest { display:none; }
   .pl-intro.opening .pl-quote { margin:0 auto; padding:0 24px; text-align:center; max-width:760px; }
@@ -2027,6 +2006,8 @@
   .pl-intro.opening .pl-quote .en p { font-size:30px; line-height:1.45; margin-bottom:18px; }
   .pl-intro.opening .pl-quote .ko p { font-size:16px; }
   .play-page.pl-opening .pl-head { opacity:0; }
+  body.pl-intro-on .member-col { display:none !important; }   /* 인트로 동안은 기록판 없이 */
+  body.is-play .member-col { animation: plIn .7s ease; }
   .play-page .pl-head { transition: opacity .8s ease; }
   /* settling : 작아지며 제자리로, 제목 · 카드가 차례로 떠오름 */
   .pl-intro.settling .pl-intro-top { animation: plIn .7s ease .35s both; }
@@ -12604,6 +12585,7 @@ function renderLoop() {
   const old = page.querySelector('.pl-scroll');
   const keep = old ? old.scrollTop : 0;
   page.classList.toggle('pl-opening', !r && loopIntroStage === 'opening');
+  document.body.classList.toggle('pl-intro-on', !r && loopIntroStage === 'opening');
   page.innerHTML = `<div class="pl-scroll" onclick="loopSkip()"><div class="pl-wrap">${loopHeadHtml(d)}${main}${loopLivesHtml(d)}</div></div>`
     + (dock ? `<div class="pl-dock"><div class="pl-dock-in">${dock}</div></div>` : '');
   const sc = page.querySelector('.pl-scroll');
@@ -12648,6 +12630,7 @@ function loopIntroSettle() {
   const box = document.querySelector('.pl-intro'), page = document.getElementById('playPage');
   if (box) { box.classList.remove('opening'); box.classList.add('settling'); }
   if (page) page.classList.remove('pl-opening');
+  document.body.classList.remove('pl-intro-on');
   loopIntroT = setTimeout(() => { loopIntroStage = 'done'; const b = document.querySelector('.pl-intro'); if (b) { b.classList.remove('settling'); b.classList.add('done'); } }, 1400);
 }
 function loopTopSub(d) {
@@ -12821,7 +12804,7 @@ function loopStartHtml(d) {
     return { main: '<div class="pl-box pl-intro opening"></div>', dock: '' };
   }
   const fresh = !loopShown.has('intro|en');
-  let enHtml = `<p>${loopEsc(LOOP_QUOTE_EN)}</p>`, koHtml = `<p>${loopEsc(LOOP_QUOTE_KO)}</p>`, cosmos = '';
+  let enHtml = `<p>${loopEsc(LOOP_QUOTE_EN)}</p>`, koHtml = `<p>${loopEsc(LOOP_QUOTE_KO)}</p>`;
   if (fresh) {
     // 영어 : 글자가 무작위 기호로 깜빡이다 하나씩 '기록'되듯 자리 잡아요(스크램블). 한국어 : 흩어진 글자가 모여들어요.
     loopShown.add('intro|en'); loopShown.add('intro|ko'); loopIntroStage = 'opening';
@@ -12831,13 +12814,10 @@ function loopStartHtml(d) {
     const koStart = LOOP_EN_START + i * LOOP_EN_STEP + 700;
     let k = 0;
     koHtml = '<p>' + LOOP_QUOTE_KO.split(' ').map(w => `<span class="w">${Array.from(w).map(ch => `<span class="kc" style="--dx:${rnd(-160, 160)}px;--dy:${rnd(-90, 90)}px;--rot:${rnd(-120, 120)}deg;animation-delay:${koStart + (k++) * 55}ms">${loopEsc(ch)}</span>`).join('')}</span>`).join(' ') + '</p>';
-    const stars = n => Array.from({ length: n }, () => `${rnd(0, 1600)}px ${rnd(0, 900)}px 0 ${Math.random() < .15 ? 1 : 0}px rgba(255,255,255,${(.25 + Math.random() * .7).toFixed(2)})`).join(',');
-    cosmos = `<div class="pl-cosmos"><i class="nebula"></i><i class="stars s1" style="box-shadow:${stars(110)}"></i><i class="stars s2" style="box-shadow:${stars(60)}"></i>
-      <i class="ring r1"></i><i class="ring r2"></i><i class="ring r3"></i><i class="comet"></i></div>`;
     setTimeout(() => loopScramble(), 0);
     loopIntroTimer(koStart + k * 55 + 1000 + 1500);
   }
-  return { main: `<div class="pl-box glow pl-intro ${loopIntroStage}">${cosmos}
+  return { main: `<div class="pl-box glow pl-intro ${loopIntroStage}">
     <div class="pl-intro-top"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span>${d.loops ? `<span>${(d.lives || []).length + 1}번째 생애</span>` : ''}</div>
     <h2 class="pl-ev-title">운명을 시작합니다</h2></div>
     <div class="pl-quote"><div class="en">${enHtml}</div><div class="ko">${koHtml}</div></div>
