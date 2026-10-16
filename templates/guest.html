@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko" data-point="{{ point_theme }}">
+<html lang="ko" data-point="{% if battle_type == 'play' %}purple{% else %}{{ point_theme }}{% endif %}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1979,11 +1979,12 @@
   .pl-logo { font-family: var(--font-title); font-size:34px; line-height:1; letter-spacing:.04em; }
   .pl-logo small { display:block; font-family: inherit; font-size:12px; letter-spacing:.3em; color: var(--muted); margin-bottom:6px; }
   .pl-pill { height:28px; display:inline-flex; align-items:center; gap:6px; padding:0 11px; border-radius:10px; background: rgba(255,255,255,.05); color:#cfcfd4; font-size:12.5px; font-weight:600; white-space:nowrap; }
-  .pl-head { display:flex; flex-direction:column; gap:16px; }
-  .pl-head-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .pl-head { display:block; padding:18px 22px; }
+  .pl-head-top { display:flex; align-items:center; gap:12px; }
+  .pl-meta-gap { flex:1; }
   .pl-restart { flex:none; height:30px; display:inline-flex; align-items:center; gap:6px; padding:0 12px; border:none; border-radius:10px; background: rgba(255,255,255,.04); color: var(--muted); font: inherit; font-size:12.5px; font-weight:600; cursor:pointer; transition: color .15s, background .15s; }
   .pl-restart:hover { color:#fff; background: rgba(255,255,255,.09); }
-  .pl-meta { display:flex; flex-wrap:wrap; align-items:center; row-gap:6px; padding-top:14px; border-top:1px solid rgba(255,255,255,.06); color:#bdbdc3; font-size:13px; }
+  .pl-meta { flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; row-gap:6px; margin-left:12px; padding:4px 0 4px 24px; border-left:1px solid rgba(255,255,255,.08); color:#bdbdc3; font-size:13px; }
   .pl-meta > span { display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
   .pl-meta > span:not(:last-child)::after { content:''; width:3px; height:3px; border-radius:50%; background: rgba(255,255,255,.22); margin:0 11px 0 4px; }
   .pl-meta .up { color: var(--point); font-weight:600; }
@@ -1996,7 +1997,15 @@
   .pl-tags > span i { font-size:11px; opacity:.8; }
   .pl-tags .c { color:#fff; } .pl-tags .c i { width:7px; height:7px; border-radius:50%; background: var(--nc); box-shadow: 0 0 8px var(--nc); opacity:1; }
   .pl-tags .c.arcadia { --nc:#e9c05b; } .pl-tags .c.nova { --nc:#6aa5ff; }
-  .pl-stat { display:grid; grid-template-columns: auto 1fr; gap:14px 22px; align-items:center; }
+  .pl-stat { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr); gap:12px 32px; align-items:center; padding:18px 22px; }
+  .ps-c { display:flex; align-items:center; gap:14px; min-width:0; }
+  .ps-c > .pl-k { flex:none; width:52px; white-space:nowrap; }
+  .ps-v { min-width:0; flex:1; }
+  .ps-c.mood { padding-left:66px; color:#9d9da6; font-size:12.5px; line-height:1.55; align-self:start; }
+  .ps-c.mood.low { color:#ff8a80; }
+  .pl-strain { flex-wrap:nowrap !important; min-width:0; }
+  .pl-strain span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .pl-stat .pl-asset { height:28px; }
   .pl-k { font-size:12px; color: var(--muted); font-weight:700; letter-spacing:.04em; }
   .pl-hp { display:flex; align-items:center; gap:6px; }
   .pl-hp i { width:26px; height:10px; border-radius:4px; background: rgba(255,255,255,.07); transition: background-color .3s; }
@@ -2105,9 +2114,31 @@
     .pl-sv { height:30px; padding:0 10px; font-size:12.5px; }
     .pl-sv-note { flex-basis:100%; margin:2px 0 0 2px; font-size:11.5px; }
     .pl-top-brand b { font-size:22px; }
-    .pl-stat { gap:10px 14px; }
-    .pl-mood { margin-top:-4px; font-size:13px; }
-    .pl-hp i { width:22px; }
+    .pl-stat { grid-template-columns: 1fr 1fr; gap:12px 14px; padding:18px 18px; }
+    .ps-c { gap:8px; }
+    .ps-c > .pl-k { width:auto; }
+    .ps-c > .pl-k i { margin-right:4px; }
+    .ps-c.hp { order:1; } .ps-c.mind { order:2; }
+    .ps-c.mood { order:3; grid-column: 1 / -1; padding-left:0; margin-top:-4px; }
+    .ps-c.assets { order:4; grid-column: 1 / -1; } .ps-c.strain { order:5; grid-column: 1 / -1; } .ps-c.eras { order:6; grid-column: 1 / -1; }
+    .ps-c.assets > .pl-k, .ps-c.strain > .pl-k, .ps-c.eras > .pl-k { width:46px; }
+    .pl-hp { gap:3px; }
+    .pl-hp i { width:auto; flex:1; max-width:18px; height:8px; }
+    .pl-hp b { margin-left:6px; font-size:14px; }
+    .pl-hp b span { display:none; }
+    .pl-stat .pl-asset { height:26px; padding:0 8px; font-size:12px; gap:5px; }
+    .pl-stat .pl-asset b { font-size:13px; }
+    .pl-strain i { width:auto; flex:1; max-width:14px; height:7px; }
+    .pl-strain span { display:none; }
+    .pl-era { min-width:32px; height:26px; padding:0 8px; font-size:12px; }
+    .pl-era.now em { font-size:11.5px; }
+    .pl-era.now em .nm { display:none; }   /* 시대 이름은 상단 바에 있어요 */
+    .pl-eras { flex-wrap:nowrap; gap:5px; }
+    /* 휴대폰 : 상단 바에 이미 Loop 제목이 있으니 헤더 상자는 생애 정보 한 줄 + 새로 시작만 */
+    .pl-head .pl-logo { display:none; }
+    .pl-head .pl-head-top { flex-wrap:nowrap; align-items:center; }
+    .pl-head .pl-meta { order:0; flex:1; flex-basis:auto; margin:0; padding:0; border:none; }
+    .pl-head { padding:14px 16px; }
     .pl-res { grid-template-columns:1fr; }
     .pl-res .prc { min-height:0; padding:26px 22px 22px; }
     .pl-dock { padding-top:8px; }
@@ -2115,7 +2146,11 @@
     .pl-dock .pl-ch { padding:11px 14px; gap:12px; font-size:13.5px; line-height:1.45; }
     .pl-dock .pl-ch .k { width:24px; height:24px; font-size:12px; }
     .pl-btn.wide, .pl-actions.two .pl-btn { height:44px; }
-    .pl-head-top { padding-right:30px; }   /* 오른쪽 위 소리 버튼 자리 */
+    .pl-head { padding:18px 18px 16px; }
+    .pl-head-top { flex-wrap:wrap; padding-right:30px; }   /* 오른쪽 위 소리 버튼 자리 */
+    .pl-head-top .pl-logo { flex:1; }
+    .pl-meta { order:3; flex-basis:100%; margin:12px -30px 0 0; padding:12px 0 0; border-left:none; border-top:1px solid rgba(255,255,255,.06); }
+    .pl-meta-gap { display:none; }
     .pl-restart { width:30px; padding:0; justify-content:center; }
     .pl-restart span { display:none; }
     .pl-logo small { white-space:nowrap; font-size:10px; letter-spacing:.2em; }
@@ -12412,13 +12447,14 @@ if (window.ResizeObserver) {
 // 오른쪽(휴대폰은 아래 기록 버튼) 기록판에는 이번 생애에 지나온 사건이 쌓입니다.
 // ==================================================================
 const IS_PLAY = BATTLE_TYPE === 'play';
-// LOOP : 이번 생애의 출신 국가 색으로 포인트 컬러를 바꿔요(아르카디아 노랑 · 노바 파랑). 국가가 정해지기 전엔 사이트 기본 색.
-var loopPointTheme = null;
+// LOOP : 운영진이 정한 사이트 색과 상관없이 운명 시작 전에는 보라, 시작하면 출신 국가 색(아르카디아 노랑 · 노바 파랑).
+var loopPointTheme = IS_PLAY ? 'purple' : null;
 function loopSyncPoint(d) {
   const c = d && d.run && d.run.country;
-  loopPointTheme = c === 'arcadia' ? 'yellow' : c === 'nova' ? 'blue' : null;
+  loopPointTheme = c === 'arcadia' ? 'yellow' : c === 'nova' ? 'blue' : 'purple';
   applyPointTheme();
 }
+if (IS_PLAY) applyPointTheme();
 let loopData = null, loopRes = null, loopCountry = null, loopBusy = false, loopLastKey = '', loopTailMs = 0;
 const loopShown = new Set();   // 이미 한 번 떠오른 글 : 다시 그릴 때는 애니메이션 없이
 const LOOP_CH_MS = 16;         // 글자 사이 간격
@@ -12522,8 +12558,8 @@ function loopHeadHtml(d) {
     if (r.loop_no) it.push(`<span>${r.life_no}번째 생애</span><span class="up"><i class="fa-solid fa-infinity"></i> 루프 ${r.loop_no}</span>`);
   }
   const restart = r && r.status !== 'ended' ? `<button class="pl-restart" onclick="event.stopPropagation(); loopRestart()"><i class="fa-solid fa-rotate-left"></i><span>새로 시작</span></button>` : '';
-  return `<div class="pl-box glow pl-head"><div class="pl-head-top"><div class="pl-logo"><small>RUNNING SIMULATION</small>Loop</div>${restart}</div>
-    ${it.length ? `<div class="pl-meta">${it.join('')}</div>` : ''}</div>`;
+  return `<div class="pl-box glow pl-head"><div class="pl-head-top"><div class="pl-logo"><small>RUNNING SIMULATION</small>Loop</div>
+    ${it.length ? `<div class="pl-meta">${it.join('')}</div>` : '<div class="pl-meta-gap"></div>'}${restart}</div></div>`;
 }
 // 진행 중인 생애를 버리고 처음(공명 여부 고르기)부터. 지난 생애 기록은 남아요. 기록은 이 브라우저에만 저장돼요.
 function loopRestart() {
@@ -12534,24 +12570,29 @@ function loopRestart() {
   });
 }
 function loopStatusHtml(d, r) {
-  const bar = (k, v, max) => `<span class="pl-k"><i class="fa-solid ${LOOP_STAT[k][1]}"></i>${LOOP_STAT[k][0]}</span><div class="pl-hp ${k} ${v <= 1 ? 'low' : ''}">${Array.from({ length: max }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}<b>${v}<span> / ${max}</span></b></div>`;
+  const bar = (k, v, max) => `<div class="pl-hp ${k} ${v <= 1 ? 'low' : ''}">${Array.from({ length: max }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}<b>${v}<span> / ${max}</span></b></div>`;
   const nowIdx = r.eras.indexOf(r.era.id);
   const eraById = Object.fromEntries((d.eras || []).map(e => [e.id, e]));
   const eras = r.eras.map((id, i) => {
     const e = eraById[id] || { no: id };
     const st = i < nowIdx || (r.status === 'ending' && !(r.ending || {}).paused) ? 'done' : i === nowIdx && r.status !== 'ending' ? 'now' : (r.closed_eras || []).includes(id) ? 'locked' : '';
     if (st === 'locked') return `<span class="pl-era locked" data-tip="다음 업데이트에서 공개돼요"><i class="fa-solid fa-lock"></i>${e.no}</span>`;
-    return `<span class="pl-era ${st}">${e.no}${st === 'now' ? `<em>${loopEsc(e.name)} · ${Math.min(r.era_step + (r.status === 'event' ? 1 : 0), r.era_len)}/${r.era_len}</em>` : ''}</span>`;
+    return `<span class="pl-era ${st}">${e.no}${st === 'now' ? `<em><span class="nm">${loopEsc(e.name)} · </span>${Math.min(r.era_step + (r.status === 'event' ? 1 : 0), r.era_len)}/${r.era_len}</em>` : ''}</span>`;
   }).join('');
   const mood = [...(r.mood || []), ...(r.mood_mind || [])];
   const A = r.assets || {};
-  const assets = `<span class="pl-k"><i class="fa-solid fa-gem"></i>자원</span><div class="pl-assets">${LOOP_ASSETS.map(([k, ic]) => `<span class="pl-asset ${k}"><i class="fa-solid ${ic}"></i>${k === 'talent' ? loopEsc(r.talent_name || '재능') : LOOP_ASSET_NAME[k]}<b>${A[k] || 0}</b></span>`).join('')}<span class="pl-asset-note">${r.country === 'nova' ? '노바는 지능과 기술이 중요해요' : r.country === 'arcadia' ? '아르카디아는 재산과 재능이 중요해요' : ''}</span></div>`;
+  const note = r.country === 'nova' ? '노바는 지능과 기술이 중요해요' : r.country === 'arcadia' ? '아르카디아는 재산과 재능이 중요해요' : '';
+  const sv = r.strain || 0, sm = r.strain_max || 10;
+  const strainText = sv === 0 ? '지구는 아직 조용합니다.' : sv < sm * 0.3 ? '땅이 가끔 뒤척입니다.' : sv < sm * 0.6 ? '문명이 커질수록 재난이 잦아집니다.' : '지구가 인류를 덜어 내려 합니다.';
+  const cell = (cls, k, ic, label, body, tip) => `<div class="ps-c ${cls}"><span class="pl-k"${tip ? ` data-tip="${loopEsc(tip)}"` : ''}><i class="fa-solid ${ic}"></i>${label}</span><div class="ps-v">${body}</div></div>`;
+  // PC : 두 칸(왼쪽 체력 · 정신 · 상태 / 오른쪽 자원 · 균열 · 시대) — 휴대폰 : 체력 · 정신 나란히, 나머지는 한 줄씩
   return `<div class="pl-box pl-stat">
-    ${bar('hp', r.hp, d.hp_max || 5)}${bar('mind', r.mind, d.mind_max || 5)}
-    ${mood.length ? `<div class="pl-mood">${mood.map(loopEsc).join('<br>')}</div>` : ''}
-    ${assets}
-    <span class="pl-k"><i class="fa-solid fa-house-crack"></i>균열</span><div class="pl-strain ${(r.strain || 0) >= (r.strain_max || 10) * 0.6 ? 'hot' : ''}">${Array.from({ length: r.strain_max || 10 }, (_, i) => `<i class="${i < (r.strain || 0) ? 'on' : ''}"></i>`).join('')}<span>${(r.strain || 0) === 0 ? '지구는 아직 조용합니다.' : (r.strain || 0) < (r.strain_max || 10) * 0.3 ? '땅이 가끔 뒤척입니다.' : (r.strain || 0) < (r.strain_max || 10) * 0.6 ? '문명이 커질수록 재난이 잦아집니다.' : '지구가 인류를 덜어 내려 합니다.'}</span></div>
-    <span class="pl-k"><i class="fa-solid fa-hourglass-half"></i>시대</span><div class="pl-eras">${eras}</div></div>`;
+    ${cell('hp', 'hp', LOOP_STAT.hp[1], LOOP_STAT.hp[0], bar('hp', r.hp, d.hp_max || 5))}
+    ${cell('assets', 'a', 'fa-gem', '자원', `<div class="pl-assets">${LOOP_ASSETS.map(([k, ic]) => `<span class="pl-asset ${k}"><i class="fa-solid ${ic}"></i>${k === 'talent' ? loopEsc(r.talent_name || '재능') : LOOP_ASSET_NAME[k]}<b>${A[k] || 0}</b></span>`).join('')}</div>`, note)}
+    ${cell('mind', 'mind', LOOP_STAT.mind[1], LOOP_STAT.mind[0], bar('mind', r.mind, d.mind_max || 5))}
+    ${cell('strain', 's', 'fa-house-crack', '균열', `<div class="pl-strain ${sv >= sm * 0.6 ? 'hot' : ''}">${Array.from({ length: sm }, (_, i) => `<i class="${i < sv ? 'on' : ''}"></i>`).join('')}<span>${strainText}</span></div>`, strainText)}
+    <div class="ps-c mood ${r.hp <= 1 || r.mind <= 1 ? 'low' : ''}">${mood.length ? mood.map(loopEsc).join(' ') : ''}</div>
+    ${cell('eras', 'e', 'fa-hourglass-half', '시대', `<div class="pl-eras">${eras}</div>`)}</div>`;
 }
 function loopEventHtml(r, marks) {
   const ev = r.event, res = r.result;
