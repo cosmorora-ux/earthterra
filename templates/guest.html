@@ -2301,6 +2301,62 @@
   .ops-seg { display:inline-flex; padding:3px; gap:3px; border-radius:10px; background: rgba(255,255,255,.04); border:1px solid var(--line); }
   .ops-seg button { height:30px; padding:0 12px; border:none; border-radius:8px; background:none; color: var(--muted); font-size:13px; font-weight:600; cursor:pointer; }
   .ops-seg button.on { background: rgba(var(--point-rgb),.16); color:#fff; }
+  /* Loop Studio : LOOP 편집 페이지(사이드바 따로) */
+  .la-page { display:none; flex:1; min-height:0; flex-direction:column; }
+  body.view-loopadmin .shell > *:not(.modal-overlay):not(#loopAdminPage):not(#shopToast):not(#floatTip) { display:none !important; }
+  body.view-loopadmin #loopAdminPage { display:flex; }
+  .la-top { flex:none; display:flex !important; align-items:center; margin-bottom:12px; }
+  .la-brand { font-family: var(--font-title); font-weight:400; font-size:24px; letter-spacing:.02em; }
+  .la-live { display:inline-flex; align-items:center; gap:8px; font-size:13px; color: var(--muted); }
+  .la-live i { font-size:8px; color:#5ee08a; } .la-live b { color: var(--text); }
+  .la-shell { flex:1; min-height:0; display:grid; grid-template-columns: 230px minmax(0,1fr); gap:16px; }
+  .la-nav { display:flex; flex-direction:column; gap:4px; overflow-y:auto; }
+  .la-nav button { display:flex; align-items:flex-start; gap:12px; text-align:left; padding:12px 14px; border-radius:12px; border:none; background:none; color: var(--muted); font: inherit; cursor:pointer; }
+  .la-nav button i { width:16px; margin-top:3px; }
+  .la-nav button b { display:block; font-size:14.5px; color:#cfcfd4; }
+  .la-nav button em { display:block; font-style:normal; font-size:12px; margin-top:2px; line-height:1.45; }
+  .la-nav button:hover { background: rgba(255,255,255,.04); }
+  .la-nav button.on { background: rgba(var(--point-rgb),.12); color: var(--point); }
+  .la-nav button.on b { color:#fff; }
+  .la-nav-hint { margin-top:auto; padding:12px 14px; font-size:12px; line-height:1.6; color: var(--muted); }
+  .la-nav-hint b { color:#cfcfd4; }
+  .la-main { min-height:0; overflow-y:auto; scrollbar-width:thin; padding-right:4px; }
+  .la-main .la-wrap { padding-bottom:20px; }
+  .la-page > .la-bar { margin-top:12px; flex:none; position:static; }
+  .la-lead { display:flex; flex-direction:column; gap:6px; padding:16px 18px; border-radius:16px; background: rgba(var(--point-rgb),.06); margin-bottom:16px; font-size:13.5px; line-height:1.65; color:#cfcfd4; }
+  .la-lead b { color:#fff; }
+  .la-chs-row { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px; }
+  .la-ch-card { position:relative; gap:12px; }
+  .la-ch-card .ops-field + .ops-field { margin-top:0; }
+  .la-ch-card.live { border-color: rgba(var(--point-rgb),.35); }
+  .la-ch-card.now { box-shadow: inset 0 2px 0 rgba(var(--point-rgb),.8); }
+  .la-ch-top { display:flex; align-items:center; gap:8px; }
+  .la-step { font-family: var(--font-title); font-size:16px; color: var(--point); letter-spacing:.04em; }
+  .la-badge { margin-left:auto; font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:8px; background: rgba(255,255,255,.06); color: var(--muted); }
+  .la-badge.on { background: rgba(94,224,138,.14); color:#7fe8a4; }
+  .la-grid.two { grid-template-columns: 1fr 1fr; }
+  .la-ch-eras { display:flex; gap:6px; flex-wrap:wrap; }
+  .la-ch-eras span { font-size:12px; padding:3px 9px; border-radius:8px; background: rgba(255,255,255,.05); color:#cfcfd4; }
+  .la-ch-eras span.none { color: var(--muted); }
+  .la-ch-foot { display:flex; align-items:center; gap:8px; margin-top:auto; padding-top:6px; }
+  .la-ch-foot .ops-btn, .la-ch-foot .la-now { margin-left:auto; }
+  .la-now { font-size:13px; font-weight:700; color: var(--point); display:inline-flex; align-items:center; gap:6px; }
+  .la-ch-del { position:absolute; top:14px; right:84px; }
+  .la-item em.draft { background: rgba(255,207,90,.14); color:#ffcf5a; }
+  .la-item em.lock { color: var(--muted); }
+  .la-g i { margin-left:6px; font-size:10px; opacity:.7; }
+  .la-memo { border-radius:12px; background: rgba(255,207,90,.05); border:1px dashed rgba(255,207,90,.25); padding:12px; margin-bottom:16px; }
+  .la-memo-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; font-size:13px; font-weight:700; color:#ffcf5a; }
+  .la-memo-h span { font-weight:500; font-size:12px; color: var(--muted); }
+  .la-memo-h .la-draft { margin-left:auto; height:auto; font-weight:600; color:#cfcfd4; }
+  .la-memo textarea.ops-in { min-height:0; background: rgba(0,0,0,.25); }
+  .pl-era.locked { color:#55555c; gap:5px; } .pl-era.locked i { font-size:10px; }
+  @media (max-width:900px) {
+    .la-shell { grid-template-columns: 1fr; }
+    .la-nav { flex-direction:row; overflow-x:auto; scrollbar-width:none; }
+    .la-nav button { flex:none; padding:10px 12px; } .la-nav button em, .la-nav-hint { display:none; }
+    .la-live { display:none; }
+  }
   /* LOOP 편집 */
   .la-wrap { display:flex; flex-direction:column; gap:14px; padding-bottom:70px; }
   .la-head { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
@@ -3738,7 +3794,7 @@
       <div class="gate-wait"><i class="fa-solid fa-circle-notch fa-spin"></i>접속 중입니다</div>
       <div class="gate-form" style="display:contents">
         <div class="gate-field"><i class="fa-solid fa-user"></i>
-          <input id="joinNameInput" placeholder="캐릭터 이름" aria-label="캐릭터 이름" autocomplete="username" oninput="onJoinNameInput()" onkeydown="if(event.key==='Enter') submitJoinModal()"></div>
+          <input id="joinNameInput" placeholder="{% if battle_type == 'play' %}TEST{% else %}캐릭터 이름{% endif %}" aria-label="캐릭터 이름" autocomplete="username" oninput="onJoinNameInput()" onkeydown="if(event.key==='Enter') submitJoinModal()"></div>
         <div class="gate-field" id="joinPasswordLabel" style="display:none;"><i class="fa-solid fa-key"></i>
           <input id="joinPasswordInput" type="password" placeholder="운영진 비밀번호" aria-label="운영진 비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitJoinModal()"></div>
         <div id="joinModalError" class="err"></div>
@@ -3759,7 +3815,8 @@
   <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i></button>
   <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
   <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i></button>
-  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
+  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps(); if (typeof closeLoopAdmin === 'function') closeLoopAdmin()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
+  {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" data-tip="LOOP 편집" style="display:none;"><i class="fa-solid fa-pen-ruler"></i></button>{% endif %}
   <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps()" data-tip="운영" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsTab()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
@@ -3997,6 +4054,7 @@
     <div class="spacer"></div><div class="dorm-tools-r" id="worldTools"></div></div>
   <div class="world-body" id="worldBody"></div>
 </div>
+{% if battle_type == 'play' %}<div id="loopAdminPage" class="la-page"></div>{% endif %}
 <div id="opsPage" class="ops-page">
   <div class="topbar v2 panel ops-topbar"><div class="seg ops-brand">Admin</div><span class="sep">▶</span><div class="seg" id="opsTopSeg">전투 준비</div></div>
   <div class="member-toptabs ops-tabs" id="opsTabs"></div>
@@ -4500,6 +4558,15 @@ function fxPump() {
 // 올리는 파일 크기 기준(사이트 전체 공통, 서버 webapp.py와 같게) : 이미지 15MB, 소리(음악 · 효과음) 20MB
 var UPLOAD_IMG_MB = 15, UPLOAD_AUDIO_MB = 20, UPLOAD_IMG_BYTES = UPLOAD_IMG_MB * 1024 * 1024, UPLOAD_AUDIO_BYTES = UPLOAD_AUDIO_MB * 1024 * 1024;
 // 접속 기기 : 운영진 유저 리스트에 PC · 태블릿 · 모바일과 운영체제 · 브라우저를 보여주는 용도(운영진에게만 전달)
+// LOOP(PLAY 룸) 기록용 기기 번호 : 같은 TEST 아이디라도 기기(브라우저)마다 따로 저장됩니다.
+const LOOP_DEVICE = (() => {
+  const mk = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
+  try {
+    let v = localStorage.getItem('loopDeviceId');
+    if (!/^[A-Za-z0-9]{8,40}$/.test(v || '')) { v = mk(); localStorage.setItem('loopDeviceId', v); }
+    return v;
+  } catch (e) { return mk(); }
+})();
 const MY_DEVICE = (() => {
   const ua = navigator.userAgent || '';
   const touch = (navigator.maxTouchPoints || 0) > 1;
@@ -4627,7 +4694,7 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
   let rejected = false;
   const onErr = () => { rejected = true; };
   socket.once('error', onErr);
-  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, gm_password: password || undefined, device: MY_DEVICE });
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, gm_password: password || undefined, device: MY_DEVICE, loop_device: LOOP_DEVICE });
   // 서버가 join → public_state 순으로 응답하는 짧은 시간을 기다린 뒤, 이 이름이 실제 전투에
   // 참여 중인 캐릭터거나(전투 시작 전이어도) 캐릭터 데이터베이스에 등록되어 있는지 확인합니다.
   setTimeout(() => {
@@ -4639,7 +4706,8 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
     }
     const control = myControlInfo(lastBattleForPanel);
     const inBattle = control.scope === 'character' || control.scope === 'all';
-    const inRoster = lastRoster.includes(name);
+    const inRoster = lastRoster.includes(name) || (BATTLE_TYPE === 'play' && name.toUpperCase() === 'TEST');
+    if (BATTLE_TYPE === 'play' && name.toUpperCase() === 'TEST') MY_NICKNAME = 'TEST';
     if (inBattle || inRoster) {
       explicitlyJoined = true;
       updateChatVisibility();
@@ -4750,7 +4818,7 @@ function submitJoinModal() {
     go.disabled = false;
     document.getElementById('joinModalError').textContent = isGm
       ? '비밀번호가 올바르지 않습니다.'
-      : '등록된 캐릭터 이름이 아닙니다. 이름을 다시 확인해 주세요.';
+      : BATTLE_TYPE === 'play' ? '이 방은 TEST로만 입장할 수 있습니다.' : '등록된 캐릭터 이름이 아닙니다. 이름을 다시 확인해 주세요.';
   });
 }
 
@@ -4881,7 +4949,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.47";
+const EXPECTED_SERVER_BUILD = "2026-10-13.49";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -11458,8 +11526,9 @@ const OPS_ROLES = ['가디언', '스트라이커', '메딕'];
 const IS_LOUNGE = BATTLE_TYPE === 'lounge';
 // 일반 룸은 전투가 없으므로 전투 준비 탭을 뺍니다.
 // PLAY 룸은 전투 준비 대신 LOOP 편집(사건 · 규칙 · 문장)이 첫 탭이에요.
-const OPS_TABS = (BATTLE_TYPE === 'play' ? [['loop', 'LOOP 편집']] : []).concat([['battle', '전투 준비'], ['chars', '캐릭터'], ['music', '음악'], ['room', '방 설정']]
-  .filter(t => !((IS_LOUNGE || BATTLE_TYPE === 'play') && t[0] === 'battle')));
+// PLAY 룸은 전투가 없어서 전투 준비 탭을 빼요(LOOP 편집은 사이드바의 따로 된 페이지).
+const OPS_TABS = [['battle', '전투 준비'], ['chars', '캐릭터'], ['music', '음악'], ['room', '방 설정']]
+  .filter(t => !((IS_LOUNGE || BATTLE_TYPE === 'play') && t[0] === 'battle'));
 let opsTab = OPS_TABS[0][0];
 let opsTeamA = [], opsTeamB = [];
 let opsLastPublic = null;
@@ -11478,9 +11547,12 @@ function syncOpsBtn() {
   const gm = opsIsGm();
   btn.style.display = gm ? '' : 'none';
   if (!gm && opsOpen()) closeOps();
+  const lb = document.getElementById('sidebarLoopEditBtn');
+  if (lb) { lb.style.display = gm ? '' : 'none'; if (!gm && typeof closeLoopAdmin === 'function') closeLoopAdmin(); }
 }
 function openOps() {
   if (!opsIsGm()) return;
+  if (typeof closeLoopAdmin === 'function') closeLoopAdmin();
   closeWorldMap(true);
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
@@ -11499,20 +11571,13 @@ function closeOps() {
 }
 // 일반 룸은 기숙사가 첫 화면입니다(전투 화면이 없음).
 if (IS_LOUNGE) document.addEventListener('DOMContentLoaded', () => openDorm());
-function setOpsTab(t) {
-  if (opsTab === 'loop' && t !== 'loop' && typeof laDirty === 'function' && laDirty()) {
-    uiConfirm('LOOP 편집에 저장하지 않은 변경이 있어요. 탭을 옮겨도 작업본은 남아 있어요.', { title: '저장 안 됨', okText: '옮기기' }).then(ok => { if (ok) { opsTab = t; opsEditName = null; renderOps(); } });
-    return;
-  }
-  opsTab = t; opsEditName = null; renderOps();
-}
+function setOpsTab(t) { opsTab = t; opsEditName = null; renderOps(); }
 
 function renderOps() {
   document.getElementById('opsTabs').innerHTML = OPS_TABS.map(([k, t]) =>
     `<button class="${k === opsTab ? 'active' : ''}" onclick="setOpsTab('${k}')">${t}</button>`).join('');
   document.getElementById('opsTopSeg').textContent = (OPS_TABS.find(t => t[0] === opsTab) || [])[1] || '';
   const body = document.getElementById('opsBody');
-  if (opsTab === 'loop') { body.innerHTML = opsLoopHtml(); laSyncBar(); return; }
   if (opsTab === 'battle') body.innerHTML = opsBattleHtml();
   else if (opsTab === 'chars') body.innerHTML = opsCharsHtml();
   else if (opsTab === 'music') body.innerHTML = opsMusicHtml();
@@ -12347,7 +12412,8 @@ function loopStatusHtml(d, r) {
   const eraById = Object.fromEntries((d.eras || []).map(e => [e.id, e]));
   const eras = r.eras.map((id, i) => {
     const e = eraById[id] || { no: id };
-    const st = i < nowIdx || (r.status === 'ending') ? 'done' : i === nowIdx ? 'now' : '';
+    const st = i < nowIdx || (r.status === 'ending' && !(r.ending || {}).paused) ? 'done' : i === nowIdx && r.status !== 'ending' ? 'now' : (r.closed_eras || []).includes(id) ? 'locked' : '';
+    if (st === 'locked') return `<span class="pl-era locked" data-tip="다음 업데이트에서 공개돼요"><i class="fa-solid fa-lock"></i>${e.no}</span>`;
     return `<span class="pl-era ${st}">${e.no}${st === 'now' ? `<em>${loopEsc(e.name)} · ${Math.min(r.era_step + (r.status === 'event' ? 1 : 0), r.era_len)}/${r.era_len}</em>` : ''}</span>`;
   }).join('');
   const mood = [...(r.mood || []), ...(r.mood_mind || [])];
@@ -12402,9 +12468,10 @@ function loopDeathHtml(r, marks) {
   const tag = d.kind === 'loop' ? 'LOOP' : d.kind === 'mind' ? 'COLLAPSE' : 'DEATH';
   return { main: `<div class="pl-box glow pl-death ${d.kind === 'loop' ? 'loop' : ''} ${d.kind === 'mind' ? 'mind' : ''}"><div class="t">${tag}</div><h3>${loopEsc(d.title)}</h3>${tx.html}
     <div class="pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><div class="at">${loopEsc(d.at)}에서 · ${r.count}개의 사건을 지나왔습니다</div>
-    <div class="at" style="margin-top:8px">생애 종료 : 기록을 남기고 끝냅니다 · 루프 진입 : 기억 일부를 안고 전쟁 이전의 평행 세계에서 다시 시작합니다</div></div></div>`,
-    dock: `<div class="pl-actions two pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>생애 종료</button>
-    <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'loop' })"><i class="fa-solid fa-infinity"></i>루프 진입</button></div>` };
+    ${r.loop_open ? '<div class="at" style="margin-top:8px">생애 종료 : 기록을 남기고 끝냅니다 · 루프 진입 : 기억 일부를 안고 전쟁 이전의 평행 세계에서 다시 시작합니다</div>' : ''}</div></div>`,
+    dock: r.loop_open ? `<div class="pl-actions two pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>생애 종료</button>
+    <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'loop' })"><i class="fa-solid fa-infinity"></i>루프 진입</button></div>`
+      : `<div class="pl-actions pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>생애 종료</button></div>` };
 }
 // 프롤로그 : 서력의 역사 → 탄생 → 문명관. 고르는 것 없이 자동으로 정해진 나레이션이에요.
 function loopPrologueHtml(d, r, marks) {
@@ -12422,14 +12489,16 @@ function loopEndingHtml(r, marks) {
   const e = r.ending, k = `ending|${r.life_no}|${r.loop_no}`;
   const tx = loopType(e.text, k, 400);
   if (tx.fresh) marks.push(k);
-  return { main: `<div class="pl-box glow pl-death loop"><div class="t">SURVIVED</div><h3>${loopEsc(e.title)}</h3>${tx.html}
+  return { main: `<div class="pl-box glow pl-death loop"><div class="t">${e.paused ? 'TO BE CONTINUED' : 'SURVIVED'}</div><h3>${loopEsc(e.title)}</h3>${tx.html}
     <div class="pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><div class="at">${r.count}개의 사건을 견뎠습니다 · 남은 체력 ${r.hp} · 정신 ${r.mind}</div></div></div>`,
-    dock: `<div class="pl-actions pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_finish')"><i class="fa-solid fa-book"></i>기록 남기기</button></div>` };
+    dock: r.can_resume ? `<div class="pl-actions two pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_finish')"><i class="fa-solid fa-book"></i>여기서 기록 남기기</button>
+      <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_resume')"><i class="fa-solid fa-forward"></i>이어서 살기</button></div>`
+      : `<div class="pl-actions pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_finish')"><i class="fa-solid fa-book"></i>기록 남기기</button>${e.paused ? '<div class="pl-k-note" style="margin-top:8px;text-align:center"><i class="fa-solid fa-hourglass-half"></i> 기록을 남기지 않고 두면, 다음 이야기가 열릴 때 이 자리에서 이어서 살 수 있어요.</div>' : ''}</div>` };
 }
 function loopEndedHtml(d, r) {
   const last = (d.lives || [])[0];
-  const survived = r.outcome === 'survived';
-  return { main: `<div class="pl-box glow pl-death ${survived ? 'loop' : ''}"><div class="t">${survived ? 'SURVIVED' : 'RECORD'}</div><h3>${survived ? '전쟁 이후에 도달했습니다' : '생애가 끝났습니다'}</h3>
+  const survived = r.outcome === 'survived' || r.outcome === 'paused';
+  return { main: `<div class="pl-box glow pl-death ${survived ? 'loop' : ''}"><div class="t">${survived ? 'SURVIVED' : 'RECORD'}</div><h3>${r.outcome === 'paused' ? '여기까지 살아남았습니다' : survived ? '전쟁 이후에 도달했습니다' : '생애가 끝났습니다'}</h3>
     <p>${last ? `${last.count}개의 사건 · ${last.loop_no ? `루프 ${last.loop_no} · ` : ''}${survived ? '생존' : loopEsc((last.death || {}).at || '') + '에서 ' + ((last.death || {}).kind === 'mind' ? '정신 붕괴' : '사망')}` : ''}</p></div>`,
     dock: `<div class="pl-actions"><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_reset')"><i class="fa-solid fa-seedling"></i>새 생애 시작</button></div>` };
 }
@@ -12451,7 +12520,7 @@ function loopLivesHtml(d) {
   const lives = d.lives || [];
   if (!lives.length) return '';
   const eraNo = id => ((d.eras || []).find(e => e.id === id) || {}).no || '';
-  return `<div class="pl-box pl-rec"><div class="pl-k" style="margin-bottom:6px">지난 생애</div><div class="pl-log">${lives.map(l => `<div class="row"><span class="era">${loopEsc(eraNo(l.era))}</span><span class="ttl"><b>${l.life_no}번째 생애${l.loop_no ? ` · 루프 ${l.loop_no}` : ''} · ${l.outcome === 'survived' ? '생존' : (l.death || {}).kind === 'mind' ? '정신 붕괴' : '사망'}</b><span>${l.country ? loopEsc((LOOP_COUNTRY[l.country] || [''])[0]) + ' · ' : ''}${loopEsc((LOOP_RES[l.res] || [''])[0])} · ${l.outcome === 'survived' ? '전쟁 이후까지' : loopEsc((l.death || {}).at || '') + '에서'}</span></span><span class="d zero">${l.count}사건</span></div>`).join('')}</div></div>`;
+  return `<div class="pl-box pl-rec"><div class="pl-k" style="margin-bottom:6px">지난 생애</div><div class="pl-log">${lives.map(l => `<div class="row"><span class="era">${loopEsc(eraNo(l.era))}</span><span class="ttl"><b>${l.life_no}번째 생애${l.loop_no ? ` · 루프 ${l.loop_no}` : ''} · ${l.outcome === 'survived' ? '생존' : l.outcome === 'paused' ? '잠시 멈춤' : (l.death || {}).kind === 'mind' ? '정신 붕괴' : '사망'}</b><span>${l.country ? loopEsc((LOOP_COUNTRY[l.country] || [''])[0]) + ' · ' : ''}${loopEsc((LOOP_RES[l.res] || [''])[0])} · ${l.outcome === 'survived' ? '전쟁 이후까지' : loopEsc((l.death || {}).at || '') + '에서'}</span></span><span class="d zero">${l.count}사건</span></div>`).join('')}</div></div>`;
 }
 // 오른쪽 기록판 : 이번 생애에 지나온 사건(오래된 것부터 아래로 쌓이고, 새 사건이 생기면 맨 아래로).
 function renderLoopLog() {
@@ -12518,6 +12587,7 @@ function laInput(el, rerender) {
   else if (t === 'tags') v = v.split(/[\s,]+/).filter(Boolean).map(x => x.toUpperCase());
   else if (t === 'seq') v = v.split(/[\s,>→·]+/).map(Number).filter(Boolean);
   else if (t === 'fixed') v = el.checked ? 'open' : undefined;
+  else if (t === 'chapter') v = v === '' ? undefined : Number(v);
   laSetPath(path, v);
   if (path[0] === 'events' && path[2] === 'title') { const it = document.querySelector(`.la-item[data-i="${path[1]}"] .t`); if (it) it.textContent = v || '(제목 없음)'; }
   if (rerender) renderLoopAdmin(); else laSyncBar();
@@ -12537,31 +12607,87 @@ function laSeg(path, value, opts, rerender) {
   return `<div class="ops-seg">${opts.map(([v, t]) => `<button class="${(value || '') === v ? 'on' : ''}" onclick='laSetPath(${JSON.stringify(path)}, ${JSON.stringify(v || undefined) || 'undefined'}); renderLoopAdmin()'>${t}</button>`).join('')}</div>`;
 }
 
-function opsLoopHtml() {
+const LA_SECTIONS = [
+  ['release', '공개 범위', 'fa-flag-checkered', '업데이트 단계별로 플레이어에게 열리는 범위'],
+  ['events', '사건', 'fa-scroll', '사건 카드 · 선택지 · 출현 조건'],
+  ['rules', '규칙 · 수치', 'fa-sliders', '체력 · 정신 · 시대 · 균열 · 자원'],
+  ['prologue', '프롤로그', 'fa-landmark', '서력의 역사 · 탄생 · 문명관'],
+  ['texts', '문장', 'fa-align-left', '상태 · 사망 · 엔딩 · 재난 · 해결'],
+];
+function openLoopAdmin() {
+  if (!opsIsGm()) return;
+  if (opsOpen()) closeOps();
+  document.body.classList.add('view-loopadmin');
+  document.getElementById('sidebarLoopEditBtn').classList.add('active');
+  document.getElementById('sidebarBattleBtn').classList.remove('active');
+  renderLoopAdmin();
+}
+function closeLoopAdmin() {
+  if (!document.body.classList.contains('view-loopadmin')) return;
+  if (laDirty()) uiToast('LOOP 편집에 저장하지 않은 변경이 있어요. 다시 열면 이어서 고칠 수 있어요.');
+  document.body.classList.remove('view-loopadmin');
+  const lb = document.getElementById('sidebarLoopEditBtn'); if (lb) lb.classList.remove('active');
+  document.getElementById('sidebarBattleBtn').classList.add('active');
+}
+function laOpen() { return document.body.classList.contains('view-loopadmin'); }
+function loopStudioHtml() {
   if (!la.c) { if (!la.loading) { la.loading = true; socket.emit('loop_admin_get'); } return emptyHtml('fa-circle-notch fa-spin', 'LOOP 내용을 불러오는 중이에요'); }
-  const subs = [['events', '사건', 'fa-scroll'], ['rules', '규칙 · 수치', 'fa-sliders'], ['texts', '문장', 'fa-align-left']];
-  return `<div class="la-wrap">
-    <div class="la-head"><div class="ops-seg">${subs.map(([k, t, ic]) => `<button class="${la.sub === k ? 'on' : ''}" onclick="la.sub='${k}'; renderLoopAdmin()"><i class="fa-solid ${ic}"></i> ${t}</button>`).join('')}</div>
-      <span class="ops-hint">이야기 속 <b>{조국}</b> · <b>{이웃}</b>은 출신 국가로, <b>{적}</b>은 상대 진영으로 바뀌어요.</span></div>
-    <div class="la-body">${la.sub === 'events' ? laEventsHtml() : la.sub === 'rules' ? laRulesHtml() : laTextsHtml()}</div>
+  const rel = la.c.rules.chapters[la.c.rules.release] || {};
+  const nav = LA_SECTIONS.map(([k, t, ic, d]) => `<button class="${la.sub === k ? 'on' : ''}" onclick="la.sub='${k}'; renderLoopAdmin(); document.getElementById('laMain').scrollTop = 0"><i class="fa-solid ${ic}"></i><span><b>${t}</b><em>${d}</em></span></button>`).join('');
+  const body = la.sub === 'release' ? laReleaseHtml() : la.sub === 'events' ? laEventsHtml() : la.sub === 'rules' ? laRulesHtml() : la.sub === 'prologue' ? laPrologueHtml() : laTextsHtml();
+  return `<div class="topbar v2 panel la-top"><div class="seg la-brand">Loop Studio</div><span class="sep">▶</span><div class="seg">${laEsc((LA_SECTIONS.find(x => x[0] === la.sub) || [])[1] || '')}</div>
+      <div class="spacer"></div><span class="la-live"><i class="fa-solid fa-circle"></i> 공개 중 : <b>${laEsc(rel.name || '')}</b> ${laEsc(rel.sub || '')}</span></div>
+    <div class="la-shell"><nav class="la-nav">${nav}<div class="la-nav-hint">이야기 속 <b>{조국}</b> · <b>{이웃}</b>은 출신 국가, <b>{적}</b>은 상대 진영으로 바뀌어요.</div></nav>
+      <div class="la-main" id="laMain"><div class="la-wrap">${body}</div></div></div>
     <div class="la-bar" id="laBar"><span class="st"></span>
       <button class="ops-btn" onclick="laRevert()"><i class="fa-solid fa-rotate-left"></i> 마지막 저장으로</button>
-      <button class="ops-btn primary" onclick="laSave()"><i class="fa-solid fa-floppy-disk"></i> 저장</button></div></div>`;
+      <button class="ops-btn primary" onclick="laSave()"><i class="fa-solid fa-floppy-disk"></i> 저장</button></div>`;
 }
 function renderLoopAdmin() {
-  if (!opsOpen() || opsTab !== 'loop') return;
-  const body = document.getElementById('opsBody');
-  const list = body.querySelector('.la-list'), keepList = list ? list.scrollTop : 0, keep = body.scrollTop;
-  body.innerHTML = opsLoopHtml();
-  body.scrollTop = keep;
-  const l2 = body.querySelector('.la-list'); if (l2) l2.scrollTop = keepList;
+  if (!laOpen()) return;
+  const page = document.getElementById('loopAdminPage');
+  const main = page.querySelector('#laMain'), keep = main ? main.scrollTop : 0;
+  const list = page.querySelector('.la-list'), keepList = list ? list.scrollTop : 0;
+  page.innerHTML = loopStudioHtml();
+  const m2 = page.querySelector('#laMain'); if (m2) m2.scrollTop = keep;
+  const l2 = page.querySelector('.la-list'); if (l2) l2.scrollTop = keepList;
   laSyncBar();
 }
+
+// ── 공개 범위 ─────────────────────────────────
+function laReleaseHtml() {
+  const R = la.c.rules, chs = R.chapters;
+  const cnt = id => la.c.events.filter(ev => !ev.draft && laEvChapter(ev) === id).length;
+  const drafts = la.c.events.filter(ev => ev.draft).length;
+  const cards = chs.map((ch, i) => {
+    const live = i <= R.release, now = i === R.release;
+    return `<div class="ops-card la-ch-card ${live ? 'live' : ''} ${now ? 'now' : ''}">
+      <div class="la-ch-top"><span class="la-step">${i === 0 ? 'BASE' : 'PATCH ' + i}</span>${live ? '<span class="la-badge on">공개 중</span>' : '<span class="la-badge">공개 전</span>'}</div>
+      <div class="la-grid two"><div class="ops-field"><span class="lb">이름</span><input class="ops-in" ${laP(['rules', 'chapters', i, 'name'])} value="${laEsc(ch.name)}" oninput="laInput(this)"></div>
+        <div class="ops-field"><span class="lb">부제</span><input class="ops-in" ${laP(['rules', 'chapters', i, 'sub'])} value="${laEsc(ch.sub)}" oninput="laInput(this)"></div></div>
+      <div class="ops-field"><span class="lb">이 단계에 열리는 시대 (시대 번호를 쉼표로)</span><input class="ops-in" ${laP(['rules', 'chapters', i, 'eras'])} data-t="seq" value="${ch.eras.join(', ')}" onchange="laInput(this, true)"></div>
+      <div class="la-ch-eras">${ch.eras.map(e => `<span>${laEsc(laEraName(e))}</span>`).join('') || '<span class="none">시대 없음</span>'}</div>
+      <label class="la-chk"><input type="checkbox" ${laP(['rules', 'chapters', i, 'loop'])} ${ch.loop ? 'checked' : ''} onchange="laInput(this, true)"> 이 단계부터 루프 진입이 열려요</label>
+      <div class="la-ch-foot"><span class="ops-hint">사건 ${cnt(i)}장</span>
+        ${now ? '<span class="la-now"><i class="fa-solid fa-check"></i> 지금 공개 단계</span>' : `<button class="ops-btn ${i > R.release ? 'primary' : ''}" onclick="la.c.rules.release=${i}; renderLoopAdmin()">${i > R.release ? '여기까지 공개하기' : '여기까지로 되돌리기'}</button>`}</div>
+      ${chs.length > 1 && i === chs.length - 1 ? `<button class="ops-btn icon danger la-ch-del" onclick="la.c.rules.chapters.pop(); la.c.rules.release=Math.min(la.c.rules.release, la.c.rules.chapters.length-1); renderLoopAdmin()"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="la-lead"><b>업데이트 단계마다 플레이어에게 열리는 범위를 정해요.</b>
+      <span>공개 전 시대에 닿으면 플레이어는 '이야기는 여기서 잠시 멈춥니다' 엔딩을 보고, 다음 단계를 공개하면 그 자리에서 <b>이어서 살기</b>를 할 수 있어요. 공개 단계를 바꾼 뒤 <b>저장</b>을 눌러야 반영돼요.</span></div>
+    <div class="la-chs-row">${cards}
+      <div class="ops-card la-add" onclick="la.c.rules.chapters.push({ id: la.c.rules.chapters.length, name: (la.c.rules.chapters.length) + '차 패치', sub: '', eras: [], loop: false }); renderLoopAdmin()"><i class="fa-solid fa-plus"></i> 단계 추가</div></div>
+    <div class="ops-hint" style="margin-top:14px">작업 중으로 표시된 사건 ${drafts}장은 어느 단계에서도 플레이에 나오지 않아요. 사건마다 '공개 단계'를 따로 정하면 시대와 상관없이 그 단계에 열려요(예 : III 시대의 루프 사건을 2차 패치에).</div>`;
+}
+function laEraChapter(era) { const ch = la.c.rules.chapters.find(c => c.eras.includes(era)); return ch ? ch.id : 0; }
+function laEvChapter(ev) { return ev.chapter != null && ev.chapter !== '' ? Number(ev.chapter) : laEraChapter(ev.era); }
 
 // ── 사건 ─────────────────────────────────────
 function laEraName(id) { const e = (la.c.eras || []).find(x => x.id === id); return e ? `${e.no}. ${e.name}` : `시대 ${id}`; }
 function laCondBadges(ev) {
   const c = ev.cond || {}, b = [];
+  if (ev.draft) b.push('<em class="draft">작업 중</em>');
+  else if (laEvChapter(ev) > la.c.rules.release) b.push(`<em class="lock"><i class="fa-solid fa-lock"></i> ${laEsc((la.c.rules.chapters[laEvChapter(ev)] || {}).name || '')}</em>`);
   if (ev.fixed === 'open') b.push('<em class="open">첫 사건</em>');
   if (c.country) b.push(`<em>${c.country === 'arcadia' ? '아르카디아' : '노바'}</em>`);
   if (c.res) b.push(`<em>${c.res === 'res' ? '공명자' : '비공명자'}</em>`);
@@ -12576,7 +12702,7 @@ function laEventsHtml() {
   const groups = (la.c.eras || []).map(era => {
     const items = evs.map((ev, i) => [ev, i]).filter(([ev]) => ev.era === era.id && (!q || `${ev.id} ${ev.title} ${(ev.story || []).join(' ')}`.toLowerCase().includes(q)));
     if (!items.length) return '';
-    return `<div class="la-g">${laEsc(era.no)}. ${laEsc(era.name)} <span>${items.length}</span></div>` + items.map(([ev, i]) =>
+    return `<div class="la-g">${laEsc(era.no)}. ${laEsc(era.name)} <span>${items.length}</span>${laEraChapter(era.id) > la.c.rules.release ? '<i class="fa-solid fa-lock"></i>' : ''}</div>` + items.map(([ev, i]) =>
       `<button class="la-item ${i === la.sel ? 'on' : ''}" data-i="${i}" onclick="la.sel=${i}; renderLoopAdmin()"><span class="n">${laEsc(ev.id)}</span><span class="t">${laEsc(ev.title) || '(제목 없음)'}</span><span class="b">${laCondBadges(ev)}</span></button>`).join('');
   }).join('');
   return `<div class="la-ev">
@@ -12611,12 +12737,16 @@ function laEventForm(i) {
   }).join('');
   return `<div class="ops-card la-form">
     <h3><i class="fa-solid fa-scroll"></i> EVENT ${laEsc(ev.id)}<span class="sub"><button class="ops-btn" onclick="laDupEvent(${i})"><i class="fa-regular fa-copy"></i> 복제</button> <button class="ops-btn danger" onclick="laDelEvent(${i})"><i class="fa-solid fa-trash-can"></i> 삭제</button></span></h3>
+    <div class="la-memo"><div class="la-memo-h"><i class="fa-solid fa-note-sticky"></i> 작업 메모 <span>주제 · 필요한 내용 · 예상 선택지 · 예상 결과 — 플레이어에게는 안 보여요</span>
+        <label class="la-chk la-draft"><input type="checkbox" ${laP(P(['draft']))} ${ev.draft ? 'checked' : ''} onchange="laInput(this, true)"> 작업 중 (플레이에 안 나옴)</label></div>
+      <textarea class="ops-in" rows="4" ${laP(P(['note']))} placeholder="예) 주제 : 공명로 사고 / 필요 : 도시 정전, 공명자 책임론 / A 복구 지원 → 체력−, 균열+ / B 피신 → 정신− / C 고발 → 재산−" oninput="laInput(this)">${laEsc(ev.note || '')}</textarea></div>
     <div class="la-grid">
       <div class="ops-field"><span class="lb">번호</span><input class="ops-in" ${laP(P(['id']))} value="${laEsc(ev.id)}" maxlength="12" onchange="laInput(this, true)"></div>
       <div class="ops-field"><span class="lb">시대</span><select class="ops-in" ${laP(P(['era']))} data-t="num" onchange="laInput(this, true)">${eraOpts}</select></div>
       <div class="ops-field"><span class="lb">종류 <i class="la-q" data-tip="체력이 0이 되어 죽을 때 이 종류의 사망 문장이 나와요.">?</i></span><select class="ops-in" ${laP(P(['kind']))} onchange="laInput(this)">${kindOpts}</select></div>
       <div class="ops-field la-span2"><span class="lb">제목</span><input class="ops-in" ${laP(P(['title']))} value="${laEsc(ev.title)}" maxlength="60" oninput="laInput(this)"></div>
       <div class="ops-field"><span class="lb">시대 첫 사건</span><label class="la-chk"><input type="checkbox" ${laP(P(['fixed']))} data-t="fixed" ${ev.fixed === 'open' ? 'checked' : ''} onchange="laInput(this, true)"> 그 시대 첫 사건으로 고정</label></div>
+      <div class="ops-field"><span class="lb">공개 단계</span><select class="ops-in" ${laP(P(['chapter']))} data-t="chapter" onchange="laInput(this, true)"><option value="" ${ev.chapter == null || ev.chapter === '' ? 'selected' : ''}>시대를 따라 (${laEsc((la.c.rules.chapters[laEraChapter(ev.era)] || {}).name || '')})</option>${la.c.rules.chapters.map(c => `<option value="${c.id}" ${ev.chapter != null && ev.chapter !== '' && Number(ev.chapter) === c.id ? 'selected' : ''}>${laEsc(c.name)} · ${laEsc(c.sub)}</option>`).join('')}</select></div>
     </div>
     <div class="la-sec"><b>출현 조건</b><span class="ops-hint">비워 두면 누구에게나 나와요.</span></div>
     <div class="la-grid">
@@ -12720,7 +12850,10 @@ function laResRulesHtml() {
     </div>`;
 }
 // ── 문장 ─────────────────────────────────────
-function laTextsHtml() {
+function laPrologueHtml() { const h = laTextsAllHtml(); return h.slice(0, h.indexOf(LA_TEXT_SPLIT)); }
+function laTextsHtml() { const h = laTextsAllHtml(); return h.slice(h.indexOf(LA_TEXT_SPLIT) + LA_TEXT_SPLIT.length); }
+const LA_TEXT_SPLIT = '<div class="la-sec" style="margin-top:20px"><b>나머지 문장</b></div>';
+function laTextsAllHtml() {
   const t = la.c.texts;
   const mood = (key, lb, ic) => `<div class="ops-card"><h3><i class="fa-solid ${ic}"></i> ${lb} 상태 문장<span class="sub">값이 이 이상이면</span></h3>
       ${(t[key] || []).map((m, k) => `<div class="la-mood"><div class="ops-row"><input class="ops-in num" type="number" min="0" max="20" ${laP(['texts', key, k, 'min'])} data-t="num" value="${m.min}" oninput="laInput(this)"><span class="ops-hint">이상</span>
@@ -12756,7 +12889,7 @@ function laTextsHtml() {
     <div class="la-sec" style="margin-top:20px"><b>사망 문장</b><span class="ops-hint">체력 0이면 마지막 사건의 종류에 맞는 문장, 정신 0이면 '정신 붕괴'. 루프와 닿은 적 있으면 '루프'가 섞여 나와요.</span></div>
     <div class="ops-grid">${Object.keys(t.death).map(k => titled('death', k, LA_KIND[k] || k)).join('')}</div>
     <div class="la-sec" style="margin-top:20px"><b>엔딩 문장</b></div>
-    <div class="ops-grid">${titled('ending', 'first', '첫 생애에 살아남았을 때')}${titled('ending', 'loop', '루프 뒤에 살아남았을 때')}</div>`;
+    <div class="ops-grid">${titled('ending', 'first', '첫 생애에 살아남았을 때')}${titled('ending', 'loop', '루프 뒤에 살아남았을 때')}${titled('ending', 'pause', '공개 전 시대에 닿았을 때 (잠시 멈춤)')}</div>`;
 }
 
 // ── 저장 · 되돌리기 ─────────────────────────────
@@ -12779,6 +12912,8 @@ socket.on('loop_admin', d => {
 });
 socket.on('loop_admin_result', r => { if (r) uiToast(r.message); });
 window.addEventListener('beforeunload', e => { if (BATTLE_TYPE === 'play' && laDirty()) { e.preventDefault(); e.returnValue = ''; } });
+// 운영진이 저장하면 내 플레이 화면도 새 공개 범위로 다시 불러와요.
+socket.on('loop_admin', () => { if (typeof IS_PLAY !== 'undefined' && IS_PLAY) socket.emit('loop_state'); });
 </script>
 </body>
 </html>

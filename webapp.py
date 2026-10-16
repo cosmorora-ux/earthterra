@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.47"
+SERVER_BUILD = "2026-10-13.49"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -1083,11 +1083,19 @@ def on_join(data):
             emit("error", {"message": "비밀번호가 올바르지 않습니다."})
             return
 
+    # PLAY 룸(LOOP)은 공용 아이디 TEST(와 운영진)로만 들어옵니다. 기록은 기기마다 따로 저장돼요.
+    if room.battle_type == "play" and nickname.lower() not in ("gm", "익명"):
+        if nickname.upper() != loop_mod.TEST_ID:
+            emit("error", {"message": "이 방은 TEST로만 입장할 수 있습니다."})
+            return
+        nickname = loop_mod.TEST_ID
+
     previous = CONNECTIONS.get(request.sid)
     previous_nickname = previous["nickname"] if previous else None
 
     CONNECTIONS[request.sid] = {"room_id": room_id, "role": role, "nickname": nickname,
-                                "device": _clean_device(data.get("device"))}
+                                "device": _clean_device(data.get("device")),
+                                "loop_device": loop_mod.clean_device_id(data.get("loop_device"))}
     join_room(room_channel(room_id, "all"))
     # 참가자 링크에서 닉네임 "GM"으로 (비밀번호 인증까지 마치고) 입장한 경우도 운영진 로그/수식이
     # 필요하므로 gm 채널에 넣어줍니다. 다른 이름으로 재입장(로그아웃 포함)하면 다시 빠집니다.
@@ -2904,34 +2912,42 @@ def _emit_mail_data(sid):
 # PLAY 룸 : LOOP 생존 시뮬레이션 (loop_game.py) — 캐릭터마다 자기 생애를 진행합니다.
 # 체력 · 정신 변동은 고른 뒤에만 보냅니다. 출신 국가는 생애마다 무작위, 진영(使徒 / Void)은 캐릭터 정보의 진영 칸을 씁니다.
 # ==================================================================
+def _loop_identity(sid):
+    """LOOP 기록 주인 : (기록 키, 화면 이름, 운영진 여부, 방).
+    TEST는 여러 사람이 같이 쓰는 아이디라 기기(브라우저)마다 따로 저장합니다 — "TEST#기기번호".
+    운영진도 기기마다 따로예요(시험 플레이용)."""
+    info = CONNECTIONS.get(sid)
+    room = get_room(info["room_id"]) if info else None
+    if room is None:
+        return None, None, False, None
+    dev = info.get("loop_device") or ""
+    if _require_gm_or_guest_gm(sid) is not None:
+        return (f"{mailbox_mod.GM_NAME}#{dev}" if dev else mailbox_mod.GM_NAME), mailbox_mod.GM_NAME, True, room
+    if (info.get("nickname") or "") == loop_mod.TEST_ID and dev:
+        return f"{loop_mod.TEST_ID}#{dev}", loop_mod.TEST_ID, False, room
+    return None, None, False, room
+
+
 def _emit_loop_data(sid):
-    me, is_gm, room = _mail_identity(sid)
+    key, me, is_gm, room = _loop_identity(sid)
     if room is None or room.battle_type != "play":
         return
     book = loop_mod.shared_book()
-    data = book.view(me) if me else {"run": None, "lives": [], "loops": 0, "intro": [], "eras": []}
+    data = book.view(key) if key else {"run": None, "lives": [], "loops": 0, "intro": [], "eras": []}
     data["me"] = me
     data["is_gm"] = is_gm
-    data["faction"] = _loop_faction(room, me)
     socketio.emit("loop_data", data, to=sid)
 
 
-def _loop_faction(room, me):
-    """진영 : 캐릭터 정보의 진영 칸(使徒 / Void). 전쟁 때의 포지션이에요."""
-    entry = room.game.db.characters.get(me) if me else None
-    f = ((entry or {}).get("nation") or "").strip()
-    return f if f in loop_mod.FACTIONS else ""
-
-
 def _loop_action(fn, *args):
-    me, is_gm, room = _mail_identity(request.sid)
+    key, me, is_gm, room = _loop_identity(request.sid)
     if room is None or room.battle_type != "play":
         return
-    if me is None:
-        emit("loop_result", {"ok": False, "message": "캐릭터로 입장해야 플레이할 수 있어요."})
+    if key is None:
+        emit("loop_result", {"ok": False, "message": "TEST로 입장해야 플레이할 수 있어요."})
         return
     try:
-        fn(me, *args)
+        fn(key, *args)
     except loop_mod.LoopError as e:
         emit("loop_result", {"ok": False, "message": str(e)})
     _emit_loop_data(request.sid)
@@ -2944,11 +2960,8 @@ def on_loop_state(data=None):
 
 @socketio.on("loop_start")
 def on_loop_start(data):
-    # 출신 국가는 생애마다 서버가 무작위로 정해요. 진영은 캐릭터 정보에서.
-    me, is_gm, room = _mail_identity(request.sid)
-    if room is None:
-        return
-    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""), _loop_faction(room, me))
+    # 출신 국가와 전쟁 때 진영(使徒 / Void)은 생애마다 서버가 무작위로 정해요.
+    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""), random.choice(loop_mod.FACTIONS))
 
 
 # ── LOOP 편집(운영진) : 사건 · 규칙 · 문장. 체력 · 정신 변동이 들어 있어서 운영진에게만 보냅니다. ──
@@ -3009,6 +3022,11 @@ def on_loop_solve(data):
 @socketio.on("loop_begin")
 def on_loop_begin(data=None):
     _loop_action(loop_mod.shared_book().begin)
+
+
+@socketio.on("loop_resume")
+def on_loop_resume(data=None):
+    _loop_action(loop_mod.shared_book().resume)
 
 
 @socketio.on("loop_next")

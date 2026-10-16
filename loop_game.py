@@ -21,6 +21,7 @@ import copy
 import json
 import os
 import random
+import re
 import threading
 import time
 
@@ -46,6 +47,15 @@ GAINABLE = RESOURCES + (STRAIN,)
 LOOP_KEEP_TAGS = {"LOOP_CONTACT", "LOOP_NOTES", "LOOP_ALLY", "TRUTH", "FRACTURE_SEEN", "LEFT_BEHIND", "KILLED", "SAVED_ONE"}
 
 # 출신 국가 : 아르카디아에서는 공명자가 기득권, 노바에서는 비공명자가 기득권.
+TEST_ID = "TEST"  # PLAY 룸 공용 아이디. 기록은 기기마다 따로("TEST#기기번호")
+
+
+def clean_device_id(v):
+    """브라우저가 만든 기기 번호 : 영문 · 숫자 8~40자만."""
+    v = str(v or "")
+    return v if 8 <= len(v) <= 40 and re.fullmatch(r"[A-Za-z0-9]+", v) else ""
+
+
 COUNTRIES = {"arcadia": "아르카디아", "nova": "노바"}
 # 진영 : 전쟁 때의 포지션. 서로 적입니다.
 FACTIONS = ("使徒", "Void")
@@ -135,6 +145,17 @@ def clean_content(c):
             return dv
     rules["strain"] = {"max": _int(sr.get("max"), 1, 20, ds["max"]), "per": _f(sr.get("per"), 0, 0.2, ds["per"]),
                        "loop_keep": _f(sr.get("loop_keep"), 0, 1, ds["loop_keep"])}
+    chapters = []
+    for i, ch in enumerate((r.get("chapters") or d["rules"]["chapters"])[:10]):
+        if not isinstance(ch, dict):
+            continue
+        chapters.append({"id": i, "name": _s(ch.get("name"), 30) or f"{i}단계", "sub": _s(ch.get("sub"), 60),
+                         "eras": [x for x in (_int(e, 1, 99, 0) for e in (ch.get("eras") or [])) if x in era_ids],
+                         "loop": bool(ch.get("loop"))})
+    if not chapters:
+        chapters = copy.deepcopy(d["rules"]["chapters"])
+    rules["chapters"] = chapters
+    rules["release"] = _int(r.get("release"), 0, len(chapters) - 1, 0)
     for key in ("first_life", "loop_life"):
         seq = [_int(x, 1, 99, 0) for x in (r.get(key) or [])]
         seq = [x for x in seq if x in era_ids][:12]
@@ -171,13 +192,14 @@ def clean_content(c):
         if mins:
             cond["min"] = mins
         story = _lines(ev.get("story"))
-        if not story:
-            raise LoopError(f"EVENT {eid} : 상황 서술을 써 주세요.")
+        draft = bool(ev.get("draft"))
+        if not story and not draft:
+            raise LoopError(f"EVENT {eid} : 상황 서술을 써 주세요. (아직 작업 중이면 '작업 중'을 켜 두세요)")
         choices = []
         for i, ch in enumerate((ev.get("choices") or [])[:3]):
             label = _s(ch.get("label"), 200)
-            if not label:
-                raise LoopError(f"EVENT {eid} : 선택지 {'ABC'[i]} 문장을 써 주세요.")
+            if not label and not draft:
+                raise LoopError(f"EVENT {eid} : 선택지 {'ABC'[i]} 문장을 써 주세요. (아직 작업 중이면 '작업 중'을 켜 두세요)")
             item = {"label": label, "hp": _int(ch.get("hp"), -3, 3, 0), "mind": _int(ch.get("mind"), -3, 3, 0),
                     "result": "\n".join(_lines(ch.get("result"), 10)), "tags": _tags(ch.get("tags"))}
             need = {k: _int((ch.get("need") or {}).get(k), 0, 10, 0) for k in RESOURCES}
@@ -211,6 +233,12 @@ def clean_content(c):
             extra.append(item)
         item = {"id": eid, "era": era, "title": title, "kind": ev.get("kind") if ev.get("kind") in KINDS else "life",
                 "story": story, "choices": choices}
+        if ev.get("chapter") not in (None, "", -1):
+            item["chapter"] = _int(ev.get("chapter"), 0, 9, 0)
+        if _s(ev.get("note"), 3000):
+            item["note"] = _s(ev.get("note"), 3000)      # 운영진 작업 메모(플레이어에게는 안 보여요)
+        if ev.get("draft"):
+            item["draft"] = True                         # 작업 중 : 플레이에 나오지 않아요
         if cond:
             item["cond"] = cond
         if ev.get("fixed") == "open":
@@ -312,6 +340,29 @@ class Content:
 
     def strain_rules(self):
         return self.rules.get("strain") or default_content()["rules"]["strain"]
+
+    # ── 공개 챕터 ──
+    def release(self):
+        return self.rules.get("release", 0)
+
+    def era_chapter(self, era):
+        for ch in self.rules.get("chapters", []):
+            if era in ch["eras"]:
+                return ch["id"]
+        return 0
+
+    def event_chapter(self, ev):
+        return ev["chapter"] if "chapter" in ev else self.era_chapter(ev["era"])
+
+    def era_open(self, era):
+        return self.era_chapter(era) <= self.release()
+
+    def event_open(self, ev):
+        return not ev.get("draft") and self.event_chapter(ev) <= self.release()
+
+    def loop_open(self):
+        loops = [ch["id"] for ch in self.rules.get("chapters", []) if ch.get("loop")]
+        return not loops or min(loops) <= self.release()
 
 
 _CONTENT = None
@@ -445,7 +496,8 @@ class LoopBook:
 
     def _pick(self, run, era):
         seen = set(run["seen"])
-        pool = [ev for ev in content().events if ev["era"] == era and ev["id"] not in seen and _cond_ok(ev, run)]
+        C = content()
+        pool = [ev for ev in C.events if ev["era"] == era and ev["id"] not in seen and C.event_open(ev) and _cond_ok(ev, run)]
         if run["step"] == 0:
             fixed = [ev for ev in pool if ev.get("fixed") == "open"]
             if fixed:
@@ -455,9 +507,17 @@ class LoopBook:
 
     def _next_event(self, run):
         """다음 사건을 고릅니다. 시대가 끝났거나 고를 사건이 없으면 다음 시대로, 마지막 시대가 끝나면 엔딩."""
-        eras = content().eras
+        C = content()
+        eras = C.eras
+        run["paused"] = False
         while run["era_i"] < len(run["eras"]):
             era = run["eras"][run["era_i"]]
+            if era in eras and not C.era_open(era):
+                # 아직 공개되지 않은 시대 : 여기서 잠시 멈춤 엔딩(다음 패치가 열리면 이어서 살 수 있어요)
+                run["event"] = None
+                run["status"] = "ending"
+                run["paused"] = True
+                return
             if era in eras and run["step"] < eras[era]["len"]:
                 ev = self._pick(run, era)
                 if ev:
@@ -546,11 +606,23 @@ class LoopBook:
             if run["hp"] <= HP_MIN or run["mind"] <= 0:
                 run["status"] = "dead"
                 kind = ev.get("kind", "life") if run["hp"] <= HP_MIN else "mind"
-                if "LOOP_CONTACT" in run["tags"] or run["loop_no"] > 0:
+                if ("LOOP_CONTACT" in run["tags"] or run["loop_no"] > 0) and C.loop_open():
                     kind = "loop" if kind == "life" or (kind != "mind" and random.random() < 0.5) else kind
                 run["death"] = {"kind": kind if kind in DEATH_KINDS else "life", "at": ev["title"], "era": ev["era"]}
             else:
                 run["status"] = "result"
+            self.save()
+
+    def resume(self, name):
+        """잠시 멈춤 엔딩에서, 다음 챕터가 공개되었으면 그 자리에서 이어서 살기."""
+        with self.lock:
+            run = self._entry(name)["run"]
+            if not run or run["status"] != "ending" or not run.get("paused"):
+                raise LoopError("이어서 살 수 있는 생애가 아니에요.")
+            era = run["eras"][run["era_i"]] if run["era_i"] < len(run["eras"]) else None
+            if era is None or not content().era_open(era):
+                raise LoopError("다음 이야기는 아직 공개되지 않았어요.")
+            self._next_event(run)
             self.save()
 
     def begin(self, name):
@@ -618,6 +690,8 @@ class LoopBook:
             run = e["run"]
             if not run or run["status"] != "dead":
                 raise LoopError("지금은 고를 수 없어요.")
+            if mode == "loop" and not content().loop_open():
+                raise LoopError("루프는 아직 공개되지 않았어요.")
             self._archive(e, run, "dead")
             if mode == "loop":
                 e["loops"] = e.get("loops", 0) + 1
@@ -644,9 +718,9 @@ class LoopBook:
             run = e["run"]
             if not run or run["status"] != "ending":
                 raise LoopError("아직 엔딩에 도달하지 않았어요.")
-            self._archive(e, run, "survived")
+            self._archive(e, run, "paused" if run.get("paused") else "survived")
             run["status"] = "ended"
-            run["outcome"] = "survived"
+            run["outcome"] = "paused" if run.get("paused") else "survived"
             self.save()
 
     def reset(self, name):
@@ -744,9 +818,15 @@ class LoopBook:
             if run["status"] == "dead" and run.get("death"):
                 d = C.texts["death"].get(run["death"]["kind"]) or C.texts["death"]["life"]
                 r["death"] = {"title": d["title"], "text": d["text"], "at": run["death"]["at"], "kind": run["death"]["kind"]}
-            if run["status"] == "ending" or (run["status"] == "ended" and run.get("outcome") == "survived"):
-                x = C.texts["ending"]["loop" if run["loop_no"] else "first"]
-                r["ending"] = {"title": x["title"], "text": x["text"]}
+            if run["status"] == "ending" or (run["status"] == "ended" and run.get("outcome") in ("survived", "paused")):
+                key = "pause" if run.get("paused") or run.get("outcome") == "paused" else "loop" if run["loop_no"] else "first"
+                x = C.texts["ending"].get(key) or C.texts["ending"]["first"]
+                r["ending"] = {"title": x["title"], "text": x["text"], "paused": key == "pause"}
+                if run["status"] == "ending" and run.get("paused"):
+                    era = run["eras"][run["era_i"]] if run["era_i"] < len(run["eras"]) else None
+                    r["can_resume"] = bool(era and C.era_open(era))
+            r["loop_open"] = C.loop_open()
+            r["closed_eras"] = [e for e in run["eras"] if not C.era_open(e)]
             if run["status"] == "ended":
                 r["outcome"] = run.get("outcome")
             out["run"] = r

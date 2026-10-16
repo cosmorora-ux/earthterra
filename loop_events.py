@@ -639,6 +639,16 @@ PURGE_TEXT = [
     "이름 모를 열병이 돌았다. 도시가 클수록 빨리 번졌다.",
 ]
 
+# 공개 챕터(업데이트 단계) : 운영진이 '지금 공개 단계'를 고르면 그 단계까지의 시대 · 사건만 나와요.
+#   본편 = 일상 ~ 전쟁, 1차 패치 = 전쟁 이후, 2차 패치 = 루프와 운명(루프 진입 · 회귀 · 루프 관련 사건).
+#   사건마다 chapter를 따로 적으면 시대와 상관없이 그 단계에 공개돼요(예 : III 시대의 루프 사건을 2차 패치에).
+CHAPTERS = [
+    {"id": 0, "name": "본편", "sub": "일상 ~ 전쟁", "eras": [1, 2, 3, 4], "loop": False},
+    {"id": 1, "name": "1차 패치", "sub": "전쟁 이후", "eras": [5], "loop": False},
+    {"id": 2, "name": "2차 패치", "sub": "루프와 운명", "eras": [6], "loop": True},
+]
+EVENT_CHAPTER = {"005": 2}
+
 # 프롤로그 : 생애를 시작하면 먼저 나오는 나레이션(고르는 것 없이 자동).
 HISTORY = [
     "서력 22세기, 인류는 정점에 서 있었다.",
@@ -772,6 +782,10 @@ ENDING = {
         "지난 생의 죽음들이 발밑에 겹겹이 쌓여 있는 것 같습니다.",
         "기억은 흐릿하지만, 한 가지는 분명합니다. 당신은 다르게 선택했고, 다르게 살아남았습니다.",
         "루프는 끝났을까요. 아니면 또 다른 아침이 기다리고 있을까요."]},
+    "pause": {"title": "이야기는 여기서 잠시 멈춥니다", "text": [
+        "당신은 여기까지 살아남았습니다.",
+        "그러나 그다음 장은 아직 쓰이지 않았습니다.",
+        "세계는 숨을 고르고 있습니다. 다음 이야기가 열리면, 당신은 이 자리에서 다시 걷기 시작할 것입니다."]},
 }
 
 INTRO = [
@@ -789,12 +803,13 @@ def default_content():
     import copy
     return copy.deepcopy({
         "rules": {"hp_start": 5, "hp_max": 5, "mind_start": 5, "mind_max": 5,
-                  "first_life": [1, 2, 3, 4, 5], "loop_life": [6, 4, 5], "res": RES_RULES, "strain": STRAIN_RULES},
+                  "first_life": [1, 2, 3, 4, 5], "loop_life": [6, 4, 5], "res": RES_RULES, "strain": STRAIN_RULES,
+                  "chapters": CHAPTERS, "release": 0},
         "eras": [dict(id=i, no=x["no"], name=x["name"], period=x["period"], level=x["level"], len=x["len"],
                       risk=ERA_RISK.get(i, (0, 0))[0], luck=ERA_RISK.get(i, (0, 0))[1],
                       risk_text=[{"stat": s, "text": t} for s, t in RISK_TEXT.get(i, [])])
                  for i, x in sorted(ERAS.items())],
-        "events": EVENTS,
+        "events": [dict(ev, chapter=EVENT_CHAPTER[ev["id"]]) if ev["id"] in EVENT_CHAPTER else ev for ev in EVENTS],
         "texts": {
             "intro": INTRO,
             "mood_hp": [{"min": m, "text": t} for m, t in MOOD],
