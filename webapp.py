@@ -40,7 +40,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.66"
+SERVER_BUILD = "2026-10-13.67"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -710,7 +710,7 @@ def _online_character_names(room):
     return names
 
 
-def build_public_state(room):
+def build_public_state(room, for_gm=False):
     battle = room.game.battle
     sync_round_timer(room)
     battle_payload = build_battle_common(battle)
@@ -776,8 +776,8 @@ def build_public_state(room):
         "point_theme": point_theme(),
         "remind_seconds": remind_seconds(),
     }
-    if room.battle_type == "play":
-        # LOOP 방은 웹에 공개돼요 : 다른 방 사람들(캐릭터 목록 · 프로필 · 접속 · 채팅 · 상점)은 보내지 않아요.
+    if room.battle_type == "play" and not for_gm:
+        # LOOP 방은 웹에 공개돼요(운영진 화면에는 그대로 보내요 : 상점 관리 등) : 다른 방 사람들(캐릭터 목록 · 프로필 · 접속 · 채팅 · 상점)은 보내지 않아요.
         payload.update({"roster": [], "roster_mypage": {}, "roster_profiles": {}, "online_characters": [],
                         "userinfo_hidden": [], "chat": [], "chat_total": 0, "log": [], "log_total": 0,
                         "shop": dict(payload["shop"], items=[]), "preview_teams": None})
@@ -793,7 +793,7 @@ def build_public_state(room):
 
 def build_gm_state(room):
     battle = room.game.battle
-    payload = build_public_state(room)
+    payload = build_public_state(room, for_gm=True)
     op_log = battle.operator_log if battle else []
     payload["operator_log"] = op_log[-LOG_SEND_CAP:]
     payload["operator_log_total"] = len(op_log)

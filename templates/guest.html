@@ -5568,7 +5568,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.66";
+const EXPECTED_SERVER_BUILD = "2026-10-13.67";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   const notice = document.getElementById('serverRestartNotice');
@@ -7432,6 +7432,12 @@ socket.on('gm_state', (state) => {
   lastOnlineDevices = state.online_devices || {};
   if (document.getElementById('userInfoModal') && document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
   lastShopRequests = state.shop_requests || [];
+  // LOOP 방은 공개 상태에서 상점 · 명단을 빼고 보내요 : 운영진 화면은 운영진 상태의 것을 써요.
+  if (BATTLE_TYPE === 'play') {
+    if (state.shop) lastShop = state.shop;
+    if (state.roster) lastRoster = state.roster;
+    if (state.roster_mypage) lastRosterMypage = state.roster_mypage;
+  }
   renderShop();
   lastOperatorLog = state.operator_log || [];
   lastOperatorLogTotal = state.operator_log_total != null ? state.operator_log_total : lastOperatorLog.length;
