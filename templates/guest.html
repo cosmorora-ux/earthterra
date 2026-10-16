@@ -11550,6 +11550,13 @@ async function buildExportHtml(d) {
 </script>
 <div id="floatTip"></div>
 <script>
+var sitePointTheme = document.documentElement.dataset.point || '';
+function applyPointTheme() {
+  const t = (typeof loopPointTheme !== 'undefined' && loopPointTheme) || sitePointTheme;
+  if (document.documentElement.dataset.point !== t) document.documentElement.dataset.point = t;
+}
+</script>
+<script>
 (function setupFloatTip() {
   const tip = document.getElementById('floatTip');
   let cur = null;
@@ -12012,7 +12019,7 @@ function opsCopyLink() {
 // 상태 갱신 연결
 socket.on('public_state', (state) => {
   opsLastPublic = state;
-  if (state.point_theme && document.documentElement.dataset.point !== state.point_theme) document.documentElement.dataset.point = state.point_theme;
+  if (state.point_theme) { sitePointTheme = state.point_theme; applyPointTheme(); }
   syncOpsBtn(); renderOpsData();
 });
 socket.on('gm_state', (state) => {
@@ -12387,6 +12394,13 @@ if (window.ResizeObserver) {
 // 오른쪽(휴대폰은 아래 기록 버튼) 기록판에는 이번 생애에 지나온 사건이 쌓입니다.
 // ==================================================================
 const IS_PLAY = BATTLE_TYPE === 'play';
+// LOOP : 이번 생애의 출신 국가 색으로 포인트 컬러를 바꿔요(아르카디아 노랑 · 노바 파랑). 국가가 정해지기 전엔 사이트 기본 색.
+var loopPointTheme = null;
+function loopSyncPoint(d) {
+  const c = d && d.run && d.run.country;
+  loopPointTheme = c === 'arcadia' ? 'yellow' : c === 'nova' ? 'blue' : null;
+  applyPointTheme();
+}
 let loopData = null, loopRes = null, loopCountry = null, loopBusy = false, loopLastKey = '', loopTailMs = 0;
 const loopShown = new Set();   // 이미 한 번 떠오른 글 : 다시 그릴 때는 애니메이션 없이
 const LOOP_CH_MS = 16;         // 글자 사이 간격
@@ -12648,7 +12662,7 @@ function renderLoopLog() {
 function loopEmit(ev, data) { if (loopBusy) return; loopBusy = true; renderLoop(); socket.emit(ev, data || {}); }
 function loopChoose(id, idx) { loopEmit('loop_choose', { event: id, idx }); }
 if (IS_PLAY) {
-  socket.on('loop_data', d => { loopData = d; loopBusy = false; renderLoop(); });
+  socket.on('loop_data', d => { loopData = d; loopBusy = false; loopSyncPoint(d); renderLoop(); });
   socket.on('loop_result', r => { loopBusy = false; if (r && !r.ok) uiToast(r.message); });
   socket.on('joined', () => socket.emit('loop_state'));
   socket.on('connect', () => setTimeout(() => socket.emit('loop_state'), 400));
