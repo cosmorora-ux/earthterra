@@ -3589,10 +3589,11 @@
     /* 일반 룸 하단 탭 순서 : 소식 · 상점 · 기숙사 · 맵 · 마이페이지 (운영진은 맨 끝에 운영) */
     body.is-lounge .sidebar #sidebarNewsBtn { order:1; }
     body.is-lounge .sidebar #sidebarShopBtn { order:2; }
-    body.is-lounge .sidebar #sidebarDormBtn { order:3; }
-    body.is-lounge .sidebar #sidebarMapBtn { order:4; }
-    body.is-lounge .sidebar #sidebarMyPageBtn { order:5; }
-    body.is-lounge .sidebar #sidebarOpsBtn { order:6; }
+    body.is-lounge .sidebar #sidebarBattlesBtn { order:3; }
+    body.is-lounge .sidebar #sidebarDormBtn { order:4; }
+    body.is-lounge .sidebar #sidebarMapBtn { order:5; }
+    body.is-lounge .sidebar #sidebarMyPageBtn { order:6; }
+    body.is-lounge .sidebar #sidebarOpsBtn { order:7; }
     /* 하단 탭 : 눌린 회색 배경 없이, 채팅이 열려 있으면 채팅만 켜진 탭으로 표시 */
     .sidebar .sidebar-icon:hover, .sidebar .sidebar-icon:focus { background:none !important; }
     .sidebar .sidebar-icon:hover { color: var(--muted); }
@@ -3629,6 +3630,43 @@
   .shop-tab-sep { flex:none; }
   .modal-overlay.no-anim, .modal-overlay.no-anim > .modal-box, .modal-overlay.no-anim > div > .modal-box { animation:none !important; }
   .modal-box.mail-modal { position:relative; }
+  /* ── 전투 일정(일반 룸 '전투' 메뉴) ── */
+  #sidebarBattlesBtn { display:none; }
+  body.is-lounge #sidebarBattlesBtn { display:flex; }
+  .modal-box.battle-modal { width:760px; max-width:calc(100vw - 32px); height:80vh; display:flex; flex-direction:column; padding:18px 20px; }
+  .bt-list { display:flex; flex-direction:column; gap:12px; padding-bottom:20px; }
+  .bt-sec { font-size:12px; font-weight:700; color: var(--muted); letter-spacing:.04em; margin:6px 2px 0; }
+  .bt-card { position:relative; display:grid; grid-template-columns: minmax(0,1fr) auto; gap:10px 16px; align-items:center; padding:18px 20px; border-radius:16px; background: rgba(255,255,255,.03); border:1px solid var(--line); }
+  .bt-card.open::before { content:''; position:absolute; left:18px; right:18px; top:-1px; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.7), transparent); }
+  .bt-card.closed { opacity:.6; }
+  .bt-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .bt-chip { display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 9px; border-radius:10px; background: rgba(255,255,255,.06); color:#cfcfd4; font-size:11.5px; font-weight:700; }
+  .bt-chip.st-open { background: rgba(var(--point-rgb),.16); color: var(--point); }
+  .bt-chip.st-live { background: rgba(255,138,128,.14); color:#ff9a90; }
+  .bt-chip.mine { background: rgba(94,224,138,.14); color:#7fe8a4; }
+  .bt-name { font-size:17px; font-weight:700; margin-top:8px; letter-spacing:-0.01em; }
+  .bt-when { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:6px; font-size:13px; color:#cfcfd4; }
+  .bt-when i { color: var(--muted); font-size:12px; }
+  .bt-when .cd { color: var(--muted); }
+  .bt-act { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .bt-act .btn { min-width:120px; height:42px; }
+  .bt-act .btn-plain { min-width:120px; height:34px; font-size:12.5px; }
+  .bt-act small { font-size:11.5px; color: var(--muted); }
+  .bt-gm { grid-column: 1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px; display:flex; flex-direction:column; gap:10px; }
+  .bt-gm-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .bt-gm-row input[type=text] { flex:1 1 200px !important; width:auto !important; min-width:0; height:38px; padding:0 12px; }
+  .bt-gm-row .btn { flex:none; height:38px; }
+  .bt-gm-row input[type=datetime-local] { flex:none; width:220px !important; height:38px !important; height:36px; padding:0 10px; border-radius:10px; border:1px solid var(--ds-line, rgba(255,255,255,.08)); background: rgba(255,255,255,.05); color: var(--text); color-scheme: dark; }
+  .bt-names { display:flex; flex-wrap:wrap; gap:6px; max-height:132px; overflow:auto; }
+  .bt-names button { height:28px; padding:0 10px; border-radius:10px; border:1px solid var(--line); background:none; color: var(--muted); font:inherit; font-size:12.5px; cursor:pointer; }
+  .bt-names button.on { background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); color:#fff; }
+  .bt-add { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:14px 16px; border-radius:16px; border:1px dashed rgba(255,255,255,.12); }
+  .bt-add input { flex:1; min-width:160px; height:38px; padding:0 12px; }
+  .bt-add select { width:140px; }
+  @media (max-width:1180px) {
+    .modal-box.battle-modal { width:100vw; max-width:none; height:100%; border-radius:0; border:none; padding:calc(20px + env(safe-area-inset-top)) 20px 20px; }
+  }
+  @media (max-width:600px) { .bt-card { grid-template-columns: minmax(0,1fr); } .bt-act { align-items:stretch; } .bt-act .btn { width:100%; } }
   #mailBody { padding-bottom:84px; }
   #mailBody.writing { padding-bottom:0; }   /* 편지 쓰기 화면은 아래 '보내기' 줄이 맨 아래에 붙어요 */
   .mail-write-head { display:flex; align-items:center; gap:10px; width:100%; padding:2px 0 12px; }
@@ -4432,6 +4470,7 @@
   <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
   <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
   <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i></button>
+  <button class="sidebar-icon" id="sidebarBattlesBtn" onclick="openBattleHub()" data-tip="전투"><i class="fa-solid fa-shield-halved"></i><span class="notice-dot" id="battlesDot"></span></button>
   <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
   <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i></button>
   <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps(); if (typeof closeLoopAdmin === 'function') closeLoopAdmin(); if (!IS_LOUNGE) closeWorldMap(true)" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
@@ -4715,6 +4754,15 @@
     <div class="shop-head"><div class="modal-title">도트 자료 출처</div>
       <button class="shop-close" onclick="document.getElementById('dormCreditModal').style.display='none'" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button></div>
     <div id="dormCreditBody"></div>
+  </div>
+</div>
+<div id="battleHubModal" class="modal-overlay" onclick="if(event.target===this) closeBattleHub()">
+  <div class="modal-box battle-modal panel">
+    <div class="shop-head">
+      <div class="modal-title page-title">Battle</div><span class="mail-me">전투 일정</span>
+      <button class="shop-close" onclick="closeBattleHub()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="shop-body" id="battleHubBody"></div>
   </div>
 </div>
 <div id="mailModal" class="modal-overlay" onclick="if(event.target===this) closeMail()">
@@ -5599,7 +5647,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.70";
+const EXPECTED_SERVER_BUILD = "2026-10-13.71";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -12412,6 +12460,85 @@ let opsQuick = { role: '스트라이커', stats: {} };
 let opsRegMode = 'quick';
 let opsEditName = null;
 let opsResultHtml = '';
+// ==================================================================
+// 전투 일정(일반 룸 '전투' 메뉴) : 운영진이 만든 전투 방을 골라 들어가요.
+// 입장 가능 시간 = 시작 3시간 전 ~ 끝난 뒤 3시간. 운영진은 여기서 방 만들기 · 날짜/시간 · 배정을 해요.
+// ==================================================================
+let battleHub = null, battleHubT = null, battleEdit = {};
+function battleHubOpen() { const m = document.getElementById('battleHubModal'); return !!m && m.style.display === 'flex'; }
+function openBattleHub() {
+  document.getElementById('battleHubModal').style.display = 'flex';
+  socket.emit('battle_list'); renderBattleHub();
+  clearInterval(battleHubT); battleHubT = setInterval(() => { if (battleHubOpen()) renderBattleHub(true); else clearInterval(battleHubT); }, 30000);
+}
+function closeBattleHub() { document.getElementById('battleHubModal').style.display = 'none'; clearInterval(battleHubT); }
+socket.on('battle_list', d => {
+  battleHub = d; battleHub.offset = (d.now || Date.now() / 1000) - Date.now() / 1000;
+  const dot = document.getElementById('battlesDot'); if (dot) dot.classList.toggle('on', (d.battles || []).some(b => b.mine && b.state === 'open'));
+  if (battleHubOpen()) renderBattleHub();
+});
+socket.on('joined', () => { if (IS_LOUNGE) socket.emit('battle_list'); });
+socket.on('battle_enter', r => {
+  if (!r || !r.ok) { uiToast((r && r.message) || '들어갈 수 없어요.', 'error'); return; }
+  // 지금 로그인한 캐릭터 그대로 전투 방에 들어가요
+  const n = myLoggedInName(); if (n) { try { localStorage.setItem('joinedName_' + r.room_id, n); } catch (e) {} }
+  location.href = r.url;
+});
+socket.on('battle_saved', r => { if (r && r.ok) uiToast('저장했어요.'); });
+function btFmt(ts) {
+  if (!ts) return '';
+  const d = new Date(ts * 1000), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} (${'일월화수목금토'[d.getDay()]}) ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function btLeft(sec) {
+  sec = Math.max(0, Math.round(sec)); const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+  return d ? `${d}일 ${h}시간` : h ? `${h}시간 ${m}분` : `${m}분`;
+}
+function btLocalInput(ts) { if (!ts) return ''; const d = new Date(ts * 1000), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
+function renderBattleHub(tickOnly) {
+  const body = document.getElementById('battleHubBody'); if (!body) return;
+  if (!battleHub) { body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '전투 일정을 불러오는 중이에요'); return; }
+  if (tickOnly && body.querySelector(':focus')) return;   // 운영진이 입력 중이면 다시 그리지 않아요
+  const now = Date.now() / 1000 + (battleHub.offset || 0), gm = battleHub.is_gm, me = myLoggedInName();
+  const card = b => {
+    const st = b.state === 'none' ? 'none' : now < b.opens ? 'upcoming' : now <= b.closes ? 'open' : 'closed';
+    const stChip = st === 'open' ? (b.live ? '<span class="bt-chip st-live"><i class="fa-solid fa-circle"></i>진행 중</span>' : '<span class="bt-chip st-open">입장 가능</span>')
+      : st === 'upcoming' ? '<span class="bt-chip">입장 전</span>' : st === 'closed' ? '<span class="bt-chip">종료</span>' : '<span class="bt-chip">일정 없음</span>';
+    const cd = st === 'upcoming' ? `${btLeft(b.opens - now)} 뒤 입장이 열려요` : st === 'open' && b.start > now ? `${btLeft(b.start - now)} 뒤 시작` : st === 'open' ? `입장 마감까지 ${btLeft(b.closes - now)}` : '';
+    const can = gm || (st === 'open' && (b.mine || !b.assigned.length));
+    const why = gm ? '' : st === 'upcoming' ? '시작 3시간 전부터 들어갈 수 있어요' : st === 'closed' ? '끝난 뒤 3시간이 지났어요' : (!b.mine && b.assigned.length) ? '배정된 캐릭터만 들어갈 수 있어요' : '';
+    const ed = battleEdit[b.id] || (battleEdit[b.id] = { name: b.name, start: btLocalInput(b.start), assigned: [...b.assigned], open: false, edit: false });
+    const gmHtml = gm && ed.edit ? `<div class="bt-gm">
+        <div class="bt-gm-row"><input type="text" value="${mailEsc(ed.name)}" placeholder="전투 이름" oninput="battleEdit['${b.id}'].name=this.value">
+          <input type="datetime-local" value="${ed.start}" onchange="battleEdit['${b.id}'].start=this.value">
+          <button class="btn" onclick="battleSave('${b.id}')"><i class="fa-solid fa-floppy-disk"></i>저장</button></div>
+        <div class="bt-gm-row"><span class="mail-me" style="margin:0">배정 ${ed.assigned.length}명</span>
+          <button class="btn-plain" onclick="battleEdit['${b.id}'].open=!battleEdit['${b.id}'].open; renderBattleHub()">${ed.open ? '접기' : '캐릭터 고르기'}</button>
+          <button class="btn-plain" onclick="navigator.clipboard && navigator.clipboard.writeText(location.origin + '${b.url || ''}'); uiToast('링크를 복사했어요.')"><i class="fa-solid fa-link"></i>링크</button>
+          <button class="ops-btn icon danger" onclick="battleDelete('${b.id}')" data-tip="전투 방 지우기"><i class="fa-solid fa-trash-can"></i></button></div>
+        ${ed.open ? `<div class="bt-names">${(battleHub.roster || []).map(n => `<button class="${ed.assigned.includes(n) ? 'on' : ''}" onclick="battleToggle('${b.id}', ${mailEsc(JSON.stringify(n))})">${mailEsc(n)}</button>`).join('') || '<span class="mail-me">등록된 캐릭터가 없어요</span>'}</div>` : ''}
+      </div>` : '';
+    return `<div class="bt-card ${st}">
+      <div><div class="bt-top"><span class="bt-chip">${mailEsc(b.type_label)}</span>${stChip}${b.mine ? '<span class="bt-chip mine"><i class="fa-solid fa-check"></i>배정됨</span>' : ''}</div>
+        <div class="bt-name">${mailEsc(b.name)}</div>
+        <div class="bt-when">${b.start ? `<i class="fa-regular fa-calendar"></i>${btFmt(b.start)}` : '<i class="fa-regular fa-calendar"></i>날짜 · 시간 미정'}${cd ? `<span class="cd">· ${cd}</span>` : ''}${b.assigned.length ? `<span class="cd">· 배정 ${b.assigned.length}명</span>` : ''}</div></div>
+      <div class="bt-act"><button class="btn" ${can ? '' : 'disabled'} onclick="socket.emit('battle_enter', {room_id:'${b.id}'})"><i class="fa-solid fa-right-to-bracket"></i>입장하기</button>${why ? `<small>${why}</small>` : ''}
+        ${gm ? `<button class="btn-plain" onclick="battleEdit['${b.id}'].edit=!battleEdit['${b.id}'].edit; renderBattleHub()"><i class="fa-solid fa-pen"></i>${ed.edit ? '닫기' : '일정 · 배정'}</button>` : ''}</div>
+      ${gmHtml}</div>`;
+  };
+  const list = battleHub.battles || [];
+  const add = gm ? `<div class="bt-add"><select id="btNewType"><option value="pvp">PVP</option><option value="siege">공성전</option><option value="mass_raid">마스 레이드</option></select>
+      <input type="text" id="btNewName" placeholder="새 전투 이름"><button class="btn" onclick="socket.emit('battle_room_create', {type: document.getElementById('btNewType').value, name: document.getElementById('btNewName').value})"><i class="fa-solid fa-plus"></i>전투 추가</button></div>` : '';
+  body.innerHTML = `<div class="bt-list">${add}${list.length ? list.map(card).join('') : emptyHtml('fa-shield-halved', '예정된 전투가 없어요', gm ? '위에서 전투를 추가하고 날짜 · 시간을 정해 주세요.' : '운영진이 전투를 등록하면 여기에 보여요.')}</div>`;
+}
+function battleToggle(id, name) { const e = battleEdit[id]; const i = e.assigned.indexOf(name); if (i < 0) e.assigned.push(name); else e.assigned.splice(i, 1); renderBattleHub(); }
+function battleSave(id) {
+  const e = battleEdit[id]; const t = e.start ? new Date(e.start).getTime() / 1000 : '';
+  socket.emit('battle_schedule_set', { room_id: id, name: e.name, start: t, assigned: e.assigned });
+}
+function battleDelete(id) {
+  uiConfirm('이 전투 방을 지울까요? 진행 기록도 함께 사라져요.', { title: '전투 지우기', okText: '지우기', danger: true }).then(ok => { if (ok) { delete battleEdit[id]; socket.emit('battle_room_delete', { room_id: id }); } });
+}
 function opsIsGm() { return myControlInfo(lastBattleForPanel).scope === 'all'; }
 function opsOpen() { return document.body.classList.contains('view-ops'); }
 function opsTeamLabels() { return BATTLE_TYPE === 'pvp' ? ['Team 1', 'Team 2'] : ['Runner', 'Enemy']; }

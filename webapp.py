@@ -42,7 +42,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.70"
+SERVER_BUILD = "2026-10-13.71"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -1126,6 +1126,7 @@ def broadcast_state(room):
 
 def _flush_state(room):
     socketio.sleep(_BCAST_DELAY)
+    _note_battle_end(room)
     with _BCAST_LOCK:
         _BCAST_PENDING.discard(room.id)
     try:
@@ -1140,6 +1141,158 @@ def _require_gm(sid):
     if info is None or info["role"] != "gm":
         return None
     return get_room(info["room_id"])
+
+
+# ==================================================================
+# 전투 일정 : 운영진이 전투 방에 날짜 · 시간과 배정 캐릭터를 등록하면, 러너는 일반 룸의 '전투' 메뉴에서
+# 방을 골라 들어갑니다. 입장 가능 시간 = 시작 3시간 전 ~ 전투가 끝난 뒤 3시간.
+# (끝내지 않은 채면 : 진행 중에는 계속 열려 있고, 시작도 안 했으면 시작 6시간 뒤에 닫혀요.)
+# ==================================================================
+BATTLE_OPEN_BEFORE = 3 * 3600
+BATTLE_OPEN_AFTER = 3 * 3600
+BATTLE_TYPES_SCHEDULED = ("pvp", "siege", "mass_raid")
+
+
+def _note_battle_end(room):
+    sc = room.schedule
+    b = room.game.battle
+    if sc and sc.get("start") and not sc.get("ended_at") and b is not None and b.finished:
+        sc["ended_at"] = time.time()
+        save_rooms()
+
+
+def battle_window(room, now=None):
+    """(열림 시각, 닫힘 시각, 상태) — 상태 : none(일정 없음) · upcoming · open · closed"""
+    sc = room.schedule or {}
+    start = sc.get("start")
+    if not start:
+        return None, None, "none"
+    now = now or time.time()
+    opens = start - BATTLE_OPEN_BEFORE
+    b = room.game.battle
+    if sc.get("ended_at"):
+        closes = sc["ended_at"] + BATTLE_OPEN_AFTER
+    elif b is not None and not b.finished:
+        closes = max(now + 60, start + BATTLE_OPEN_AFTER)   # 진행 중이면 계속 열려 있어요
+    else:
+        closes = start + 2 * BATTLE_OPEN_AFTER
+    state = "upcoming" if now < opens else "open" if now <= closes else "closed"
+    return opens, closes, state
+
+
+def _battle_card(room, me, is_gm):
+    opens, closes, state = battle_window(room)
+    sc = room.schedule or {}
+    assigned = list(sc.get("assigned") or [])
+    mine = bool(me and me in assigned)
+    card = {"id": room.id, "name": room.name, "type": room.battle_type, "type_label": BATTLE_TYPE_LABELS.get(room.battle_type, ""),
+            "start": sc.get("start"), "ended_at": sc.get("ended_at"), "opens": opens, "closes": closes, "state": state,
+            "assigned": assigned, "mine": mine, "live": bool(room.game.battle and not room.game.battle.finished),
+            "can_enter": is_gm or (state == "open" and (mine or not assigned))}
+    if is_gm:
+        card["url"] = url_for("guest_page", room_id=room.id, key=room.guest_key)
+    return card
+
+
+def _battle_list_payload(sid):
+    info = CONNECTIONS.get(sid) or {}
+    is_gm = _require_gm_or_guest_gm(sid) is not None
+    me = (info.get("nickname") or "").strip()
+    rooms = [r for r in list_rooms() if r.battle_type in BATTLE_TYPES_SCHEDULED]
+    if not is_gm:
+        rooms = [r for r in rooms if (r.schedule or {}).get("start")]   # 러너에게는 일정이 잡힌 전투만
+    cards = [_battle_card(r, me, is_gm) for r in rooms]
+    cards.sort(key=lambda c: (c["state"] == "closed", c["start"] or 9e18))
+    return {"battles": cards, "is_gm": is_gm, "now": time.time(), "roster": room_roster_names() if is_gm else []}
+
+
+def room_roster_names():
+    try:
+        lounge = next((r for r in list_rooms() if r.battle_type == "lounge"), None)
+        return lounge.game.db.all_names() if lounge else []
+    except Exception:
+        return []
+
+
+@socketio.on("battle_list")
+def on_battle_list(data=None):
+    emit("battle_list", _battle_list_payload(request.sid))
+
+
+@socketio.on("battle_enter")
+def on_battle_enter(data):
+    """러너 : 입장 가능 시간이고 배정된 캐릭터면 그 방 주소(키 포함)를 알려 줘요."""
+    rid = str((data or {}).get("room_id") or "")
+    room = get_room(rid)
+    if room is None or room.battle_type not in BATTLE_TYPES_SCHEDULED:
+        emit("battle_enter", {"ok": False, "message": "없는 전투예요."})
+        return
+    info = CONNECTIONS.get(request.sid) or {}
+    is_gm = _require_gm_or_guest_gm(request.sid) is not None
+    card = _battle_card(room, (info.get("nickname") or "").strip(), is_gm)
+    if not card["can_enter"]:
+        msg = "아직 입장 시간이 아니에요." if card["state"] == "upcoming" else "입장 시간이 지났어요." if card["state"] == "closed" else "이 전투에 배정되지 않았어요."
+        emit("battle_enter", {"ok": False, "message": msg})
+        return
+    emit("battle_enter", {"ok": True, "room_id": room.id, "url": url_for("guest_page", room_id=room.id, key=room.guest_key)})
+
+
+def _broadcast_battle_lists():
+    for sid in list(CONNECTIONS.keys()):
+        info = CONNECTIONS.get(sid) or {}
+        r = get_room(info.get("room_id"))
+        if r is not None and r.battle_type == "lounge":
+            socketio.emit("battle_list", _battle_list_payload(sid), to=sid)
+
+
+@socketio.on("battle_schedule_set")
+def on_battle_schedule_set(data):
+    """운영진 : 전투 날짜 · 시간과 배정 캐릭터. start는 epoch 초(비우면 일정 없음)."""
+    if _require_gm_or_guest_gm(request.sid) is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    data = data or {}
+    room = get_room(str(data.get("room_id") or ""))
+    if room is None or room.battle_type not in BATTLE_TYPES_SCHEDULED:
+        return
+    try:
+        start = float(data.get("start")) if data.get("start") not in (None, "") else None
+    except (TypeError, ValueError):
+        start = None
+    names = [str(n)[:40] for n in (data.get("assigned") or []) if str(n).strip()][:60]
+    old = room.schedule or {}
+    room.schedule = {"start": start, "assigned": names,
+                     "ended_at": old.get("ended_at") if old.get("start") == start else None} if start else None
+    if "name" in data and str(data.get("name") or "").strip():
+        room.name = str(data["name"]).strip()[:30]
+    save_rooms()
+    _broadcast_battle_lists()
+    emit("battle_saved", {"ok": True})
+
+
+@socketio.on("battle_room_create")
+def on_battle_room_create(data):
+    if _require_gm_or_guest_gm(request.sid) is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    data = data or {}
+    bt = data.get("type") if data.get("type") in BATTLE_TYPES_SCHEDULED else "pvp"
+    room = create_room(bt, name=str(data.get("name") or "").strip()[:30] or None)
+    _broadcast_battle_lists()
+    emit("battle_saved", {"ok": True, "room_id": room.id})
+
+
+@socketio.on("battle_room_delete")
+def on_battle_room_delete(data):
+    if _require_gm_or_guest_gm(request.sid) is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    rid = str((data or {}).get("room_id") or "")
+    room = get_room(rid)
+    if room is None or room.battle_type not in BATTLE_TYPES_SCHEDULED:
+        return
+    delete_room(rid)
+    _broadcast_battle_lists()
 
 
 def _require_gm_or_guest_gm(sid):
@@ -1233,6 +1386,18 @@ def on_join(data):
         if not same_secret(data.get("gm_password"), GM_GUEST_PASSWORD):
             note_fail(ip)
             emit("error", {"message": "비밀번호가 올바르지 않습니다."})
+            return
+
+    # 일정이 잡힌 전투 방 : 입장 가능 시간(시작 3시간 전 ~ 끝난 뒤 3시간)에만, 배정된 캐릭터(와 관전)만. 운영진은 언제나.
+    if room.battle_type in BATTLE_TYPES_SCHEDULED and nickname.lower() != "gm":
+        opens, closes, state = battle_window(room)
+        if state in ("upcoming", "closed"):
+            when = time.strftime("%m월 %d일 %H:%M", time.localtime(opens)) if state == "upcoming" else ""
+            emit("error", {"message": f"아직 입장 시간이 아니에요. {when}부터 들어올 수 있어요." if when else "입장 시간이 지났어요."})
+            return
+        assigned = (room.schedule or {}).get("assigned") or []
+        if state == "open" and assigned and nickname not in assigned and nickname != "익명":
+            emit("error", {"message": "이 전투에 배정되지 않은 캐릭터예요."})
             return
 
     # PLAY 룸(LOOP)은 공용 아이디 TEST(와 운영진)로만 들어옵니다. 기록은 기기마다 따로 저장돼요.
