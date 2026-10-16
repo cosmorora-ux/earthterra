@@ -1887,6 +1887,12 @@
   .pl-logpanel .member-header { justify-content:flex-start; gap:10px; }
   .pl-logpanel .member-header b { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; }
   .pl-logpanel .member-header span { color: var(--muted); font-size:13px; }
+  /* LOOP 상단 바 : 방 번호 대신 기록판(Log)과 같은 모양의 제목 — Loop + 지금 시대 */
+  body.is-play #roomNameLabel { display:none !important; }
+  body.is-play .topbar.v2 .pl-top-brand { grid-area:room; }
+  .pl-top-brand { display:flex !important; align-items:baseline; gap:10px; min-width:0; }
+  .pl-top-brand b { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; color:#fff; }
+  .pl-top-brand span { color: var(--muted); font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pl-lp-body { flex:1; min-height:0; overflow-y:auto; padding:6px 16px 16px; scrollbar-width:thin; }
   .pl-lp-body .lp-era { position:sticky; top:0; z-index:1; padding:12px 2px 6px; font-size:12px; font-weight:800; color: var(--muted); letter-spacing:.04em;
     background: linear-gradient(180deg, var(--panel) 70%, transparent); }
@@ -1901,28 +1907,29 @@
   /* 자원 : 재산 · 지능 · 재능(기술) */
   .pl-assets { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .pl-asset { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 10px; border-radius:10px; background: rgba(255,255,255,.04); font-size:13px; color:#cfcfd4; }
-  .pl-asset i { font-size:12px; color:#e6c36a; } .pl-asset.intel i { color:#8fb8ff; } .pl-asset.talent i { color:#e7a7ff; }
+  .pl-asset i { font-size:12px; color: var(--point); }
   .pl-asset b { margin-left:2px; font-size:14px; color:#fff; font-variant-numeric: tabular-nums; }
   .pl-asset-note { font-size:12px; color: var(--muted); margin-left:4px; }
-  .pl-delta.asset.up { background: rgba(230,195,106,.14); color:#f0d48a; }
+  .pl-delta.asset.up { background: rgba(var(--point-rgb),.14); color: var(--point); }
   .pl-delta.asset.down { background: rgba(255,255,255,.06); color:#bdbdc3; }
   .pl-ch .lbl { display:flex; flex-direction:column; gap:4px; }
   .pl-need { display:flex; gap:4px; flex-wrap:wrap; }
   .pl-need em { font-style:normal; font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:7px; background: rgba(255,107,94,.12); color:#ff8a80; display:inline-flex; align-items:center; gap:4px; }
-  .pl-need em.ok { background: rgba(230,195,106,.12); color:#f0d48a; }
+  .pl-need em.ok { background: rgba(var(--point-rgb),.12); color: var(--point); }
   .pl-need em i { font-size:10px; }
   .pl-ch.locked { opacity:.45 !important; }
   .pl-ch.locked .k { background: rgba(255,255,255,.04); color: var(--muted); font-size:11px; }
   .pl-solve { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:2px; padding:8px 4px 0; }
-  .pl-solve > span:first-child { font-size:12.5px; font-weight:700; color: var(--muted); margin-right:4px; }
-  .pl-sv { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px; border-radius:10px; border:1px solid rgba(230,195,106,.35); background: rgba(230,195,106,.08); color:#f0d48a; font: inherit; font-size:13px; font-weight:700; cursor:pointer; }
-  .pl-sv:hover:not(:disabled) { background: rgba(230,195,106,.16); }
+  .pl-solve > span:first-child { font-size:12.5px; font-weight:700; color: var(--point); margin-right:4px; }
+  .pl-sv { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px; border-radius:10px; border:1px solid rgba(var(--point-rgb),.3); background: rgba(var(--point-rgb),.08); color: var(--point); font: inherit; font-size:13px; font-weight:700; cursor:pointer; }
+  .pl-sv:hover:not(:disabled) { background: rgba(var(--point-rgb),.16); }
+  .pl-solve > span:first-child i { color: var(--point); }
   .pl-sv:disabled { opacity:.35; cursor:default; }
-  .pl-sv-note { font-size:12px; color: var(--muted); margin-left:4px; }
+  .pl-sv-note { font-size:12px; color: rgba(var(--point-rgb),.7); margin-left:4px; }
   .pl-picked .k i { font-size:11px; }
   .pl-lp-body .lp-gain { display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
   .pl-lp-body .lp-gain em.strain.up { color:#c9b0ff !important; } .pl-lp-body .lp-gain em.strain.down { color:#7fe0d0 !important; }
-  .pl-lp-body .lp-gain em { font-style:normal; font-size:11px; font-weight:700; color:#f0d48a; } .pl-lp-body .lp-gain em.down { color:#9a9aa3; }
+  .pl-lp-body .lp-gain em { font-style:normal; font-size:11px; font-weight:700; color: var(--point); } .pl-lp-body .lp-gain em.down { color:#9a9aa3; }
   /* 프롤로그 · 균열 압력 */
   .pl-pro p { color:#dcdce1; }
   .pl-view { margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.06); }
@@ -2086,8 +2093,18 @@
   .pl-none { color: var(--muted); font-size:13.5px; padding:14px 4px; }
   @keyframes plIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
   @media (max-width:900px) {
-    .pl-box { padding:18px 16px; }
-    .pl-ev-title { font-size:21px; }
+    .pl-box { padding:22px 20px; }
+    .pl-wrap { gap:12px; }
+    .pl-ev-title { font-size:19px; margin-bottom:14px; line-height:1.4; }
+    .pl-ev-meta { margin-bottom:8px; }
+    .pl-story p { font-size:14.5px; line-height:1.8; margin-bottom:14px; }
+    .pl-result { padding:16px; }
+    .pl-result p { font-size:14px; line-height:1.75; }
+    .pl-picked { font-size:14px; padding:10px 12px; }
+    .pl-solve { padding:8px 2px 0; gap:6px; }
+    .pl-sv { height:30px; padding:0 10px; font-size:12.5px; }
+    .pl-sv-note { flex-basis:100%; margin:2px 0 0 2px; font-size:11.5px; }
+    .pl-top-brand b { font-size:22px; }
     .pl-stat { gap:10px 14px; }
     .pl-mood { margin-top:-4px; font-size:13px; }
     .pl-hp i { width:22px; }
@@ -2095,7 +2112,7 @@
     .pl-res .prc { min-height:0; padding:26px 22px 22px; }
     .pl-dock { padding-top:8px; }
     .pl-dock .pl-choices { gap:6px; }
-    .pl-dock .pl-ch { padding:10px 12px; gap:10px; font-size:14px; line-height:1.45; }
+    .pl-dock .pl-ch { padding:11px 14px; gap:12px; font-size:13.5px; line-height:1.45; }
     .pl-dock .pl-ch .k { width:24px; height:24px; font-size:12px; }
     .pl-btn.wide, .pl-actions.two .pl-btn { height:44px; }
     .pl-head-top { padding-right:30px; }   /* 오른쪽 위 소리 버튼 자리 */
@@ -4360,6 +4377,7 @@
 </div>
 <div class="topbar v2 panel">
   <div class="seg" id="roomNameLabel">{{ room_id }}</div>
+  {% if battle_type == 'play' %}<div class="seg pl-top-brand"><b>Loop</b><span id="plTopSub">러닝 시뮬레이션</span></div>{% endif %}
   <span class="sep">▶</span>
   <div class="seg" id="formatLabel">-</div>
   <span class="sep">▶</span>
@@ -12483,6 +12501,11 @@ function renderLoop() {
 }
 // 떠오르는 중에 화면을 누르면 남은 글과 버튼을 한 번에 보여 줍니다.
 function loopSkip() { const p = document.getElementById('playPage'); if (p) p.classList.add('pl-skip'); }
+function loopTopSub(d) {
+  const el = document.getElementById('plTopSub'); if (!el) return;
+  const r = d && d.run, e = r && r.era;
+  el.textContent = r && e && ['event', 'result', 'dead'].includes(r.status) ? `${e.no}. ${e.name}` : '러닝 시뮬레이션';
+}
 function loopWarStarted(r) { return !!(r && r.era && r.era.id >= 4); }
 function loopHeadHtml(d) {
   // 제목은 왼쪽, 이번 생애 정보는 아래 한 줄(점으로 구분), 새로 시작은 오른쪽 위 작은 버튼.
@@ -12662,7 +12685,7 @@ function renderLoopLog() {
 function loopEmit(ev, data) { if (loopBusy) return; loopBusy = true; renderLoop(); socket.emit(ev, data || {}); }
 function loopChoose(id, idx) { loopEmit('loop_choose', { event: id, idx }); }
 if (IS_PLAY) {
-  socket.on('loop_data', d => { loopData = d; loopBusy = false; loopSyncPoint(d); renderLoop(); });
+  socket.on('loop_data', d => { loopData = d; loopBusy = false; loopSyncPoint(d); loopTopSub(d); renderLoop(); });
   socket.on('loop_result', r => { loopBusy = false; if (r && !r.ok) uiToast(r.message); });
   socket.on('joined', () => socket.emit('loop_state'));
   socket.on('connect', () => setTimeout(() => socket.emit('loop_state'), 400));
