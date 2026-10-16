@@ -5109,10 +5109,20 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
   let rejected = false;
   const onErr = () => { rejected = true; };
   socket.once('error', onErr);
+  const sentAt = Date.now();
   socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, gm_password: password || undefined, device: MY_DEVICE, loop_device: LOOP_DEVICE });
-  // 서버가 join → public_state 순으로 응답하는 짧은 시간을 기다린 뒤, 이 이름이 실제 전투에
+  // 서버가 join → public_state 순으로 응답할 때까지 기다린 뒤(회선이 느리면 오래 걸려요 : 최대 8초), 이 이름이 실제 전투에
   // 참여 중인 캐릭터거나(전투 시작 전이어도) 캐릭터 데이터베이스에 등록되어 있는지 확인합니다.
-  setTimeout(() => {
+  // 예전에는 0.35초만 기다려서, 느린 회선 · 재접속 때 로그인된 사람을 '로그인 실패'로 잘못 처리하곤 했어요.
+  const waitState = (fn) => {
+    const tick = () => {
+      if (rejected || lastPublicStateAt > sentAt) return fn(true);
+      if (Date.now() - sentAt > 8000) return fn(false);
+      setTimeout(tick, 120);
+    };
+    setTimeout(tick, 200);
+  };
+  waitState((gotState) => {
     socket.off('error', onErr);
     if (rejected) {
       MY_NICKNAME = prevNickname;
@@ -5121,7 +5131,8 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
     }
     const control = myControlInfo(lastBattleForPanel);
     const inBattle = control.scope === 'character' || control.scope === 'all';
-    const inRoster = lastRoster.includes(name) || (BATTLE_TYPE === 'play' && name.toUpperCase() === 'TEST');
+    // 끝내 상태를 못 받았으면(연결이 끊김 등) 로그아웃시키지 않고 이름을 그대로 둬요 : 다시 연결되면 자동으로 재입장해요.
+    const inRoster = lastRoster.includes(name) || (BATTLE_TYPE === 'play' && name.toUpperCase() === 'TEST') || (!gotState && !password);
     if (BATTLE_TYPE === 'play' && name.toUpperCase() === 'TEST') MY_NICKNAME = 'TEST';
     if (inBattle || inRoster) {
       explicitlyJoined = true;
@@ -5142,8 +5153,9 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
     } else if (onFail) {
       onFail();
     }
-  }, 350);
+  });
 }
+var lastPublicStateAt = 0;
 
 // ------------------------------------------------------------------
 // 캐릭터 이름으로 입장/로그아웃 (아바타 동그라미 한 번 클릭으로 둘 다 처리)
@@ -5366,6 +5378,7 @@ socket.on('action_error', (d) => showError(d.message));
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
 const EXPECTED_SERVER_BUILD = "2026-10-13.61";
 socket.on('public_state', (state) => {
+  lastPublicStateAt = Date.now();
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
   const roomNameEl = document.getElementById('roomNameLabel');
@@ -10439,6 +10452,16 @@ function openMail(tab) {
   document.getElementById('mailModal').style.display = 'flex';
   socket.emit('mail_list');
   renderMail();
+  mailRetry(0);
+}
+// 응답이 안 오면(재접속 중 등) 조금 뒤에 다시 물어봐요. 무한 로딩 방지.
+function mailRetry(n) {
+  clearTimeout(mailRetry.t);
+  mailRetry.t = setTimeout(() => {
+    if (document.getElementById('mailModal').style.display !== 'flex' || (mailData && mailData.me) || n >= 4) return;
+    if (socket.connected) socket.emit('mail_list');
+    mailRetry(n + 1);
+  }, 2500);
 }
 function closeMail() { const m = document.getElementById('mailModal'); m.style.display = 'none'; m.classList.remove('no-anim'); }
 function setMailTab(t) { mailTab = t; mailOpenId = null; renderMail(); }
