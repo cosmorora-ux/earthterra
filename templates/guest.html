@@ -2063,7 +2063,7 @@
   .ps-c { display:flex; align-items:center; gap:14px; min-width:0; }
   .ps-c > .pl-k { flex:none; width:52px; white-space:nowrap; }
   .ps-v { min-width:0; flex:1; }
-  .ps-c.mood { padding-left:66px; color:#9d9da6; font-size:12.5px; line-height:1.55; align-self:start; }
+  .ps-c.mood { padding-left:66px; color:#9d9da6; font-size:12.5px; line-height:1.55; align-self:start; word-break: keep-all; }
   .ps-c.mood.low { color:#ff8a80; }
   .pl-strain { flex-wrap:nowrap !important; min-width:0; }
   .pl-strain span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
@@ -2099,6 +2099,8 @@
   .pl-ch.picked .k { background: var(--point); color: var(--on-accent, #fff); }
   .pl-result { margin-top:16px; padding:16px 18px; border-radius:12px; background: rgba(0,0,0,.25); animation: plIn .35s ease; }
   .pl-result p { margin:0 0 6px; font-size:15px; line-height:1.75; color:#e6e6ea; }
+  .pl-result .pl-res-fx { margin-top:12px; }
+  .pl-result .pl-res-fx .pl-deltas { margin-bottom:0; }
   .pl-result .tw { margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.07); color:#bdbdc3; font-size:14px; }
   .pl-result .tw i { margin-right:6px; }
   .pl-delta { display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 11px; border-radius:10px; font-size:13px; font-weight:700; margin-bottom:10px; }
@@ -2176,14 +2178,16 @@
     .pl-sv { height:30px; padding:0 10px; font-size:12.5px; }
     .pl-sv-note { flex-basis:100%; margin:2px 0 0 2px; font-size:11.5px; }
     .pl-top-brand b { font-size:22px; }
-    .pl-stat { grid-template-columns: 1fr 1fr; gap:12px 14px; padding:18px 18px; }
-    .ps-c { gap:8px; }
-    .ps-c > .pl-k { width:auto; }
+    /* 휴대폰 · 태블릿 : 한 줄에 하나씩, 라벨 칸 너비를 맞춰 값이 같은 선에서 시작. 우선순위 = 체력 · 정신 → 상태 → 자원 → 균열 → 시대 */
+    .pl-stat { grid-template-columns: 1fr; gap:10px; padding:16px 16px; }
+    .ps-c { gap:10px; }
+    .ps-c > .pl-k { width:52px; }
     .ps-c > .pl-k i { margin-right:4px; }
     .ps-c.hp { order:1; } .ps-c.mind { order:2; }
-    .ps-c.mood { order:3; grid-column: 1 / -1; padding-left:0; margin-top:-4px; }
-    .ps-c.assets { order:4; grid-column: 1 / -1; } .ps-c.strain { order:5; grid-column: 1 / -1; } .ps-c.eras { order:6; grid-column: 1 / -1; }
-    .ps-c.assets > .pl-k, .ps-c.strain > .pl-k, .ps-c.eras > .pl-k { width:46px; }
+    .ps-c.mood { order:3; padding-left:62px; margin:-2px 0 2px; font-size:12px; line-height:1.55; }
+    .ps-c.mood:empty { display:none; }
+    .ps-c.assets { order:4; } .ps-c.strain { order:5; } .ps-c.eras { order:6; }
+    .pl-hp { max-width:220px; }
     .pl-hp { gap:3px; }
     .pl-hp i { width:auto; flex:1; max-width:18px; height:8px; }
     .pl-hp b { margin-left:6px; font-size:14px; }
@@ -12858,7 +12862,7 @@ function loopEventHtml(r, marks) {
   const ev = r.event, res = r.result;
   const done = r.status !== 'event';
   const base = `${r.life_no}|${r.loop_no}|${r.count - (done ? 1 : 0)}|${ev.id}`;
-  const story = loopType(ev.story, 'ev|' + base, 0);
+  const story = loopType(ev.story, 'ev|' + base, 450);
   if (story.fresh) marks.push('ev|' + base);
   loopTailMs = story.end;
   const first = !r.loop_no && (r.count === 0 || (r.count === 1 && done));
@@ -12868,26 +12872,28 @@ function loopEventHtml(r, marks) {
   if (!done) {
     const lock = c => (c.need || []).some(x => !x.ok);
     const need = c => (c.need || []).map(x => `<em class="${x.ok ? 'ok' : ''}"><i class="fa-solid ${(LOOP_ASSETS.find(a => a[0] === x.k) || [])[1]}"></i>${loopEsc(x.name)} ${x.v}${x.ok ? '' : ' 필요'}</em>`).join('');
-    const solve = (r.solve || []).length ? `<div class="pl-solve"><span><i class="fa-solid fa-key"></i> 해결하기</span>${r.solve.map(x => `<button class="pl-sv" ${!x.ok || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_solve', { event: '${ev.id}', kind: '${x.k}' })"><i class="fa-solid ${x.k === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>${loopEsc(x.name)} ${x.cost} 쓰기</button>`).join('')}</div>` : '';
-    dock = `<div class="pl-choices pl-fade"${loopAfter(story.end + 150, story.fresh)}>${ev.choices.map((c, i) => `<button class="pl-ch ${lock(c) ? 'locked' : ''}" ${loopBusy || lock(c) ? 'disabled' : ''} onclick="loopChoose('${ev.id}', ${i})"><span class="k">${lock(c) ? '<i class="fa-solid fa-lock"></i>' : 'ABC'[i]}</span><span class="lbl">${loopEsc(c.label)}${need(c) ? `<span class="pl-need">${need(c)}</span>` : ''}</span></button>`).join('')}${solve}</div>`;
+    const solve = (r.solve || []).length ? `<div class="pl-solve pl-fade"${loopAfter(story.end + 200 + 3 * 140 + 120, story.fresh)}><span><i class="fa-solid fa-key"></i> 해결하기</span>${r.solve.map(x => `<button class="pl-sv" ${!x.ok || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_solve', { event: '${ev.id}', kind: '${x.k}' })"><i class="fa-solid ${x.k === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>${loopEsc(x.name)} ${x.cost} 쓰기</button>`).join('')}</div>` : '';
+    const chAt = i => story.end + 200 + i * 140;
+    dock = `<div class="pl-choices">${ev.choices.map((c, i) => `<button class="pl-ch pl-fade ${lock(c) ? 'locked' : ''}"${loopAfter(chAt(i), story.fresh)} ${loopBusy || lock(c) ? 'disabled' : ''} onclick="loopChoose('${ev.id}', ${i})"><span class="k">${lock(c) ? '<i class="fa-solid fa-lock"></i>' : 'ABC'[i]}</span><span class="lbl">${loopEsc(c.label)}${need(c) ? `<span class="pl-need">${need(c)}</span>` : ''}</span></button>`).join('')}${solve}</div>`;
   } else if (res) {
     const rk = 'res|' + base;
-    const rt = loopType(res.text, rk, 260);
+    const rt = loopType(res.text, rk, 200);
     if (rt.fresh) marks.push(rk);
-    let tw = '';
+    let tw = '', tt_end = rt.end;
     if (res.twist) {
-      const tt = loopType([res.twist.text], rk + '|tw', rt.end + 200);
-      tw = `<div class="tw ${res.twist.kind}"><i class="fa-solid ${res.twist.kind === 'purge' ? 'fa-house-crack' : res.twist.kind === 'risk' ? 'fa-bolt' : 'fa-leaf'} pl-fade"${loopAfter(rt.end + 120, rt.fresh)}></i>${tt.html}</div>`;
+      const tt = loopType([res.twist.text], rk + '|tw', rt.end + 600);
+      tw = `<div class="tw ${res.twist.kind}"><i class="fa-solid ${res.twist.kind === 'purge' ? 'fa-house-crack' : res.twist.kind === 'risk' ? 'fa-bolt' : 'fa-leaf'} pl-fade"${loopAfter(rt.end + 520, rt.fresh)}></i>${tt.html}</div>`;
       if (tt.fresh) marks.push(rk + '|tw');
+      tt_end = tt.end;
     }
     const picked = res.solved ? { label: `${loopAssetName(res.solved, r)} ${res.cost}을(를) 써서 해결했다.` } : (ev.choices[res.choice] || {});
-    loopTailMs = rt.fresh ? rt.end + (res.twist ? 900 : 200) : 0;
+    loopTailMs = rt.fresh ? (res.twist ? tt_end + 200 : rt.end + 450) : 0;
     resHtml = `<div class="pl-picked"><span class="k">${res.solved ? `<i class="fa-solid ${res.solved === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>` : 'ABC'[res.choice]}</span>${loopEsc(picked.label)}</div>
-      <div class="pl-result"><div class="pl-fade"${loopAfter(0, rt.fresh)}>${res.solved ? `<div class="pl-deltas">${loopGainHtml(res.gain, r)}</div>` : loopDeltaHtml(res.delta, res.dmind).replace('</div>', loopGainHtml(res.gain, r) + '</div>')}</div>${rt.html}${tw}</div>`;
+      <div class="pl-result">${rt.html}<div class="pl-fade pl-res-fx"${loopAfter(rt.end + 150, rt.fresh)}>${res.solved ? `<div class="pl-deltas">${loopGainHtml(res.gain, r)}</div>` : loopDeltaHtml(res.delta, res.dmind).replace('</div>', loopGainHtml(res.gain, r) + '</div>')}</div>${tw}</div>`;
     if (r.status === 'result') dock = `<div class="pl-actions pl-fade"${loopAfter(loopTailMs, rt.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_next')">다음 사건<i class="fa-solid fa-arrow-right"></i></button></div>`;
   }
-  return { main: `<div class="pl-box glow pl-ev"><div class="pl-ev-meta"><span class="pl-ev-no">EVENT ${loopEsc(ev.id)}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span></div>
-    ${origin}<h2 class="pl-ev-title">${loopEsc(ev.title)}</h2><div class="pl-story">${story.html}</div>${memory}${resHtml}</div>`, dock };
+  return { main: `<div class="pl-box glow pl-ev"><div class="pl-ev-meta pl-fade"${loopAfter(0, story.fresh)}><span class="pl-ev-no">EVENT ${String(r.count + (done ? 0 : 1)).padStart(2, '0')}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span></div>
+    ${origin}<h2 class="pl-ev-title pl-fade"${loopAfter(120, story.fresh)}>${loopEsc(ev.title)}</h2><div class="pl-story">${story.html}</div>${memory}${resHtml}</div>`, dock };
 }
 function loopDeathHtml(r, marks) {
   const d = r.death, k = `death|${r.life_no}|${r.loop_no}|${r.count}`;
