@@ -26,7 +26,7 @@ import threading
 import time
 
 import safeio
-from loop_events import default_content
+from loop_events import default_content, HISTORY, OLD_HISTORY
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 RUNS_PATH = os.path.join(_DIR, "loop_runs.json")
@@ -57,8 +57,9 @@ def clean_device_id(v):
 
 
 COUNTRIES = {"arcadia": "아르카디아", "nova": "노바"}
-# 진영 : 전쟁 때의 포지션. 서로 적입니다.
+# 진영 : 전쟁 때의 포지션. 서로 적입니다. 출신 국가를 따라가요(아르카디아 → 使徒, 노바 → Void).
 FACTIONS = ("使徒", "Void")
+COUNTRY_FACTION = {"arcadia": "使徒", "nova": "Void"}
 
 
 class LoopError(Exception):
@@ -280,7 +281,8 @@ def clean_content(c):
         text = _lines(v.get("text"), 10)
         if not name or not text or any(x["id"] == vid for x in views):
             continue
-        views.append({"id": vid, "name": name, "tag": (_tags([v.get("tag")]) or [""])[0], "text": text})
+        country = v.get("country") if v.get("country") in COUNTRIES else ""   # 비우면 두 나라 모두
+        views.append({"id": vid, "name": name, "tag": (_tags([v.get("tag")]) or [""])[0], "country": country, "text": text})
     texts["views"] = views or dt["views"]
     return {"rules": rules, "eras": eras, "events": events, "texts": texts}
 
@@ -297,7 +299,14 @@ class Content:
     def _load(self):
         try:
             with open(self.path, "r", encoding="utf-8") as f:
-                c = clean_content(json.load(f))
+                raw = json.load(f)
+            # 예전에 저장한 '순응' 문명관(아르카디아 4구역 이야기)은 아르카디아 전용으로 옮깁니다.
+            for v in ((raw.get("texts") or {}).get("views") or []) if isinstance(raw, dict) else []:
+                if isinstance(v, dict) and v.get("id") == "earth" and "country" not in v:
+                    v["country"] = "arcadia"
+            c = clean_content(raw)
+            if c["texts"].get("history") == OLD_HISTORY:
+                c["texts"]["history"] = list(HISTORY)
             self.custom = True
             return c
         except (OSError, json.JSONDecodeError, LoopError, ValueError, TypeError, AttributeError):
@@ -476,12 +485,13 @@ class LoopBook:
                 raise LoopError("이미 진행 중인 생애가 있어요.")
             e["run"] = self._new_run(res, loop_no=0, eras=content().rules["first_life"], life_no=len(e["lives"]) + 1)
             e["run"]["country"] = country if country in COUNTRIES else random.choice(list(COUNTRIES))
-            e["run"]["faction"] = faction if faction in FACTIONS else ""
+            e["run"]["faction"] = COUNTRY_FACTION[e["run"]["country"]]
             st = content().res_rules()["start"][e["run"]["country"]]["priv" if privileged(e["run"]) else "non"]
             for k in RESOURCES:
                 e["run"][k] = random.randint(st[k][0], st[k][1])
             e["run"][STRAIN] = 0
-            view = random.choice(content().texts["views"])
+            views = content().texts["views"]
+            view = random.choice([v for v in views if v.get("country", "") in ("", e["run"]["country"])] or views)
             e["run"]["view"] = view["id"]
             if view.get("tag"):
                 e["run"]["tags"].append(view["tag"])

@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.49"
+SERVER_BUILD = "2026-10-13.50"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2960,8 +2960,8 @@ def on_loop_state(data=None):
 
 @socketio.on("loop_start")
 def on_loop_start(data):
-    # 출신 국가와 전쟁 때 진영(使徒 / Void)은 생애마다 서버가 무작위로 정해요.
-    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""), random.choice(loop_mod.FACTIONS))
+    # 출신 국가는 생애마다 서버가 무작위로 정하고, 전쟁 때 진영은 국가를 따라가요(아르카디아 → 使徒, 노바 → Void).
+    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""))
 
 
 # ── LOOP 편집(운영진) : 사건 · 규칙 · 문장. 체력 · 정신 변동이 들어 있어서 운영진에게만 보냅니다. ──
