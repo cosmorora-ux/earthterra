@@ -5599,7 +5599,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.68";
+const EXPECTED_SERVER_BUILD = "2026-10-13.69";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -8325,7 +8325,11 @@ if (IS_PHONE) {
     root.style.setProperty('--app-h', maxH + 'px');
     root.classList.add('vp-lock');
   }
-  window.addEventListener('resize', () => upd(false));
+  // 글을 쓰는 동안(가상 키보드가 올라와 있을 때)은 고정을 풀어요 : 키보드에 입력 칸이 가려지지 않게
+  const typing = () => { const a = document.activeElement; return !!a && (a.matches('input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]), textarea, select') || a.isContentEditable); };
+  document.addEventListener('focusin', () => { if (typing()) { root.classList.remove('vp-lock'); root.style.removeProperty('--app-h'); } });
+  document.addEventListener('focusout', () => setTimeout(() => { if (!typing()) upd(true); }, 300));
+  window.addEventListener('resize', () => { if (!typing()) upd(false); });
   window.addEventListener('orientationchange', () => setTimeout(() => upd(true), 350));
   ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, () => setTimeout(() => upd(true), 250)));
   upd(true);

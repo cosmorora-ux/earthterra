@@ -22,6 +22,7 @@ import json
 import os
 import random
 import re
+import atexit
 import threading
 import time
 
@@ -517,7 +518,18 @@ class LoopBook:
             self.data = {}
 
     def save(self):
-        safeio.write_json(self.path, self.data, indent=1)
+        """웹 공개로 기록이 많아져도 버튼마다 파일 전체를 다시 쓰지 않게 : 1.5초 동안 모아서 한 번에 저장해요."""
+        with self.lock:
+            if getattr(self, "_save_t", None):
+                return
+            self._save_t = threading.Timer(1.5, self.flush)
+            self._save_t.daemon = True
+            self._save_t.start()
+
+    def flush(self):
+        with self.lock:
+            self._save_t = None
+            safeio.write_json(self.path, self.data, indent=1)
 
     MAX_PLAYERS = 5000   # 웹 공개 : 기기(브라우저) 기록이 너무 많아지면 가장 오래 안 들어온 기록부터 정리
 
@@ -946,4 +958,5 @@ def shared_book() -> LoopBook:
     global _BOOK
     if _BOOK is None:
         _BOOK = LoopBook()
+        atexit.register(lambda: _BOOK._save_t and _BOOK.flush())   # 서버를 끌 때 아직 안 쓴 기록을 마저 저장
     return _BOOK
