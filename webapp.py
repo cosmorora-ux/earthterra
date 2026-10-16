@@ -40,7 +40,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.60"
+SERVER_BUILD = "2026-10-13.61"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -437,7 +437,7 @@ def upload_avatar():
     key = request.form.get("key", "")
     name = (request.form.get("name") or "").strip()
     room = get_room(room_id)
-    if room is None or key not in (room.gm_key, room.guest_key):
+    if room is None or room.battle_type == "play" or key not in (room.gm_key, room.guest_key):
         return jsonify({"error": "권한이 없습니다."}), 403
     if not name or not room.game.db.exists(name):
         return jsonify({"error": "존재하지 않는 캐릭터입니다."}), 400
@@ -485,7 +485,7 @@ def upload_sound_effect():
     key = request.form.get("key", "")
     name = (request.form.get("name") or "").strip()
     room = get_room(room_id)
-    if room is None or key not in (room.gm_key, room.guest_key):
+    if room is None or room.battle_type == "play" or key not in (room.gm_key, room.guest_key):
         return jsonify({"error": "권한이 없습니다."}), 403
     if not name or not room.game.db.exists(name):
         return jsonify({"error": "존재하지 않는 캐릭터입니다."}), 400
@@ -776,6 +776,11 @@ def build_public_state(room):
         "point_theme": point_theme(),
         "remind_seconds": remind_seconds(),
     }
+    if room.battle_type == "play":
+        # LOOP 방은 웹에 공개돼요 : 다른 방 사람들(캐릭터 목록 · 프로필 · 접속 · 채팅 · 상점)은 보내지 않아요.
+        payload.update({"roster": [], "roster_mypage": {}, "roster_profiles": {}, "online_characters": [],
+                        "userinfo_hidden": [], "chat": [], "chat_total": 0, "log": [], "log_total": 0,
+                        "shop": dict(payload["shop"], items=[]), "preview_teams": None})
     if room.battle_type == "siege":
         payload["site_dice"] = {
             "round_no": room.site_dice_round_no,
@@ -3022,7 +3027,7 @@ def _emit_mail_data(sid):
         preview = room.battle_type == "play" and info.get("nickname") == loop_mod.TEST_ID
         socketio.emit("mail_data", {"me": loop_mod.TEST_ID if preview else None, "preview": preview, "inbox": [], "outbox": [], "unread": 0,
                                     "eras": mailbox_mod.eras_payload(), "era_now": _mail_era_now(),
-                                    "roster": _mail_candidates(room)}, to=sid)
+                                    "roster": [] if room.battle_type == "play" else _mail_candidates(room)}, to=sid)
         return
     data = mailbox_mod.shared_mailbox().payload(me, is_gm)
     data["roster"] = _mail_candidates(room)
@@ -4146,6 +4151,43 @@ def _ensure_demo_room_once():
         safeio.write_json(SITE_SETTINGS_PATH, SITE_SETTINGS, indent=2)
     except OSError:
         pass
+
+
+# ── LOOP 방은 웹에 공개 : 운영진이 아닌 접속은 LOOP에 필요한 소켓 이벤트만 쓸 수 있어요(+ 너무 잦은 요청은 버려요). ──
+PLAY_PUBLIC_EVENTS = {"join", "loop_state", "loop_start", "loop_choose", "loop_solve", "loop_begin", "loop_resume",
+                      "loop_next", "loop_death", "loop_finish", "loop_reset", "world_get", "mail_list"}
+_SID_HITS = {}
+
+
+def _sid_flood(sid, limit=40, window=10.0):
+    now = time.time()
+    hits = [t for t in _SID_HITS.get(sid, []) if now - t < window]
+    hits.append(now)
+    _SID_HITS[sid] = hits
+    if len(_SID_HITS) > 20000:
+        _SID_HITS.clear()
+    return len(hits) > limit
+
+
+def _install_play_guard():
+    handlers = socketio.server.handlers.get("/", {})
+    for ev, h in list(handlers.items()):
+        if ev in ("connect", "disconnect"):
+            continue
+
+        def make(ev, h):
+            def guarded(sid, *args):
+                info = CONNECTIONS.get(sid)
+                room = get_room(info["room_id"]) if info else None
+                if room is not None and room.battle_type == "play" and (info.get("nickname") or "").strip().lower() != "gm":
+                    if ev not in PLAY_PUBLIC_EVENTS or _sid_flood(sid):
+                        return None
+                return h(sid, *args)
+            return guarded
+        handlers[ev] = make(ev, h)
+
+
+_install_play_guard()
 
 
 if __name__ == "__main__":

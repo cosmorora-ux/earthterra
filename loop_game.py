@@ -519,8 +519,19 @@ class LoopBook:
     def save(self):
         safeio.write_json(self.path, self.data, indent=1)
 
+    MAX_PLAYERS = 5000   # 웹 공개 : 기기(브라우저) 기록이 너무 많아지면 가장 오래 안 들어온 기록부터 정리
+
     def _entry(self, name):
-        return self.data.setdefault(name, {"run": None, "lives": [], "loops": 0})
+        e = self.data.get(name)
+        if e is None:
+            if len(self.data) >= self.MAX_PLAYERS:
+                old = sorted(self.data, key=lambda k: self.data[k].get("seen", 0))[: max(1, len(self.data) // 10)]
+                for k in old:
+                    if not k.startswith(("운영진", "GM")):
+                        self.data.pop(k, None)
+            e = self.data[name] = {"run": None, "lives": [], "loops": 0}
+        e["seen"] = time.time()
+        return e
 
     # ── 진행 ──────────────────────────────────────────────
     def start(self, name, res, faction="", country=None):
