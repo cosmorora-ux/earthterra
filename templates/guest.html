@@ -1991,16 +1991,17 @@
   .pl-quote .ko p { margin:0; font-size:13.5px; line-height:1.7; color: var(--muted); word-break: keep-all; transition: font-size .9s ease; }
   /* 인트로 글자 효과 : 영어 자리는 여러 나라 말로 바뀌다 멈추고, 한국어는 조용히 떠오름 */
   .pl-intro.opening .en p { min-height:3.2em; display:block; width:100%; }
-  .pl-intro.opening .en p { transition: opacity .38s ease, filter .38s ease, color .6s ease; }
-  .pl-intro.opening .en p.pq-out { opacity:0; filter: blur(3px); }
-  .pl-intro.opening .en p.pq-other { color: rgba(255,255,255,.6); }
-  .pl-intro.opening .ko p.ko-in { opacity:0; transform: translateY(6px); transition: opacity 1s ease, transform 1s ease; }
-  .pl-intro.opening .ko p.ko-in.show { opacity:1; transform:none; }
+  /* 기록 장치 느낌 : 시스템 줄(고정폭 글꼴) + 깜빡이는 커서 */
+  .pq-term { font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Courier New", monospace; font-size:12px; line-height:1.9; color: rgba(var(--point-rgb),.75); letter-spacing:.02em; text-align:left; width:100%; max-width:820px; margin:0 auto 26px; padding:0 24px; box-sizing:border-box; }
+  .pl-intro .pq-term p { margin:0; min-height:1.9em; white-space:pre; font-size:12px; line-height:1.9; color: rgba(var(--point-rgb),.8); }
+  .pq-caret { display:inline-block; width:.55em; height:1.05em; margin-left:2px; vertical-align:-.15em; background: var(--point); box-shadow: 0 0 8px rgba(var(--point-rgb),.7); animation: pqBlink 1s steps(1) infinite; }
+  @keyframes pqBlink { 50% { opacity:0; } }
+  .pl-intro.opening .ko p { min-height:1.7em; }
   /* opening : 문구만 가운데에 크게 */
   .pl-intro.opening { min-height:min(74vh, 680px); display:flex; flex-direction:column; justify-content:center; background:none; }
   .pl-intro.opening::before { opacity:0; }
   .pl-intro.opening .pl-intro-top, .pl-intro.opening .pl-intro-rest { display:none; }
-  .pl-intro.opening .pl-quote { margin:0 auto; padding:0 24px; text-align:center; width:100%; max-width:820px; box-sizing:border-box; }
+  .pl-intro.opening .pl-quote { margin:0 auto; padding:0 24px; text-align:left; width:100%; max-width:820px; box-sizing:border-box; }
   .pl-intro.opening .pl-quote::before { opacity:0; }
   .pl-intro.opening .pl-quote .en p { font-size:19px; font-weight:400; line-height:1.6; margin-bottom:12px; }
   .pl-intro.opening .pl-quote .ko p { font-size:13.5px; }
@@ -12595,36 +12596,33 @@ function renderLoop() {
 function loopSkip() { const p = document.getElementById('playPage'); if (p) p.classList.add('pl-skip'); if (loopIntroStage === 'opening') loopIntroSettle(); }
 const LOOP_QUOTE_EN = '— Life and death are inevitable. Destiny is a phenomenon beyond defiance.';
 const LOOP_QUOTE_KO = '삶과 죽음은 필연. 운명은 거부할 수 없는 현상이다.';
-// 인트로에서 잠깐씩 스쳐 가는 다른 나라 말(같은 뜻)
-const LOOP_QUOTE_LANGS = [
-  ['ja', '— 生と死は必然。運命は抗えぬ現象である。'],
-  ['zh', '— 生与死皆是必然。命运是无法抗拒的现象。'],
-  ['fr', '— La vie et la mort sont inévitables. Le destin est un phénomène qu’on ne peut défier.'],
-  ['de', '— Leben und Tod sind unausweichlich. Das Schicksal ist ein Phänomen jenseits allen Widerstands.'],
-  ['es', '— La vida y la muerte son inevitables. El destino es un fenómeno que no se puede desafiar.'],
-  ['ru', '— Жизнь и смерть неизбежны. Судьба — явление, которому нельзя противиться.'],
-  ['la', '— Vita et mors necessariae sunt. Fatum res est cui resisti non potest.'],
-  ['it', '— La vita e la morte sono inevitabili. Il destino è un fenomeno a cui non ci si può opporre.'],
-  ['el', '— Η ζωή και ο θάνατος είναι αναπόφευκτα. Η μοίρα είναι φαινόμενο πέρα από κάθε αντίσταση.'],
-  ['hi', '— जीवन और मृत्यु अनिवार्य हैं। भाग्य एक ऐसी घटना है जिसका विरोध नहीं किया जा सकता।'],
-];
-// 문구가 다른 나라 말 몇 개를 천천히 지나(흐려졌다 또렷해지며) 영어로 멈춰요. 걸리는 시간(ms)을 돌려줘요.
-function loopLangCycle() {
-  const seq = LOOP_QUOTE_LANGS.slice().sort(() => Math.random() - .5).slice(0, 4).concat([['en', LOOP_QUOTE_EN]]);
-  const STEP = 1100, OUT = 380;
-  seq.forEach(([lang, text], i) => {
-    const at = 500 + i * STEP;
-    if (i) setTimeout(() => { const el = document.querySelector('.pl-intro.opening .en p'); if (el) el.classList.add('pq-out'); }, at - OUT);
-    setTimeout(() => {
-      const el = document.querySelector('.pl-intro.opening .en p');
-      if (!el) return;
-      el.textContent = text; el.lang = lang;
-      el.classList.toggle('pq-other', lang !== 'en');
-      requestAnimationFrame(() => el.classList.remove('pq-out'));
-      if (lang === 'en') setTimeout(() => { const k = document.querySelector('.pl-intro.opening .ko p'); if (k) k.classList.add('show'); }, 900);
-    }, at);
-  });
-  return 500 + (seq.length - 1) * STEP;
+// 인트로 : 기록 장치가 켜지듯 시스템 줄이 몇 개 찍히고, 문구가 커서와 함께 한 글자씩 기록돼요.
+const LOOP_TERM = ['> LOOP.SYS  boot … ok', '> load record : 空歷 / 西暦 22c', '> decode fate.log … 100%'];
+function loopTermType(el, text, ms, done) {
+  const caret = document.querySelector('.pl-intro .pq-caret');
+  let i = 0;
+  const chars = Array.from(text);
+  if (caret) el.appendChild(caret);
+  const step = () => {
+    if (loopIntroStage !== 'opening' || !document.body.contains(el)) return;
+    el.insertBefore(document.createTextNode(chars[i++]), caret && caret.parentNode === el ? caret : null);
+    if (i < chars.length) setTimeout(step, chars[i - 1] === ' ' ? ms / 2 : ms); else if (done) done();
+  };
+  step();
+}
+// 순서대로 기록 : 시스템 줄 → 영어(메인) → 한국어(서브). 걸리는 시간(ms)을 대략 돌려줘요.
+function loopTermRun() {
+  const q = s => document.querySelector('.pl-intro.opening ' + s);
+  const lines = [...document.querySelectorAll('.pl-intro.opening .pq-term p')];
+  const seq = lines.map((el, i) => [el, LOOP_TERM[i], 16, 260]).concat([[q('.en p'), LOOP_QUOTE_EN, 42, 500], [q('.ko p'), LOOP_QUOTE_KO, 60, 0]]);
+  const run = (k) => {
+    if (k >= seq.length) return;
+    const [el, text, ms, pause] = seq[k];
+    if (!el) return;
+    setTimeout(() => loopTermType(el, text, ms, () => run(k + 1)), k ? pause : 500);
+  };
+  run(0);
+  return 500 + LOOP_TERM.join('').length * 16 + 3 * 260 + LOOP_QUOTE_EN.length * 42 + 500 + LOOP_QUOTE_KO.length * 60;
 }
 // 시작 화면 연출 단계 : opening(문구만) → settling(작아지며 나머지가 떠오름) → done
 var loopIntroStage = 'done', loopIntroT = null;
@@ -12634,7 +12632,8 @@ function loopIntroSettle() {
   if (loopIntroStage !== 'opening') return;
   loopIntroStage = 'settling';
   const en = document.querySelector('.pl-intro .en p'); if (en) { en.textContent = LOOP_QUOTE_EN; en.lang = 'en'; en.className = ''; }
-  const ko = document.querySelector('.pl-intro .ko p'); if (ko) ko.className = '';
+  const ko = document.querySelector('.pl-intro .ko p'); if (ko) { ko.textContent = LOOP_QUOTE_KO; ko.className = ''; }
+  document.querySelectorAll('.pl-intro .pq-caret, .pl-intro .pq-term').forEach(e => e.remove());
   const box = document.querySelector('.pl-intro'), page = document.getElementById('playPage');
   if (box) { box.classList.remove('opening'); box.classList.add('settling'); }
   if (page) page.classList.remove('pl-opening');
@@ -12816,15 +12815,15 @@ function loopStartHtml(d) {
   if (fresh) {
     // 영어(메인) : 여러 나라 말로 빠르게 바뀌다가 영어로 멈춰요. 한국어(서브) : 그다음 조용히 떠올라요.
     loopShown.add('intro|en'); loopShown.add('intro|ko'); loopIntroStage = 'opening';
-    enHtml = '<p class="pq-out"></p>';
-    koHtml = `<p class="ko-in">${loopEsc(LOOP_QUOTE_KO)}</p>`;
-    const total = loopLangCycle();
-    loopIntroTimer(total + 900 + 2000);
+    enHtml = '<p></p>';
+    koHtml = '<p></p>';
+    setTimeout(() => { const t = loopTermRun(); loopIntroTimer(t + 1800); }, 0);
   }
   return { main: `<div class="pl-box glow pl-intro ${loopIntroStage}">
     <div class="pl-intro-top"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span>${d.loops ? `<span>${(d.lives || []).length + 1}번째 생애</span>` : ''}</div>
     <h2 class="pl-ev-title">운명을 시작합니다</h2></div>
-    <div class="pl-quote"><div class="en">${enHtml}</div><div class="ko">${koHtml}</div></div>
+    ${loopIntroStage === 'opening' ? `<div class="pq-term">${LOOP_TERM.map(() => '<p></p>').join('')}</div>` : ''}
+    <div class="pl-quote"><div class="en">${enHtml}</div><div class="ko">${koHtml}</div>${loopIntroStage === 'opening' ? '<span class="pq-caret"></span>' : ''}</div>
     <div class="pl-intro-rest">
       <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res">${res}</div>
       <div class="pl-k-note" style="margin-top:14px"><i class="fa-solid fa-dice"></i> 출신 국가는 생애마다 무작위로 정해져요.</div></div></div>`,
