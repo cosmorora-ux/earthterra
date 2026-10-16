@@ -42,7 +42,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.71"
+SERVER_BUILD = "2026-10-13.72"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -1424,7 +1424,13 @@ def on_join(data):
 
     # 입장/퇴장 알림은 쓰지 않으므로 채팅 기록에도 남기지 않습니다.
 
-    emit("joined", {"role": role, "room_id": room_id})
+    joined = {"role": role, "room_id": room_id}
+    if room.battle_type in BATTLE_TYPES_SCHEDULED:
+        # 전투 방에서 '룸 목록'으로 돌아갈 주소(일반 룸 · 전투 화면)
+        lounge = next((r for r in list_rooms() if r.battle_type == "lounge"), None)
+        if lounge is not None:
+            joined["lobby_url"] = url_for("guest_page", room_id=lounge.id, key=lounge.guest_key) + "&view=battles"
+    emit("joined", joined)
     emit("notices", {"notices": notices_mod.shared_board().payload()})
     # 누가 로그인/로그아웃하면 유저 접속정보(초록 점)가 모든 접속자 화면에 같이 바뀌도록 방 전체에 다시 보냅니다.
     broadcast_state(room)

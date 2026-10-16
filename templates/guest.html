@@ -2376,8 +2376,10 @@
      맵 (일반 룸) : 장소가 선 위에 놓인 세계 지도 + 고른 장소 설명 + 스토리 챕터 해금 트랙
      ================================================================ */
   .world-page { display:none; flex:1; min-height:0; flex-direction:column; }
-  body.view-map .shell > *:not(.modal-overlay):not(#worldPage):not(#shopToast):not(#floatTip) { display:none !important; }
+  body.view-map .shell > *:not(.modal-overlay):not(.skill-cutin):not(.fx-float):not(.fx-round):not(#worldPage):not(#shopToast):not(#floatTip) { display:none !important; }
   body.view-map #worldPage { display:flex; }
+  body.view-battles .shell > *:not(.modal-overlay):not(.skill-cutin):not(.fx-float):not(.fx-round):not(#battlesPage):not(#shopToast):not(#floatTip) { display:none !important; }
+  body.view-battles #battlesPage { display:flex; }
   .topbar.v2.world-topbar { flex:none; display:flex !important; flex-wrap:nowrap; margin-bottom:14px; }
   .world-topbar .world-brand { font-family: var(--font-title); font-weight:400; font-size:24px; letter-spacing:.02em; }
   .world-topbar .seg { white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
@@ -2572,7 +2574,7 @@
      수식·운영진 로그·스탯은 서버가 GM 인증 소켓에만 보내므로, 이 화면 코드가 있어도 러너에게는 데이터가 가지 않습니다.
      ================================================================ */
   .ops-page { display:none; flex:1; min-height:0; flex-direction:column; }
-  body.view-ops .shell > *:not(.modal-overlay):not(#opsPage):not(#shopToast):not(#floatTip) { display:none !important; }
+  body.view-ops .shell > *:not(.modal-overlay):not(.skill-cutin):not(.fx-float):not(.fx-round):not(#opsPage):not(#shopToast):not(#floatTip) { display:none !important; }
   body.view-ops #opsPage { display:flex; }
   .topbar.v2.ops-topbar { flex:none; display:flex !important; flex-wrap:nowrap; margin-bottom:12px; }
   .ops-topbar .ops-brand { font-family: var(--font-title); font-weight:400; font-size:24px; letter-spacing:.02em; }
@@ -2611,7 +2613,7 @@
   .ops-seg button.on { background: rgba(var(--point-rgb),.16); color:#fff; }
   /* Loop Studio : LOOP 편집 페이지(사이드바 따로) */
   .la-page { display:none; flex:1; min-height:0; flex-direction:column; }
-  body.view-loopadmin .shell > *:not(.modal-overlay):not(#loopAdminPage):not(#shopToast):not(#floatTip) { display:none !important; }
+  body.view-loopadmin .shell > *:not(.modal-overlay):not(.skill-cutin):not(.fx-float):not(.fx-round):not(#loopAdminPage):not(#shopToast):not(#floatTip) { display:none !important; }
   body.view-loopadmin #loopAdminPage { display:flex; }
   .la-top { flex:none; display:flex !important; align-items:center; margin-bottom:12px; }
   .la-brand { font-family: var(--font-title); font-weight:400; font-size:24px; letter-spacing:.02em; }
@@ -3006,7 +3008,7 @@
 
   /* 기숙사 페이지 : 전투 화면 자리를 그대로 씁니다 */
   .dorm-page { display:none; flex:1; min-height:0; flex-direction:column; }
-  body.view-dorm .shell > *:not(.modal-overlay):not(.dorm-page):not(#shopToast):not(#floatTip) { display:none !important; }
+  body.view-dorm .shell > *:not(.modal-overlay):not(.skill-cutin):not(.fx-float):not(.fx-round):not(.dorm-page):not(#shopToast):not(#floatTip) { display:none !important; }
   .modal-box.dorm-modal { width:100%; max-width:none; flex:1; min-height:0; height:auto; display:flex; flex-direction:column; padding:22px 26px;
     border-radius:16px; box-shadow:none; animation:none; }
   .dorm-hbtn { display:inline-flex; align-items:center; gap:6px; background: rgba(255,255,255,.05); border:1px solid transparent; color:#cfcfd4;
@@ -3633,9 +3635,19 @@
   /* ── 전투 일정(일반 룸 '전투' 메뉴) ── */
   #sidebarBattlesBtn { display:none; }
   body.is-lounge #sidebarBattlesBtn { display:flex; }
-  .modal-box.battle-modal { width:760px; max-width:calc(100vw - 32px); height:80vh; display:flex; flex-direction:column; padding:18px 20px; }
+  .battles-page .world-body { overflow-y:auto; padding:16px 0 40px; }
+  .bt-back { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px 0 10px; margin-right:6px; border:none; border-radius:10px; background: rgba(255,255,255,.05); color:#cfcfd4; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; flex:none; }
+  .bt-back:hover { background: rgba(255,255,255,.1); color:#fff; }
+  .bt-back i { font-size:11px; }
+  @media (max-width:600px) { .bt-back span { display:none; } .bt-back { padding:0 10px; } }
+  /* 좁은 화면(상단 바가 격자일 때) : 방 이름 칸 앞에 겹쳐 두고 이름을 그만큼 밀어요 */
+  @media (max-width:900px) { .topbar.v2 .bt-back { grid-area:room; justify-self:start; align-self:center; width:32px; padding:0; justify-content:center; margin:0; } .topbar.v2 .bt-back span { display:none; } body.has-lobby .topbar.v2 #roomNameLabel { padding-left:40px; } }
   .bt-list { display:flex; flex-direction:column; gap:12px; padding-bottom:20px; }
-  .bt-sec { font-size:12px; font-weight:700; color: var(--muted); letter-spacing:.04em; margin:6px 2px 0; }
+  .bt-sec { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#cfcfd4; letter-spacing:.02em; margin:14px 2px 0; }
+  .bt-sec i { color: var(--point); font-size:12px; }
+  .bt-sec span { color: var(--muted); font-weight:600; }
+  .bt-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:12px; }
+  .bt-grid .bt-card { grid-template-columns: minmax(0,1fr) auto; }
   .bt-card { position:relative; display:grid; grid-template-columns: minmax(0,1fr) auto; gap:10px 16px; align-items:center; padding:18px 20px; border-radius:16px; background: rgba(255,255,255,.03); border:1px solid var(--line); }
   .bt-card.open::before { content:''; position:absolute; left:18px; right:18px; top:-1px; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.7), transparent); }
   .bt-card.closed { opacity:.6; }
@@ -3664,8 +3676,7 @@
   .bt-add input { flex:1; min-width:160px; height:38px; padding:0 12px; }
   .bt-add select { width:140px; }
   @media (max-width:1180px) {
-    .modal-box.battle-modal { width:100vw; max-width:none; height:100%; border-radius:0; border:none; padding:calc(20px + env(safe-area-inset-top)) 20px 20px; }
-  }
+    }
   @media (max-width:600px) { .bt-card { grid-template-columns: minmax(0,1fr); } .bt-act { align-items:stretch; } .bt-act .btn { width:100%; } }
   #mailBody { padding-bottom:84px; }
   #mailBody.writing { padding-bottom:0; }   /* 편지 쓰기 화면은 아래 '보내기' 줄이 맨 아래에 붙어요 */
@@ -4710,6 +4721,11 @@
     <div class="dorm-main" id="dormBody"></div>
   </div>
 </div>
+<div id="battlesPage" class="world-page battles-page">
+  <div class="topbar v2 panel world-topbar"><div class="seg world-brand">Battle</div><span class="sep">▶</span><div class="seg">룸 목록</div>
+    <div class="spacer"></div><div class="dorm-tools-r" id="btTools"></div></div>
+  <div class="world-body" id="battleHubBody"></div>
+</div>
 <div id="worldPage" class="world-page">
   <div class="topbar v2 panel world-topbar"><div class="seg world-brand">Pangaea</div><span class="sep">▶</span><div class="seg" id="worldTopSeg">맵</div>
     <div class="spacer"></div><div class="dorm-tools-r" id="worldTools"></div></div>
@@ -4754,15 +4770,6 @@
     <div class="shop-head"><div class="modal-title">도트 자료 출처</div>
       <button class="shop-close" onclick="document.getElementById('dormCreditModal').style.display='none'" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button></div>
     <div id="dormCreditBody"></div>
-  </div>
-</div>
-<div id="battleHubModal" class="modal-overlay" onclick="if(event.target===this) closeBattleHub()">
-  <div class="modal-box battle-modal panel">
-    <div class="shop-head">
-      <div class="modal-title page-title">Battle</div><span class="mail-me">전투 일정</span>
-      <button class="shop-close" onclick="closeBattleHub()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="shop-body" id="battleHubBody"></div>
   </div>
 </div>
 <div id="mailModal" class="modal-overlay" onclick="if(event.target===this) closeMail()">
@@ -4985,6 +4992,7 @@
   ⚠ 서버가 예전 버전으로 실행 중이에요. 일부 기능(마이페이지 저장 등)이 막힐 수 있어요. 서버 창에서 Ctrl + C → ↑ → Enter로 서버를 다시 켜 주세요.
 </div>
 <div class="topbar v2 panel main-topbar">
+  <button class="bt-back" id="btBackLobby" style="display:none" onclick="if (window.BT_LOBBY_URL) location.href = BT_LOBBY_URL" data-tip="룸 목록으로"><i class="fa-solid fa-chevron-left"></i><span>룸 목록</span></button>
   <div class="seg" id="roomNameLabel">{{ room_id }}</div>
   {% if battle_type == 'play' %}<div class="seg pl-top-brand"><b>Loop</b><span id="plTopSub">러닝 시뮬레이션</span></div>{% endif %}
   <span class="sep">▶</span>
@@ -5647,7 +5655,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.71";
+const EXPECTED_SERVER_BUILD = "2026-10-13.72";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -11025,6 +11033,7 @@ function dormBH(b) { return b.h * (b.s || 1); }
 
 // 기숙사는 팝업이 아니라 전투 화면과 나란한 '페이지'예요. 사이드바 집 / 지구본 아이콘으로 오갑니다.
 function setMainView(dorm) {
+  if (typeof closeBattleHub === 'function') closeBattleHub();
   document.body.classList.toggle('view-dorm', dorm);
   document.getElementById('sidebarDormBtn').classList.toggle('active', dorm);
   document.getElementById('sidebarBattleBtn').classList.toggle('active', !dorm && !document.body.classList.contains('view-ops'));
@@ -12465,19 +12474,38 @@ let opsResultHtml = '';
 // 입장 가능 시간 = 시작 3시간 전 ~ 끝난 뒤 3시간. 운영진은 여기서 방 만들기 · 날짜/시간 · 배정을 해요.
 // ==================================================================
 let battleHub = null, battleHubT = null, battleEdit = {};
-function battleHubOpen() { const m = document.getElementById('battleHubModal'); return !!m && m.style.display === 'flex'; }
+// 전투 화면(룸 목록) : 일반 룸의 '전투' 탭을 누르면 본문이 룸 목록으로 바뀌어요(형식별로 묶어서). 룸을 고르면 그 룸의 전투 화면으로.
+function battleHubOpen() { return document.body.classList.contains('view-battles'); }
 function openBattleHub() {
-  document.getElementById('battleHubModal').style.display = 'flex';
+  if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
+  if (document.getElementById('dormModal').style.display === 'flex') return;
+  closeWorldMap(true);
+  if (typeof opsOpen === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); }
+  document.body.classList.add('view-battles');
+  ['sidebarBattleBtn', 'sidebarDormBtn', 'sidebarMapBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.classList.remove('active'); });
+  document.getElementById('sidebarBattlesBtn').classList.add('active');
   socket.emit('battle_list'); renderBattleHub();
   clearInterval(battleHubT); battleHubT = setInterval(() => { if (battleHubOpen()) renderBattleHub(true); else clearInterval(battleHubT); }, 30000);
 }
-function closeBattleHub() { document.getElementById('battleHubModal').style.display = 'none'; clearInterval(battleHubT); }
+function closeBattleHub() {
+  if (!battleHubOpen()) return;
+  document.body.classList.remove('view-battles'); clearInterval(battleHubT);
+  document.getElementById('sidebarBattlesBtn').classList.remove('active');
+}
 socket.on('battle_list', d => {
   battleHub = d; battleHub.offset = (d.now || Date.now() / 1000) - Date.now() / 1000;
   const dot = document.getElementById('battlesDot'); if (dot) dot.classList.toggle('on', (d.battles || []).some(b => b.mine && b.state === 'open'));
   if (battleHubOpen()) renderBattleHub();
 });
-socket.on('joined', () => { if (IS_LOUNGE) socket.emit('battle_list'); });
+socket.on('joined', (d) => {
+  if (IS_LOUNGE) socket.emit('battle_list');
+  if (d && d.lobby_url) { window.BT_LOBBY_URL = d.lobby_url; const b = document.getElementById('btBackLobby'); if (b) b.style.display = ''; document.body.classList.add('has-lobby'); }
+});
+// 전투 방에서 '룸 목록'으로 돌아오면(?view=battles) 바로 룸 목록 화면을 열어요
+if (IS_LOUNGE && new URLSearchParams(location.search).get('view') === 'battles') {
+  const tryOpen = () => { if (document.getElementById('dormModal')) openBattleHub(); else setTimeout(tryOpen, 100); };
+  setTimeout(tryOpen, 300);
+}
 socket.on('battle_enter', r => {
   if (!r || !r.ok) { uiToast((r && r.message) || '들어갈 수 없어요.', 'error'); return; }
   // 지금 로그인한 캐릭터 그대로 전투 방에 들어가요
@@ -12527,9 +12555,14 @@ function renderBattleHub(tickOnly) {
       ${gmHtml}</div>`;
   };
   const list = battleHub.battles || [];
+  const tools = document.getElementById('btTools'); if (tools) tools.innerHTML = '';
   const add = gm ? `<div class="bt-add"><select id="btNewType"><option value="pvp">PVP</option><option value="siege">공성전</option><option value="mass_raid">마스 레이드</option></select>
       <input type="text" id="btNewName" placeholder="새 전투 이름"><button class="btn" onclick="socket.emit('battle_room_create', {type: document.getElementById('btNewType').value, name: document.getElementById('btNewName').value})"><i class="fa-solid fa-plus"></i>전투 추가</button></div>` : '';
-  body.innerHTML = `<div class="bt-list">${add}${list.length ? list.map(card).join('') : emptyHtml('fa-shield-halved', '예정된 전투가 없어요', gm ? '위에서 전투를 추가하고 날짜 · 시간을 정해 주세요.' : '운영진이 전투를 등록하면 여기에 보여요.')}</div>`;
+  // 룸 형식별로 묶어서 : PVP · 공성전 · 마스 레이드
+  const groups = [['pvp', 'PVP', 'fa-user-group'], ['siege', '공성전', 'fa-chess-rook'], ['mass_raid', '마스 레이드', 'fa-dragon']]
+    .map(([t, label, ic]) => [label, ic, list.filter(b => b.type === t)]).filter(([, , xs]) => xs.length);
+  body.innerHTML = `<div class="bt-list">${add}${groups.length ? groups.map(([label, ic, xs]) => `<div class="bt-sec"><i class="fa-solid ${ic}"></i>${label}<span>${xs.length}</span></div><div class="bt-grid">${xs.map(card).join('')}</div>`).join('')
+    : emptyHtml('fa-shield-halved', '예정된 전투가 없어요', gm ? '위에서 전투를 추가하고 날짜 · 시간을 정해 주세요.' : '운영진이 전투를 등록하면 여기에 보여요.')}</div>`;
 }
 function battleToggle(id, name) { const e = battleEdit[id]; const i = e.assigned.indexOf(name); if (i < 0) e.assigned.push(name); else e.assigned.splice(i, 1); renderBattleHub(); }
 function battleSave(id) {
@@ -12559,6 +12592,7 @@ function openOps() {
   closeWorldMap(true);
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
+  if (typeof closeBattleHub === 'function') closeBattleHub();
   document.body.classList.add('view-ops');
   document.getElementById('sidebarOpsBtn').classList.add('active');
   document.getElementById('sidebarBattleBtn').classList.remove('active');
@@ -12972,6 +13006,7 @@ function openWorldMap() {
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
   if (typeof closeOps === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); }
+  if (typeof closeBattleHub === 'function') closeBattleHub();
   document.body.classList.add('view-map');
   if (typeof closeLoopAdmin === 'function' && document.body.classList.contains('view-loopadmin')) closeLoopAdmin();
   ['sidebarBattleBtn', 'sidebarDormBtn'].forEach(id => document.getElementById(id).classList.remove('active'));
