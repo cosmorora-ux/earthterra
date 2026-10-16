@@ -9024,6 +9024,27 @@ function updateMusicStatusText() {
   if (kicker) kicker.textContent = playing ? 'NOW PLAYING' : 'PAUSED';
 }
 setInterval(updateMusicStatusText, 1000);
+// 브라우저는 사용자가 화면을 한 번 누르기 전까지 소리 자동 재생을 막아요(그래서 노래가 안 나왔어요).
+// 처음 누르거나 키를 칠 때, 나와야 하는데 멈춰 있는 배경음악 · 방 음악을 다시 틀어요.
+function musicKick() {
+  try {
+    if (typeof dormAutoBlocked !== 'undefined' && dormAutoBlocked && dormAudio) {
+      dormAutoBlocked = false; dormMusicPaused = false;
+      dormAudio.play().then(() => { dormMusicActive = true; applyVolume(); renderDormMusicBtn(); }).catch(() => {});
+    }
+    if (!musicState) return;
+    if (musicState.type === 'mp3') {
+      const a = document.getElementById('mp3Player');
+      if (!a) return;
+      if (!a.getAttribute('src')) startMusicPlayback();
+      else if (a.paused) { applyVolume(); a.play().then(updateMusicStatusText).catch(() => {}); }
+    } else if (musicState.type === 'youtube') {
+      if (!ytPlayer && ytApiReady) startMusicPlayback();
+      else if (ytPlayer && ytPlayer.getPlayerState && ![1, 3].includes(ytPlayer.getPlayerState())) { applyVolume(); ytPlayer.playVideo(); }
+    }
+  } catch (e) {}
+}
+['pointerdown', 'keydown', 'touchend'].forEach(ev => document.addEventListener(ev, musicKick, { capture: true, passive: true }));
 
 function renderMusic(music, serverNow) {
   updateServerTimeOffset(serverNow);
@@ -10878,14 +10899,14 @@ function renderDorm() {
   syncDormMusic();
 }
 // ---------- 방 음악 : 그 방에 있는 동안만 반복 재생 (음량은 배경음악 음량을 따라요) ----------
-var dormAudio = null, dormMusicActive = false, dormMusicUrl = null, dormMusicPaused = false;
+var dormAudio = null, dormMusicActive = false, dormMusicUrl = null, dormMusicPaused = false, dormAutoBlocked = false;
 function syncDormMusic() {
   const shown = document.getElementById('dormModal').style.display === 'flex';
   const want = shown && dormView === 'room' && dormRoom && !dormRoom.loading && dormRoom.music ? dormRoom.music.url : null;
   if (want !== dormMusicUrl) {
     if (dormAudio) { dormAudio.pause(); dormAudio = null; }
     dormMusicUrl = want; dormMusicPaused = false;
-    if (want) { dormAudio = new Audio(want); dormAudio.loop = true; dormAudio.volume = musicVolume / 100; dormAudio.play().catch(() => { dormMusicPaused = true; renderDormMusicBtn(); }); }
+    if (want) { dormAudio = new Audio(want); dormAudio.loop = true; dormAudio.volume = musicVolume / 100; dormAudio.play().catch(() => { dormMusicPaused = true; dormAutoBlocked = true; renderDormMusicBtn(); }); }
   }
   dormMusicActive = !!(dormAudio && !dormMusicPaused);
   applyVolume();
@@ -13225,8 +13246,11 @@ function loopNarrHtml(r) {
 // 팝업은 아래쪽 고정 버튼(다음 사건 · 선택지) 바로 위에 떠요.
 function loopNarrPlace(el) {
   const dock = document.querySelector('#playPage .pl-dock');
-  const top = dock && dock.offsetParent ? dock.getBoundingClientRect().top : window.innerHeight - 36;
+  const r = dock && dock.offsetParent ? dock.getBoundingClientRect() : null;
+  const top = r ? r.top : window.innerHeight - 36;
   el.style.bottom = Math.max(16, Math.round(window.innerHeight - top + 14)) + 'px';
+  // 가로 가운데도 아래 버튼(다음 사건 · 선택지)의 가운데에 맞춰요.
+  el.style.left = r ? Math.round(r.left + r.width / 2) + 'px' : '50%';
 }
 function loopNarrNext() {
   let el = document.getElementById('loopNarrPop');
