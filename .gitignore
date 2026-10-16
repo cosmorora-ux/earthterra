@@ -39,3 +39,5 @@ static/mail_images/
 loop_runs.json
 loop_content.json
 secret_key.txt
+backups/
+backup_dir.txt

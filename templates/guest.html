@@ -5599,7 +5599,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.69";
+const EXPECTED_SERVER_BUILD = "2026-10-13.70";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -12758,6 +12758,10 @@ function opsRoomHtml() {
       <div class="ops-hint" style="margin-top:12px;">예) 제한시간 1분 남았습니다. 미행동자 하루, 노아, 세린 · 모두 행동했으면 안내하지 않아요.</div>
     </div>
     <div class="ops-card">
+      <h3><i class="fa-solid fa-comment-slash"></i> 채팅 도배 방지<span class="sub">이 시간 안에 이 횟수를 넘게 보내면 잠시 막아요 · 운영진은 제한 없음</span></h3>
+      <div class="mail-eras" id="opsChatLimit"></div>
+    </div>
+    <div class="ops-card">
       <h3><i class="fa-solid fa-cloud-sun"></i> 배경 · 날씨</h3>
       <div class="ops-scene" id="opsScene"></div>
       <div class="ops-foot"><button class="ops-btn" onclick="openSceneModal()"><i class="fa-solid fa-sliders"></i> 배경 · 날씨 설정</button></div>
@@ -12797,8 +12801,14 @@ function opsRenderRemind() {
   const cur = opsLastPublic && opsLastPublic.remind_seconds != null ? opsLastPublic.remind_seconds : 60;
   el.innerHTML = OPS_REMIND.map(([v, t]) => `<button class="${v === cur ? 'on' : ''}" onclick="socket.emit('set_remind_seconds', {seconds:${v}})">${v ? `${t} 남았을 때` : t}</button>`).join('');
 }
+const OPS_CHAT_LIMIT = [['off', '끄기'], ['3/5', '5초에 3번'], ['5/10', '10초에 5번'], ['8/10', '10초에 8번'], ['15/30', '30초에 15번']];
+function opsRenderChatLimit() {
+  const el = document.getElementById('opsChatLimit'); if (!el) return;
+  const cur = (opsLastPublic && opsLastPublic.chat_limit) || 'off';
+  el.innerHTML = OPS_CHAT_LIMIT.map(([v, t]) => `<button class="${v === cur ? 'on' : ''}" onclick="socket.emit('set_chat_limit', {limit:'${v}'})">${t}</button>`).join('');
+}
 function opsRenderRoomInfo() {
-  opsRenderSwatches(); opsRenderScene(); opsRenderMailEras(); opsRenderRemind();
+  opsRenderSwatches(); opsRenderScene(); opsRenderMailEras(); opsRenderRemind(); opsRenderChatLimit();
   const n = document.getElementById('opsRoomName');
   if (n && document.activeElement !== n) n.value = (opsLastPublic && opsLastPublic.room_name) || ROOM_ID;
   const l = document.getElementById('opsGuestLink');

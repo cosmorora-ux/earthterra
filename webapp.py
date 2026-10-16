@@ -32,6 +32,7 @@ import mailbox as mailbox_mod
 import dorm as dorm_mod
 import world as world_mod
 import loop_game as loop_mod
+import backup as backup_mod
 from battle import Battle, BattleError, cell_label
 from database import CharacterDatabase, shared_db
 from rooms import (
@@ -41,7 +42,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.69"
+SERVER_BUILD = "2026-10-13.70"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -800,6 +801,7 @@ def build_public_state(room, for_gm=False):
         "server_build": SERVER_BUILD,
         "point_theme": point_theme(),
         "remind_seconds": remind_seconds(),
+        "chat_limit": chat_limit_key(),
     }
     if room.battle_type == "play" and not for_gm:
         # LOOP 방은 웹에 공개돼요(운영진 화면에는 그대로 보내요 : 상점 관리 등) : 다른 방 사람들(캐릭터 목록 · 프로필 · 접속 · 채팅 · 상점)은 보내지 않아요.
@@ -1287,6 +1289,9 @@ def on_chat_message(data):
     if not text:
         return
     control = resolve_control(room, info)
+    if control["scope"] != "all" and _chat_flood(request.sid):   # 운영진은 제한 없음
+        emit("action_error", {"message": "채팅을 너무 빨리 보내고 있어요. 잠시 뒤에 다시 보내 주세요."})
+        return
     category = {"all": "operator", "character": "player", "none": "spectator"}[control["scope"]]
     nickname = info["nickname"]
     role = info["role"]
@@ -1715,6 +1720,22 @@ sound_effect_volume=existing.get("sound_effect_volume"),
                     entry.pop("nation", None)
                 room.game.db.save()
     broadcast_state(room)
+
+
+@socketio.on("set_chat_limit")
+def on_set_chat_limit(data):
+    """운영진 : 채팅 도배 방지 기준(끄기 / n초에 m번)."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    k = str((data or {}).get("limit") or "off")
+    if k not in CHAT_LIMITS:
+        return
+    SITE_SETTINGS["chat_limit"] = k
+    safeio.write_json(SITE_SETTINGS_PATH, SITE_SETTINGS, indent=1)
+    for r in list_rooms():
+        broadcast_state(r)
 
 
 @socketio.on("set_remind_seconds")
@@ -2267,6 +2288,31 @@ SITE_TURN_ACTIONS = ("attack", "heal", "defense_settle")
 # 미행동자 안내 : 라운드 제한시간이 이만큼(초) 남았을 때 아직 행동하지 않은 캐릭터를 커맨드 창에 한 번 안내합니다.
 # 운영진이 운영 페이지에서 바꿀 수 있고(0 = 끄기), 기본은 1분입니다. 모든 전투 방식에 같이 적용됩니다.
 REMIND_CHOICES = (0, 30, 60, 120, 180, 300)
+# 채팅 도배 방지 : (횟수, 초) — 이 시간 안에 이 횟수를 넘게 보내면 잠시 막아요. "off"면 끔(기본).
+CHAT_LIMITS = {"off": None, "5/10": (5, 10), "8/10": (8, 10), "15/30": (15, 30), "3/5": (3, 5)}
+_CHAT_HITS = {}
+
+
+def chat_limit_key():
+    k = SITE_SETTINGS.get("chat_limit", "off")
+    return k if k in CHAT_LIMITS else "off"
+
+
+def _chat_flood(sid):
+    lim = CHAT_LIMITS[chat_limit_key()]
+    if not lim:
+        return False
+    n, sec = lim
+    now = time.time()
+    hits = [t for t in _CHAT_HITS.get(sid, []) if now - t < sec]
+    if len(hits) >= n:
+        _CHAT_HITS[sid] = hits
+        return True
+    hits.append(now)
+    _CHAT_HITS[sid] = hits
+    if len(_CHAT_HITS) > 5000:
+        _CHAT_HITS.clear()
+    return False
 REMIND_DEFAULT = 60
 
 
@@ -3779,6 +3825,22 @@ def on_chat_delete(data):
     socketio.emit("chat_deleted", {"id": msg_id}, room=room_channel(room.id, "all"))
 
 
+def _backup_loop():
+    """자동 백업 : 켤 때 한 번, 그 뒤로 backup.BACKUP_HOURS 시간마다 backups/에 zip으로."""
+    while True:
+        try:
+            save_runtime()
+            try:
+                loop_mod.shared_book().flush()
+            except Exception:
+                pass
+            path = backup_mod.make_backup()
+            print(f"[backup] 저장했어요: {path}")
+        except Exception as e:
+            print(f"[backup] 실패: {e}")
+        socketio.sleep(backup_mod.BACKUP_HOURS * 3600)
+
+
 def _runtime_save_loop():
     """전투 진행 상태(HP/턴/로그/채팅/음악 등)를 3초마다 디스크에 저장합니다(바뀐 게 있을 때만)."""
     while True:
@@ -4222,5 +4284,6 @@ if __name__ == "__main__":
     _ensure_demo_room_once()
     socketio.start_background_task(_round_reminder_loop)
     socketio.start_background_task(_runtime_save_loop)
+    socketio.start_background_task(_backup_loop)
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)
