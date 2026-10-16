@@ -2030,30 +2030,23 @@
   .pl-death .pl-actions { justify-content:center; margin-top:24px; }
   .pl-intro p { margin:0 0 8px; font-size:15px; line-height:1.8; color:#dcdce1; }
   .pl-res { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
-  /* 공명 여부 카드 : 은은한 상자 + 고르면 위쪽 빛줄 */
-  .pl-res .prc { position:relative; display:flex; flex-direction:column; gap:12px; padding:18px; border-radius:16px; border:1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); text-align:left; transition: background .2s, border-color .2s, transform .2s; }
-  .pl-res .prc:hover { background: rgba(255,255,255,.045); }
-  .pl-res .prc::before { content:''; position:absolute; left:18px; right:18px; top:0; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.9), transparent); opacity:0; transition: opacity .2s; }
-  .pl-res .prc.on { background: rgba(var(--point-rgb),.07); border-color: rgba(var(--point-rgb),.18); box-shadow: 0 10px 30px -18px rgba(var(--point-rgb),.7); }
-  .pl-res .prc.on::before { opacity:1; }
-  .prc-check { position:absolute; top:14px; right:14px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; background: var(--point); opacity:0; transform: scale(.6); transition: opacity .2s, transform .2s; }
-  .prc.on .prc-check { opacity:1; transform:none; }
-  .prc-head { display:flex; align-items:center; gap:12px; }
-  .prc-ic { flex:none; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:17px; color: var(--muted); background: rgba(255,255,255,.05); transition: color .2s, background .2s; }
-  .prc.on .prc-ic { color: var(--point); background: rgba(var(--point-rgb),.14); }
-  .prc-t { display:flex; flex-direction:column; gap:2px; min-width:0; }
-  .prc-t small { font-size:10.5px; letter-spacing:.14em; font-weight:700; color: var(--muted); }
-  .prc-t b { font-size:17px; margin:0 !important; color:#fff; }
-  .pl-res .prc .prc-d { display:block; color: var(--muted); font-size:13px; line-height:1.6; }
-  .prc-rows { display:flex; flex-direction:column; gap:6px; padding:10px 12px; border-radius:12px; background: rgba(0,0,0,.22); }
-  .prc-row { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12.5px; }
-  .pl-res .prc .prc-c { display:flex; align-items:center; gap:7px; color:#cfcfd4; font-size:12.5px; }
-  .prc-c i { width:7px; height:7px; border-radius:50%; background: var(--nc); box-shadow: 0 0 8px var(--nc); }
-  .prc-row.arcadia { --nc:#e9c05b; } .prc-row.nova { --nc:#6aa5ff; }
-  .pl-res .prc .prc-v { display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 9px; border-radius:10px; font-size:11.5px; font-weight:700; color:#9d9da5; background: rgba(255,255,255,.05); }
-  .pl-res .prc .prc-v.up { color: var(--nc-up, #fff); background: rgba(255,255,255,.1); }
-  .prc-row.arcadia .prc-v.up { color:#e9c05b; background: rgba(233,192,91,.12); } .prc-row.nova .prc-v.up { color:#6aa5ff; background: rgba(106,165,255,.12); }
-  .prc-v i { font-size:10px; }
+  /* 공명 여부 카드 : 은은한 상자, 넉넉한 여백, 카드 안에서 바로 시작 */
+  .pl-res .prc { position:relative; display:flex; flex-direction:column; align-items:flex-start; min-height:300px; padding:30px 28px 26px; border-radius:16px; border:1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); transition: background .25s, border-color .25s, box-shadow .25s; }
+  .pl-res .prc::before { content:''; position:absolute; left:22px; right:22px; top:0; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.9), transparent); opacity:.35; transition: opacity .25s; }
+  .pl-res .prc:hover { background: rgba(var(--point-rgb),.06); border-color: rgba(var(--point-rgb),.16); box-shadow: 0 14px 36px -22px rgba(var(--point-rgb),.8); }
+  .pl-res .prc:hover::before { opacity:1; }
+  .prc-ic { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:21px; color: var(--point); background: rgba(var(--point-rgb),.12); }
+  .prc-t { display:flex; flex-direction:column; gap:4px; margin-top:26px; }
+  .prc-t small { font-size:11px; letter-spacing:.16em; font-weight:700; color: var(--muted); }
+  .prc-t b { font-size:22px; color:#fff; }
+  .prc-d { margin-top:12px; color: var(--muted); font-size:13.5px; line-height:1.7; }
+  .pl-res .prc-go { margin-top:auto; align-self:stretch; height:48px; display:flex; align-items:center; justify-content:center; gap:8px; border:none; border-radius:12px; font: inherit; font-size:14.5px; font-weight:700; cursor:pointer; color: var(--point); background: rgba(var(--point-rgb),.14); transition: background .2s, color .2s; }
+  .prc-go i { font-size:13px; transition: transform .2s; }
+  .pl-res .prc:hover .prc-go, .pl-res .prc-go:focus-visible { color:#fff; background: var(--point); }
+  .prc-go:hover i { transform: translateX(3px); }
+  .pl-res .prc-go:disabled { opacity:.5; cursor:default; }
+  .prc-d + .prc-go { margin-top:auto; }
+  .pl-res .prc .prc-d { padding-bottom:28px; }
   .pl-res button { padding:14px; border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); font: inherit; cursor:pointer; text-align:left; }
   .pl-res button b { display:block; font-size:15px; margin-bottom:3px; }
   .pl-res button:not(.prc) span { color: var(--muted); font-size:13px; line-height:1.5; }
@@ -2087,6 +2080,7 @@
     .pl-mood { margin-top:-4px; font-size:13px; }
     .pl-hp i { width:22px; }
     .pl-res { grid-template-columns:1fr; }
+    .pl-res .prc { min-height:0; padding:26px 22px 22px; }
     .pl-dock { padding-top:8px; }
     .pl-dock .pl-choices { gap:6px; }
     .pl-dock .pl-ch { padding:10px 12px; gap:10px; font-size:14px; line-height:1.45; }
@@ -12585,20 +12579,19 @@ function loopEndedHtml(d, r) {
 function loopStartHtml(d) {
   // 출신 국가는 생애마다 무작위 : 고르는 건 공명 여부뿐이에요.
   const RES_ICON = { res: ['fa-wave-square', 'RESONANT'], non: ['fa-circle-half-stroke', 'NON-RESONANT'] };
-  const row = (c, k) => `<div class="prc-row ${c}"><span class="prc-c"><i></i>${(LOOP_COUNTRY[c] || [''])[0]}</span><span class="prc-v ${loopPriv(c, k) ? 'up' : ''}">${loopPriv(c, k) ? '<i class="fa-solid fa-crown"></i>기득권' : '비기득권'}</span></div>`;
-  const res = Object.entries(LOOP_RES).map(([k, [t, ds]]) => `<button class="prc ${k} ${loopRes === k ? 'on' : ''}" onclick="event.stopPropagation(); loopRes='${k}'; renderLoop()">
-      <span class="prc-check"><i class="fa-solid fa-check"></i></span>
-      <span class="prc-head"><span class="prc-ic"><i class="fa-solid ${RES_ICON[k][0]}"></i></span><span class="prc-t"><small>${RES_ICON[k][1]}</small><b>${t}</b></span></span>
+  const res = Object.entries(LOOP_RES).map(([k, [t, ds]]) => `<div class="prc ${k}">
+      <span class="prc-ic"><i class="fa-solid ${RES_ICON[k][0]}"></i></span>
+      <span class="prc-t"><small>${RES_ICON[k][1]}</small><b>${t}</b></span>
       <span class="prc-d">${ds}</span>
-      <span class="prc-rows">${row('arcadia', k)}${row('nova', k)}</span></button>`).join('');
+      <button class="prc-go" ${loopBusy ? 'disabled' : ''} onclick="event.stopPropagation(); loopRes='${k}'; loopEmit('loop_start', { res: '${k}' })">운명 시작<i class="fa-solid fa-arrow-right"></i></button></div>`).join('');
   const intro = loopType(d.intro, 'intro', 0);
   if (intro.fresh) loopShown.add('intro');
   return { main: `<div class="pl-box glow pl-intro"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span><span>${(d.lives || []).length + 1}번째 생애</span></div>
     <h2 class="pl-ev-title">운명을 시작합니다</h2>${intro.html}
     <div class="pl-fade"${loopAfter(intro.end + 100, intro.fresh)}>
       <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res">${res}</div>
-      <div class="pl-k-note" style="margin-top:12px"><i class="fa-solid fa-dice"></i> 출신 국가(아르카디아 연방 / 노바 공화국)는 생애마다 무작위로 정해져요.</div></div></div>`,
-    dock: `<div class="pl-actions pl-fade"${loopAfter(intro.end + 100, intro.fresh)}><button class="pl-btn primary wide" ${!loopRes || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_start', { res: loopRes })">${loopRes ? '운명 시작' : '공명 여부를 골라 주세요'}<i class="fa-solid fa-arrow-right"></i></button></div>` };
+      <div class="pl-k-note" style="margin-top:14px"><i class="fa-solid fa-dice"></i> 출신 국가는 생애마다 무작위로 정해져요.</div></div></div>`,
+    dock: '' };
 }
 // 지난 생애 : 끝난 생애가 있을 때만 아래에 보여요.
 function loopLivesHtml(d) {
