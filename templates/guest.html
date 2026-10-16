@@ -1974,6 +1974,8 @@
   .pl-sub { color: var(--muted); font-size:13.5px; padding-bottom:3px; }
   .pl-life { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
   .pl-pill { height:28px; display:inline-flex; align-items:center; gap:6px; padding:0 11px; border-radius:10px; background: rgba(255,255,255,.05); color:#cfcfd4; font-size:12.5px; font-weight:600; white-space:nowrap; }
+  .pl-pill.pl-restart { cursor:pointer; border:none; font-family:inherit; color: var(--muted); transition: color .15s, background .15s; }
+  .pl-pill.pl-restart:hover { color:#fff; background: rgba(255,255,255,.08); }
   .pl-pill.loop { background: rgba(var(--point-rgb),.14); color: var(--point); }
   .pl-stat { display:grid; grid-template-columns: auto 1fr; gap:14px 22px; align-items:center; }
   .pl-k { font-size:12px; color: var(--muted); font-weight:700; letter-spacing:.04em; }
@@ -2071,6 +2073,8 @@
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
   body.is-lounge #sidebarBattleBtn, body.is-lounge #sidebarUserListBtn, body.is-lounge .m-battle-tools { display:none !important; }
   body.is-battle #sidebarDormBtn, body.is-battle #sidebarMapBtn, body.is-battle #sidebarMailBtn, body.is-battle #newsMailRow, body.is-battle #myPageRoomBox { display:none !important; }
+  /* PLAY 룸(LOOP)에는 맵을 달아 둡니다(챕터 없음 · 학교 잠김) */
+  body.is-play.is-battle .sidebar #sidebarMapBtn { display:flex !important; }
 
   /* ================================================================
      맵 (일반 룸) : 장소가 선 위에 놓인 세계 지도 + 고른 장소 설명 + 스토리 챕터 해금 트랙
@@ -3102,6 +3106,8 @@
     body.is-battle .sidebar #sidebarChatBtn { order:4; }
     body.is-battle .sidebar #sidebarMyPageBtn { order:5; }
     body.is-battle .sidebar #sidebarOpsBtn { order:6; }
+    body.is-play.is-battle .sidebar #sidebarMapBtn { order:4; }
+    body.is-play.is-battle .sidebar #sidebarChatBtn { order:5; }
     /* 일반 룸 하단 탭 순서 : 소식 · 상점 · 기숙사 · 맵 · 마이페이지 (운영진은 맨 끝에 운영) */
     body.is-lounge .sidebar #sidebarNewsBtn { order:1; }
     body.is-lounge .sidebar #sidebarShopBtn { order:2; }
@@ -3815,7 +3821,7 @@
   <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i></button>
   <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
   <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i></button>
-  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps(); if (typeof closeLoopAdmin === 'function') closeLoopAdmin()" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
+  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps(); if (typeof closeLoopAdmin === 'function') closeLoopAdmin(); if (!IS_LOUNGE) closeWorldMap(true)" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
   {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" data-tip="LOOP 편집" style="display:none;"><i class="fa-solid fa-pen-ruler"></i></button>{% endif %}
   <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps()" data-tip="운영" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
@@ -4949,7 +4955,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.50";
+const EXPECTED_SERVER_BUILD = "2026-10-13.53";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -11960,6 +11966,7 @@ function openWorldMap() {
   if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
   if (typeof closeOps === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); }
   document.body.classList.add('view-map');
+  if (typeof closeLoopAdmin === 'function' && document.body.classList.contains('view-loopadmin')) closeLoopAdmin();
   ['sidebarBattleBtn', 'sidebarDormBtn'].forEach(id => document.getElementById(id).classList.remove('active'));
   document.getElementById('sidebarMapBtn').classList.add('active');
   socket.emit('world_get');
@@ -11971,6 +11978,7 @@ function closeWorldMap(silent) {
   document.getElementById('sidebarMapBtn').classList.remove('active');
   worldEditMode = false; worldDraft = null;
   if (!silent && IS_LOUNGE) openDorm();
+  if (!IS_LOUNGE) document.getElementById('sidebarBattleBtn').classList.add('active');
 }
 socket.on('world_data', (d) => {
   worldData = d;
@@ -12404,7 +12412,16 @@ function loopHeadHtml(d) {
   if (r && r.view) pills.push(`<span class="pl-pill"><i class="fa-solid fa-earth-asia"></i>${loopEsc(r.view.name)}</span>`);
   if (r) pills.push(`<span class="pl-pill">${r.life_no}번째 생애</span>`);
   if (r && r.loop_no) pills.push(`<span class="pl-pill loop"><i class="fa-solid fa-infinity"></i>루프 ${r.loop_no}</span>`);
+  if (r && r.status !== 'ended') pills.push(`<button class="pl-pill pl-restart" onclick="event.stopPropagation(); loopRestart()"><i class="fa-solid fa-rotate-left"></i>새로 시작</button>`);
   return `<div class="pl-box glow pl-head"><div class="pl-logo"><small>SURVIVAL SIMULATION</small>Loop</div><div class="pl-sub">생존 시뮬레이션</div><div class="pl-life">${pills.join('')}</div></div>`;
+}
+// 진행 중인 생애를 버리고 처음(공명 여부 고르기)부터. 지난 생애 기록은 남아요. 기록은 이 브라우저에만 저장돼요.
+function loopRestart() {
+  uiConfirm('지금 생애를 기록 없이 버리고 처음부터 다시 시작할까요?', { title: '새로 시작', okText: '새로 시작', icon: 'fa-rotate-left' }).then(ok => {
+    if (!ok) return;
+    loopShown.clear(); loopProStep = {};
+    loopEmit('loop_reset', { force: true });
+  });
 }
 function loopStatusHtml(d, r) {
   const bar = (k, v, max) => `<span class="pl-k"><i class="fa-solid ${LOOP_STAT[k][1]}"></i>${LOOP_STAT[k][0]}</span><div class="pl-hp ${k} ${v <= 1 ? 'low' : ''}">${Array.from({ length: max }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}<b>${v}<span> / ${max}</span></b></div>`;
@@ -12622,6 +12639,7 @@ const LA_SECTIONS = [
 function openLoopAdmin() {
   if (!opsIsGm()) return;
   if (opsOpen()) closeOps();
+  closeWorldMap(true);
   document.body.classList.add('view-loopadmin');
   document.getElementById('sidebarLoopEditBtn').classList.add('active');
   document.getElementById('sidebarBattleBtn').classList.remove('active');
@@ -12872,7 +12890,7 @@ function laTextsAllHtml() {
       <div class="ops-card"><h3><i class="fa-solid fa-landmark"></i> 서력의 역사<span class="sub">한 줄 = 한 문단</span></h3>${laTa(['texts', 'history'], t.history, 10)}</div>
       <div class="ops-card"><h3><i class="fa-solid fa-baby"></i> 탄생 문장</h3>
         ${[['arcadia', '아르카디아 출신'], ['nova', '노바 출신'], ['res_priv', '공명자 · 기득권'], ['res_non', '공명자 · 비기득권'], ['non_priv', '비공명자 · 기득권'], ['non_non', '비공명자 · 비기득권']].map(([bk, bl]) => `<div class="ops-field"><span class="lb">${bl}</span><input class="ops-in" ${laP(['texts', 'birth', bk])} value="${laEsc((t.birth || {})[bk])}" oninput="laInput(this)"></div>`).join('')}
-        <div class="ops-hint" style="margin-top:10px">집안 형편 · 지능 · 재능 문장은 시작 자원에 따라 자동으로 붙어요.</div></div>
+        <div class="ops-hint" style="margin-top:10px">집안 형편 · 지능 · 재능 문장은 시작 자원(0 · 1 · 2 · 3 이상 네 단계)에 따라 자동으로 붙어요.</div></div>
     </div>
     <div class="la-views">${(t.views || []).map((v, k) => `<div class="ops-card"><h3><i class="fa-solid fa-earth-asia"></i> 문명관 ${k + 1}<span class="sub"><button class="ops-btn icon danger" onclick="la.c.texts.views.splice(${k}, 1); renderLoopAdmin()"><i class="fa-solid fa-trash-can"></i></button></span></h3>
         <div class="la-grid"><div class="ops-field"><span class="lb">이름</span><input class="ops-in" ${laP(['texts', 'views', k, 'name'])} value="${laEsc(v.name)}" oninput="laInput(this)"></div>

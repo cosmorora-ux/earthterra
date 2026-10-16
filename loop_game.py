@@ -733,11 +733,12 @@ class LoopBook:
             run["outcome"] = "paused" if run.get("paused") else "survived"
             self.save()
 
-    def reset(self, name):
-        """새 생애 : 끝난 생애를 치우고 시작 화면으로."""
+    def reset(self, name, force=False):
+        """새 생애 : 끝난 생애를 치우고 시작 화면으로.
+        force면 진행 중인 생애를 기록 없이 버리고 처음부터(지난 생애 기록 · 루프 횟수는 그대로)."""
         with self.lock:
             e = self._entry(name)
-            if e["run"] and e["run"]["status"] not in ("ended",):
+            if not force and e["run"] and e["run"]["status"] not in ("ended",):
                 raise LoopError("진행 중인 생애는 끝까지 가야 해요.")
             e["run"] = None
             self.save()
@@ -756,10 +757,14 @@ class LoopBook:
         out = [b.get(run.get("country"), "")]
         out.append(b[("res" if run["res"] == "res" else "non") + ("_priv" if privileged(run) else "_non")])
         w, i, t = run.get("wealth", 0), run.get("intel", 0), run.get("talent", 0)
-        home = "집은 넉넉했다." if w >= 2 else "집은 그럭저럭 먹고살 만했다." if w == 1 else "집은 가난했다."
-        mind = "또래보다 셈이 빠르고 눈치가 밝은 아이였다." if i >= 2 else "평범하게 영리한 아이였다." if i == 1 else "책보다 몸이 먼저 움직이는 아이였다."
+        # 0 · 1 · 2 · 3 이상(최고) 네 단계
+        home = ("집안의 재산은 아무리 써도 줄지 않았다." if w >= 3 else "집은 넉넉했다." if w == 2
+                else "집은 그럭저럭 먹고살 만했다." if w == 1 else "집은 가난했다.")
+        mind = ("백 년에 한 번 나올까 말까 한, 불세출의 천재였다." if i >= 3 else "또래보다 셈이 빠르고 눈치가 밝은 아이였다." if i == 2
+                else "평범하게 영리한 아이였다." if i == 1 else "책보다 몸이 먼저 움직이는 아이였다.")
         tal = _talent_name(run)
-        hand = f"{tal}은 일찍부터 남달랐다." if t >= 2 else f"{tal}은 아직 드러나지 않았다." if t == 1 else f"{tal}이라 부를 만한 것은 없었다."
+        hand = (f"{tal}만큼은 어린 나이에 이미 그 분야 최고의 권위자로 불렸다." if t >= 3 else f"{tal}은 일찍부터 남달랐다." if t == 2
+                else f"{tal}은 아직 드러나지 않았다." if t == 1 else f"{tal}이라 부를 만한 것은 없었다.")
         out.append(f"{home} 당신은 {mind} {hand}")
         return [_fmt(x, run) for x in out if x]
 

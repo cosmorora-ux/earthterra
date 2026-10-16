@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.50"
+SERVER_BUILD = "2026-10-13.53"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -3047,7 +3047,7 @@ def on_loop_finish(data=None):
 
 @socketio.on("loop_reset")
 def on_loop_reset(data=None):
-    _loop_action(loop_mod.shared_book().reset)
+    _loop_action(loop_mod.shared_book().reset, bool((data or {}).get("force")))
 
 
 @socketio.on("mail_list")
@@ -3190,13 +3190,22 @@ WORLD_IMG_MAX_BYTES = IMAGE_UPLOAD_MAX_BYTES
 
 def _world_broadcast():
     w = world_mod.shared_world()
-    gm_payload, pub_payload = w.payload(True), w.payload(False)
-    for sid in list(CONNECTIONS.keys()):
-        socketio.emit("world_data", gm_payload if _require_gm_or_guest_gm(sid) is not None else pub_payload, to=sid)
+    gm_payload, pub_payload, play_payload = w.payload(True), w.payload(False), w.payload_play()
+    for sid, info in list(CONNECTIONS.items()):
+        room = get_room(info.get("room_id"))
+        if room is not None and room.battle_type == "play":
+            socketio.emit("world_data", play_payload, to=sid)
+        else:
+            socketio.emit("world_data", gm_payload if _require_gm_or_guest_gm(sid) is not None else pub_payload, to=sid)
 
 
 @socketio.on("world_get")
 def on_world_get(data=None):
+    info = CONNECTIONS.get(request.sid)
+    room = get_room(info["room_id"]) if info else None
+    if room is not None and room.battle_type == "play":
+        emit("world_data", world_mod.shared_world().payload_play())
+        return
     emit("world_data", world_mod.shared_world().payload(_require_gm_or_guest_gm(request.sid) is not None))
 
 

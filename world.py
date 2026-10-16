@@ -176,6 +176,14 @@ class World:
                   for p in self.places]
         return {"chapters": chapters, "places": places, "unlocked": n, "gm": False}
 
+    def payload_play(self):
+        """PLAY 룸(LOOP)용 맵 : 챕터는 보이지 않고, 학교는 잠겨 있어요. 편집도 없습니다(운영진 포함)."""
+        n = self.unlocked
+        school = lambda p: p.get("id") == "nexus" or "학교" in (p.get("sub") or "")
+        places = [{"id": p["id"], "locked": True, "chapter": 0} if p.get("chapter", 0) > n or school(p) else dict(p, chapter=0)
+                  for p in self.places]
+        return {"chapters": [], "places": places, "unlocked": n, "gm": False}
+
 
 _WORLD = None
 
