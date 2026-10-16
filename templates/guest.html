@@ -1983,6 +1983,12 @@
   .pl-meta .c { color:#fff; font-weight:600; }
   .pl-meta .c i { width:7px; height:7px; border-radius:50%; background: var(--nc); box-shadow: 0 0 8px var(--nc); }
   .pl-meta .c.arcadia { --nc:#e9c05b; } .pl-meta .c.nova { --nc:#6aa5ff; }
+  .pl-tags { display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 16px; }
+  .pl-tags > span { height:28px; display:inline-flex; align-items:center; gap:7px; padding:0 11px; border-radius:10px; background: rgba(255,255,255,.05); color:#cfcfd4; font-size:12.5px; font-weight:600; }
+  .pl-tags > span.up { background: rgba(var(--point-rgb),.14); color: var(--point); }
+  .pl-tags > span i { font-size:11px; opacity:.8; }
+  .pl-tags .c { color:#fff; } .pl-tags .c i { width:7px; height:7px; border-radius:50%; background: var(--nc); box-shadow: 0 0 8px var(--nc); opacity:1; }
+  .pl-tags .c.arcadia { --nc:#e9c05b; } .pl-tags .c.nova { --nc:#6aa5ff; }
   .pl-stat { display:grid; grid-template-columns: auto 1fr; gap:14px 22px; align-items:center; }
   .pl-k { font-size:12px; color: var(--muted); font-weight:700; letter-spacing:.04em; }
   .pl-hp { display:flex; align-items:center; gap:6px; }
@@ -12463,17 +12469,21 @@ function renderLoop() {
 }
 // 떠오르는 중에 화면을 누르면 남은 글과 버튼을 한 번에 보여 줍니다.
 function loopSkip() { const p = document.getElementById('playPage'); if (p) p.classList.add('pl-skip'); }
+function loopWarStarted(r) { return !!(r && r.era && r.era.id >= 4); }
 function loopHeadHtml(d) {
   // 제목은 왼쪽, 이번 생애 정보는 아래 한 줄(점으로 구분), 새로 시작은 오른쪽 위 작은 버튼.
   const r = d.run;
   const country = (r && r.country) || d.country, faction = (r && r.faction) || d.faction;
+  // 프롤로그(BIRTH)에서는 같은 정보를 태그로 보여 주니 여기서는 숨깁니다.
+  // 진영은 전쟁(IV 시대)부터, 몇 번째 생애인지는 루프에 들어간 뒤부터만 보여요.
   const it = [];
-  if (country) it.push(`<span class="c ${country}"><i></i>${loopEsc((LOOP_COUNTRY[country] || [''])[0])}</span>`);
-  if (r) it.push(`<span>${loopEsc((LOOP_RES[r.res] || [''])[0])}</span><span class="${r.privileged ? 'up' : ''}">${r.privileged ? '기득권' : '비기득권'}</span>`);
-  if (faction) it.push(`<span>${loopEsc(faction)}</span>`);
-  if (r && r.view) it.push(`<span>문명관 ${loopEsc(r.view.name)}</span>`);
-  if (r) it.push(`<span>${r.life_no}번째 생애</span>`);
-  if (r && r.loop_no) it.push(`<span class="up"><i class="fa-solid fa-infinity"></i> 루프 ${r.loop_no}</span>`);
+  if (r && r.status !== 'prologue') {
+    if (country) it.push(`<span class="c ${country}"><i></i>${loopEsc((LOOP_COUNTRY[country] || [''])[0])}</span>`);
+    it.push(`<span>${loopEsc((LOOP_RES[r.res] || [''])[0])}</span><span class="${r.privileged ? 'up' : ''}">${r.privileged ? '기득권' : '비기득권'}</span>`);
+    if (faction && loopWarStarted(r)) it.push(`<span>${loopEsc(faction)}</span>`);
+    if (r.view) it.push(`<span>문명관 ${loopEsc(r.view.name)}</span>`);
+    if (r.loop_no) it.push(`<span>${r.life_no}번째 생애</span><span class="up"><i class="fa-solid fa-infinity"></i> 루프 ${r.loop_no}</span>`);
+  }
   const restart = r && r.status !== 'ended' ? `<button class="pl-restart" onclick="event.stopPropagation(); loopRestart()"><i class="fa-solid fa-rotate-left"></i><span>새로 시작</span></button>` : '';
   return `<div class="pl-box glow pl-head"><div class="pl-head-top"><div class="pl-logo"><small>RUNNING SIMULATION</small>Loop</div>${restart}</div>
     ${it.length ? `<div class="pl-meta">${it.join('')}</div>` : ''}</div>`;
@@ -12567,7 +12577,10 @@ function loopPrologueHtml(d, r, marks) {
   const b = loopType(P.birth, k + '|b', 300);
   const v = loopType(P.view, k + '|v', b.end + 500);
   [b, v].forEach((x, i) => { if (x.fresh) marks.push(k + '|' + 'bv'[i]); });
-  return { main: `<div class="pl-box glow pl-pro"><div class="pl-ev-meta"><span class="pl-ev-no">BIRTH</span><span>${r.life_no}번째 생애</span></div>${b.html}
+  const tags = [`<span class="c ${r.country}"><i></i>${loopEsc((LOOP_COUNTRY[r.country] || [''])[0])}</span>`, `<span>${loopEsc((LOOP_RES[r.res] || [''])[0])}</span>`,
+    `<span class="${r.privileged ? 'up' : ''}">${r.privileged ? '기득권' : '비기득권'}</span>`].concat(r.view ? [`<span><i class="fa-solid fa-earth-asia"></i>문명관 ${loopEsc(r.view.name)}</span>`] : []);
+  return { main: `<div class="pl-box glow pl-pro"><div class="pl-ev-meta"><span class="pl-ev-no">BIRTH</span>${r.loop_no ? `<span>${r.life_no}번째 생애</span>` : ''}</div>
+      <div class="pl-tags">${tags.join('')}</div>${b.html}
       ${r.view ? `<div class="pl-view pl-fade"${loopAfter(b.end + 300, b.fresh)}><span class="pl-view-k"><i class="fa-solid fa-earth-asia"></i> 문명관 · ${loopEsc(r.view.name)}</span>${v.html}</div>` : ''}</div>`,
     dock: `<div class="pl-actions pl-fade"${loopAfter(v.end + 300, v.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_begin')">삶을 시작한다<i class="fa-solid fa-arrow-right"></i></button></div>` };
 }
@@ -12598,7 +12611,7 @@ function loopStartHtml(d) {
       <button class="prc-go" ${loopBusy ? 'disabled' : ''} onclick="event.stopPropagation(); loopRes='${k}'; loopEmit('loop_start', { res: '${k}' })">운명 시작<i class="fa-solid fa-arrow-right"></i></button></div>`).join('');
   const intro = loopType(d.intro, 'intro', 0);
   if (intro.fresh) loopShown.add('intro');
-  return { main: `<div class="pl-box glow pl-intro"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span><span>${(d.lives || []).length + 1}번째 생애</span></div>
+  return { main: `<div class="pl-box glow pl-intro"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span>${d.loops ? `<span>${(d.lives || []).length + 1}번째 생애</span>` : ''}</div>
     <h2 class="pl-ev-title">운명을 시작합니다</h2>${intro.html}
     <div class="pl-fade"${loopAfter(intro.end + 100, intro.fresh)}>
       <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res">${res}</div>
