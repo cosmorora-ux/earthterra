@@ -1889,6 +1889,7 @@
   .pl-logpanel .member-header span { color: var(--muted); font-size:13px; }
   /* LOOP 상단 바 : 방 번호 대신 기록판(Log)과 같은 모양의 제목 — Loop + 지금 시대 */
   body.is-play #roomNameLabel { display:none !important; }
+  body.is-play .main-topbar { display:none !important; }   /* LOOP : 상단 바 없이 */
   body.is-play .topbar.v2 .pl-top-brand { grid-area:room; }
   .pl-top-brand { display:flex !important; align-items:baseline; gap:10px; min-width:0; }
   .pl-top-brand b { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; color:#fff; }
@@ -2134,11 +2135,11 @@
     .pl-era.now em { font-size:11.5px; }
     .pl-era.now em .nm { display:none; }   /* 시대 이름은 상단 바에 있어요 */
     .pl-eras { flex-wrap:nowrap; gap:5px; }
-    /* 휴대폰 : 상단 바에 이미 Loop 제목이 있으니 헤더 상자는 생애 정보 한 줄 + 새로 시작만 */
-    .pl-head .pl-logo { display:none; }
-    .pl-head .pl-head-top { flex-wrap:nowrap; align-items:center; }
-    .pl-head .pl-meta { order:0; flex:1; flex-basis:auto; margin:0; padding:0; border:none; }
-    .pl-head { padding:14px 16px; }
+    /* 휴대폰 : 작은 Loop 제목 + 새로 시작, 그 아래 생애 정보 한 줄 */
+    .pl-head { padding:16px 16px 14px; }
+    .pl-head .pl-logo { font-size:24px; }
+    .pl-head .pl-logo small { display:none; }
+    .pl-head .pl-meta { margin:12px -30px 0 0; padding:12px 0 0; }
     .pl-res { grid-template-columns:1fr; }
     .pl-res .prc { min-height:0; padding:26px 22px 22px; }
     .pl-dock { padding-top:8px; }
@@ -4410,7 +4411,7 @@
 <div id="serverRestartNotice" style="display:none; margin:0 0 10px; padding:10px 14px; border-radius:10px; background:#3a2a10; border:1px solid #8a6a2a; color:#ffd58a; font-size:14px;">
   ⚠ 서버가 예전 버전으로 실행 중이에요. 일부 기능(마이페이지 저장 등)이 막힐 수 있어요. 서버 창에서 Ctrl + C → ↑ → Enter로 서버를 다시 켜 주세요.
 </div>
-<div class="topbar v2 panel">
+<div class="topbar v2 panel main-topbar">
   <div class="seg" id="roomNameLabel">{{ room_id }}</div>
   {% if battle_type == 'play' %}<div class="seg pl-top-brand"><b>Loop</b><span id="plTopSub">러닝 시뮬레이션</span></div>{% endif %}
   <span class="sep">▶</span>
