@@ -185,8 +185,14 @@ class World:
         """PLAY 룸(LOOP)용 맵 : 챕터는 보이지 않고, 학교는 잠겨 있어요. 편집도 없습니다(운영진 포함)."""
         n = self.unlocked
         school = lambda p: p.get("id") == "nexus" or "학교" in (p.get("sub") or "")
-        places = [{"id": p["id"], "locked": True, "chapter": 0} if p.get("chapter", 0) > n or school(p) else dict(p, chapter=0)
-                  for p in self.places]
+        def view(p):
+            if school(p):   # 학교 : 아이콘 · 이름은 보이고, 장소 안(설명 · 구역)만 해금 전
+                return {"id": p["id"], "name": p.get("name"), "en": p.get("en"), "sub": p.get("sub"), "image": p.get("image"),
+                        "locked": True, "sealed": True, "chapter": 0}
+            if p.get("chapter", 0) > n:
+                return {"id": p["id"], "locked": True, "chapter": 0}
+            return dict(p, chapter=0)
+        places = [view(p) for p in self.places]
         return {"chapters": [], "places": places, "unlocked": n, "gm": False}
 
 
