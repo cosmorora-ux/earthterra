@@ -1773,7 +1773,9 @@
   .mail-attach:hover { color: var(--text); border-color: rgba(var(--point-rgb), .6); }
   .mail-thumb { position:relative; width:64px; height:64px; border-radius:10px; overflow:hidden; background: rgba(255,255,255,.04); flex:none; }
   .mail-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-  .mail-thumb button { position:absolute; top:4px; right:4px; width:20px; height:20px; border-radius:50%; border:none; background: rgba(0,0,0,.65); color:#fff; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .mail-thumb:hover button, .mail-thumb button:focus-visible { opacity:1; }
+  @media (hover:none) { .mail-thumb button { opacity:1; } }   /* 터치 기기는 늘 보여요 */
+  .mail-thumb button { opacity:0; transition: opacity .15s; position:absolute; top:4px; right:4px; width:20px; height:20px; border-radius:50%; border:none; background: rgba(0,0,0,.65); color:#fff; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
   .mail-prev i { margin-right:6px; font-size:12px; }
   .mail-imgs { display:grid; gap:8px; margin:6px 0 4px; }
   .mail-letter .txt:has(+ .mail-imgs) { min-height:0; margin-bottom:14px; }
@@ -10641,7 +10643,7 @@ function renderMail() {
   if (mailTab === 'write') {
     body.innerHTML = pv + mailComposeHtml(d);
     const sb = document.getElementById('mailSendBtn');
-    if (d.preview && sb) { sb.disabled = true; sb.innerHTML = '<i class="fa-solid fa-lock"></i> 미리보기'; }
+    if (d.preview && sb) sb.remove();   // 미리보기 방 : 보낼 수 없으니 보내기 버튼 자체를 빼요(위 안내로 충분)
     return;
   }
   const list = mailTab === 'outbox' ? d.outbox : mailTab === 'all' ? (d.all || []) : d.inbox;
