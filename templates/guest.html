@@ -1848,6 +1848,35 @@
   .mypage.v2 .mp-click:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.14); }
   .mypage.v2 .mp-go { font-size:10px; opacity:.6; }
   .mypage.v2 .idc-room { border-top:1px solid var(--line); padding:14px 18px; }
+  /* 왼쪽 · 오른쪽 기둥의 아래 끝을 맞춰요 : 마이룸 칸이 남는 높이를 채워요. */
+  .mypage.v2 .mypage-cols { align-items:stretch; }
+  .mypage.v2 .mypage-col { min-height:100%; }
+  .mypage.v2 .mypage-col > .idc-room { flex:1; display:flex; flex-direction:column; gap:12px; padding:18px 20px; border-top:none; }
+  .mypage.v2 .mypage-col > .idc-room { align-items:stretch; text-align:left; }
+  .mypage.v2 .idc-room .idc-room-head { flex-direction:row; align-items:baseline; justify-content:flex-start; gap:10px; }
+  .mypage.v2 .idc-room-prev { width:100%; box-sizing:border-box; justify-content:center; }
+  .mypage.v2 .idc-room-prev { flex:1; min-height:140px; align-items:center; }
+  .mypage.v2 .idc-room-prev.empty { cursor:default; background: rgba(255,255,255,.02); border:1px dashed rgba(255,255,255,.08); }
+  .mypage.v2 .idc-room-prev.empty:hover { background: rgba(255,255,255,.02); }
+  .idc-room-empty { display:flex; flex-direction:column; align-items:center; gap:10px; color:#6c6c74; font-size:13px; text-align:center; padding:10px; }
+  .idc-room-empty i { font-size:22px; color:#4a4a52; }
+  /* 캐치프레이즈 : 이름 아래 한 줄(ID card 위쪽) */
+  .modal-box.mypage input.mp-catch { display:block; width:100%; max-width:440px; box-sizing:border-box; margin:-8px 0 12px; height:34px; padding:0 12px; border-radius:10px;
+    background: rgba(255,255,255,.035); border:1px solid transparent; color:#d6d6dc; font-size:13.5px; font-style:italic; }
+  .modal-box.mypage input.mp-catch:hover:not(:disabled) { background: rgba(255,255,255,.06); }
+  .modal-box.mypage input.mp-catch:focus { outline:none; border-color: rgba(var(--point-rgb),.5); font-style:normal; }
+  .modal-box.mypage input.mp-catch:disabled { background:none; padding-left:0; color:#a8a8b0; }
+  .modal-box.mypage input.mp-catch:disabled:placeholder-shown { display:none; }
+  /* 스킬 로그 본문 : 텍스트 · 이미지 블럭을 같은 크기로, 스킬명 칸과 본문 칸을 같은 모양으로 */
+  .mypage.v2 .mp-cutin-opts { grid-template-columns:auto 1fr; }
+  .mypage.v2 .mp-skill-body { flex:1; display:flex; flex-direction:column; min-height:300px; margin-bottom:12px; }
+  .mypage.v2 #myPageSkillText, .mypage.v2 #myPageSkillImage { flex:1; display:flex; flex-direction:column; gap:10px; min-height:0; }
+  .mypage.v2 #myPageSkillText[style*="none"], .mypage.v2 #myPageSkillImage[style*="none"] { display:none !important; }
+  .modal-box.mypage.v2 #myPageSkillLogTitle { height:44px; margin:0; background: rgba(255,255,255,.035) !important; border:1px solid var(--line) !important; border-radius:12px !important; padding:0 14px !important; font-size:15px; font-weight:700; }
+  .mypage.v2 #myPageSkillText .idc-editor { flex:1; display:flex; flex-direction:column; margin:0; background: rgba(255,255,255,.035); border:1px solid var(--line); border-radius:12px; }
+  .mypage.v2 #myPageSkillText .idc-editor .rich { flex:1; min-height:150px; max-height:none; }
+  .mypage.v2 #myPageSkillImage .mypage-fx-image { flex:1; height:auto; min-height:200px; margin:0; border-radius:12px; background: rgba(255,255,255,.035); border:1px dashed var(--line); }
+  .mypage.v2 .mp-img-foot { display:flex; justify-content:flex-end; }
   /* 스킬 로그 */
   .mypage.v2 .mp-skill { flex:1; display:flex; flex-direction:column; }
   .mypage.v2 .mp-skill .seg-toggle { margin:0; }
@@ -4632,6 +4661,7 @@
       </div>
       <div class="mp-hero-main">
         <div class="mypage-name" id="myPageName">-</div>
+        <input type="text" id="myPageCatchphrase" class="mp-catch" maxlength="60" placeholder="캐치프레이즈 · 컷인에 이름과 함께 나오는 한 줄" autocomplete="off" onchange="saveCatchphrase()" onkeydown="if(event.key==='Enter') this.blur()">
         <div class="mp-line" id="myPageLine"></div>
         <div class="mp-tags">
           <div class="mp-tagrow"><span class="mp-k">포지션</span><div class="mypage-roles" id="myPageRoles"></div></div>
@@ -4696,16 +4726,15 @@
     <div class="mp-card-h"><i class="fa-solid fa-wand-magic-sparkles"></i> 스킬 로그
       <span style="flex:1"></span>
       <div class="seg-toggle" id="myPageSkillLogType">
-        <button data-v="text" onclick="setSkillLogType('text')"><i class="fa-solid fa-font"></i> 글</button>
+        <button data-v="text" onclick="setSkillLogType('text')"><i class="fa-solid fa-font"></i> 텍스트</button>
         <button data-v="image" onclick="setSkillLogType('image')"><i class="fa-solid fa-image"></i> 이미지</button>
       </div>
     </div>
     <div class="mp-cutin-opts">
-      <label class="mp-k" for="myPageCatchphrase">캐치프레이즈</label>
-      <input type="text" id="myPageCatchphrase" class="idc-field" maxlength="60" placeholder="컷인에 이름과 함께 나오는 한 줄" autocomplete="off" onchange="saveCatchphrase()">
       <span class="mp-k">등장 모션</span>
       <div class="mp-motions" id="myPageCutinMotion"></div>
     </div>
+    <div class="mp-skill-body">
     <div id="myPageSkillText">
       <input type="text" id="myPageSkillLogTitle" class="idc-field" maxlength="30" placeholder="스킬명" onchange="saveSkillLogText()">
       <div class="idc-editor">
@@ -4721,10 +4750,11 @@
         <img id="myPageSkillImagePreview" alt="" style="display:none;">
         <span id="myPageSkillImageEmpty"><i class="fa-solid fa-upload"></i><br>클릭해서 이미지 올리기<br><small>png · apng · gif · webp / 15MB까지</small></span>
       </div>
-      <div style="margin-top:8px;">
+      <div class="mp-img-foot">
         <button class="idc-textbtn" id="myPageSkillImageClear" onclick="clearSkillLogImage()"><i class="fa-solid fa-trash"></i> 이미지 삭제</button>
       </div>
       <input type="file" id="mySkillImageInput" accept="image/png,image/apng,image/gif,image/webp,.apng" style="display:none;" onchange="onSkillImageChosen(event)">
+    </div>
     </div>
     <button class="mp-preview-btn" onclick="previewSkillCutin()"><i class="fa-solid fa-eye"></i> 컷인 미리 보기</button>
     </div>
@@ -10783,15 +10813,20 @@ function renderMyPageRoom() {
   const self = !!(name && name === dormMe() && !dormIsGm());
   if (self && dormPast.owner !== name) { dormPast = { owner: name, rooms: [], loading: true }; socket.emit('dorm_past_get'); }
   const past = self && dormPast.owner === name ? (dormPast.rooms || []) : [];
-  if (!hall && !past.length) { box.style.display = 'none'; return; }
+  // 배정 전이어도 미리보기 자리는 늘 보여요(빈 방 안내).
   box.style.display = '';
-  const P = dormP();
-  document.getElementById('myPageRoomSub').textContent = hall ? `${P.no}차 ${P.name} · ${hall.name}` : '';
+  const P = dormP ? dormP() : { no: '', name: '' };
+  document.getElementById('myPageRoomSub').textContent = hall ? `${P.no}차 ${P.name} · ${hall.name}` : '아직 배정되지 않았어요';
   const prev = document.getElementById('myPageRoomPrev');
-  prev.style.display = hall ? '' : 'none';
+  prev.style.display = '';
+  prev.classList.toggle('empty', !hall);
   if (hall) {
-    prev.innerHTML = dormMiniHtml(name, 120, 100);
+    prev.innerHTML = dormMiniHtml(name, 160, 130);
     prev.onclick = () => { document.getElementById('myPageModal').style.display = 'none'; openDorm(); openDormRoom(name); };
+    prev.dataset.tip = '눌러서 방으로 가기';
+  } else {
+    prev.innerHTML = '<div class="idc-room-empty"><i class="fa-solid fa-door-closed"></i><span>마이룸이 배정되면 여기에서 미리 볼 수 있어요.</span></div>';
+    prev.onclick = null; delete prev.dataset.tip;
   }
   const pastEl = document.getElementById('myPageRoomPast');
   pastEl.innerHTML = past.length ? `<div class="idc-past-h">지난 마이룸</div>` + past.map((e, i) =>
