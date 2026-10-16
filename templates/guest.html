@@ -3642,42 +3642,58 @@
   @media (max-width:600px) { .bt-back span { display:none; } .bt-back { padding:0 10px; } }
   /* 좁은 화면(상단 바가 격자일 때) : 방 이름 칸 앞에 겹쳐 두고 이름을 그만큼 밀어요 */
   @media (max-width:900px) { .topbar.v2 .bt-back { grid-area:room; justify-self:start; align-self:center; width:32px; padding:0; justify-content:center; margin:0; } .topbar.v2 .bt-back span { display:none; } body.has-lobby .topbar.v2 #roomNameLabel { padding-left:40px; } }
-  .bt-list { display:flex; flex-direction:column; gap:12px; padding-bottom:20px; }
-  .bt-sec { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#cfcfd4; letter-spacing:.02em; margin:14px 2px 0; }
-  .bt-sec i { color: var(--point); font-size:12px; }
-  .bt-sec span { color: var(--muted); font-weight:600; }
-  .bt-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:12px; }
-  .bt-grid .bt-card { grid-template-columns: minmax(0,1fr) auto; }
-  .bt-card { position:relative; display:grid; grid-template-columns: minmax(0,1fr) auto; gap:10px 16px; align-items:center; padding:18px 20px; border-radius:16px; background: rgba(255,255,255,.03); border:1px solid var(--line); }
-  .bt-card.open::before { content:''; position:absolute; left:18px; right:18px; top:-1px; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.7), transparent); }
-  .bt-card.closed { opacity:.6; }
-  .bt-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .bt-chip { display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 9px; border-radius:10px; background: rgba(255,255,255,.06); color:#cfcfd4; font-size:11.5px; font-weight:700; }
-  .bt-chip.st-open { background: rgba(var(--point-rgb),.16); color: var(--point); }
-  .bt-chip.st-live { background: rgba(255,138,128,.14); color:#ff9a90; }
-  .bt-chip.mine { background: rgba(94,224,138,.14); color:#7fe8a4; }
-  .bt-name { font-size:17px; font-weight:700; margin-top:8px; letter-spacing:-0.01em; }
-  .bt-when { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:6px; font-size:13px; color:#cfcfd4; }
-  .bt-when i { color: var(--muted); font-size:12px; }
-  .bt-when .cd { color: var(--muted); }
-  .bt-act { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
-  .bt-act .btn { min-width:120px; height:42px; }
-  .bt-act .btn-plain { min-width:120px; height:34px; font-size:12.5px; }
-  .bt-act small { font-size:11.5px; color: var(--muted); }
-  .bt-gm { grid-column: 1 / -1; border-top:1px solid var(--line); padding-top:12px; margin-top:4px; display:flex; flex-direction:column; gap:10px; }
+  .bt-list { display:flex; flex-direction:column; gap:12px; padding-bottom:96px; }
+  /* 섹션 제목 : 룸 목록(index)의 .sec-title 그대로 */
+  .bt-sec { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color: var(--muted); letter-spacing:.08em; margin:14px 2px 0; }
+  .bt-sec i { font-size:12px; }
+  .bt-sec span { font-weight:600; opacity:.7; letter-spacing:0; }
+  .bt-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:14px; }
+  /* 카드 : 위 썸네일 + 아래 이름 · 날짜 바 */
+  .bt-card { position:relative; display:flex; flex-direction:column; border-radius: var(--ds-r-card, 16px); background: var(--ds-surface, rgba(255,255,255,.03)); border:1px solid var(--ds-line, var(--line)); overflow:hidden; transition: border-color .15s, transform .15s; }
+  .bt-card.can { cursor:pointer; }
+  .bt-card.can:hover { border-color: rgba(255,255,255,.16); transform: translateY(-1px); }
+  .bt-card.open::before { content:''; position:absolute; left:18px; right:18px; top:0; height:1px; z-index:2; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.7), transparent); }
+  .bt-card.editing { grid-column: 1 / -1; cursor:default; transform:none; }
+  .bt-thumb { position:relative; aspect-ratio: 16 / 9; background:#0c0c0d center / cover no-repeat; display:flex; align-items:center; justify-content:center; border-bottom:1px solid var(--ds-line, var(--line)); }
+  .bt-card.editing .bt-thumb { display:none; }
+  .bt-thumb > .ic { font-size:34px; color: rgba(255,255,255,.12); }
+  .bt-thumb.has-img::after { content:''; position:absolute; inset:0; background: linear-gradient(180deg, rgba(0,0,0,.35), transparent 40%, transparent 70%, rgba(0,0,0,.3)); }
+  .bt-thumb .bt-tags { position:absolute; left:10px; top:10px; right:10px; display:flex; gap:6px; flex-wrap:wrap; z-index:1; }
+  .bt-thumb .bt-why { position:absolute; left:0; right:0; bottom:0; z-index:1; padding:8px 12px; font-size:11.5px; color:#cfcfd4; background: rgba(12,12,13,.72); text-align:center; }
+  .bt-thumb .bt-go { position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px; font-weight:700; color:#fff; background: rgba(0,0,0,.45); opacity:0; transition: opacity .15s; }
+  .bt-card.can:hover .bt-go { opacity:1; }
+  .bt-card.closed .bt-thumb { filter: grayscale(1) brightness(.7); }
+  .bt-chip { display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 9px; border-radius:10px; background: rgba(12,12,13,.72); color:#cfcfd4; font-size:11.5px; font-weight:700; }
+  .bt-chip.st-open { color: var(--point); }
+  .bt-chip.st-live { color:#ff9a90; }
+  .bt-chip.st-live i { font-size:7px; }
+  .bt-chip.mine { color:#7fe8a4; }
+  .bt-foot { display:flex; align-items:center; gap:10px; padding:12px 12px 12px 16px; min-height:64px; }
+  .bt-info { flex:1; min-width:0; }
+  .bt-name { font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em; }
+  .bt-when { margin-top:3px; font-size:12.5px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bt-icons { display:flex; gap:2px; flex:none; }
+  .bt-icons .ops-btn.icon.danger:hover { color: var(--ds-danger, #ff8a80); }
+  .bt-gm { border-top:1px solid var(--ds-line, var(--line)); padding:14px 16px 16px; display:flex; flex-direction:column; gap:10px; }
   .bt-gm-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .bt-gm-row input[type=text] { flex:1 1 200px !important; width:auto !important; min-width:0; height:38px; padding:0 12px; }
-  .bt-gm-row .btn { flex:none; height:38px; }
-  .bt-gm-row input[type=datetime-local] { flex:none; width:220px !important; height:38px !important; height:36px; padding:0 10px; border-radius:10px; border:1px solid var(--ds-line, rgba(255,255,255,.08)); background: rgba(255,255,255,.05); color: var(--text); color-scheme: dark; }
+  .bt-gm-row .btn, .bt-gm-row .btn-plain { flex:none; height:38px; }
+  .bt-gm-row input[type=datetime-local] { flex:none; width:220px !important; height:38px !important; padding:0 10px; border-radius:10px; border:1px solid var(--ds-line, rgba(255,255,255,.08)); background: rgba(255,255,255,.05); color: var(--text); color-scheme: dark; }
   .bt-names { display:flex; flex-wrap:wrap; gap:6px; max-height:132px; overflow:auto; }
   .bt-names button { height:28px; padding:0 10px; border-radius:10px; border:1px solid var(--line); background:none; color: var(--muted); font:inherit; font-size:12.5px; cursor:pointer; }
   .bt-names button.on { background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); color:#fff; }
-  .bt-add { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:14px 16px; border-radius:16px; border:1px dashed rgba(255,255,255,.12); }
+  .bt-add { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:14px 16px; border-radius: var(--ds-r-card, 16px); border:1px solid var(--ds-line, var(--line)); background: var(--ds-surface, rgba(255,255,255,.03)); }
   .bt-add input { flex:1; min-width:160px; height:38px; padding:0 12px; }
   .bt-add select { width:140px; }
-  @media (max-width:1180px) {
-    }
-  @media (max-width:600px) { .bt-card { grid-template-columns: minmax(0,1fr); } .bt-act { align-items:stretch; } .bt-act .btn { width:100%; } }
+  /* 운영진 : 오른쪽 아래 둥근 + (우체통 편지 쓰기 버튼과 같은 모양) */
+  .bt-fab { position:fixed; right:28px; bottom:28px; width:56px; height:56px; z-index:20; display:none; align-items:center; justify-content:center; border-radius:50%; border:none; background: var(--point); color:#fff; cursor:pointer;
+    box-shadow: 0 10px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06) inset; transition: transform .15s, filter .15s; }
+  .bt-fab:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .bt-fab i { font-size:19px; transition: transform .2s; }
+  .bt-fab.on i { transform: rotate(45deg); }
+  body.view-battles .bt-fab.gm { display:inline-flex; }
+  @media (max-width:900px) { .bt-fab { right:18px; bottom: calc(100px + env(safe-area-inset-bottom)); } }
+  @media (max-width:600px) { .bt-grid { grid-template-columns: minmax(0,1fr); } .bt-thumb { aspect-ratio: 21 / 9; } .bt-gm-row input[type=datetime-local] { width:100% !important; } }
   #mailBody { padding-bottom:84px; }
   #mailBody.writing { padding-bottom:0; }   /* 편지 쓰기 화면은 아래 '보내기' 줄이 맨 아래에 붙어요 */
   .mail-write-head { display:flex; align-items:center; gap:10px; width:100%; padding:2px 0 12px; }
@@ -4725,6 +4741,7 @@
   <div class="topbar v2 panel world-topbar"><div class="seg world-brand">Battle</div><span class="sep">▶</span><div class="seg">룸 목록</div>
     <div class="spacer"></div><div class="dorm-tools-r" id="btTools"></div></div>
   <div class="world-body" id="battleHubBody"></div>
+    <button class="bt-fab" id="btFab" onclick="battleAddOpen = !battleAddOpen; renderBattleHub(); if (battleAddOpen) setTimeout(() => { const i = document.getElementById('btNewName'); if (i) i.focus(); }, 0)" aria-label="전투 추가" data-tip="전투 추가"><i class="fa-solid fa-plus"></i></button>
 </div>
 <div id="worldPage" class="world-page">
   <div class="topbar v2 panel world-topbar"><div class="seg world-brand">Pangaea</div><span class="sep">▶</span><div class="seg" id="worldTopSeg">맵</div>
@@ -5655,7 +5672,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.72";
+const EXPECTED_SERVER_BUILD = "2026-10-13.73";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -12532,10 +12549,11 @@ function renderBattleHub(tickOnly) {
     const st = b.state === 'none' ? 'none' : now < b.opens ? 'upcoming' : now <= b.closes ? 'open' : 'closed';
     const stChip = st === 'open' ? (b.live ? '<span class="bt-chip st-live"><i class="fa-solid fa-circle"></i>진행 중</span>' : '<span class="bt-chip st-open">입장 가능</span>')
       : st === 'upcoming' ? '<span class="bt-chip">입장 전</span>' : st === 'closed' ? '<span class="bt-chip">종료</span>' : '<span class="bt-chip">일정 없음</span>';
-    const cd = st === 'upcoming' ? `${btLeft(b.opens - now)} 뒤 입장이 열려요` : st === 'open' && b.start > now ? `${btLeft(b.start - now)} 뒤 시작` : st === 'open' ? `입장 마감까지 ${btLeft(b.closes - now)}` : '';
+    const cd = st === 'upcoming' ? `${btLeft(b.opens - now)} 뒤 열림` : st === 'open' && b.start > now ? `${btLeft(b.start - now)} 뒤 시작` : st === 'open' ? `마감까지 ${btLeft(b.closes - now)}` : '';
     const can = gm || (st === 'open' && (b.mine || !b.assigned.length));
     const why = gm ? '' : st === 'upcoming' ? '시작 3시간 전부터 들어갈 수 있어요' : st === 'closed' ? '끝난 뒤 3시간이 지났어요' : (!b.mine && b.assigned.length) ? '배정된 캐릭터만 들어갈 수 있어요' : '';
     const ed = battleEdit[b.id] || (battleEdit[b.id] = { name: b.name, start: btLocalInput(b.start), assigned: [...b.assigned], open: false, edit: false });
+    const ic = (BT_TYPES.find(t => t[0] === b.type) || [])[2] || 'fa-shield-halved';
     const gmHtml = gm && ed.edit ? `<div class="bt-gm">
         <div class="bt-gm-row"><input type="text" value="${mailEsc(ed.name)}" placeholder="전투 이름" oninput="battleEdit['${b.id}'].name=this.value">
           <input type="datetime-local" value="${ed.start}" onchange="battleEdit['${b.id}'].start=this.value">
@@ -12543,26 +12561,36 @@ function renderBattleHub(tickOnly) {
         <div class="bt-gm-row"><span class="mail-me" style="margin:0">배정 ${ed.assigned.length}명</span>
           <button class="btn-plain" onclick="battleEdit['${b.id}'].open=!battleEdit['${b.id}'].open; renderBattleHub()">${ed.open ? '접기' : '캐릭터 고르기'}</button>
           <button class="btn-plain" onclick="navigator.clipboard && navigator.clipboard.writeText(location.origin + '${b.url || ''}'); uiToast('링크를 복사했어요.')"><i class="fa-solid fa-link"></i>링크</button>
-          <button class="ops-btn icon danger" onclick="battleDelete('${b.id}')" data-tip="전투 방 지우기"><i class="fa-solid fa-trash-can"></i></button></div>
+          <button class="btn-plain" onclick="socket.emit('battle_enter', {room_id:'${b.id}'})"><i class="fa-solid fa-right-to-bracket"></i>입장</button></div>
         ${ed.open ? `<div class="bt-names">${(battleHub.roster || []).map(n => `<button class="${ed.assigned.includes(n) ? 'on' : ''}" onclick="battleToggle('${b.id}', ${mailEsc(JSON.stringify(n))})">${mailEsc(n)}</button>`).join('') || '<span class="mail-me">등록된 캐릭터가 없어요</span>'}</div>` : ''}
       </div>` : '';
-    return `<div class="bt-card ${st}">
-      <div><div class="bt-top"><span class="bt-chip">${mailEsc(b.type_label)}</span>${stChip}${b.mine ? '<span class="bt-chip mine"><i class="fa-solid fa-check"></i>배정됨</span>' : ''}</div>
-        <div class="bt-name">${mailEsc(b.name)}</div>
-        <div class="bt-when">${b.start ? `<i class="fa-regular fa-calendar"></i>${btFmt(b.start)}` : '<i class="fa-regular fa-calendar"></i>날짜 · 시간 미정'}${cd ? `<span class="cd">· ${cd}</span>` : ''}${b.assigned.length ? `<span class="cd">· 배정 ${b.assigned.length}명</span>` : ''}</div></div>
-      <div class="bt-act"><button class="btn" ${can ? '' : 'disabled'} onclick="socket.emit('battle_enter', {room_id:'${b.id}'})"><i class="fa-solid fa-right-to-bracket"></i>입장하기</button>${why ? `<small>${why}</small>` : ''}
-        ${gm ? `<button class="btn-plain" onclick="battleEdit['${b.id}'].edit=!battleEdit['${b.id}'].edit; renderBattleHub()"><i class="fa-solid fa-pen"></i>${ed.edit ? '닫기' : '일정 · 배정'}</button>` : ''}</div>
+    const when = (b.start ? btFmt(b.start) : '날짜 · 시간 미정') + (cd ? ` · ${cd}` : '') + (gm && b.assigned.length ? ` · 배정 ${b.assigned.length}명` : '');
+    const thumbStyle = b.thumb ? ` style="background-image:url('${mailEsc(b.thumb)}')"` : '';
+    return `<div class="bt-card ${st}${can ? ' can' : ''}${gm && ed.edit ? ' editing' : ''}"${can && !(gm && ed.edit) ? ` onclick="socket.emit('battle_enter', {room_id:'${b.id}'})"` : ''}>
+      <div class="bt-thumb${b.thumb ? ' has-img' : ''}"${thumbStyle}>${b.thumb ? '' : `<i class="fa-solid ${ic} ic"></i>`}
+        <div class="bt-tags">${stChip}${b.mine ? '<span class="bt-chip mine"><i class="fa-solid fa-check"></i>배정됨</span>' : ''}</div>
+        ${can ? '<div class="bt-go"><i class="fa-solid fa-right-to-bracket"></i>입장하기</div>' : why ? `<div class="bt-why">${why}</div>` : ''}</div>
+      <div class="bt-foot"><div class="bt-info"><div class="bt-name">${mailEsc(b.name)}</div><div class="bt-when">${when}</div></div>
+        ${gm ? `<div class="bt-icons" onclick="event.stopPropagation()"><button class="ops-btn icon" onclick="battleEdit['${b.id}'].edit=!battleEdit['${b.id}'].edit; renderBattleHub()" data-tip="${ed.edit ? '닫기' : '일정 · 배정'}"><i class="fa-solid ${ed.edit ? 'fa-xmark' : 'fa-pen'}"></i></button>
+          <button class="ops-btn icon danger" onclick="battleDelete('${b.id}')" data-tip="전투 방 지우기"><i class="fa-regular fa-trash-can"></i></button></div>` : ''}</div>
       ${gmHtml}</div>`;
   };
   const list = battleHub.battles || [];
   const tools = document.getElementById('btTools'); if (tools) tools.innerHTML = '';
-  const add = gm ? `<div class="bt-add"><select id="btNewType"><option value="pvp">PVP</option><option value="siege">공성전</option><option value="mass_raid">마스 레이드</option></select>
-      <input type="text" id="btNewName" placeholder="새 전투 이름"><button class="btn" onclick="socket.emit('battle_room_create', {type: document.getElementById('btNewType').value, name: document.getElementById('btNewName').value})"><i class="fa-solid fa-plus"></i>전투 추가</button></div>` : '';
+  const fab = document.getElementById('btFab'); if (fab) { fab.classList.toggle('gm', !!gm); fab.classList.toggle('on', !!battleAddOpen); }
+  const add = gm && battleAddOpen ? `<div class="bt-add"><select id="btNewType">${BT_TYPES.map(t => `<option value="${t[0]}">${t[1]}</option>`).join('')}</select>
+      <input type="text" id="btNewName" placeholder="새 전투 이름" onkeydown="if (event.key === 'Enter') battleCreate()"><button class="btn" onclick="battleCreate()"><i class="fa-solid fa-plus"></i>전투 추가</button></div>` : '';
   // 룸 형식별로 묶어서 : PVP · 공성전 · 마스 레이드
-  const groups = [['pvp', 'PVP', 'fa-user-group'], ['siege', '공성전', 'fa-chess-rook'], ['mass_raid', '마스 레이드', 'fa-dragon']]
-    .map(([t, label, ic]) => [label, ic, list.filter(b => b.type === t)]).filter(([, , xs]) => xs.length);
+  const groups = BT_TYPES.map(([t, label, ic]) => [label, ic, list.filter(b => b.type === t)]).filter(([, , xs]) => xs.length);
   body.innerHTML = `<div class="bt-list">${add}${groups.length ? groups.map(([label, ic, xs]) => `<div class="bt-sec"><i class="fa-solid ${ic}"></i>${label}<span>${xs.length}</span></div><div class="bt-grid">${xs.map(card).join('')}</div>`).join('')
-    : emptyHtml('fa-shield-halved', '예정된 전투가 없어요', gm ? '위에서 전투를 추가하고 날짜 · 시간을 정해 주세요.' : '운영진이 전투를 등록하면 여기에 보여요.')}</div>`;
+    : emptyHtml('fa-shield-halved', '예정된 전투가 없어요', gm ? '오른쪽 아래 + 로 전투를 추가하고 날짜 · 시간을 정해 주세요.' : '운영진이 전투를 등록하면 여기에 보여요.')}</div>`;
+}
+const BT_TYPES = [['pvp', 'PVP', 'fa-user-group'], ['siege', '공성전', 'fa-chess-rook'], ['mass_raid', '마스 레이드', 'fa-dragon']];
+let battleAddOpen = false;
+function battleCreate() {
+  const t = document.getElementById('btNewType'), n = document.getElementById('btNewName');
+  if (!t || !n) return;
+  socket.emit('battle_room_create', { type: t.value, name: n.value }); battleAddOpen = false;
 }
 function battleToggle(id, name) { const e = battleEdit[id]; const i = e.assigned.indexOf(name); if (i < 0) e.assigned.push(name); else e.assigned.splice(i, 1); renderBattleHub(); }
 function battleSave(id) {

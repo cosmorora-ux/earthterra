@@ -42,7 +42,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.72"
+SERVER_BUILD = "2026-10-13.73"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -1188,7 +1188,8 @@ def _battle_card(room, me, is_gm):
     card = {"id": room.id, "name": room.name, "type": room.battle_type, "type_label": BATTLE_TYPE_LABELS.get(room.battle_type, ""),
             "start": sc.get("start"), "ended_at": sc.get("ended_at"), "opens": opens, "closes": closes, "state": state,
             "assigned": assigned, "mine": mine, "live": bool(room.game.battle and not room.game.battle.finished),
-            "can_enter": is_gm or (state == "open" and (mine or not assigned))}
+            "can_enter": is_gm or (state == "open" and (mine or not assigned)),
+            "thumb": (room.scene or {}).get("url") or (room.map_bg or {}).get("url") or None}
     if is_gm:
         card["url"] = url_for("guest_page", room_id=room.id, key=room.guest_key)
     return card
