@@ -2080,6 +2080,8 @@
   #loopNarrPop > i { flex:none; font-size:12px; color: var(--point); }
   #loopNarrPop p { margin:0; color:#d6d6dc; font-size:13.5px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #loopNarrPop.low p { color:#ffb0a8; } #loopNarrPop.low > i { color:#ff8a80; }
+  #loopNarrPop.low { border-color: rgba(255,138,128,.22); }
+  #loopNarrPop.low::before { background: linear-gradient(90deg, transparent, rgba(255,138,128,.8), transparent); }
   @media (max-width:900px) { #loopNarrPop { bottom: calc(96px + env(safe-area-inset-bottom)); } #loopNarrPop { padding:11px 14px; } #loopNarrPop p { font-size:12.5px; } }
   .ps-c.mood { padding-left:66px; color:#9d9da6; font-size:12.5px; line-height:1.55; align-self:start; word-break: keep-all; }
   .ps-c.mood.low { color:#ff8a80; }
