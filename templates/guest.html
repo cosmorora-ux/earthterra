@@ -2068,15 +2068,15 @@
   .ps-c > .pl-k { flex:none; width:52px; white-space:nowrap; }
   .ps-v { min-width:0; flex:1; }
   .pl-stat .ps-c.eras { grid-column: 1 / -1; }
-  #loopNarrPop { position:fixed; left:50%; top:28px; z-index:900; display:flex; align-items:center; gap:10px; width:max-content; max-width:calc(100vw - 24px); box-sizing:border-box;
+  #loopNarrPop { position:fixed; left:50%; bottom:36px; z-index:900; display:flex; align-items:center; gap:10px; width:max-content; max-width:calc(100vw - 24px); box-sizing:border-box;
     padding:13px 18px; border-radius:12px; background: rgba(20,20,24,.94); border:1px solid rgba(255,255,255,.08); box-shadow: 0 14px 36px rgba(0,0,0,.5);
-    backdrop-filter: blur(8px); cursor:pointer; opacity:0; pointer-events:none; transform: translate(-50%, -8px); transition: opacity .35s ease, transform .35s ease; }
+    backdrop-filter: blur(8px); cursor:pointer; opacity:0; pointer-events:none; transform: translate(-50%, 8px); transition: opacity .35s ease, transform .35s ease; }
   #loopNarrPop.on { opacity:1; pointer-events:auto; transform: translate(-50%, 0); }
   #loopNarrPop::before { content:""; position:absolute; left:14px; right:14px; top:-1px; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.7), transparent); }
   #loopNarrPop > i { flex:none; font-size:12px; color: var(--point); }
   #loopNarrPop p { margin:0; color:#d6d6dc; font-size:13.5px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #loopNarrPop.low p { color:#ffb0a8; } #loopNarrPop.low > i { color:#ff8a80; }
-  @media (max-width:900px) { #loopNarrPop { top: calc(14px + env(safe-area-inset-top)); } #loopNarrPop { padding:11px 14px; } #loopNarrPop p { font-size:12.5px; } }
+  @media (max-width:900px) { #loopNarrPop { bottom: calc(96px + env(safe-area-inset-bottom)); } #loopNarrPop { padding:11px 14px; } #loopNarrPop p { font-size:12.5px; } }
   .ps-c.mood { padding-left:66px; color:#9d9da6; font-size:12.5px; line-height:1.55; align-self:start; word-break: keep-all; }
   .ps-c.mood.low { color:#ff8a80; }
   .pl-strain { flex-wrap:nowrap !important; min-width:0; }
