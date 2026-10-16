@@ -1943,11 +1943,12 @@
   @media (prefers-reduced-motion: reduce) { .play-page .tc { animation-duration:.01s; } }
   body.is-play .breadcrumb-row .grid-notice, body.is-play #formatLabel, body.is-play #roundInfo, body.is-play .topbar .sep, body.is-play #roundTimerLabel, body.is-play .m-battle-tools { display:none !important; }
   .play-page { flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+  @media (min-width:901px) { body.is-play .play-page { padding-top:50px; } }   /* 오른쪽 음악 줄(40px + 간격 10px) 아래 기록 패널과 위쪽을 맞춥니다 */
   .pl-scroll { flex:1; min-height:0; overflow-y:auto; scrollbar-width:thin; }
   /* 선택지 · 다음 버튼 : 화면 아래 고정 */
-  .pl-dock { flex:none; padding:12px 2px 2px; position:relative; }
+  .pl-dock { flex:none; padding:12px 0 0; position:relative; }
   .pl-dock::before { content:''; position:absolute; left:0; right:0; bottom:100%; height:28px; pointer-events:none; background: linear-gradient(180deg, transparent, var(--bg)); }
-  .pl-dock-in { max-width:860px; margin:0 auto; }
+  .pl-dock-in { max-width:none; margin:0; }
   .pl-dock .pl-choices { margin-top:0; }
   .pl-dock .pl-actions { margin-top:0; }
   .pl-btn.wide { width:100%; justify-content:center; height:48px; }
@@ -1965,18 +1966,23 @@
   .pl-lp-body .dd .d { display:inline-flex; align-items:center; gap:4px; font-size:12px; }
   .pl-lp-body .dd .d i { font-size:10px; opacity:.8; }
   .pl-lp-body .d.mind.up { color:#7fe0d0; }
-  .pl-wrap { max-width:860px; margin:0 auto; padding:4px 2px 40px; display:flex; flex-direction:column; gap:14px; }
+  .pl-wrap { max-width:none; margin:0; padding:0 0 40px; display:flex; flex-direction:column; gap:14px; }
   .pl-box { position:relative; border-radius:16px; background: rgba(255,255,255,.025); padding:20px 22px; }
   .pl-box.glow::before { content:''; position:absolute; left:18px; right:18px; top:0; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.6), transparent); }
-  .pl-head { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; }
   .pl-logo { font-family: var(--font-title); font-size:34px; line-height:1; letter-spacing:.04em; }
   .pl-logo small { display:block; font-family: inherit; font-size:12px; letter-spacing:.3em; color: var(--muted); margin-bottom:6px; }
-  .pl-sub { color: var(--muted); font-size:13.5px; padding-bottom:3px; }
-  .pl-life { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
   .pl-pill { height:28px; display:inline-flex; align-items:center; gap:6px; padding:0 11px; border-radius:10px; background: rgba(255,255,255,.05); color:#cfcfd4; font-size:12.5px; font-weight:600; white-space:nowrap; }
-  .pl-pill.pl-restart { cursor:pointer; border:none; font-family:inherit; color: var(--muted); transition: color .15s, background .15s; }
-  .pl-pill.pl-restart:hover { color:#fff; background: rgba(255,255,255,.08); }
-  .pl-pill.loop { background: rgba(var(--point-rgb),.14); color: var(--point); }
+  .pl-head { display:flex; flex-direction:column; gap:16px; }
+  .pl-head-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .pl-restart { flex:none; height:30px; display:inline-flex; align-items:center; gap:6px; padding:0 12px; border:none; border-radius:10px; background: rgba(255,255,255,.04); color: var(--muted); font: inherit; font-size:12.5px; font-weight:600; cursor:pointer; transition: color .15s, background .15s; }
+  .pl-restart:hover { color:#fff; background: rgba(255,255,255,.09); }
+  .pl-meta { display:flex; flex-wrap:wrap; align-items:center; row-gap:6px; padding-top:14px; border-top:1px solid rgba(255,255,255,.06); color:#bdbdc3; font-size:13px; }
+  .pl-meta > span { display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
+  .pl-meta > span:not(:last-child)::after { content:''; width:3px; height:3px; border-radius:50%; background: rgba(255,255,255,.22); margin:0 11px 0 4px; }
+  .pl-meta .up { color: var(--point); font-weight:600; }
+  .pl-meta .c { color:#fff; font-weight:600; }
+  .pl-meta .c i { width:7px; height:7px; border-radius:50%; background: var(--nc); box-shadow: 0 0 8px var(--nc); }
+  .pl-meta .c.arcadia { --nc:#e9c05b; } .pl-meta .c.nova { --nc:#6aa5ff; }
   .pl-stat { display:grid; grid-template-columns: auto 1fr; gap:14px 22px; align-items:center; }
   .pl-k { font-size:12px; color: var(--muted); font-weight:700; letter-spacing:.04em; }
   .pl-hp { display:flex; align-items:center; gap:6px; }
@@ -2086,7 +2092,12 @@
     .pl-dock .pl-ch { padding:10px 12px; gap:10px; font-size:14px; line-height:1.45; }
     .pl-dock .pl-ch .k { width:24px; height:24px; font-size:12px; }
     .pl-btn.wide, .pl-actions.two .pl-btn { height:44px; }
-    .pl-life { margin-left:0; }
+    .pl-head-top { padding-right:30px; }   /* 오른쪽 위 소리 버튼 자리 */
+    .pl-restart { width:30px; padding:0; justify-content:center; }
+    .pl-restart span { display:none; }
+    .pl-logo small { white-space:nowrap; font-size:10px; letter-spacing:.2em; }
+    .pl-meta { font-size:12.5px; }
+    .pl-meta > span:not(:last-child)::after { margin:0 8px 0 3px; }
   }
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
   body.is-lounge #sidebarBattleBtn, body.is-lounge #sidebarUserListBtn, body.is-lounge .m-battle-tools { display:none !important; }
@@ -12453,18 +12464,19 @@ function renderLoop() {
 // 떠오르는 중에 화면을 누르면 남은 글과 버튼을 한 번에 보여 줍니다.
 function loopSkip() { const p = document.getElementById('playPage'); if (p) p.classList.add('pl-skip'); }
 function loopHeadHtml(d) {
+  // 제목은 왼쪽, 이번 생애 정보는 아래 한 줄(점으로 구분), 새로 시작은 오른쪽 위 작은 버튼.
   const r = d.run;
-  const pills = [];
   const country = (r && r.country) || d.country, faction = (r && r.faction) || d.faction;
-  if (d.me) pills.push(`<span class="pl-pill"><i class="fa-solid fa-user"></i>${loopEsc(d.me)}</span>`);
-  if (country) pills.push(`<span class="pl-pill"><i class="fa-solid fa-flag"></i>${loopEsc((LOOP_COUNTRY[country] || [''])[0])}</span>`);
-  if (r) pills.push(`<span class="pl-pill"><i class="fa-solid fa-wave-square"></i>${loopEsc((LOOP_RES[r.res] || [''])[0])} · ${r.privileged ? '기득권' : '비기득권'}</span>`);
-  if (faction) pills.push(`<span class="pl-pill"><i class="fa-solid fa-shield-halved"></i>${loopEsc(faction)}</span>`);
-  if (r && r.view) pills.push(`<span class="pl-pill"><i class="fa-solid fa-earth-asia"></i>${loopEsc(r.view.name)}</span>`);
-  if (r) pills.push(`<span class="pl-pill">${r.life_no}번째 생애</span>`);
-  if (r && r.loop_no) pills.push(`<span class="pl-pill loop"><i class="fa-solid fa-infinity"></i>루프 ${r.loop_no}</span>`);
-  if (r && r.status !== 'ended') pills.push(`<button class="pl-pill pl-restart" onclick="event.stopPropagation(); loopRestart()"><i class="fa-solid fa-rotate-left"></i>새로 시작</button>`);
-  return `<div class="pl-box glow pl-head"><div class="pl-logo"><small>RUNNING SIMULATION</small>Loop</div><div class="pl-sub">러닝 시뮬레이션</div><div class="pl-life">${pills.join('')}</div></div>`;
+  const it = [];
+  if (country) it.push(`<span class="c ${country}"><i></i>${loopEsc((LOOP_COUNTRY[country] || [''])[0])}</span>`);
+  if (r) it.push(`<span>${loopEsc((LOOP_RES[r.res] || [''])[0])}</span><span class="${r.privileged ? 'up' : ''}">${r.privileged ? '기득권' : '비기득권'}</span>`);
+  if (faction) it.push(`<span>${loopEsc(faction)}</span>`);
+  if (r && r.view) it.push(`<span>문명관 ${loopEsc(r.view.name)}</span>`);
+  if (r) it.push(`<span>${r.life_no}번째 생애</span>`);
+  if (r && r.loop_no) it.push(`<span class="up"><i class="fa-solid fa-infinity"></i> 루프 ${r.loop_no}</span>`);
+  const restart = r && r.status !== 'ended' ? `<button class="pl-restart" onclick="event.stopPropagation(); loopRestart()"><i class="fa-solid fa-rotate-left"></i><span>새로 시작</span></button>` : '';
+  return `<div class="pl-box glow pl-head"><div class="pl-head-top"><div class="pl-logo"><small>RUNNING SIMULATION</small>Loop</div>${restart}</div>
+    ${it.length ? `<div class="pl-meta">${it.join('')}</div>` : ''}</div>`;
 }
 // 진행 중인 생애를 버리고 처음(공명 여부 고르기)부터. 지난 생애 기록은 남아요. 기록은 이 브라우저에만 저장돼요.
 function loopRestart() {
