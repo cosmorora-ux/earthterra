@@ -544,3 +544,26 @@ INTRO = [
     "살아남는 것과 옳은 일을 하는 것이 항상 일치하지는 않습니다.",
     "가능한 한 많은 사건을 견디고, 전쟁 이후까지 도달하십시오.",
 ]
+
+
+def default_content():
+    """GM 편집 페이지가 다루는 전체 내용(사건 · 규칙 · 문장)의 기본값. JSON으로 저장할 수 있는 모양입니다.
+    loop_content.json이 없으면 이 기본값을 씁니다(편집 페이지의 '기본값으로 되돌리기'도 이것)."""
+    import copy
+    return copy.deepcopy({
+        "rules": {"hp_start": 5, "hp_max": 5, "mind_start": 5, "mind_max": 5,
+                  "first_life": [1, 2, 3, 4, 5], "loop_life": [6, 4, 5]},
+        "eras": [dict(id=i, no=x["no"], name=x["name"], period=x["period"], level=x["level"], len=x["len"],
+                      risk=ERA_RISK.get(i, (0, 0))[0], luck=ERA_RISK.get(i, (0, 0))[1],
+                      risk_text=[{"stat": s, "text": t} for s, t in RISK_TEXT.get(i, [])])
+                 for i, x in sorted(ERAS.items())],
+        "events": EVENTS,
+        "texts": {
+            "intro": INTRO,
+            "mood_hp": [{"min": m, "text": t} for m, t in MOOD],
+            "mood_mind": [{"min": m, "text": t} for m, t in MOOD_MIND],
+            "death": DEATH,
+            "ending": ENDING,
+            "luck": LUCK_TEXT,
+        },
+    })

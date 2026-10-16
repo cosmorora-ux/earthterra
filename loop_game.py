@@ -5,15 +5,18 @@ loop_game.py
 PLAY 룸 「LOOP : 생존 시뮬레이션」 진행 상태.
 
 - 캐릭터마다 지금 생애(run) 하나와 지난 생애 기록(lives)을 가집니다. 모든 PLAY 룸이 같은 기록을 씁니다.
-- 체력과 정신은 각각 5로 시작해 0~5 사이를 오갑니다. 체력이 0이면 사망, 정신이 0이면 정신 붕괴입니다.
-- 출신 국가(아르카디아 / 노바)와 공명 여부로 기득권 · 비기득권이 갈리고, 시대 I · II 사건이 달라집니다.
-- 진영(使徒 / Void)은 전쟁 때의 포지션이고 서로 적입니다.
-- 시대 I → V 순서로 사건이 이어지고, V의 사건을 모두 견디면 '전쟁 이후' 엔딩입니다.
+- 체력과 정신은 각각 시작값에서 출발해 0~최대 사이를 오갑니다. 체력이 0이면 사망, 정신이 0이면 정신 붕괴입니다.
+- 출신 국가(아르카디아 / 노바)는 생애마다 무작위로 정해지고, 공명 여부와 함께 기득권 · 비기득권이 갈립니다.
+- 진영(使徒 / Void)은 전쟁 때의 포지션이고 서로 적입니다(캐릭터 정보의 진영 칸).
+- 시대 I → V 순서로 사건이 이어지고, 마지막 시대의 사건을 모두 견디면 '전쟁 이후' 엔딩입니다.
 - 죽으면 '생애 종료'(기록만 남김) 또는 '루프 진입'(VI. 회귀 → IV. 전쟁 → V. 종전으로 다시)을 고릅니다.
 - 체력 · 정신 변동은 고른 뒤에만 알려 줍니다(고르기 전 화면에는 선택지 문장만 보냅니다).
-loop_runs.json에 저장됩니다(서버 컴퓨터별 실데이터라 git에 올리지 않음).
+
+사건 · 규칙 · 문장(내용)은 운영진이 편집 페이지에서 고칠 수 있고 loop_content.json에 저장됩니다.
+파일이 없으면 loop_events.py의 기본값을 씁니다. 진행 기록은 loop_runs.json(둘 다 git 밖 실데이터).
 """
 
+import copy
 import json
 import os
 import random
@@ -21,23 +24,19 @@ import threading
 import time
 
 import safeio
-from loop_events import ERAS, EVENTS, MOOD, MOOD_MIND, DEATH, ENDING, INTRO, ERA_RISK, RISK_TEXT, LUCK_TEXT
+from loop_events import default_content
 
-RUNS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "loop_runs.json")
-HP_START, HP_MAX, HP_MIN = 5, 5, 0
-MIND_START, MIND_MAX = 5, 5   # 정신 : 0이 되면 무너집니다(정신 붕괴)
+_DIR = os.path.dirname(os.path.abspath(__file__))
+RUNS_PATH = os.path.join(_DIR, "loop_runs.json")
+CONTENT_PATH = os.path.join(_DIR, "loop_content.json")
+HP_MIN = 0
 MAX_LIVES = 30            # 캐릭터마다 남기는 지난 생애 수
 RESONANCE = ("res", "non")
-EVENT_BY_ID = {e["id"]: e for e in EVENTS}
-FIRST_LIFE_ERAS = [1, 2, 3, 4, 5]
-LOOP_LIFE_ERAS = [6, 4, 5]
+KINDS = ("life", "war", "plague", "purge", "loop")       # 사건 종류(체력으로 죽을 때 사망 문장을 고름)
+DEATH_KINDS = KINDS + ("mind",)
+STATS = ("hp", "mind")
 # 루프를 넘어가도 남는 태그(나머지 기억은 흐려집니다)
 LOOP_KEEP_TAGS = {"LOOP_CONTACT", "LOOP_NOTES", "LOOP_ALLY", "TRUTH", "FRACTURE_SEEN", "LEFT_BEHIND", "KILLED", "SAVED_ONE"}
-
-
-class LoopError(Exception):
-    pass
-
 
 # 출신 국가 : 아르카디아에서는 공명자가 기득권, 노바에서는 비공명자가 기득권.
 COUNTRIES = {"arcadia": "아르카디아", "nova": "노바"}
@@ -45,6 +44,227 @@ COUNTRIES = {"arcadia": "아르카디아", "nova": "노바"}
 FACTIONS = ("使徒", "Void")
 
 
+class LoopError(Exception):
+    pass
+
+
+# ══════════════════════════════════════════════════════════════
+# 내용(사건 · 규칙 · 문장) : 운영진 편집 → 검사 → 저장
+# ══════════════════════════════════════════════════════════════
+def _s(v, n=2000):
+    return str(v if v is not None else "").strip()[:n]
+
+
+def _lines(v, n=40):
+    """문단 목록 : 문자열이면 줄 단위로 자르고, 빈 줄은 뺍니다."""
+    if isinstance(v, str):
+        v = v.split("\n")
+    return [_s(x, 1000) for x in (v or []) if _s(x, 1000)][:n]
+
+
+def _int(v, lo, hi, d):
+    try:
+        return max(lo, min(hi, int(v)))
+    except (TypeError, ValueError):
+        return d
+
+
+def _tags(v):
+    if isinstance(v, str):
+        v = v.replace(",", " ").split()
+    out = []
+    for t in v or []:
+        t = _s(t, 40).upper().replace(" ", "_")
+        if t and t not in out:
+            out.append(t)
+    return out[:20]
+
+
+def clean_content(c):
+    """편집 페이지에서 온 내용을 검사해서 게임이 쓸 수 있는 모양으로 다듬습니다. 잘못된 곳이 있으면 LoopError."""
+    if not isinstance(c, dict):
+        raise LoopError("내용 형식이 올바르지 않아요.")
+    d = default_content()
+    r = c.get("rules") or {}
+    rules = {"hp_max": _int(r.get("hp_max"), 1, 20, 5), "mind_max": _int(r.get("mind_max"), 1, 20, 5)}
+    rules["hp_start"] = _int(r.get("hp_start"), 1, rules["hp_max"], rules["hp_max"])
+    rules["mind_start"] = _int(r.get("mind_start"), 1, rules["mind_max"], rules["mind_max"])
+
+    eras = []
+    for x in (c.get("eras") or [])[:12]:
+        eid = _int(x.get("id"), 1, 99, 0)
+        if not eid or any(e["id"] == eid for e in eras):
+            continue
+        eras.append({"id": eid, "no": _s(x.get("no"), 8) or str(eid), "name": _s(x.get("name"), 40) or f"시대 {eid}",
+                     "period": _s(x.get("period"), 40), "level": _s(x.get("level"), 20), "len": _int(x.get("len"), 1, 30, 3),
+                     "risk": max(0.0, min(1.0, float(x.get("risk") or 0))), "luck": max(0.0, min(1.0, float(x.get("luck") or 0))),
+                     "risk_text": [{"stat": t.get("stat") if t.get("stat") in STATS else "hp", "text": _s(t.get("text"), 500)}
+                                   for t in (x.get("risk_text") or []) if isinstance(t, dict) and _s(t.get("text"))][:20]})
+        if eras[-1]["risk"] + eras[-1]["luck"] > 1:
+            raise LoopError(f"{eras[-1]['no']} 시대 : 위험 + 행운 확률은 100%를 넘을 수 없어요.")
+    if not eras:
+        raise LoopError("시대가 하나 이상 있어야 해요.")
+    era_ids = {e["id"] for e in eras}
+    for key in ("first_life", "loop_life"):
+        seq = [_int(x, 1, 99, 0) for x in (r.get(key) or [])]
+        seq = [x for x in seq if x in era_ids][:12]
+        if not seq:
+            raise LoopError("첫 생애 · 루프 생애의 시대 순서를 정해 주세요.")
+        rules[key] = seq
+
+    events, ids = [], set()
+    for ev in (c.get("events") or [])[:400]:
+        eid = _s(ev.get("id"), 12)
+        title = _s(ev.get("title"), 60)
+        if not eid or not title:
+            raise LoopError("사건마다 번호와 제목이 있어야 해요.")
+        if eid in ids:
+            raise LoopError(f"사건 번호 {eid}가 두 번 있어요.")
+        ids.add(eid)
+        era = _int(ev.get("era"), 1, 99, 0)
+        if era not in era_ids:
+            raise LoopError(f"EVENT {eid} : 없는 시대예요.")
+        cond_in = ev.get("cond") or {}
+        cond = {}
+        if cond_in.get("res") in RESONANCE:
+            cond["res"] = cond_in["res"]
+        if cond_in.get("country") in COUNTRIES:
+            cond["country"] = cond_in["country"]
+        if _tags(cond_in.get("tags")):
+            cond["tags"] = _tags(cond_in.get("tags"))
+        if _tags(cond_in.get("no_tags")):
+            cond["no_tags"] = _tags(cond_in.get("no_tags"))
+        if _int(cond_in.get("loops"), 0, 99, 0):
+            cond["loops"] = _int(cond_in.get("loops"), 0, 99, 0)
+        story = _lines(ev.get("story"))
+        if not story:
+            raise LoopError(f"EVENT {eid} : 상황 서술을 써 주세요.")
+        choices = []
+        for i, ch in enumerate((ev.get("choices") or [])[:3]):
+            label = _s(ch.get("label"), 200)
+            if not label:
+                raise LoopError(f"EVENT {eid} : 선택지 {'ABC'[i]} 문장을 써 주세요.")
+            choices.append({"label": label, "hp": _int(ch.get("hp"), -3, 3, 0), "mind": _int(ch.get("mind"), -3, 3, 0),
+                            "result": "\n".join(_lines(ch.get("result"), 10)), "tags": _tags(ch.get("tags"))})
+        if len(choices) != 3:
+            raise LoopError(f"EVENT {eid} : 선택지는 3개여야 해요.")
+        extra = []
+        for x in (ev.get("extra") or [])[:10]:
+            w = x.get("when") or {}
+            when = {}
+            if w.get("tag"):
+                when["tag"] = _tags([w["tag"]])[0] if _tags([w["tag"]]) else ""
+            if w.get("hp_lte") not in (None, ""):
+                when["hp_lte"] = _int(w["hp_lte"], 0, 20, 1)
+            if w.get("mind_lte") not in (None, ""):
+                when["mind_lte"] = _int(w["mind_lte"], 0, 20, 1)
+            if w.get("loops") not in (None, ""):
+                when["loops"] = _int(w["loops"], 0, 99, 1)
+            text = _lines(x.get("text"), 10)
+            if not text:
+                continue
+            at = "result" if x.get("at") == "result" else "story"
+            item = {"when": when, "at": at, "text": text}
+            if at == "result":
+                item["choice"] = _int(x.get("choice"), 0, 2, 0)
+            extra.append(item)
+        item = {"id": eid, "era": era, "title": title, "kind": ev.get("kind") if ev.get("kind") in KINDS else "life",
+                "story": story, "choices": choices}
+        if cond:
+            item["cond"] = cond
+        if ev.get("fixed") == "open":
+            item["fixed"] = "open"
+        if extra:
+            item["extra"] = extra
+        events.append(item)
+    if not events:
+        raise LoopError("사건이 하나 이상 있어야 해요.")
+
+    t, dt = c.get("texts") or {}, d["texts"]
+
+    def mood(v, dv):
+        rows = [{"min": _int(x.get("min"), 0, 20, 0), "text": _lines(x.get("text"), 5)} for x in (v or []) if isinstance(x, dict)]
+        rows = [x for x in rows if x["text"]]
+        return sorted(rows, key=lambda x: -x["min"]) or dv
+
+    def titled(v, dv):
+        out = {}
+        for k, dx in dv.items():
+            x = (v or {}).get(k) or {}
+            out[k] = {"title": _s(x.get("title"), 60) or dx["title"], "text": _lines(x.get("text"), 20) or dx["text"]}
+        return out
+
+    texts = {"intro": _lines(t.get("intro"), 12) or dt["intro"],
+             "mood_hp": mood(t.get("mood_hp"), dt["mood_hp"]), "mood_mind": mood(t.get("mood_mind"), dt["mood_mind"]),
+             "death": titled(t.get("death"), dt["death"]), "ending": titled(t.get("ending"), dt["ending"]),
+             "luck": {k: _lines((t.get("luck") or {}).get(k), 20) or dt["luck"][k] for k in STATS}}
+    return {"rules": rules, "eras": eras, "events": events, "texts": texts}
+
+
+class Content:
+    """지금 쓰는 내용. 저장하면 바로 다음 사건부터 반영됩니다."""
+
+    def __init__(self, path=CONTENT_PATH):
+        self.path = path
+        self.lock = threading.RLock()
+        self.custom = False
+        self.set(self._load())
+
+    def _load(self):
+        try:
+            with open(self.path, "r", encoding="utf-8") as f:
+                c = clean_content(json.load(f))
+            self.custom = True
+            return c
+        except (OSError, json.JSONDecodeError, LoopError, ValueError, TypeError, AttributeError):
+            self.custom = False
+            return clean_content(default_content())
+
+    def set(self, c):
+        with self.lock:
+            self.c = c
+            self.rules = c["rules"]
+            self.eras = {e["id"]: e for e in c["eras"]}
+            self.events = c["events"]
+            self.by_id = {e["id"]: e for e in c["events"]}
+            self.texts = c["texts"]
+
+    def save(self, raw):
+        c = clean_content(raw)
+        with self.lock:
+            safeio.write_json(self.path, c, indent=1)
+            self.custom = True
+            self.set(c)
+        return c
+
+    def reset(self):
+        with self.lock:
+            try:
+                os.remove(self.path)
+            except OSError:
+                pass
+            self.custom = False
+            self.set(clean_content(default_content()))
+
+    def payload(self):
+        """편집 페이지용 전체 내용(운영진에게만 보냅니다 — 체력 · 정신 변동이 들어 있어요)."""
+        with self.lock:
+            return {"content": copy.deepcopy(self.c), "custom": self.custom, "kinds": list(KINDS), "death_kinds": list(DEATH_KINDS)}
+
+
+_CONTENT = None
+
+
+def content() -> Content:
+    global _CONTENT
+    if _CONTENT is None:
+        _CONTENT = Content()
+    return _CONTENT
+
+
+# ══════════════════════════════════════════════════════════════
+# 진행
+# ══════════════════════════════════════════════════════════════
 def privileged(run):
     """이번 생애의 당신이 그 나라의 기득권인지."""
     c, res = run.get("country"), run.get("res")
@@ -61,10 +281,10 @@ def _fmt(text, run):
     return text.replace("{조국}", home).replace("{이웃}", other).replace("{적}", enemy)
 
 
-def _mood(v, table=MOOD):
-    for limit, lines in table:
-        if v >= limit:
-            return lines
+def _mood(v, rows):
+    for x in rows:
+        if v >= x["min"]:
+            return x["text"]
     return []
 
 
@@ -85,9 +305,11 @@ def _cond_ok(ev, run):
 
 
 def _when_ok(when, run):
-    if "tag" in when and when["tag"] not in run["tags"]:
+    if when.get("tag") and when["tag"] not in run["tags"]:
         return False
     if "hp_lte" in when and run["hp"] > when["hp_lte"]:
+        return False
+    if "mind_lte" in when and run.get("mind", 0) > when["mind_lte"]:
         return False
     if "loops" in when and run["loop_no"] < when["loops"]:
         return False
@@ -116,29 +338,29 @@ class LoopBook:
         return self.data.setdefault(name, {"run": None, "lives": [], "loops": 0})
 
     # ── 진행 ──────────────────────────────────────────────
-    def start(self, name, res, country="", faction=""):
+    def start(self, name, res, faction="", country=None):
+        """새 생애. 출신 국가는 생애마다 무작위(시험용으로만 country를 넘깁니다)."""
         if res not in RESONANCE:
             raise LoopError("공명 여부를 골라 주세요.")
-        if country not in COUNTRIES:
-            raise LoopError("출신 국가를 골라 주세요.")
         with self.lock:
             e = self._entry(name)
             if e["run"] and e["run"]["status"] not in ("ended",):
                 raise LoopError("이미 진행 중인 생애가 있어요.")
-            e["run"] = self._new_run(res, loop_no=0, eras=FIRST_LIFE_ERAS, life_no=len(e["lives"]) + 1)
-            e["run"]["country"] = country
+            e["run"] = self._new_run(res, loop_no=0, eras=content().rules["first_life"], life_no=len(e["lives"]) + 1)
+            e["run"]["country"] = country if country in COUNTRIES else random.choice(list(COUNTRIES))
             e["run"]["faction"] = faction if faction in FACTIONS else ""
             self._next_event(e["run"])
             self.save()
 
     def _new_run(self, res, loop_no, eras, life_no, tags=(), memory=None):
-        return {"res": res, "hp": HP_START, "mind": MIND_START, "eras": list(eras), "era_i": 0, "step": 0, "tags": list(tags),
+        r = content().rules
+        return {"res": res, "hp": r["hp_start"], "mind": r["mind_start"], "eras": list(eras), "era_i": 0, "step": 0, "tags": list(tags),
                 "seen": [], "log": [], "event": None, "status": "event", "result": None, "death": None,
                 "loop_no": loop_no, "life_no": life_no, "memory": memory, "started": time.time(), "count": 0}
 
     def _pick(self, run, era):
         seen = set(run["seen"])
-        pool = [ev for ev in EVENTS if ev["era"] == era and ev["id"] not in seen and _cond_ok(ev, run)]
+        pool = [ev for ev in content().events if ev["era"] == era and ev["id"] not in seen and _cond_ok(ev, run)]
         if run["step"] == 0:
             fixed = [ev for ev in pool if ev.get("fixed") == "open"]
             if fixed:
@@ -148,9 +370,10 @@ class LoopBook:
 
     def _next_event(self, run):
         """다음 사건을 고릅니다. 시대가 끝났거나 고를 사건이 없으면 다음 시대로, 마지막 시대가 끝나면 엔딩."""
+        eras = content().eras
         while run["era_i"] < len(run["eras"]):
             era = run["eras"][run["era_i"]]
-            if run["step"] < ERAS[era]["len"]:
+            if era in eras and run["step"] < eras[era]["len"]:
                 ev = self._pick(run, era)
                 if ev:
                     run["event"] = ev["id"]
@@ -163,42 +386,57 @@ class LoopBook:
         run["event"] = None
         run["status"] = "ending"
 
+    def _repair(self, run):
+        """운영진이 진행 중인 사건을 지웠거나 시대를 바꿨으면, 고르기 전 상태의 사건만 새로 뽑아 줍니다."""
+        if run and run["status"] == "event" and run["event"] not in content().by_id:
+            if run["event"] in run["seen"]:
+                run["seen"].remove(run["event"])
+            self._next_event(run)
+            return True
+        return False
+
     def choose(self, name, event_id, idx):
         with self.lock:
             run = self._entry(name)["run"]
+            if self._repair(run):
+                self.save()
+                raise LoopError("운영진이 사건을 고쳐서 새 사건을 불러왔어요.")
             if not run or run["status"] != "event" or run["event"] != event_id:
                 raise LoopError("지금 고를 수 있는 사건이 아니에요. 화면을 새로 불러올게요.")
-            ev = EVENT_BY_ID[event_id]
+            C = content()
+            ev = C.by_id[event_id]
             if not isinstance(idx, int) or not 0 <= idx < len(ev["choices"]):
                 raise LoopError("선택지를 다시 골라 주세요.")
             ch = ev["choices"][idx]
-            before, mbefore = run["hp"], run.get("mind", MIND_START)
-            run["hp"] = max(HP_MIN, min(HP_MAX, before + ch["hp"]))
-            run["mind"] = max(0, min(MIND_MAX, mbefore + ch.get("mind", 0)))
+            hp_max, mind_max = C.rules["hp_max"], C.rules["mind_max"]
+            before, mbefore = run["hp"], run.get("mind", C.rules["mind_start"])
+            run["hp"] = max(HP_MIN, min(hp_max, before + ch["hp"]))
+            run["mind"] = max(0, min(mind_max, mbefore + ch.get("mind", 0)))
             for t in ch.get("tags", []):
                 if t not in run["tags"]:
                     run["tags"].append(t)
-            text = [_fmt(t, run) for t in ch["result"].split("\n")]
+            text = [_fmt(t, run) for t in ch["result"].split("\n") if t.strip()]
             for x in ev.get("extra", []):
                 if x.get("at") == "result" and x.get("choice") == idx and _when_ok(x.get("when", {}), run):
                     text += [_fmt(t, run) for t in x["text"]]
             # 시대의 위험 / 행운 : 선택과 상관없이 덮치는 일(위험 문장마다 체력 또는 정신). 이미 쓰러진 경우는 건너뜁니다.
             twist = None
+            era = C.eras.get(ev["era"]) or {}
             if run["hp"] > HP_MIN and run["mind"] > 0:
-                risk, luck = ERA_RISK.get(ev["era"], (0, 0))
                 roll = random.random()
-                if roll < risk:
-                    stat, line = random.choice(RISK_TEXT.get(ev["era"]) or [("hp", "예기치 못한 일이 겹쳤다.")])
-                    run[stat] = max(0, run[stat] - 1)
-                    twist = {"kind": "risk", "stat": stat, "text": line}
-                elif roll < risk + luck:
-                    room = [k for k, mx in (("hp", HP_MAX), ("mind", MIND_MAX)) if run[k] < mx]
+                if roll < era.get("risk", 0):
+                    rt = random.choice(era.get("risk_text") or [{"stat": "hp", "text": "예기치 못한 일이 겹쳤다."}])
+                    run[rt["stat"]] = max(0, run[rt["stat"]] - 1)
+                    twist = {"kind": "risk", "stat": rt["stat"], "text": _fmt(rt["text"], run)}
+                elif roll < era.get("risk", 0) + era.get("luck", 0):
+                    room = [k for k, mx in (("hp", hp_max), ("mind", mind_max)) if run[k] < mx]
                     if room:
                         stat = min(room, key=lambda k: run[k])   # 더 모자란 쪽을 채워요
                         run[stat] += 1
-                        twist = {"kind": "luck", "stat": stat, "text": random.choice(LUCK_TEXT[stat])}
+                        twist = {"kind": "luck", "stat": stat, "text": _fmt(random.choice(C.texts["luck"][stat]), run)}
             dh, dm = run["hp"] - before, run["mind"] - mbefore
-            run["result"] = {"choice": idx, "delta": dh, "dmind": dm, "twist": twist, "text": text}
+            run["result"] = {"choice": idx, "delta": dh, "dmind": dm, "twist": twist, "text": text,
+                             "title": ev["title"], "label": _fmt(ch["label"], run)}
             run["log"].append({"id": ev["id"], "title": ev["title"], "era": ev["era"], "choice": _fmt(ch["label"], run),
                                "delta": dh, "dmind": dm, "hp": run["hp"], "mind": run["mind"]})
             run["step"] += 1
@@ -208,7 +446,7 @@ class LoopBook:
                 kind = ev.get("kind", "life") if run["hp"] <= HP_MIN else "mind"
                 if "LOOP_CONTACT" in run["tags"] or run["loop_no"] > 0:
                     kind = "loop" if kind == "life" or (kind != "mind" and random.random() < 0.5) else kind
-                run["death"] = {"kind": kind if kind in DEATH else "life", "at": ev["title"], "era": ev["era"]}
+                run["death"] = {"kind": kind if kind in DEATH_KINDS else "life", "at": ev["title"], "era": ev["era"]}
             else:
                 run["status"] = "result"
             self.save()
@@ -239,7 +477,7 @@ class LoopBook:
                 e["loops"] = e.get("loops", 0) + 1
                 tags = [t for t in run["tags"] if t in LOOP_KEEP_TAGS] + ["LOOP_CONTACT"]
                 memory = run["death"]["at"] if run.get("death") else None
-                e["run"] = self._new_run(run["res"], loop_no=run["loop_no"] + 1, eras=LOOP_LIFE_ERAS,
+                e["run"] = self._new_run(run["res"], loop_no=run["loop_no"] + 1, eras=content().rules["loop_life"],
                                          life_no=run["life_no"], tags=sorted(set(tags)), memory=memory)
                 e["run"]["country"] = run.get("country", "")
                 e["run"]["faction"] = run.get("faction", "")
@@ -279,11 +517,16 @@ class LoopBook:
     # ── 화면에 보낼 자료 ─────────────────────────────────────
     @staticmethod
     def _era_view(era):
-        x = ERAS[era]
+        x = content().eras.get(era) or {"no": str(era), "name": "", "period": "", "level": ""}
         return {"id": era, "no": x["no"], "name": x["name"], "period": x["period"], "level": x["level"]}
 
     def _event_view(self, run):
-        ev = EVENT_BY_ID[run["event"]]
+        ev = content().by_id.get(run["event"])
+        if ev is None:
+            # 고른 뒤에 운영진이 그 사건을 지웠으면 결과에 남겨 둔 제목 · 선택만 보여 줍니다.
+            r = run.get("result") or {}
+            return {"id": run["event"], "title": r.get("title", ""), "era": self._era_view(run["eras"][min(run["era_i"], len(run["eras"]) - 1)]),
+                    "story": [], "choices": [{"label": r.get("label", ""), "picked": True}] * 3}
         story = list(ev["story"])
         for x in ev.get("extra", []):
             if x.get("at") == "story" and _when_ok(x.get("when", {}), run):
@@ -297,28 +540,34 @@ class LoopBook:
 
     def view(self, name):
         with self.lock:
+            C = content()
             e = self._entry(name) if name in self.data else {"run": None, "lives": [], "loops": 0}
             run = e["run"]
-            out = {"intro": INTRO, "hp_max": HP_MAX, "hp_start": HP_START, "mind_max": MIND_MAX, "loops": e.get("loops", 0),
-                   "lives": [{**{k: l.get(k) for k in ("life_no", "loop_no", "res", "country", "outcome", "count", "era", "hp", "mind", "death", "log", "ended")}} for l in e["lives"][:MAX_LIVES]],
-                   "eras": [self._era_view(i) for i in sorted(ERAS)], "run": None}
+            if self._repair(run):
+                self.save()
+            out = {"intro": C.texts["intro"], "hp_max": C.rules["hp_max"], "mind_max": C.rules["mind_max"], "loops": e.get("loops", 0),
+                   "lives": [{k: l.get(k) for k in ("life_no", "loop_no", "res", "country", "outcome", "count", "era", "hp", "mind", "death", "log", "ended")} for l in e["lives"][:MAX_LIVES]],
+                   "eras": [self._era_view(i) for i in C.eras], "run": None}
             if not run:
                 return out
-            r = {"status": run["status"], "hp": run["hp"], "mind": run.get("mind", MIND_START), "res": run["res"], "country": run.get("country", ""), "faction": run.get("faction", ""), "privileged": privileged(run), "loop_no": run["loop_no"], "life_no": run["life_no"],
-                 "count": run["count"], "log": run["log"], "mood": _mood(run["hp"]), "mood_mind": _mood(run.get("mind", MIND_START), MOOD_MIND), "eras": run["eras"], "memory": run.get("memory")}
+            r = {"status": run["status"], "hp": run["hp"], "mind": run.get("mind", C.rules["mind_start"]), "res": run["res"],
+                 "country": run.get("country", ""), "faction": run.get("faction", ""), "privileged": privileged(run),
+                 "loop_no": run["loop_no"], "life_no": run["life_no"], "count": run["count"], "log": run["log"],
+                 "mood": _mood(run["hp"], C.texts["mood_hp"]), "mood_mind": _mood(run.get("mind", 0), C.texts["mood_mind"]),
+                 "eras": run["eras"], "memory": run.get("memory")}
             era_now = run["eras"][min(run["era_i"], len(run["eras"]) - 1)]
             r["era"] = self._era_view(era_now)
             r["era_step"] = run["step"]
-            r["era_len"] = ERAS[era_now]["len"]
+            r["era_len"] = (C.eras.get(era_now) or {}).get("len", 1)
             if run["status"] in ("event", "result", "dead") and run["event"]:
                 r["event"] = self._event_view(run)
             if run["result"] is not None and run["status"] in ("result", "dead"):
                 r["result"] = {k: run["result"].get(k) for k in ("choice", "delta", "dmind", "twist", "text")}
             if run["status"] == "dead" and run.get("death"):
-                d = DEATH[run["death"]["kind"]]
+                d = C.texts["death"].get(run["death"]["kind"]) or C.texts["death"]["life"]
                 r["death"] = {"title": d["title"], "text": d["text"], "at": run["death"]["at"], "kind": run["death"]["kind"]}
             if run["status"] == "ending" or (run["status"] == "ended" and run.get("outcome") == "survived"):
-                x = ENDING["loop" if run["loop_no"] else "first"]
+                x = C.texts["ending"]["loop" if run["loop_no"] else "first"]
                 r["ending"] = {"title": x["title"], "text": x["text"]}
             if run["status"] == "ended":
                 r["outcome"] = run.get("outcome")

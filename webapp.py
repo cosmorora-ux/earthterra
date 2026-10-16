@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.44"
+SERVER_BUILD = "2026-10-13.45"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2902,7 +2902,7 @@ def _emit_mail_data(sid):
 
 # ==================================================================
 # PLAY 룸 : LOOP 생존 시뮬레이션 (loop_game.py) — 캐릭터마다 자기 생애를 진행합니다.
-# 체력 · 정신 변동은 고른 뒤에만 보냅니다. 출신 국가는 마이페이지 출신지, 진영(使徒 / Void)은 캐릭터 정보의 진영 칸을 씁니다.
+# 체력 · 정신 변동은 고른 뒤에만 보냅니다. 출신 국가는 생애마다 무작위, 진영(使徒 / Void)은 캐릭터 정보의 진영 칸을 씁니다.
 # ==================================================================
 def _emit_loop_data(sid):
     me, is_gm, room = _mail_identity(sid)
@@ -2912,16 +2912,8 @@ def _emit_loop_data(sid):
     data = book.view(me) if me else {"run": None, "lives": [], "loops": 0, "intro": [], "eras": []}
     data["me"] = me
     data["is_gm"] = is_gm
-    data["country"] = _loop_country(room, me)
     data["faction"] = _loop_faction(room, me)
     socketio.emit("loop_data", data, to=sid)
-
-
-def _loop_country(room, me):
-    """출신 국가 : 마이페이지 출신지(맵 '장소id:구역')가 아르카디아 · 노바 구역이면 그 나라, 아니면 빈칸(생애 시작 때 고름)."""
-    entry = room.game.db.characters.get(me) if me else None
-    home = ((entry or {}).get("hometown") or "").split(":")[0]
-    return home if home in loop_mod.COUNTRIES else ""
 
 
 def _loop_faction(room, me):
@@ -2952,12 +2944,50 @@ def on_loop_state(data=None):
 
 @socketio.on("loop_start")
 def on_loop_start(data):
-    # 출신 국가는 출신지가 정해져 있으면 그것, 아니면 화면에서 고른 것. 진영은 캐릭터 정보에서.
+    # 출신 국가는 생애마다 서버가 무작위로 정해요. 진영은 캐릭터 정보에서.
     me, is_gm, room = _mail_identity(request.sid)
     if room is None:
         return
-    country = _loop_country(room, me) or str((data or {}).get("country") or "")
-    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""), country, _loop_faction(room, me))
+    _loop_action(loop_mod.shared_book().start, str((data or {}).get("res") or ""), _loop_faction(room, me))
+
+
+# ── LOOP 편집(운영진) : 사건 · 규칙 · 문장. 체력 · 정신 변동이 들어 있어서 운영진에게만 보냅니다. ──
+def _loop_admin_room():
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None or room.battle_type != "play":
+        emit("loop_admin_result", {"ok": False, "message": "운영진만 편집할 수 있어요."})
+        return None
+    return room
+
+
+@socketio.on("loop_admin_get")
+def on_loop_admin_get(data=None):
+    if _loop_admin_room() is None:
+        return
+    emit("loop_admin", loop_mod.content().payload())
+
+
+@socketio.on("loop_admin_save")
+def on_loop_admin_save(data):
+    room = _loop_admin_room()
+    if room is None:
+        return
+    try:
+        loop_mod.content().save((data or {}).get("content"))
+    except (loop_mod.LoopError, ValueError, TypeError, AttributeError) as e:
+        emit("loop_admin_result", {"ok": False, "message": str(e) if isinstance(e, loop_mod.LoopError) else "내용 형식이 올바르지 않아요."})
+        return
+    emit("loop_admin", loop_mod.content().payload())
+    emit("loop_admin_result", {"ok": True, "message": "저장했어요. 다음 사건부터 바로 반영돼요."})
+
+
+@socketio.on("loop_admin_reset")
+def on_loop_admin_reset(data=None):
+    if _loop_admin_room() is None:
+        return
+    loop_mod.content().reset()
+    emit("loop_admin", loop_mod.content().payload())
+    emit("loop_admin_result", {"ok": True, "message": "기본 내용으로 되돌렸어요."})
 
 
 @socketio.on("loop_choose")

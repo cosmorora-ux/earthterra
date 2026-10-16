@@ -37,3 +37,4 @@ static/world/
 # 편지 첨부 이미지(서버 컴퓨터별 실데이터)
 static/mail_images/
 loop_runs.json
+loop_content.json
