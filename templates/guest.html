@@ -2068,15 +2068,15 @@
   .ps-c > .pl-k { flex:none; width:52px; white-space:nowrap; }
   .ps-v { min-width:0; flex:1; }
   .pl-stat .ps-c.eras { grid-column: 1 / -1; }
-  #loopNarrPop { position:fixed; left:50%; top:28px; z-index:900; display:flex; align-items:flex-start; gap:10px; max-width:min(520px, calc(100vw - 32px)); box-sizing:border-box;
+  #loopNarrPop { position:fixed; left:50%; top:28px; z-index:900; display:flex; align-items:center; gap:10px; width:max-content; max-width:calc(100vw - 24px); box-sizing:border-box;
     padding:13px 18px; border-radius:12px; background: rgba(20,20,24,.94); border:1px solid rgba(255,255,255,.08); box-shadow: 0 14px 36px rgba(0,0,0,.5);
     backdrop-filter: blur(8px); cursor:pointer; opacity:0; pointer-events:none; transform: translate(-50%, -8px); transition: opacity .35s ease, transform .35s ease; }
   #loopNarrPop.on { opacity:1; pointer-events:auto; transform: translate(-50%, 0); }
   #loopNarrPop::before { content:""; position:absolute; left:14px; right:14px; top:-1px; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.7), transparent); }
-  #loopNarrPop > i { flex:none; margin-top:3px; font-size:12px; color: var(--point); }
-  #loopNarrPop p { margin:0; color:#d6d6dc; font-size:13.5px; line-height:1.65; word-break: keep-all; }
+  #loopNarrPop > i { flex:none; font-size:12px; color: var(--point); }
+  #loopNarrPop p { margin:0; color:#d6d6dc; font-size:13.5px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #loopNarrPop.low p { color:#ffb0a8; } #loopNarrPop.low > i { color:#ff8a80; }
-  @media (max-width:900px) { #loopNarrPop { top: calc(14px + env(safe-area-inset-top)); } #loopNarrPop p { font-size:12.5px; } }
+  @media (max-width:900px) { #loopNarrPop { top: calc(14px + env(safe-area-inset-top)); } #loopNarrPop { padding:11px 14px; } #loopNarrPop p { font-size:12.5px; } }
   .ps-c.mood { padding-left:66px; color:#9d9da6; font-size:12.5px; line-height:1.55; align-self:start; word-break: keep-all; }
   .ps-c.mood.low { color:#ff8a80; }
   .pl-strain { flex-wrap:nowrap !important; min-width:0; }
@@ -13019,18 +13019,30 @@ function loopStatusHtml(d, r) {
     ${cell('eras', 'e', 'fa-hourglass-half', '시대', `<div class="pl-eras">${eras}</div>`)}</div>`;
 }
 // 몸 · 마음 상태 문장 : 화면에 붙여 두지 않고, 상태가 바뀔 때만 잠깐 팝업으로 알려 줘요(처음 들어왔을 때는 조용히).
-var loopNarrLast = null, loopNarrTimer = null;
+var loopNarrLast = null, loopNarrTimer = null, loopNarrQ = [];
+const loopSentences = lines => lines.join(' ').split(/(?<=[.!?。…])\s+/).map(t => t.trim()).filter(Boolean);
 function loopNarrHtml(r, mood) {
-  const txt = mood.join(' '), key = `${r.life_no}|${r.loop_no}`;
-  const prev = loopNarrLast; loopNarrLast = { key, txt };
+  const all = loopSentences(mood), key = `${r.life_no}|${r.loop_no}`, txt = all.join(' ');
+  const prev = loopNarrLast; loopNarrLast = { key, txt, all };
   if (!txt || !prev || prev.key !== key || prev.txt === txt) return '';
-  let el = document.getElementById('loopNarrPop');
-  if (!el) { el = document.createElement('div'); el.id = 'loopNarrPop'; el.onclick = () => el.classList.remove('on'); document.body.appendChild(el); }
-  el.className = r.hp <= 1 || r.mind <= 1 ? 'low' : '';
-  el.innerHTML = `<i class="fa-solid fa-feather-pointed"></i><p>${mood.map(loopEsc).join(' ')}</p>`;
-  void el.offsetWidth; el.classList.add('on');
-  clearTimeout(loopNarrTimer); loopNarrTimer = setTimeout(() => el.classList.remove('on'), 4200);
+  // 새로 생긴 문장만, 한 문장씩 차례로
+  const fresh = all.filter(t => !prev.all.includes(t));
+  loopNarrQ = (fresh.length ? fresh : all).map(t => ({ t, low: r.hp <= 1 || r.mind <= 1 }));
+  clearTimeout(loopNarrTimer); loopNarrNext();
   return '';
+}
+function loopNarrNext() {
+  let el = document.getElementById('loopNarrPop');
+  if (!el) { el = document.createElement('div'); el.id = 'loopNarrPop'; el.onclick = () => { loopNarrQ = []; el.classList.remove('on'); }; document.body.appendChild(el); }
+  const it = loopNarrQ.shift();
+  if (!it) { el.classList.remove('on'); return; }
+  const show = () => {
+    el.className = it.low ? 'low' : '';
+    el.innerHTML = `<i class="fa-solid fa-feather-pointed"></i><p>${loopEsc(it.t)}</p>`;
+    void el.offsetWidth; el.classList.add('on');
+    loopNarrTimer = setTimeout(() => { el.classList.remove('on'); loopNarrTimer = setTimeout(loopNarrNext, 380); }, 2600);
+  };
+  if (el.classList.contains('on')) { el.classList.remove('on'); loopNarrTimer = setTimeout(show, 380); } else show();
 }
 function loopEventHtml(r, marks) {
   const ev = r.event, res = r.result;
