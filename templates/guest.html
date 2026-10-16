@@ -12450,8 +12450,10 @@ const IS_PLAY = BATTLE_TYPE === 'play';
 // LOOP : 운영진이 정한 사이트 색과 상관없이 운명 시작 전에는 보라, 시작하면 출신 국가 색(아르카디아 노랑 · 노바 파랑).
 var loopPointTheme = IS_PLAY ? 'purple' : null;
 function loopSyncPoint(d) {
-  const c = d && d.run && d.run.country;
-  loopPointTheme = c === 'arcadia' ? 'yellow' : c === 'nova' ? 'blue' : 'purple';
+  // 출신 국가는 BIRTH에서 밝혀져요 : 프롤로그의 서력 역사를 읽는 동안에는 아직 보라.
+  const r = d && d.run, c = r && r.country;
+  const born = r && !(r.status === 'prologue' && loopProStep[`pro|${r.life_no}`] !== 'birth');
+  loopPointTheme = born && c === 'arcadia' ? 'yellow' : born && c === 'nova' ? 'blue' : 'purple';
   applyPointTheme();
 }
 if (IS_PLAY) applyPointTheme();
@@ -12643,14 +12645,14 @@ function loopDeathHtml(r, marks) {
 }
 // 프롤로그 : 서력의 역사 → 탄생 → 문명관. 고르는 것 없이 자동으로 정해진 나레이션이에요.
 // 프롤로그는 두 장 : 서력의 역사만 먼저 보여 주고, '다음'을 누르면 탄생(출신 · 공명 · 집안 · 문명관).
-let loopProStep = {};
+var loopProStep = {};
 function loopPrologueHtml(d, r, marks) {
   const P = r.prologue || {}, k = `pro|${r.life_no}`;
   if (loopProStep[k] !== 'birth') {
     const h = loopType(P.history, k + '|h', 300);
     if (h.fresh) marks.push(k + '|h');
     return { main: `<div class="pl-box glow pl-pro"><div class="pl-ev-meta"><span class="pl-ev-no">PROLOGUE</span><span>서력의 기억</span></div>${h.html}</div>`,
-      dock: `<div class="pl-actions pl-fade"${loopAfter(h.end + 300, h.fresh)}><button class="pl-btn primary wide" onclick="event.stopPropagation(); loopProStep['${k}'] = 'birth'; renderLoop()">다음<i class="fa-solid fa-arrow-right"></i></button></div>` };
+      dock: `<div class="pl-actions pl-fade"${loopAfter(h.end + 300, h.fresh)}><button class="pl-btn primary wide" onclick="event.stopPropagation(); loopProStep['${k}'] = 'birth'; loopSyncPoint(loopData); renderLoop()">다음<i class="fa-solid fa-arrow-right"></i></button></div>` };
   }
   const b = loopType(P.birth, k + '|b', 300);
   const v = loopType(P.view, k + '|v', b.end + 500);
