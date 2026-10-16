@@ -511,6 +511,16 @@
   .notice-card-head .new { width:7px; height:7px; border-radius:50%; background: var(--point); flex-shrink:0; }
   .nc-meta { margin-top:3px; color: var(--muted); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .nc-meta .pv { color:#7a7a80; }
+  /* 넉넉하게 : 카드 사이 · 안쪽 여백을 키우고, 미리보기는 두 줄까지만 */
+  .notice-card { margin-bottom:12px !important; }
+  .notice-card-head { padding:20px 22px !important; gap:16px !important; align-items:flex-start !important; }
+  .notice-card-head .t { font-size:16.5px; }
+  .nc-title { gap:10px; }
+  .nc-meta { margin-top:6px; font-size:12.5px; }
+  .nc-pv { margin-top:8px; color:#8a8a92; font-size:13.5px; line-height:1.65; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:keep-all; max-width:62ch; }
+  .notice-card-head .chev { margin-top:4px; }
+  .notice-card-body { padding:6px 22px 22px !important; }
+  @media (max-width:600px) { .notice-card-head { padding:16px 16px !important; gap:12px !important; } .notice-card-body { padding:4px 16px 18px !important; } .nc-pv { font-size:13px; } }
   .notice-card-head .chev { color: var(--muted); font-size:12px; transition: transform .15s; }
   .notice-card.open .chev { transform: rotate(180deg); }
   .notice-card-body { display:none; padding:4px 20px 18px; border-top:1px solid var(--panel-border); }
@@ -9505,7 +9515,8 @@ function renderNotices() {
       <div class="notice-card-head" onclick="toggleNotice('${n.id}')">
         <div class="nc-main">
           <div class="nc-title">${n.pinned ? '<span class="pin"><i class="fa-solid fa-thumbtack"></i>고정</span>' : ''}<span class="t">${shopEsc(n.title)}</span>${isNew ? '<span class="new"></span>' : ''}</div>
-          <div class="nc-meta">${fmtNoticeRealDate(n.created_at)}${!open && preview ? ` · <span class="pv">${shopEsc(preview)}</span>` : ''}</div>
+          ${n.pinned ? '' : `<div class="nc-meta">${fmtNoticeRealDate(n.created_at)}</div>`}
+          ${!open && preview ? `<div class="nc-pv">${shopEsc(preview)}</div>` : ''}
         </div>
         <span class="chev"><i class="fa-solid fa-chevron-down"></i></span>
       </div>
