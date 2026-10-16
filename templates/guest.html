@@ -2140,6 +2140,11 @@
   .pl-res { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
   .pl-res.one { grid-template-columns: minmax(0, 460px); }
   /* 지난 사건 다시 보기 */
+  .pl-lp-restart { margin-left:auto; height:28px; }
+  .pl-lp-body .lp-row.go { cursor:pointer; margin:0 -8px; padding-left:10px; padding-right:10px; border-radius:10px; transition: background .15s; }
+  .pl-lp-body .lp-row.go:hover { background: rgba(255,255,255,.04); }
+  .pl-lp-body .lp-row.go.on { background: rgba(var(--point-rgb),.1); }
+  .pl-lp-body .lp-row.go:hover + .lp-row, .pl-lp-body .lp-row.go.on + .lp-row { border-top-color: transparent; }
   .pl-back { margin-left:auto; display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); color: var(--muted); font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
   .pl-back:hover { color:#fff; border-color: rgba(255,255,255,.18); }
   .pl-back:disabled { opacity:.35; cursor:default; }
@@ -4823,7 +4828,7 @@
   </div>
 </div>
 {% endif %}
-{% if battle_type == 'play' %}<div class="member-panel panel pl-logpanel" id="playLogPanel"><div class="member-header"><b>Log</b><span>지나온 사건</span></div><div class="pl-lp-body" id="playLogBody"></div></div>{% endif %}
+{% if battle_type == 'play' %}<div class="member-panel panel pl-logpanel" id="playLogPanel"><div class="member-header"><b>Log</b><span>지나온 사건</span><button class="pl-restart pl-lp-restart" id="playLogRestart" onclick="event.stopPropagation(); loopRestart()" style="display:none"><i class="fa-solid fa-rotate-left"></i><span>새로 시작</span></button></div><div class="pl-lp-body" id="playLogBody"></div></div>{% endif %}
 <div class="member-panel panel">
   <div class="member-header">
     <b id="memberTitle">Chat</b>
@@ -12835,7 +12840,7 @@ function renderLoop() {
       if (loopPeek != null && (!loopPeekKey || loopPeekKey === pk) && (r.log || [])[loopPeek]) {
         loopPeekKey = pk;
         const x = loopPeekHtml(d, r, loopPeek); main += x.main; dock = x.dock;
-      } else if (r.event) { loopPeek = null; const x = loopEventHtml(r, marks); main += x.main; dock = x.dock; }
+      } else if (r.event) { if (loopPeek != null) { loopPeek = null; setTimeout(renderLoopLog, 0); } const x = loopEventHtml(r, marks); main += x.main; dock = x.dock; }
       if (isEnd && loopPeek == null) dock = `<div class="pl-actions pl-fade"${loopAfter(loopTailMs + 300, loopTailMs > 0)}><button class="pl-btn primary wide" onclick="event.stopPropagation(); loopEndPage['${endKey}'] = true; loopLastKey = ''; renderLoop()">계속<i class="fa-solid fa-arrow-right"></i></button></div>`;
     }
   }
@@ -12960,7 +12965,7 @@ function loopHeadHtml(d) {
   const folded = playing && loopFold;
   const fold = playing ? `<button class="pl-restart pl-fold" onclick="event.stopPropagation(); loopToggleFold()"><i class="fa-solid ${folded ? 'fa-chevron-down' : 'fa-chevron-up'}"></i><span>${folded ? '펼치기' : '접기'}</span></button>` : '';
   if (folded) { it.length = 0; it.push(loopMiniHtml(d, r)); }
-  const restart = r && r.status !== 'ended' ? `${fold}<button class="pl-restart" onclick="event.stopPropagation(); loopRestart()"><i class="fa-solid fa-rotate-left"></i><span>새로 시작</span></button>` : '';
+  const restart = fold;   // '새로 시작'은 기록판(Log) 머리로 옮겼어요
   return `<div class="pl-box glow pl-head ${folded ? 'folded' : ''}"><div class="pl-head-top"><div class="pl-logo"><b>Loop</b><span>러닝 시뮬레이션</span></div>
     ${it.length ? `<div class="pl-meta">${it.join('')}</div>` : '<div class="pl-meta-gap"></div>'}${restart}</div></div>`;
 }
@@ -13054,13 +13059,14 @@ function loopEventHtml(r, marks) {
       <div class="pl-result">${rt.html}<div class="pl-fade pl-res-fx"${loopAfter(rt.end + 150, rt.fresh)}>${res.solved ? `<div class="pl-deltas">${loopGainHtml(res.gain, r)}</div>` : loopDeltaHtml(res.delta, res.dmind).replace('</div>', loopGainHtml(res.gain, r) + '</div>')}</div>${tw}</div>`;
     if (r.status === 'result') dock = `<div class="pl-actions pl-fade"${loopAfter(loopTailMs, rt.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_next')">다음 사건<i class="fa-solid fa-arrow-right"></i></button></div>`;
   }
-  const prev = (r.log || []).length - (done ? 2 : 1);
-  return { main: `<div class="pl-box glow pl-ev"><div class="pl-ev-meta pl-fade"${loopAfter(0, story.fresh)}><span class="pl-ev-no">EVENT ${String(r.count + (done ? 0 : 1)).padStart(2, '0')}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span>${prev >= 0 ? `<button class="pl-back" onclick="event.stopPropagation(); loopPeekGo(${prev})"><i class="fa-solid fa-chevron-left"></i>이전 사건</button>` : ''}</div>
+  return { main: `<div class="pl-box glow pl-ev"><div class="pl-ev-meta pl-fade"${loopAfter(0, story.fresh)}><span class="pl-ev-no">EVENT ${String(r.count + (done ? 0 : 1)).padStart(2, '0')}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span></div>
     ${origin}<h2 class="pl-ev-title pl-fade"${loopAfter(120, story.fresh)}>${loopEsc(ev.title)}</h2><div class="pl-story">${story.html}</div>${memory}${resHtml}</div>`, dock };
 }
 // 지난 사건 다시 보기 : 읽기만 해요(고른 결과 · 깎인 체력 · 정신은 그대로).
 var loopPeek = null, loopPeekKey = '';
-function loopPeekGo(i) { loopPeek = i; loopPeekKey = ''; renderLoop(); const sc = document.querySelector('#playPage .pl-scroll'); if (sc) sc.scrollTop = 0; }
+function loopPeekGo(i) {
+  loopPeek = i; loopPeekKey = ''; renderLoop();
+  if (document.body.classList.contains('m-chat-open') && typeof toggleMobileChat === 'function') toggleMobileChat(false); const sc = document.querySelector('#playPage .pl-scroll'); if (sc) sc.scrollTop = 0; }
 function loopPeekHtml(d, r, i) {
   const l = r.log[i], eraBy = Object.fromEntries((d.eras || []).map(e => [e.id, e])), e = eraBy[l.era] || {};
   const cur = r.log.length - (r.status === 'event' ? 0 : 1);
@@ -13178,13 +13184,16 @@ function renderLoopLog() {
   const log = (r && r.log) || [];
   // 지난 운명은 기록판 맨 위에, 그 아래로 이번 운명의 사건이 쌓여요.
   const past = d ? loopLivesHtml(d) : '';
+  const rs = document.getElementById('playLogRestart'); if (rs) rs.style.display = r && r.status !== 'ended' ? '' : 'none';
   if (!log.length) { body.innerHTML = past || emptyHtml('fa-scroll', '아직 지나온 사건이 없어요', '사건을 고를 때마다 여기에 기록돼요.', null, true); body.dataset.n = 0; return; }
   const eraBy = Object.fromEntries(((d && d.eras) || []).map(e => [e.id, e]));
   let last = null, html = '';
   log.forEach((l, i) => {
     if (l.era !== last) { const e = eraBy[l.era] || {}; html += `<div class="lp-era">${loopEsc(e.no || '')}. ${loopEsc(e.name || '')}</div>`; last = l.era; }
     const g = Object.entries(l.gain || {}).filter(([, v]) => v).map(([k, v]) => `<em class="${k} ${v > 0 ? 'up' : 'down'}">${loopEsc(loopAssetName(k, r))} ${loopSign(v)}</em>`).join('');
-    html += `<div class="lp-row"><span class="n">${i + 1}</span><span class="ttl"><b>${loopEsc(l.title)}</b><span>${loopEsc(l.choice)}</span>${g ? `<span class="lp-gain">${g}</span>` : ''}</span>${loopMiniDelta(l.delta, l.dmind)}</div>`;
+    // 누르면 그 사건을 다시 읽어요(읽기 전용). 지금 보고 있는 사건이면 지금으로 돌아가요.
+    const cur = i === log.length - 1 && r.status !== 'event';
+    html += `<div class="lp-row go ${loopPeek === i ? 'on' : ''}" onclick="${cur ? 'loopPeek = null; renderLoop()' : `loopPeekGo(${i})`}"><span class="n">${i + 1}</span><span class="ttl"><b>${loopEsc(l.title)}</b><span>${loopEsc(l.choice)}</span>${g ? `<span class="lp-gain">${g}</span>` : ''}</span>${loopMiniDelta(l.delta, l.dmind)}</div>`;
   });
   const atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
   const grew = (body.dataset.n | 0) !== log.length;
