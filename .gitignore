@@ -38,3 +38,4 @@ static/world/
 static/mail_images/
 loop_runs.json
 loop_content.json
+secret_key.txt

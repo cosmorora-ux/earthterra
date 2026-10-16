@@ -10,7 +10,9 @@ Flask-SocketIO로 방(room) 단위 실시간 동기화 + 역할(운영진/참가
     .venv\\Scripts\\python.exe webapp.py
 """
 
+import hmac
 import json
+import secrets
 import safeio
 import os
 import random
@@ -19,7 +21,7 @@ import threading
 import time
 import uuid
 
-from flask import Flask, request, render_template, redirect, url_for, abort, jsonify
+from flask import Flask, request, render_template, redirect, url_for, abort, jsonify, session
 from flask_socketio import SocketIO, join_room, leave_room, emit
 
 import config
@@ -38,10 +40,32 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.59"
+SERVER_BUILD = "2026-10-13.60"
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "dev-only-change-me"
+# 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
+def _load_secret_key():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "secret_key.txt")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            k = f.readline().strip()
+            if len(k) >= 32:
+                return k
+    except OSError:
+        pass
+    k = secrets.token_hex(32)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(k + "\n")
+    except OSError:
+        pass
+    return k
+
+
+app.config["SECRET_KEY"] = _load_secret_key()
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 7
 # html(templates)을 고치면 서버를 다시 켜지 않아도 브라우저 새로고침(F5)만으로 바로 반영됩니다.
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 # 올리는 파일 크기 기준(사이트 전체 공통) : 이미지(움직이는 이미지 포함) 15MB, 소리(음악 · 효과음) 20MB.
@@ -133,9 +157,50 @@ LOG_SEND_CAP = 300
 
 @app.after_request
 def add_no_cache_headers(response):
-    """개발 중 수정한 화면이 브라우저 캐시에 걸려 옛 버전이 보이는 걸 방지합니다."""
+    """개발 중 수정한 화면이 브라우저 캐시에 걸려 옛 버전이 보이는 걸 방지합니다. + 기본 보안 헤더."""
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    h = response.headers
+    h.setdefault("X-Content-Type-Options", "nosniff")          # 올린 파일을 다른 형식(스크립트)으로 해석 못 하게
+    h.setdefault("X-Frame-Options", "SAMEORIGIN")              # 다른 사이트가 우리 화면을 몰래 틀 안에 넣지 못하게
+    h.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")   # 바깥 사이트로는 주소(방 키)가 넘어가지 않게
+    h.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
     return response
+
+
+# ── 보안 : 접속 IP · 비밀번호 시도 제한 · 운영진 로그인 ──────────────────────
+def client_ip():
+    """Cloudflare 터널을 거치면 실제 접속자 IP는 CF-Connecting-IP에 들어 있어요."""
+    env = request.environ
+    return (request.headers.get("CF-Connecting-IP") or env.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
+            or request.remote_addr or "?")
+
+
+_FAILS = {}          # ip → [실패 시각들]
+_FAIL_LIMIT, _FAIL_WINDOW = 6, 10 * 60
+_FAIL_LOCK = threading.Lock()
+
+
+def too_many_fails(ip):
+    now = time.time()
+    with _FAIL_LOCK:
+        recent = [t for t in _FAILS.get(ip, []) if now - t < _FAIL_WINDOW]
+        _FAILS[ip] = recent
+        return len(recent) >= _FAIL_LIMIT
+
+
+def note_fail(ip):
+    with _FAIL_LOCK:
+        _FAILS.setdefault(ip, []).append(time.time())
+        if len(_FAILS) > 5000:
+            _FAILS.clear()
+
+
+def same_secret(a, b):
+    return hmac.compare_digest(str(a or "").encode("utf-8"), str(b or "").encode("utf-8"))
+
+
+def is_admin():
+    return bool(session.get("admin"))
 
 
 def room_channel(room_id: str, suffix: str) -> str:
@@ -210,8 +275,54 @@ def web_manifest():
     return resp
 
 
+_LOGIN_HTML = """<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rooms</title><meta name="robots" content="noindex"><style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#050505;color:#f2f2f2;font-family:system-ui,"Malgun Gothic",sans-serif}
+form{width:min(340px,calc(100vw - 32px));padding:28px 24px;border-radius:16px;background:#141416;border:1px solid #262629;position:relative}
+form::before{content:"";position:absolute;left:18px;right:18px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(164,141,255,.6),transparent)}
+h1{margin:0 0 6px;font-size:18px}p{margin:0 0 18px;color:#8b8b90;font-size:13px}
+input{width:100%;box-sizing:border-box;height:42px;padding:0 14px;border-radius:12px;border:1px solid #2a2a2e;background:#0c0c0d;color:#fff;font-size:15px}
+button{width:100%;height:42px;margin-top:10px;border:none;border-radius:12px;background:#7650f0;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+.err{margin:10px 0 0;color:#ff8a80;font-size:13px}</style></head><body>
+<form method="post" action="/login"><h1>운영진 확인</h1><p>방 목록은 운영진만 볼 수 있어요.</p>
+<input type="password" name="password" placeholder="비밀번호" autofocus autocomplete="current-password"><button>들어가기</button>{err}</form></body></html>"""
+
+
+@app.route("/login", methods=["GET", "POST"])
+def admin_login():
+    err = ""
+    if request.method == "POST":
+        ip = client_ip()
+        if too_many_fails(ip):
+            err = "시도가 너무 많아요. 10분 뒤에 다시 해 주세요."
+        elif same_secret(request.form.get("password"), GM_GUEST_PASSWORD):
+            session.clear()
+            session["admin"] = True
+            session.permanent = True
+            return redirect(url_for("index"))
+        else:
+            note_fail(ip)
+            err = "비밀번호가 올바르지 않아요."
+    html = _LOGIN_HTML.replace("{err}", f'<p class="err">{err}</p>' if err else "")
+    return html, (429 if "너무" in err else 200), {"Content-Type": "text/html; charset=utf-8"}
+
+
+@app.route("/logout")
+def admin_logout():
+    session.clear()
+    return redirect(url_for("admin_login"))
+
+
+@app.route("/robots.txt")
+def robots_txt():
+    return "User-agent: *\nDisallow: /\n", 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
 @app.route("/")
 def index():
+    # 방 목록에는 모든 방의 참가 링크(키)가 들어 있어서 운영진 로그인 뒤에만 보여 줍니다.
+    if not is_admin():
+        return redirect(url_for("admin_login"))
     rooms_view = [
         {
             "id": room.id,
@@ -233,6 +344,8 @@ def yacht_page():
 
 @app.route("/create_room", methods=["POST"])
 def create_room_route():
+    if not is_admin():
+        abort(403)
     battle_type = request.form.get("battle_type", "pvp")
     if battle_type == "lounge":
         battle_type = "pvp"
@@ -243,6 +356,8 @@ def create_room_route():
 
 @app.route("/delete_room", methods=["POST"])
 def delete_room_route():
+    if not is_admin():
+        abort(403)
     room_id = request.form.get("room_id", "")
     key = request.form.get("key", "")
     room = get_room(room_id)
@@ -258,7 +373,7 @@ def guest_page(room_id):
     if room is None:
         abort(404)
     key = request.args.get("key", "")
-    if key != room.guest_key:
+    if not same_secret(key, room.guest_key):
         abort(403)
     default_team_a, default_team_b = BATTLE_TYPE_DEFAULTS.get(room.battle_type, (3, 3))
     return render_template(
@@ -1071,7 +1186,7 @@ def on_join(data):
 
     # 운영진 화면은 없앴습니다. 운영 권한은 참가자 링크에서 "GM" + 비밀번호로만 얻습니다
     # (gm_key는 방 목록 페이지에 노출될 수 있어 더 이상 권한을 주지 않습니다).
-    if key == room.guest_key:
+    if same_secret(key, room.guest_key):
         role = "guest"
     else:
         emit("error", {"message": "잘못된 접속 키입니다."})
@@ -1079,7 +1194,12 @@ def on_join(data):
 
     # 참가자 링크로 닉네임을 "GM"으로 입력해 전체 조작 권한을 얻으려면 비밀번호가 맞아야 합니다.
     if role == "guest" and nickname.lower() == "gm":
-        if (data.get("gm_password") or "") != GM_GUEST_PASSWORD:
+        ip = client_ip()
+        if too_many_fails(ip):
+            emit("error", {"message": "비밀번호 시도가 너무 많아요. 10분 뒤에 다시 해 주세요."})
+            return
+        if not same_secret(data.get("gm_password"), GM_GUEST_PASSWORD):
+            note_fail(ip)
             emit("error", {"message": "비밀번호가 올바르지 않습니다."})
             return
 
@@ -4006,6 +4126,8 @@ def build_demo_room():
 
 @app.route("/create_demo_room", methods=["POST"])
 def create_demo_room_route():
+    if not is_admin():
+        abort(403)
     room, _ = build_demo_room()
     return redirect(url_for("guest_page", room_id=room.id, key=room.guest_key))
 
