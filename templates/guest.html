@@ -1950,7 +1950,17 @@
   @media (prefers-reduced-motion: reduce) { .play-page .tc { animation-duration:.01s; } }
   body.is-play .breadcrumb-row .grid-notice, body.is-play #formatLabel, body.is-play #roundInfo, body.is-play .topbar .sep, body.is-play #roundTimerLabel, body.is-play .m-battle-tools { display:none !important; }
   .play-page { flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
-  @media (min-width:901px) { body.is-play .play-page { padding-top:50px; } }   /* 오른쪽 음악 줄(40px + 간격 10px) 아래 기록 패널과 위쪽을 맞춥니다 */
+  /* 음악 : 컴퓨터는 메뉴 탭(사이드바)의 소리 버튼에서 음소거 · 음량만. 휴대폰 · 태블릿은 기기 음량으로 조절하니 숨겨요. */
+  .member-top, .bgm-player { display:none !important; }
+  .sb-sound { position:relative; display:flex; justify-content:center; }
+  .sb-sound-pop { position:absolute; left:calc(100% + 14px); bottom:0; display:none; align-items:center; gap:10px; padding:10px 14px 10px 10px; border-radius:12px; background: var(--panel, #151518); border:1px solid rgba(255,255,255,.08); box-shadow: 0 12px 30px rgba(0,0,0,.45); z-index:200; white-space:nowrap; }
+  .sb-sound.open .sb-sound-pop { display:flex; }
+  .sb-sound.open #sidebarSoundBtn { color:#fff; background: rgba(255,255,255,.06); }
+  .sb-mute { width:32px; height:32px; border:none; border-radius:10px; background: rgba(255,255,255,.05); color: var(--text); cursor:pointer; font-size:13px; }
+  .sb-mute:hover { background: rgba(255,255,255,.1); }
+  .sb-sound-pop input[type=range].nice-range { width:120px; }
+  .sb-vol-num { min-width:24px; text-align:right; font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  @media (max-width:900px), (hover:none) and (pointer:coarse) { .sb-sound { display:none !important; } }
   .pl-scroll { flex:1; min-height:0; overflow-y:auto; scrollbar-width:thin; }
   /* 선택지 · 다음 버튼 : 화면 아래 고정 */
   .pl-dock { flex:none; padding:12px 0 0; position:relative; }
@@ -3970,6 +3980,9 @@
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
   <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <div class="sidebar-grow"></div>
+  <div class="sb-sound" id="sbSound"><button class="sidebar-icon" id="sidebarSoundBtn" onclick="toggleSoundPop(event)" aria-label="음악 음량"><i class="fa-solid fa-volume-high"></i></button>
+    <div class="sb-sound-pop" id="sbSoundPop" onclick="event.stopPropagation()"><button type="button" class="sb-mute" id="sbMuteBtn" onclick="toggleMusicMute()" aria-label="음소거"><i class="fa-solid fa-volume-high"></i></button>
+      <input type="range" class="nice-range" id="sbVolSlider" min="0" max="100" oninput="onVolumeChange(this.value)" aria-label="음악 음량"><span class="sb-vol-num" id="sbVolNum"></span></div></div>
   <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
 </div>
 <div class="content-area">
@@ -8584,8 +8597,20 @@ function toggleMusicMute() {
   refreshVolumeUi();
 }
 
+function toggleSoundPop(e) {
+  if (e) e.stopPropagation();
+  const w = document.getElementById('sbSound'); if (!w) return;
+  w.classList.toggle('open');
+  if (w.classList.contains('open')) { const sl = document.getElementById('sbVolSlider'); if (sl) sl.value = musicVolume; refreshVolumeUi(); }
+}
+document.addEventListener('click', (e) => { const w = document.getElementById('sbSound'); if (w && w.classList.contains('open') && !w.contains(e.target)) w.classList.remove('open'); });
 function refreshVolumeUi() {
   paintRange(document.getElementById('musicVolumeSlider'));
+  const sbs = document.getElementById('sbVolSlider');
+  if (sbs) { sbs.value = musicVolume; paintRange(sbs); }
+  const sbn = document.getElementById('sbVolNum'); if (sbn) sbn.textContent = musicVolume;
+  const sbIcon = musicVolume === 0 ? 'fa-volume-xmark' : (musicVolume < 40 ? 'fa-volume-low' : 'fa-volume-high');
+  ['sbMuteBtn', 'sidebarSoundBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.innerHTML = `<i class="fa-solid ${sbIcon}"></i>`; });
   const num = document.getElementById('musicVolumeNum');
   if (num) num.textContent = musicVolume;
   const btn = document.getElementById('musicMuteBtn');
