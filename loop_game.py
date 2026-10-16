@@ -62,6 +62,15 @@ COUNTRIES = {"arcadia": "아르카디아", "nova": "노바"}
 # 진영 : 전쟁 때의 포지션. 서로 적입니다. 출신 국가를 따라가요(아르카디아 → 使徒, 노바 → Void).
 FACTIONS = ("使徒", "Void")
 COUNTRY_FACTION = {"arcadia": "使徒", "nova": "Void"}
+COUNTRY_SWITCH = 0.05   # 다시 태어날 때 다른 나라에서 태어날 확률(나머지는 이전과 같은 나라)
+
+
+def _reborn_country(prev):
+    if prev not in COUNTRIES:
+        return random.choice(list(COUNTRIES))
+    if random.random() < COUNTRY_SWITCH:
+        return random.choice([c for c in COUNTRIES if c != prev])
+    return prev
 
 
 class LoopError(Exception):
@@ -522,8 +531,10 @@ class LoopBook:
             e = self._entry(name)
             if e["run"] and e["run"]["status"] not in ("ended",):
                 raise LoopError("이미 진행 중인 생애가 있어요.")
+            res = self.fixed_res(e) or res      # 한 번 기록을 남긴 공명 여부는 다음 운명에도 그대로
+            prev = e["lives"][0].get("country") if e["lives"] else None
             e["run"] = self._new_run(res, loop_no=0, eras=content().rules["first_life"], life_no=len(e["lives"]) + 1)
-            e["run"]["country"] = country if country in COUNTRIES else random.choice(list(COUNTRIES))
+            e["run"]["country"] = country if country in COUNTRIES else _reborn_country(prev)
             e["run"]["faction"] = COUNTRY_FACTION[e["run"]["country"]]
             st = content().res_rules()["start"][e["run"]["country"]]["priv" if privileged(e["run"]) else "non"]
             for k in RESOURCES:
@@ -536,6 +547,14 @@ class LoopBook:
                 e["run"]["tags"].append(view["tag"])
             e["run"]["status"] = "prologue"   # 역사 · 탄생 나레이션을 먼저 보여 주고, '삶을 시작한다'를 누르면 첫 사건
             self.save()
+
+    @staticmethod
+    def fixed_res(e):
+        """기록을 남긴 운명이 있으면 그 공명 여부로 고정(가장 최근 기록 기준)."""
+        for l in e.get("lives") or []:
+            if l.get("res") in RESONANCE:
+                return l["res"]
+        return None
 
     def _new_run(self, res, loop_no, eras, life_no, tags=(), memory=None):
         r = content().rules
@@ -649,7 +668,8 @@ class LoopBook:
             run["result"] = {"choice": idx, "delta": dh, "dmind": dm, "twist": twist, "text": text, "gain": gained,
                              "title": ev["title"], "label": _fmt(ch["label"], run)}
             run["log"].append({"id": ev["id"], "title": ev["title"], "era": ev["era"], "choice": _fmt(ch["label"], run),
-                               "delta": dh, "dmind": dm, "gain": gained, "hp": run["hp"], "mind": run["mind"]})
+                               "delta": dh, "dmind": dm, "gain": gained, "hp": run["hp"], "mind": run["mind"],
+                               "pick": idx, "story": self._event_story(ev, run), "text": text, "twist": twist})
             run["step"] += 1
             run["count"] += 1
             if run["hp"] <= HP_MIN or run["mind"] <= 0:
@@ -712,6 +732,7 @@ class LoopBook:
             run["result"] = {"choice": -1, "solved": kind, "cost": cost, "delta": 0, "dmind": 0, "twist": None, "text": text,
                              "gain": {kind: -cost}, "title": ev["title"], "label": label}
             run["log"].append({"id": ev["id"], "title": ev["title"], "era": ev["era"], "choice": label, "solved": kind,
+                               "pick": -1, "story": self._event_story(ev, run), "text": text,
                                "delta": 0, "dmind": 0, "gain": {kind: -cost}, "hp": run["hp"], "mind": run["mind"]})
             run["step"] += 1
             run["count"] += 1
@@ -748,8 +769,8 @@ class LoopBook:
                 memory = run["death"]["at"] if run.get("death") else None
                 e["run"] = self._new_run(run["res"], loop_no=run["loop_no"] + 1, eras=content().rules["loop_life"],
                                          life_no=run["life_no"], tags=sorted(set(tags)), memory=memory)
-                e["run"]["country"] = run.get("country", "")
-                e["run"]["faction"] = run.get("faction", "")
+                e["run"]["country"] = _reborn_country(run.get("country"))
+                e["run"]["faction"] = COUNTRY_FACTION.get(e["run"]["country"], run.get("faction", ""))
                 for k in RESOURCES:
                     e["run"][k] = run.get(k, 0)
                 e["run"][STRAIN] = int(run.get(STRAIN, 0) * content().strain_rules()["loop_keep"])
@@ -812,6 +833,14 @@ class LoopBook:
         x = content().eras.get(era) or {"no": str(era), "name": "", "period": "", "level": ""}
         return {"id": era, "no": x["no"], "name": x["name"], "period": x["period"], "level": x["level"]}
 
+    @staticmethod
+    def _event_story(ev, run):
+        story = list(ev["story"])
+        for x in ev.get("extra", []):
+            if x.get("at") == "story" and _when_ok(x.get("when", {}), run):
+                story += x["text"]
+        return [_fmt(t, run) for t in story]
+
     def _event_view(self, run):
         ev = content().by_id.get(run["event"])
         if ev is None:
@@ -819,11 +848,7 @@ class LoopBook:
             r = run.get("result") or {}
             return {"id": run["event"], "title": r.get("title", ""), "era": self._era_view(run["eras"][min(run["era_i"], len(run["eras"]) - 1)]),
                     "story": [], "choices": [{"label": r.get("label", ""), "picked": True}] * 3}
-        story = list(ev["story"])
-        for x in ev.get("extra", []):
-            if x.get("at") == "story" and _when_ok(x.get("when", {}), run):
-                story += x["text"]
-        story = [_fmt(t, run) for t in story]
+        story = self._event_story(ev, run)
         # 체력 변동은 고른 뒤에만 : 고르기 전에는 선택지 문장만 보냅니다.
         choices = []
         for c in ev["choices"]:
@@ -843,7 +868,10 @@ class LoopBook:
             if self._repair(run):
                 self.save()
             out = {"intro": C.texts["intro"], "hp_max": C.rules["hp_max"], "mind_max": C.rules["mind_max"], "loops": e.get("loops", 0),
-                   "lives": [{k: l.get(k) for k in ("life_no", "loop_no", "res", "country", "outcome", "count", "era", "hp", "mind", "death", "log", "ended")} for l in e["lives"][:MAX_LIVES]],
+                   "lives": [dict({k: l.get(k) for k in ("life_no", "loop_no", "res", "country", "outcome", "count", "era", "hp", "mind", "death", "ended")},
+                              log=[{k: v for k, v in x.items() if k not in ("story", "text", "twist")} for x in l.get("log") or []])
+                         for l in e["lives"][:MAX_LIVES]],
+                   "res_fixed": self.fixed_res(e),
                    "eras": [self._era_view(i) for i in C.eras], "run": None}
             if not run:
                 return out

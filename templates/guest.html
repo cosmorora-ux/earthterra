@@ -2066,6 +2066,16 @@
   .ps-c { display:flex; align-items:center; gap:14px; min-width:0; }
   .ps-c > .pl-k { flex:none; width:52px; white-space:nowrap; }
   .ps-v { min-width:0; flex:1; }
+  .pl-stat .ps-c.eras { grid-column: 1 / -1; }
+  .pl-narr { position:relative; display:flex; align-items:flex-start; gap:12px; margin-top:-4px; padding:14px 22px; border-radius:16px;
+    background: linear-gradient(90deg, rgba(var(--point-rgb),.07), rgba(255,255,255,.015) 60%); border:1px solid rgba(255,255,255,.05); }
+  .pl-narr > i { flex:none; margin-top:3px; font-size:12px; color: var(--point); opacity:.75; }
+  .pl-narr p { margin:0; color:#c4c4cc; font-size:13.5px; line-height:1.7; word-break: keep-all; letter-spacing:-0.005em; }
+  .pl-narr.low p { color:#ffb0a8; } .pl-narr.low > i { color:#ff8a80; }
+  .pl-narr.fresh p span { display:inline; animation: plNarrIn .9s ease both; }
+  .pl-narr.fresh p span + span { animation-delay:.35s; }
+  @keyframes plNarrIn { from { opacity:0; filter: blur(3px); } to { opacity:1; filter:none; } }
+  @media (max-width:900px) { .pl-narr { padding:12px 16px; } .pl-narr p { font-size:12.5px; } }
   .ps-c.mood { padding-left:66px; color:#9d9da6; font-size:12.5px; line-height:1.55; align-self:start; word-break: keep-all; }
   .ps-c.mood.low { color:#ff8a80; }
   .pl-strain { flex-wrap:nowrap !important; min-width:0; }
@@ -2127,6 +2137,14 @@
   .pl-death .pl-actions { justify-content:center; margin-top:24px; }
   .pl-intro p { margin:0 0 8px; font-size:15px; line-height:1.8; color:#dcdce1; }
   .pl-res { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+  .pl-res.one { grid-template-columns: minmax(0, 460px); }
+  /* 지난 사건 다시 보기 */
+  .pl-back { margin-left:auto; display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); color: var(--muted); font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
+  .pl-back:hover { color:#fff; border-color: rgba(255,255,255,.18); }
+  .pl-back:disabled { opacity:.35; cursor:default; }
+  .pl-peek-tag { display:inline-flex; align-items:center; gap:6px; height:22px; padding:0 9px; border-radius:8px; background: rgba(255,255,255,.06); color:#bdbdc3; font-size:11.5px; font-weight:700; }
+  .pl-ev.peek { opacity:.92; }
+  .pl-actions.peek .pl-btn i { margin:0 4px; }
   /* 공명 여부 카드 : 은은한 상자, 넉넉한 여백, 카드 안에서 바로 시작 */
   .pl-res .prc { position:relative; display:flex; flex-direction:column; align-items:flex-start; min-height:300px; padding:30px 28px 26px; border-radius:16px; border:1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); transition: background .25s, border-color .25s, box-shadow .25s; }
   .pl-res .prc::before { content:''; position:absolute; left:22px; right:22px; top:0; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.9), transparent); opacity:.35; transition: opacity .25s; }
@@ -5297,7 +5315,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.58";
+const EXPECTED_SERVER_BUILD = "2026-10-13.59";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -12794,8 +12812,12 @@ function renderLoop() {
       main = x.main.replace('class="pl-box glow pl-death', 'class="pl-box glow pl-endpage pl-death'); dock = x.dock;
     } else {
       main = loopStatusHtml(d, r);
-      if (r.event) { const x = loopEventHtml(r, marks); main += x.main; dock = x.dock; }
-      if (isEnd) dock = `<div class="pl-actions pl-fade"${loopAfter(loopTailMs + 300, loopTailMs > 0)}><button class="pl-btn primary wide" onclick="event.stopPropagation(); loopEndPage['${endKey}'] = true; loopLastKey = ''; renderLoop()">계속<i class="fa-solid fa-arrow-right"></i></button></div>`;
+      const pk = `${r.life_no}|${r.loop_no}|${(r.log || []).length}`;
+      if (loopPeek != null && (!loopPeekKey || loopPeekKey === pk) && (r.log || [])[loopPeek]) {
+        loopPeekKey = pk;
+        const x = loopPeekHtml(d, r, loopPeek); main += x.main; dock = x.dock;
+      } else if (r.event) { loopPeek = null; const x = loopEventHtml(r, marks); main += x.main; dock = x.dock; }
+      if (isEnd && loopPeek == null) dock = `<div class="pl-actions pl-fade"${loopAfter(loopTailMs + 300, loopTailMs > 0)}><button class="pl-btn primary wide" onclick="event.stopPropagation(); loopEndPage['${endKey}'] = true; loopLastKey = ''; renderLoop()">계속<i class="fa-solid fa-arrow-right"></i></button></div>`;
     }
   }
   const key = r ? `${r.status}|${r.event ? r.event.id : ''}|${r.count}|${r.loop_no}|${loopEndPage[`${r.life_no}|${r.loop_no}|${r.count}|${r.status}`] ? 'p' : ''}` : 'none';
@@ -12967,8 +12989,15 @@ function loopStatusHtml(d, r) {
     ${cell('assets', 'a', 'fa-gem', '자원', `<div class="pl-assets">${LOOP_ASSETS.map(([k, ic]) => `<span class="pl-asset ${k}"><i class="fa-solid ${ic}"></i>${k === 'talent' ? loopEsc(r.talent_name || '재능') : LOOP_ASSET_NAME[k]}<b>${A[k] || 0}</b></span>`).join('')}</div>`, note)}
     ${cell('mind', 'mind', LOOP_STAT.mind[1], LOOP_STAT.mind[0], bar('mind', r.mind, d.mind_max || 5))}
     ${cell('strain', 's', 'fa-house-crack', '균열', `<div class="pl-strain ${sv >= sm * 0.6 ? 'hot' : ''}">${Array.from({ length: sm }, (_, i) => `<i class="${i < sv ? 'on' : ''}"></i>`).join('')}<span>${strainText}</span></div>`, strainText)}
-    <div class="ps-c mood ${r.hp <= 1 || r.mind <= 1 ? 'low' : ''}">${mood.length ? mood.map(loopEsc).join(' ') : ''}</div>
-    ${cell('eras', 'e', 'fa-hourglass-half', '시대', `<div class="pl-eras">${eras}</div>`)}</div>`;
+    ${cell('eras', 'e', 'fa-hourglass-half', '시대', `<div class="pl-eras">${eras}</div>`)}</div>${loopNarrHtml(r, mood)}`;
+}
+// 나레이션 칸 : 몸 · 마음 상태 문장을 상태판 아래 따로. 문장이 바뀔 때만 천천히 떠올라요.
+var loopNarrLast = '';
+function loopNarrHtml(r, mood) {
+  if (!mood.length) return '';
+  const txt = mood.join(' '), fresh = txt !== loopNarrLast;
+  loopNarrLast = txt;
+  return `<div class="pl-narr ${r.hp <= 1 || r.mind <= 1 ? 'low' : ''} ${fresh ? 'fresh' : ''}"><i class="fa-solid fa-feather-pointed"></i><p>${mood.map(t => `<span>${loopEsc(t)}</span>`).join(' ')}</p></div>`;
 }
 function loopEventHtml(r, marks) {
   const ev = r.event, res = r.result;
@@ -13006,8 +13035,26 @@ function loopEventHtml(r, marks) {
       <div class="pl-result">${rt.html}<div class="pl-fade pl-res-fx"${loopAfter(rt.end + 150, rt.fresh)}>${res.solved ? `<div class="pl-deltas">${loopGainHtml(res.gain, r)}</div>` : loopDeltaHtml(res.delta, res.dmind).replace('</div>', loopGainHtml(res.gain, r) + '</div>')}</div>${tw}</div>`;
     if (r.status === 'result') dock = `<div class="pl-actions pl-fade"${loopAfter(loopTailMs, rt.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_next')">다음 사건<i class="fa-solid fa-arrow-right"></i></button></div>`;
   }
-  return { main: `<div class="pl-box glow pl-ev"><div class="pl-ev-meta pl-fade"${loopAfter(0, story.fresh)}><span class="pl-ev-no">EVENT ${String(r.count + (done ? 0 : 1)).padStart(2, '0')}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span></div>
+  const prev = (r.log || []).length - (done ? 2 : 1);
+  return { main: `<div class="pl-box glow pl-ev"><div class="pl-ev-meta pl-fade"${loopAfter(0, story.fresh)}><span class="pl-ev-no">EVENT ${String(r.count + (done ? 0 : 1)).padStart(2, '0')}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span>${prev >= 0 ? `<button class="pl-back" onclick="event.stopPropagation(); loopPeekGo(${prev})"><i class="fa-solid fa-chevron-left"></i>이전 사건</button>` : ''}</div>
     ${origin}<h2 class="pl-ev-title pl-fade"${loopAfter(120, story.fresh)}>${loopEsc(ev.title)}</h2><div class="pl-story">${story.html}</div>${memory}${resHtml}</div>`, dock };
+}
+// 지난 사건 다시 보기 : 읽기만 해요(고른 결과 · 깎인 체력 · 정신은 그대로).
+var loopPeek = null, loopPeekKey = '';
+function loopPeekGo(i) { loopPeek = i; loopPeekKey = ''; renderLoop(); const sc = document.querySelector('#playPage .pl-scroll'); if (sc) sc.scrollTop = 0; }
+function loopPeekHtml(d, r, i) {
+  const l = r.log[i], eraBy = Object.fromEntries((d.eras || []).map(e => [e.id, e])), e = eraBy[l.era] || {};
+  const cur = r.log.length - (r.status === 'event' ? 0 : 1);
+  const story = loopType(l.story || [], null), res = loopType(l.text || [], null);
+  const tw = l.twist && l.twist.text ? `<div class="tw ${l.twist.kind}"><i class="fa-solid ${l.twist.kind === 'purge' ? 'fa-house-crack' : l.twist.kind === 'risk' ? 'fa-bolt' : 'fa-leaf'}"></i><p>${loopEsc(l.twist.text)}</p></div>` : '';
+  const fx = l.solved ? `<div class="pl-deltas">${loopGainHtml(l.gain, r)}</div>` : loopDeltaHtml(l.delta, l.dmind).replace('</div>', loopGainHtml(l.gain, r) + '</div>');
+  const main = `<div class="pl-box glow pl-ev peek"><div class="pl-ev-meta"><span class="pl-ev-no">EVENT ${String(i + 1).padStart(2, '0')}</span><span>${loopEsc(e.no || '')}. ${loopEsc(e.name || '')}</span><span class="pl-peek-tag"><i class="fa-solid fa-clock-rotate-left"></i>지난 사건</span></div>
+    <h2 class="pl-ev-title">${loopEsc(l.title)}</h2><div class="pl-story">${story.html || '<p class="q">기록이 흐릿합니다.</p>'}</div>
+    <div class="pl-picked"><span class="k">${l.solved ? `<i class="fa-solid ${l.solved === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>` : 'ABC'[l.pick] || '·'}</span>${loopEsc(l.choice)}</div>
+    ${res.html || fx || tw ? `<div class="pl-result">${res.html}<div class="pl-res-fx">${fx}</div>${tw}</div>` : ''}</div>`;
+  const dock = `<div class="pl-actions two peek"><button class="pl-btn" ${i <= 0 ? 'disabled' : ''} onclick="event.stopPropagation(); loopPeekGo(${i - 1})"><i class="fa-solid fa-chevron-left"></i>이전 사건</button>
+    <button class="pl-btn primary" onclick="event.stopPropagation(); ${i + 1 < cur ? `loopPeekGo(${i + 1})` : 'loopPeek = null; renderLoop()'}">${i + 1 < cur ? '다음 사건' : '지금으로 돌아가기'}<i class="fa-solid fa-chevron-right"></i></button></div>`;
+  return { main, dock };
 }
 function loopDeathHtml(r, marks) {
   const d = r.death, k = `death|${r.life_no}|${r.loop_no}|${r.count}`;
@@ -13047,7 +13094,7 @@ function loopEndingHtml(r, marks) {
   const tx = loopType(e.text, k, 400);
   if (tx.fresh) marks.push(k);
   return { main: `<div class="pl-box glow pl-death loop"><div class="t">${e.paused ? 'TO BE CONTINUED' : 'SURVIVED'}</div><h3>${loopEsc(e.title)}</h3>${tx.html}
-    <div class="pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><div class="at">${r.count}개의 사건을 견뎠습니다 · 남은 체력 ${r.hp} · 정신 ${r.mind}</div></div></div>`,
+    <div class="pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><div class="at">${r.count}개의 매듭을 잇습니다 · 남은 체력 ${r.hp} · 정신 ${r.mind}</div></div></div>`,
     dock: r.can_resume ? `<div class="pl-actions two pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_finish')"><i class="fa-solid fa-book"></i>여기서 기록 남기기</button>
       <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_resume')"><i class="fa-solid fa-forward"></i>이어서 살기</button></div>`
       : `<div class="pl-actions pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_finish')"><i class="fa-solid fa-book"></i>기록 남기기</button>${e.paused ? '<div class="pl-k-note" style="margin-top:8px;text-align:center"><i class="fa-solid fa-hourglass-half"></i> 기록을 남기지 않고 두면, 다음 이야기가 열릴 때 이 자리에서 이어서 살 수 있어요.</div>' : ''}</div>` };
@@ -13062,7 +13109,8 @@ function loopEndedHtml(d, r) {
 function loopStartHtml(d) {
   // 출신 국가는 생애마다 무작위 : 고르는 건 공명 여부뿐이에요.
   const RES_ICON = { res: ['fa-wave-square', 'RESONANT'], non: ['fa-circle-half-stroke', 'NON-RESONANT'] };
-  const res = Object.entries(LOOP_RES).map(([k, [t, ds]]) => `<div class="prc ${k}">
+  // 한 번 기록을 남긴 공명 여부는 고정 : 그 카드만 보여요.
+  const res = Object.entries(LOOP_RES).filter(([k]) => !d.res_fixed || k === d.res_fixed).map(([k, [t, ds]]) => `<div class="prc ${k}">
       <span class="prc-ic"><i class="fa-solid ${RES_ICON[k][0]}"></i></span>
       <span class="prc-t"><small>${RES_ICON[k][1]}</small><b>${t}</b></span>
       <span class="prc-d">${ds}</span>
@@ -13092,8 +13140,8 @@ function loopStartHtml(d) {
     ${loopIntroStage === 'opening' ? `<div class="pq-term">${loopIntroText.term.map(() => '<p></p>').join('')}</div>` : ''}
     <div class="pl-quote"><div class="en">${enHtml}</div><div class="ko">${koHtml}</div>${loopIntroStage === 'opening' ? '<span class="pq-caret"></span>' : ''}</div>
     <div class="pl-intro-rest">
-      <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res">${res}</div>
-      <div class="pl-k-note" style="margin-top:14px"><i class="fa-solid fa-dice"></i> 출신 국가는 생애마다 무작위로 정해져요.</div></div></div>`,
+      <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res ${d.res_fixed ? 'one' : ''}">${res}</div>
+      <div class="pl-k-note" style="margin-top:14px"><i class="fa-solid fa-dice"></i> ${d.res_fixed ? '공명 여부는 기록에 새겨져 바뀌지 않아요. 대개 이전과 같은 나라에서 다시 태어나요.' : '출신 국가는 무작위로 정해져요.'}</div></div></div>`,
     dock: '' };
 }
 // 지난 생애 : 끝난 생애가 있을 때만 아래에 보여요.
