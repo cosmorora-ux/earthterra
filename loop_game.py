@@ -8,6 +8,7 @@ PLAY 룸 「LOOP : 생존 시뮬레이션」 진행 상태.
 - 체력과 정신은 각각 시작값에서 출발해 0~최대 사이를 오갑니다. 체력이 0이면 사망, 정신이 0이면 정신 붕괴입니다.
 - 출신 국가(아르카디아 / 노바)는 생애마다 무작위로 정해지고, 공명 여부와 함께 기득권 · 비기득권이 갈립니다.
 - 진영(使徒 / Void)은 전쟁 때의 포지션이고 서로 적입니다(캐릭터 정보의 진영 칸).
+- 균열 압력(지구의 반발) : 문명을 밀어붙이는 선택으로 쌓이고, 쌓인 만큼 재난(자정작용)이 잦아집니다.
 - 시대 I → V 순서로 사건이 이어지고, 마지막 시대의 사건을 모두 견디면 '전쟁 이후' 엔딩입니다.
 - 죽으면 '생애 종료'(기록만 남김) 또는 '루프 진입'(VI. 회귀 → IV. 전쟁 → V. 종전으로 다시)을 고릅니다.
 - 체력 · 정신 변동은 고른 뒤에만 알려 줍니다(고르기 전 화면에는 선택지 문장만 보냅니다).
@@ -38,6 +39,9 @@ STATS = ("hp", "mind")
 # 자원 : 재산 · 지능은 쓰면 줄어드는 자원(전쟁 전 사건 '해결'), 재능(= 노바의 '기술')은 선택지 조건으로 쓰는 능력치.
 RESOURCES = ("wealth", "intel", "talent")
 SPENDABLE = ("wealth", "intel")
+# 균열 압력(지구의 반발) : 문명을 밀어붙이는 선택으로 쌓이고, 쌓인 만큼 재난(자정작용)이 잦아져요.
+STRAIN = "strain"
+GAINABLE = RESOURCES + (STRAIN,)
 # 루프를 넘어가도 남는 태그(나머지 기억은 흐려집니다)
 LOOP_KEEP_TAGS = {"LOOP_CONTACT", "LOOP_NOTES", "LOOP_ALLY", "TRUTH", "FRACTURE_SEEN", "LEFT_BEHIND", "KILLED", "SAVED_ONE"}
 
@@ -122,6 +126,15 @@ def clean_content(c):
                 start[cc][pv][k] = [min(lo, hi), max(lo, hi)]
     cost = {cc: {k: _int(((rr.get("cost") or {}).get(cc) or {}).get(k), 0, 10, dr["cost"][cc][k]) for k in SPENDABLE} for cc in COUNTRIES}
     rules["res"] = {"max": res_max, "start": start, "cost": cost, "solve_eras": [_int(x, 1, 99, 0) for x in (rr.get("solve_eras") or []) if _int(x, 1, 99, 0)]}
+    sr, ds = r.get("strain") or {}, d["rules"]["strain"]
+
+    def _f(v, lo, hi, dv):
+        try:
+            return max(lo, min(hi, float(v)))
+        except (TypeError, ValueError):
+            return dv
+    rules["strain"] = {"max": _int(sr.get("max"), 1, 20, ds["max"]), "per": _f(sr.get("per"), 0, 0.2, ds["per"]),
+                       "loop_keep": _f(sr.get("loop_keep"), 0, 1, ds["loop_keep"])}
     for key in ("first_life", "loop_life"):
         seq = [_int(x, 1, 99, 0) for x in (r.get(key) or [])]
         seq = [x for x in seq if x in era_ids][:12]
@@ -153,7 +166,7 @@ def clean_content(c):
             cond["no_tags"] = _tags(cond_in.get("no_tags"))
         if _int(cond_in.get("loops"), 0, 99, 0):
             cond["loops"] = _int(cond_in.get("loops"), 0, 99, 0)
-        mins = {k: _int((cond_in.get("min") or {}).get(k), 0, 10, 0) for k in RESOURCES}
+        mins = {k: _int((cond_in.get("min") or {}).get(k), 0, 20, 0) for k in GAINABLE}
         mins = {k: v for k, v in mins.items() if v}
         if mins:
             cond["min"] = mins
@@ -168,7 +181,7 @@ def clean_content(c):
             item = {"label": label, "hp": _int(ch.get("hp"), -3, 3, 0), "mind": _int(ch.get("mind"), -3, 3, 0),
                     "result": "\n".join(_lines(ch.get("result"), 10)), "tags": _tags(ch.get("tags"))}
             need = {k: _int((ch.get("need") or {}).get(k), 0, 10, 0) for k in RESOURCES}
-            gain = {k: _int((ch.get("gain") or {}).get(k), -5, 5, 0) for k in RESOURCES}
+            gain = {k: _int((ch.get("gain") or {}).get(k), -5, 5, 0) for k in GAINABLE}
             if any(need.values()):
                 item["need"] = {k: v for k, v in need.items() if v}
             if any(gain.values()):
@@ -226,7 +239,21 @@ def clean_content(c):
              "mood_hp": mood(t.get("mood_hp"), dt["mood_hp"]), "mood_mind": mood(t.get("mood_mind"), dt["mood_mind"]),
              "death": titled(t.get("death"), dt["death"]), "ending": titled(t.get("ending"), dt["ending"]),
              "luck": {k: _lines((t.get("luck") or {}).get(k), 20) or dt["luck"][k] for k in STATS},
-             "solve": {k: _lines((t.get("solve") or {}).get(k), 20) or dt["solve"][k] for k in SPENDABLE}}
+             "solve": {k: _lines((t.get("solve") or {}).get(k), 20) or dt["solve"][k] for k in SPENDABLE},
+             "purge": _lines(t.get("purge"), 30) or dt["purge"],
+             "history": _lines(t.get("history"), 30) or dt["history"],
+             "birth": {k: _s((t.get("birth") or {}).get(k), 300) or dv for k, dv in dt["birth"].items()}}
+    views = []
+    for v in (t.get("views") or [])[:20]:
+        if not isinstance(v, dict):
+            continue
+        vid = _s(v.get("id"), 20) or f"v{len(views) + 1}"
+        name = _s(v.get("name"), 20)
+        text = _lines(v.get("text"), 10)
+        if not name or not text or any(x["id"] == vid for x in views):
+            continue
+        views.append({"id": vid, "name": name, "tag": (_tags([v.get("tag")]) or [""])[0], "text": text})
+    texts["views"] = views or dt["views"]
     return {"rules": rules, "eras": eras, "events": events, "texts": texts}
 
 
@@ -282,6 +309,9 @@ class Content:
 
     def res_rules(self):
         return self.rules.get("res") or default_content()["rules"]["res"]
+
+    def strain_rules(self):
+        return self.rules.get("strain") or default_content()["rules"]["strain"]
 
 
 _CONTENT = None
@@ -344,7 +374,7 @@ def _talent_name(run):
     return "기술" if run.get("country") == "nova" else "재능"
 
 
-RES_NAME = {"wealth": "재산", "intel": "지능"}
+RES_NAME = {"wealth": "재산", "intel": "지능", "strain": "균열 압력"}
 
 
 def _res_name(k, run):
@@ -399,7 +429,12 @@ class LoopBook:
             st = content().res_rules()["start"][e["run"]["country"]]["priv" if privileged(e["run"]) else "non"]
             for k in RESOURCES:
                 e["run"][k] = random.randint(st[k][0], st[k][1])
-            self._next_event(e["run"])
+            e["run"][STRAIN] = 0
+            view = random.choice(content().texts["views"])
+            e["run"]["view"] = view["id"]
+            if view.get("tag"):
+                e["run"]["tags"].append(view["tag"])
+            e["run"]["status"] = "prologue"   # 역사 · 탄생 나레이션을 먼저 보여 주고, '삶을 시작한다'를 누르면 첫 사건
             self.save()
 
     def _new_run(self, res, loop_no, eras, life_no, tags=(), memory=None):
@@ -461,11 +496,11 @@ class LoopBook:
             for k, v in (ch.get("need") or {}).items():
                 if run.get(k, 0) < v:
                     raise LoopError(f"{_res_name(k, run)}이(가) {v} 이상이어야 고를 수 있어요.")
-            rmax = C.res_rules()["max"]
+            rmax, smax = C.res_rules()["max"], C.strain_rules()["max"]
             gained = {}
             for k, v in (ch.get("gain") or {}).items():
                 b = run.get(k, 0)
-                run[k] = max(0, min(rmax, b + v))
+                run[k] = max(0, min(smax if k == STRAIN else rmax, b + v))
                 if run[k] != b:
                     gained[k] = run[k] - b
             hp_max, mind_max = C.rules["hp_max"], C.rules["mind_max"]
@@ -484,6 +519,13 @@ class LoopBook:
             era = C.eras.get(ev["era"]) or {}
             if run["hp"] > HP_MIN and run["mind"] > 0:
                 roll = random.random()
+                purge = min(0.6, run.get(STRAIN, 0) * C.strain_rules()["per"])   # 지구의 반발 : 쌓인 압력만큼 재난이 더 잦아요
+                if roll < purge:
+                    run["hp"] = max(0, run["hp"] - 1)
+                    twist = {"kind": "purge", "stat": "hp", "text": _fmt(random.choice(C.texts["purge"]), run)}
+                    roll = 2  # 재난이 왔으면 시대의 위험 · 행운은 건너뜁니다
+                else:
+                    roll = (roll - purge) / max(1e-9, 1 - purge)
                 if roll < era.get("risk", 0):
                     rt = random.choice(era.get("risk_text") or [{"stat": "hp", "text": "예기치 못한 일이 겹쳤다."}])
                     run[rt["stat"]] = max(0, run[rt["stat"]] - 1)
@@ -509,6 +551,15 @@ class LoopBook:
                 run["death"] = {"kind": kind if kind in DEATH_KINDS else "life", "at": ev["title"], "era": ev["era"]}
             else:
                 run["status"] = "result"
+            self.save()
+
+    def begin(self, name):
+        """프롤로그를 다 읽고 첫 사건으로."""
+        with self.lock:
+            run = self._entry(name)["run"]
+            if not run or run["status"] != "prologue":
+                raise LoopError("지금은 시작할 수 없어요.")
+            self._next_event(run)
             self.save()
 
     def solve_costs(self, run, ev=None):
@@ -556,7 +607,7 @@ class LoopBook:
 
     def _archive(self, e, run, outcome):
         era_last = run["log"][-1]["era"] if run["log"] else run["eras"][0]
-        e["lives"].insert(0, {"life_no": run["life_no"], "loop_no": run["loop_no"], "res": run["res"], "country": run.get("country", ""), "outcome": outcome,
+        e["lives"].insert(0, {"life_no": run["life_no"], "loop_no": run["loop_no"], "res": run["res"], "country": run.get("country", ""), "view": run.get("view"), "outcome": outcome,
                               "count": run["count"], "era": era_last, "hp": run["hp"], "mind": run.get("mind"),
                               "death": run.get("death"), "log": run["log"], "ended": time.time()})
         del e["lives"][MAX_LIVES:]
@@ -578,6 +629,8 @@ class LoopBook:
                 e["run"]["faction"] = run.get("faction", "")
                 for k in RESOURCES:
                     e["run"][k] = run.get(k, 0)
+                e["run"][STRAIN] = int(run.get(STRAIN, 0) * content().strain_rules()["loop_keep"])
+                e["run"]["view"] = run.get("view")
                 self._next_event(e["run"])
             else:
                 run["status"] = "ended"
@@ -612,6 +665,20 @@ class LoopBook:
                 self.save()
 
     # ── 화면에 보낼 자료 ─────────────────────────────────────
+    @staticmethod
+    def _birth_lines(run):
+        """탄생 나레이션 : 출신 국가 · 공명 여부 · 기득권 · 자원으로 짜 맞춥니다."""
+        b = content().texts["birth"]
+        out = [b.get(run.get("country"), "")]
+        out.append(b[("res" if run["res"] == "res" else "non") + ("_priv" if privileged(run) else "_non")])
+        w, i, t = run.get("wealth", 0), run.get("intel", 0), run.get("talent", 0)
+        home = "집은 넉넉했다." if w >= 2 else "집은 그럭저럭 먹고살 만했다." if w == 1 else "집은 가난했다."
+        mind = "또래보다 셈이 빠르고 눈치가 밝은 아이였다." if i >= 2 else "평범하게 영리한 아이였다." if i == 1 else "책보다 몸이 먼저 움직이는 아이였다."
+        tal = _talent_name(run)
+        hand = f"{tal}은 일찍부터 남달랐다." if t >= 2 else f"{tal}은 아직 드러나지 않았다." if t == 1 else f"{tal}이라 부를 만한 것은 없었다."
+        out.append(f"{home} 당신은 {mind} {hand}")
+        return [_fmt(x, run) for x in out if x]
+
     @staticmethod
     def _era_view(era):
         x = content().eras.get(era) or {"no": str(era), "name": "", "period": "", "level": ""}
@@ -657,7 +724,13 @@ class LoopBook:
                  "loop_no": run["loop_no"], "life_no": run["life_no"], "count": run["count"], "log": run["log"],
                  "mood": _mood(run["hp"], C.texts["mood_hp"]), "mood_mind": _mood(run.get("mind", 0), C.texts["mood_mind"]),
                  "eras": run["eras"], "memory": run.get("memory"),
-                 "assets": {k: run.get(k, 0) for k in RESOURCES}, "res_max": C.res_rules()["max"], "talent_name": _talent_name(run)}
+                 "assets": {k: run.get(k, 0) for k in RESOURCES}, "res_max": C.res_rules()["max"], "talent_name": _talent_name(run),
+                 "strain": run.get(STRAIN, 0), "strain_max": C.strain_rules()["max"]}
+            view = next((v for v in C.texts["views"] if v["id"] == run.get("view")), None)
+            if view:
+                r["view"] = {"name": view["name"]}
+            if run["status"] == "prologue":
+                r["prologue"] = {"history": C.texts["history"], "birth": self._birth_lines(run), "view": view["text"] if view else []}
             era_now = run["eras"][min(run["era_i"], len(run["eras"]) - 1)]
             r["era"] = self._era_view(era_now)
             r["era_step"] = run["step"]

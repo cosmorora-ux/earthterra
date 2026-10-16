@@ -1921,7 +1921,20 @@
   .pl-sv-note { font-size:12px; color: var(--muted); margin-left:4px; }
   .pl-picked .k i { font-size:11px; }
   .pl-lp-body .lp-gain { display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
+  .pl-lp-body .lp-gain em.strain.up { color:#c9b0ff !important; } .pl-lp-body .lp-gain em.strain.down { color:#7fe0d0 !important; }
   .pl-lp-body .lp-gain em { font-style:normal; font-size:11px; font-weight:700; color:#f0d48a; } .pl-lp-body .lp-gain em.down { color:#9a9aa3; }
+  /* 프롤로그 · 균열 압력 */
+  .pl-pro p { color:#dcdce1; }
+  .pl-view { margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.06); }
+  .pl-view-k { display:inline-flex; align-items:center; gap:6px; margin-bottom:8px; font-size:12.5px; font-weight:700; color: var(--point); }
+  .pl-strain { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+  .pl-strain i { width:14px; height:8px; border-radius:3px; background: rgba(255,255,255,.07); }
+  .pl-strain i.on { background:#b48cff; box-shadow: 0 0 8px rgba(180,140,255,.35); }
+  .pl-strain.hot i.on { background:#ff7a59; box-shadow: 0 0 8px rgba(255,122,89,.4); }
+  .pl-strain span { margin-left:8px; font-size:12.5px; color: var(--muted); }
+  .pl-result .tw.purge { color:#ffb199; }
+  .pl-delta.asset.strain.up { background: rgba(180,140,255,.14); color:#c9b0ff; }
+  .pl-delta.asset.strain.down { background: rgba(94,200,184,.12); color:#7fe0d0; }
   /* 한 글자씩 떠오르기 (누르면 바로 다 보임) */
   .play-page .tc { opacity:0; filter: blur(3px); animation: plCh .5s ease forwards; }
   .play-page .pl-fade[style*="animation-delay"] { opacity:0; animation: plIn .5s ease forwards; }
@@ -2343,6 +2356,11 @@
   .la-tbl td:first-child { color:#cfcfd4; white-space:nowrap; }
   .la-tbl .ops-in.num { width:52px; height:32px; }
   .la-rng { display:inline-flex; align-items:center; gap:4px; color: var(--muted); }
+  .la-d.strain.up { color:#c9b0ff; } .la-d.strain.down { color:#7fe0d0; }
+  .la-views { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px; margin-top:16px; }
+  .la-add { align-items:center; justify-content:center; gap:8px; flex-direction:row !important; min-height:120px; color: var(--muted); cursor:pointer; border-style:dashed !important; font-weight:600; }
+  .la-add:hover { color:#fff; background: rgba(255,255,255,.03); }
+  @media (max-width:900px) { .la-views { grid-template-columns: 1fr; } }
   .la-bar { position:sticky; bottom:0; z-index:5; display:flex; align-items:center; gap:8px; padding:12px 16px; margin-top:6px; border-radius:16px;
     background: rgba(20,20,23,.92); border:1px solid var(--line); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   .la-bar .st { margin-right:auto; font-size:13px; color: var(--muted); display:flex; align-items:center; gap:8px; }
@@ -4863,7 +4881,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.46";
+const EXPECTED_SERVER_BUILD = "2026-10-13.47";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -12234,10 +12252,10 @@ const LOOP_CH_MS = 16;         // 글자 사이 간격
 const LOOP_RES = { res: ['공명자', '루프와 공명한 사람. 기대와 의무, 관리의 대상이 됩니다.'], non: ['비공명자', '공명하지 못한 사람. 능력의 유무가 삶의 문을 가릅니다.'] };
 const LOOP_STAT = { hp: ['체력', 'fa-heart'], mind: ['정신', 'fa-brain'] };
 const LOOP_ASSETS = [['wealth', 'fa-coins'], ['intel', 'fa-lightbulb'], ['talent', 'fa-star']];
-const LOOP_ASSET_NAME = { wealth: '재산', intel: '지능', talent: '재능' };
+const LOOP_ASSET_NAME = { wealth: '재산', intel: '지능', talent: '재능', strain: '균열 압력' };
 function loopAssetName(k, r) { return k === 'talent' ? ((r && r.talent_name) || '재능') : LOOP_ASSET_NAME[k]; }
 function loopGainHtml(g, r) {
-  return Object.entries(g || {}).filter(([, v]) => v).map(([k, v]) => `<span class="pl-delta asset ${v > 0 ? 'up' : 'down'}"><i class="fa-solid ${(LOOP_ASSETS.find(a => a[0] === k) || [])[1]}"></i>${loopEsc(loopAssetName(k, r))} ${loopSign(v)}</span>`).join('');
+  return Object.entries(g || {}).filter(([, v]) => v).map(([k, v]) => `<span class="pl-delta asset ${k} ${v > 0 ? 'up' : 'down'}"><i class="fa-solid ${(LOOP_ASSETS.find(a => a[0] === k) || [0, 'fa-house-crack'])[1]}"></i>${loopEsc(loopAssetName(k, r))} ${loopSign(v)}</span>`).join('');
 }
 const LOOP_COUNTRY = { arcadia: ['아르카디아 연방', '공명자가 기득권, 비공명자가 비기득권인 나라.'], nova: ['노바 공화국', '비공명자가 기득권, 공명자가 비기득권인 나라.'] };
 function loopPriv(country, res) { return (country === 'arcadia' && res === 'res') || (country === 'nova' && res === 'non'); }
@@ -12286,6 +12304,7 @@ function renderLoop() {
   loopTailMs = 0;
   if (!r) { const x = loopStartHtml(d); main = x.main; dock = x.dock; }
   else if (r.status === 'ended') { const x = loopEndedHtml(d, r); main = x.main; dock = x.dock; }
+  else if (r.status === 'prologue') { const x = loopPrologueHtml(d, r, marks); main = x.main; dock = x.dock; }
   else {
     main = loopStatusHtml(d, r);
     if (r.event) { const x = loopEventHtml(r, marks); main += x.main; dock = x.dock; }
@@ -12317,6 +12336,7 @@ function loopHeadHtml(d) {
   if (country) pills.push(`<span class="pl-pill"><i class="fa-solid fa-flag"></i>${loopEsc((LOOP_COUNTRY[country] || [''])[0])}</span>`);
   if (r) pills.push(`<span class="pl-pill"><i class="fa-solid fa-wave-square"></i>${loopEsc((LOOP_RES[r.res] || [''])[0])} · ${r.privileged ? '기득권' : '비기득권'}</span>`);
   if (faction) pills.push(`<span class="pl-pill"><i class="fa-solid fa-shield-halved"></i>${loopEsc(faction)}</span>`);
+  if (r && r.view) pills.push(`<span class="pl-pill"><i class="fa-solid fa-earth-asia"></i>${loopEsc(r.view.name)}</span>`);
   if (r) pills.push(`<span class="pl-pill">${r.life_no}번째 생애</span>`);
   if (r && r.loop_no) pills.push(`<span class="pl-pill loop"><i class="fa-solid fa-infinity"></i>루프 ${r.loop_no}</span>`);
   return `<div class="pl-box glow pl-head"><div class="pl-logo"><small>SURVIVAL SIMULATION</small>Loop</div><div class="pl-sub">생존 시뮬레이션</div><div class="pl-life">${pills.join('')}</div></div>`;
@@ -12337,6 +12357,7 @@ function loopStatusHtml(d, r) {
     ${bar('hp', r.hp, d.hp_max || 5)}${bar('mind', r.mind, d.mind_max || 5)}
     ${mood.length ? `<div class="pl-mood">${mood.map(loopEsc).join('<br>')}</div>` : ''}
     ${assets}
+    <span class="pl-k"><i class="fa-solid fa-house-crack"></i>균열</span><div class="pl-strain ${(r.strain || 0) >= (r.strain_max || 10) * 0.6 ? 'hot' : ''}">${Array.from({ length: r.strain_max || 10 }, (_, i) => `<i class="${i < (r.strain || 0) ? 'on' : ''}"></i>`).join('')}<span>${(r.strain || 0) === 0 ? '지구는 아직 조용합니다.' : (r.strain || 0) < (r.strain_max || 10) * 0.3 ? '땅이 가끔 뒤척입니다.' : (r.strain || 0) < (r.strain_max || 10) * 0.6 ? '문명이 커질수록 재난이 잦아집니다.' : '지구가 인류를 덜어 내려 합니다.'}</span></div>
     <span class="pl-k"><i class="fa-solid fa-hourglass-half"></i>시대</span><div class="pl-eras">${eras}</div></div>`;
 }
 function loopEventHtml(r, marks) {
@@ -12347,7 +12368,7 @@ function loopEventHtml(r, marks) {
   if (story.fresh) marks.push('ev|' + base);
   loopTailMs = story.end;
   const first = !r.loop_no && (r.count === 0 || (r.count === 1 && done));
-  const origin = first && r.country ? `<div class="pl-memory pl-origin pl-fade"${loopAfter(0, story.fresh)}><i class="fa-solid fa-dice"></i> 이번 생애, 당신은 <b>${loopEsc((LOOP_COUNTRY[r.country] || [''])[0])}</b>에서 태어났습니다. ${loopEsc((LOOP_RES[r.res] || [''])[0])}는 이 나라의 <b>${r.privileged ? '기득권' : '비기득권'}</b>입니다.</div>` : '';
+  const origin = false && first && r.country ? `<div class="pl-memory pl-origin pl-fade"${loopAfter(0, story.fresh)}><i class="fa-solid fa-dice"></i> 이번 생애, 당신은 <b>${loopEsc((LOOP_COUNTRY[r.country] || [''])[0])}</b>에서 태어났습니다. ${loopEsc((LOOP_RES[r.res] || [''])[0])}는 이 나라의 <b>${r.privileged ? '기득권' : '비기득권'}</b>입니다.</div>` : '';
   const memory = r.memory && r.loop_no && (r.count === 0 || (r.count === 1 && done)) ? `<div class="pl-memory pl-fade"${loopAfter(story.end, story.fresh)}><i class="fa-solid fa-infinity"></i> 대부분의 기억은 흐릿합니다. 다만 한 장면만은 선명합니다 — <b>${loopEsc(r.memory)}</b>.</div>` : '';
   let resHtml = '', dock = '';
   if (!done) {
@@ -12362,7 +12383,7 @@ function loopEventHtml(r, marks) {
     let tw = '';
     if (res.twist) {
       const tt = loopType([res.twist.text], rk + '|tw', rt.end + 200);
-      tw = `<div class="tw"><i class="fa-solid ${res.twist.kind === 'risk' ? 'fa-bolt' : 'fa-leaf'} pl-fade"${loopAfter(rt.end + 120, rt.fresh)}></i>${tt.html}</div>`;
+      tw = `<div class="tw ${res.twist.kind}"><i class="fa-solid ${res.twist.kind === 'purge' ? 'fa-house-crack' : res.twist.kind === 'risk' ? 'fa-bolt' : 'fa-leaf'} pl-fade"${loopAfter(rt.end + 120, rt.fresh)}></i>${tt.html}</div>`;
       if (tt.fresh) marks.push(rk + '|tw');
     }
     const picked = res.solved ? { label: `${loopAssetName(res.solved, r)} ${res.cost}을(를) 써서 해결했다.` } : (ev.choices[res.choice] || {});
@@ -12384,6 +12405,18 @@ function loopDeathHtml(r, marks) {
     <div class="at" style="margin-top:8px">생애 종료 : 기록을 남기고 끝냅니다 · 루프 진입 : 기억 일부를 안고 전쟁 이전의 평행 세계에서 다시 시작합니다</div></div></div>`,
     dock: `<div class="pl-actions two pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>생애 종료</button>
     <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'loop' })"><i class="fa-solid fa-infinity"></i>루프 진입</button></div>` };
+}
+// 프롤로그 : 서력의 역사 → 탄생 → 문명관. 고르는 것 없이 자동으로 정해진 나레이션이에요.
+function loopPrologueHtml(d, r, marks) {
+  const P = r.prologue || {}, k = `pro|${r.life_no}`;
+  const h = loopType(P.history, k + '|h', 300);
+  const b = loopType(P.birth, k + '|b', h.end + 700);
+  const v = loopType(P.view, k + '|v', b.end + 500);
+  [h, b, v].forEach((x, i) => { if (x.fresh) marks.push(k + '|' + 'hbv'[i]); });
+  return { main: `<div class="pl-box glow pl-pro"><div class="pl-ev-meta"><span class="pl-ev-no">PROLOGUE</span><span>서력의 기억</span></div>${h.html}</div>
+    <div class="pl-box glow pl-pro pl-fade"${loopAfter(h.end + 400, h.fresh)}><div class="pl-ev-meta"><span class="pl-ev-no">BIRTH</span><span>${r.life_no}번째 생애</span></div>${b.html}
+      ${r.view ? `<div class="pl-view pl-fade"${loopAfter(b.end + 300, b.fresh)}><span class="pl-view-k"><i class="fa-solid fa-earth-asia"></i> 문명관 · ${loopEsc(r.view.name)}</span>${v.html}</div>` : ''}</div>`,
+    dock: `<div class="pl-actions pl-fade"${loopAfter(v.end + 300, v.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_begin')">삶을 시작한다<i class="fa-solid fa-arrow-right"></i></button></div>` };
 }
 function loopEndingHtml(r, marks) {
   const e = r.ending, k = `ending|${r.life_no}|${r.loop_no}`;
@@ -12431,7 +12464,7 @@ function renderLoopLog() {
   let last = null, html = '';
   log.forEach((l, i) => {
     if (l.era !== last) { const e = eraBy[l.era] || {}; html += `<div class="lp-era">${loopEsc(e.no || '')}. ${loopEsc(e.name || '')}</div>`; last = l.era; }
-    const g = Object.entries(l.gain || {}).filter(([, v]) => v).map(([k, v]) => `<em class="${v > 0 ? 'up' : 'down'}">${loopEsc(loopAssetName(k, r))} ${loopSign(v)}</em>`).join('');
+    const g = Object.entries(l.gain || {}).filter(([, v]) => v).map(([k, v]) => `<em class="${k} ${v > 0 ? 'up' : 'down'}">${loopEsc(loopAssetName(k, r))} ${loopSign(v)}</em>`).join('');
     html += `<div class="lp-row"><span class="n">${i + 1}</span><span class="ttl"><b>${loopEsc(l.title)}</b><span>${loopEsc(l.choice)}</span>${g ? `<span class="lp-gain">${g}</span>` : ''}</span>${loopMiniDelta(l.delta, l.dmind)}</div>`;
   });
   const atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
@@ -12465,6 +12498,7 @@ const la = { c: null, saved: '', custom: false, sub: 'events', sel: null, q: '',
 const LA_KIND = { life: '일상', war: '전쟁', plague: '병', purge: '자정작용', loop: '루프', mind: '정신 붕괴' };
 const LA_DELTA = [3, 2, 1, 0, -1, -2, -3];
 const LA_RES = [['wealth', '재산', 'fa-coins'], ['intel', '지능', 'fa-lightbulb'], ['talent', '재능·기술', 'fa-star']];
+const LA_GAIN = LA_RES.concat([['strain', '균열 압력', 'fa-house-crack']]);
 function laEsc(s) { return mailEsc(s == null ? '' : String(s)); }
 function laDirty() { return !!la.c && JSON.stringify(la.c) !== la.saved; }
 function laP(path) { return `data-p='${laEsc(JSON.stringify(path))}'`; }
@@ -12563,7 +12597,7 @@ function laEventForm(i) {
         <label><i class="fa-solid fa-brain"></i> 정신 ${laDeltaSel(P(['choices', k, 'mind']), ch.mind, 'mind')}</label>
         <label class="grow"><i class="fa-solid fa-tag"></i> 붙는 태그 <input class="ops-in" ${laP(P(['choices', k, 'tags']))} data-t="tags" value="${laEsc((ch.tags || []).join(', '))}" placeholder="예) ENLISTED, LOOP_CONTACT" oninput="laInput(this)"></label></div>
       <div class="la-ch-fx la-res">${LA_RES.map(([rk, rn, ic]) => `<label><i class="fa-solid ${ic}"></i> ${rn} 필요 <input class="ops-in num" type="number" min="0" max="10" ${laP(P(['choices', k, 'need', rk]))} data-t="num" value="${(ch.need || {})[rk] || 0}" oninput="laInput(this)"></label>`).join('')}
-        <span class="la-res-sep"></span>${LA_RES.map(([rk, rn, ic]) => `<label>${rn} ${laDeltaSel(P(['choices', k, 'gain', rk]), (ch.gain || {})[rk], 'asset')}</label>`).join('')}</div>
+        <span class="la-res-sep"></span>${LA_GAIN.map(([rk, rn, ic]) => `<label>${rn} ${laDeltaSel(P(['choices', k, 'gain', rk]), (ch.gain || {})[rk], rk === 'strain' ? 'strain' : 'asset')}</label>`).join('')}</div>
       ${laTa(P(['choices', k, 'result']), Array.isArray(ch.result) ? ch.result : String(ch.result || '').split('\n'), 3, '고른 뒤 나오는 결과 문장')}</div>`).join('');
   const extras = (ev.extra || []).map((x, k) => {
     const w = x.when || {}, wt = w.tag ? 'tag' : 'hp_lte' in w ? 'hp_lte' : 'mind_lte' in w ? 'mind_lte' : 'loops' in w ? 'loops' : 'always';
@@ -12591,7 +12625,7 @@ function laEventForm(i) {
       <div class="ops-field"><span class="lb">루프 n회 이상</span><input class="ops-in num" type="number" min="0" max="99" ${laP(P(['cond', 'loops']))} data-t="num" value="${c.loops || 0}" oninput="laInput(this)"></div>
       <div class="ops-field la-span2"><span class="lb">이 태그 중 하나라도 있어야</span><input class="ops-in" ${laP(P(['cond', 'tags']))} data-t="tags" value="${laEsc((c.tags || []).join(', '))}" oninput="laInput(this)"></div>
       <div class="ops-field"><span class="lb">이 태그가 있으면 안 나옴</span><input class="ops-in" ${laP(P(['cond', 'no_tags']))} data-t="tags" value="${laEsc((c.no_tags || []).join(', '))}" oninput="laInput(this)"></div>
-      ${LA_RES.map(([rk, rn]) => `<div class="ops-field"><span class="lb">${rn} 이 이상이어야</span><input class="ops-in num" type="number" min="0" max="10" ${laP(P(['cond', 'min', rk]))} data-t="num" value="${(c.min || {})[rk] || 0}" oninput="laInput(this)"></div>`).join('')}
+      ${LA_GAIN.map(([rk, rn]) => `<div class="ops-field"><span class="lb">${rn} 이 이상이어야</span><input class="ops-in num" type="number" min="0" max="10" ${laP(P(['cond', 'min', rk]))} data-t="num" value="${(c.min || {})[rk] || 0}" oninput="laInput(this)"></div>`).join('')}
     </div>
     <div class="la-sec"><b>상황 서술</b><span class="ops-hint">한 줄이 한 문단이에요. 큰따옴표로 시작하는 줄은 대사로 굵게 나와요.</span></div>
     ${laTa(P(['story']), ev.story, 8)}
@@ -12665,7 +12699,14 @@ function laResRulesHtml() {
   const rng = (cc, pv, k) => { const v = rr.start[cc][pv][k]; return `<span class="la-rng"><input class="ops-in num" type="number" min="0" max="10" ${laP(['rules', 'res', 'start', cc, pv, k, 0])} data-t="num" value="${v[0]}" oninput="laInput(this)">~<input class="ops-in num" type="number" min="0" max="10" ${laP(['rules', 'res', 'start', cc, pv, k, 1])} data-t="num" value="${v[1]}" oninput="laInput(this)"></span>`; };
   const table = cc => `<table class="la-tbl"><tr><th></th>${LA_RES.map(([, rn, ic]) => `<th><i class="fa-solid ${ic}"></i> ${rn}</th>`).join('')}</tr>
     ${[['priv', '기득권'], ['non', '비기득권']].map(([pv, pn]) => `<tr><td>${pn}</td>${LA_RES.map(([rk]) => `<td>${rng(cc, pv, rk)}</td>`).join('')}</tr>`).join('')}</table>`;
-  return `<div class="la-sec" style="margin-top:20px"><b>자원 · 재산 · 지능 · 재능(기술)</b><span class="ops-hint">재산 · 지능은 쓰면 줄어드는 자원, 재능(노바에서는 '기술')은 선택지 조건으로 쓰는 능력치예요.</span></div>
+  return `<div class="la-sec" style="margin-top:20px"><b>균열 압력 · 지구의 반발</b><span class="ops-hint">문명을 밀어붙이는 선택(+)으로 쌓이고, 쌓인 만큼 선택과 상관없이 재난이 덮쳐 체력을 1 깎을 확률이 커져요. 절제하는 선택(−)으로 내려가요.</span></div>
+    <div class="ops-grid"><div class="ops-card"><h3><i class="fa-solid fa-house-crack"></i> 균열 압력</h3>
+      <div class="la-grid">
+        <div class="ops-field"><span class="lb">최대</span><input class="ops-in num" type="number" min="1" max="20" ${laP(['rules', 'strain', 'max'])} data-t="num" value="${la.c.rules.strain.max}" oninput="laInput(this)"></div>
+        <div class="ops-field"><span class="lb">압력 1당 재난 확률 %</span><input class="ops-in num" type="number" min="0" max="20" step="0.5" ${laP(['rules', 'strain', 'per'])} data-t="pct" value="${+(la.c.rules.strain.per * 100).toFixed(1)}" oninput="laInput(this)"></div>
+        <div class="ops-field"><span class="lb">루프 뒤에 남는 비율 %</span><input class="ops-in num" type="number" min="0" max="100" ${laP(['rules', 'strain', 'loop_keep'])} data-t="pct" value="${Math.round(la.c.rules.strain.loop_keep * 100)}" oninput="laInput(this)"></div>
+      </div><div class="ops-hint" style="margin-top:12px">예) 압력 6 × 2.5% = 사건마다 15% 확률로 재난. 재난 문장은 '문장' 화면에서 고쳐요.</div></div></div>
+    <div class="la-sec" style="margin-top:20px"><b>자원 · 재산 · 지능 · 재능(기술)</b><span class="ops-hint">재산 · 지능은 쓰면 줄어드는 자원, 재능(노바에서는 '기술')은 선택지 조건으로 쓰는 능력치예요.</span></div>
     <div class="ops-grid">
       <div class="ops-card"><h3><i class="fa-solid fa-key"></i> 해결 비용<span class="sub">0이면 그 자원으로는 해결 못 해요</span></h3>
         <table class="la-tbl"><tr><th></th><th><i class="fa-solid fa-coins"></i> 재산</th><th><i class="fa-solid fa-lightbulb"></i> 지능</th></tr>
@@ -12688,8 +12729,22 @@ function laTextsHtml() {
   const titled = (group, k, lb) => `<div class="ops-card"><h3>${lb}</h3>
       <div class="ops-field"><span class="lb">제목</span><input class="ops-in" ${laP(['texts', group, k, 'title'])} value="${laEsc(t[group][k].title)}" oninput="laInput(this)"></div>
       <div class="ops-field"><span class="lb">문장 (한 줄 = 한 문단)</span>${laTa(['texts', group, k, 'text'], t[group][k].text, 6)}</div></div>`;
-  return `<div class="ops-grid">
+  return `<div class="la-sec"><b>프롤로그</b><span class="ops-hint">생애를 시작하면 사건 전에 나와요. 문명관은 생애마다 무작위로 하나 붙고, 태그가 있으면 사건 조건으로 쓸 수 있어요.</span></div>
+    <div class="ops-grid">
+      <div class="ops-card"><h3><i class="fa-solid fa-landmark"></i> 서력의 역사<span class="sub">한 줄 = 한 문단</span></h3>${laTa(['texts', 'history'], t.history, 10)}</div>
+      <div class="ops-card"><h3><i class="fa-solid fa-baby"></i> 탄생 문장</h3>
+        ${[['arcadia', '아르카디아 출신'], ['nova', '노바 출신'], ['res_priv', '공명자 · 기득권'], ['res_non', '공명자 · 비기득권'], ['non_priv', '비공명자 · 기득권'], ['non_non', '비공명자 · 비기득권']].map(([bk, bl]) => `<div class="ops-field"><span class="lb">${bl}</span><input class="ops-in" ${laP(['texts', 'birth', bk])} value="${laEsc((t.birth || {})[bk])}" oninput="laInput(this)"></div>`).join('')}
+        <div class="ops-hint" style="margin-top:10px">집안 형편 · 지능 · 재능 문장은 시작 자원에 따라 자동으로 붙어요.</div></div>
+    </div>
+    <div class="la-views">${(t.views || []).map((v, k) => `<div class="ops-card"><h3><i class="fa-solid fa-earth-asia"></i> 문명관 ${k + 1}<span class="sub"><button class="ops-btn icon danger" onclick="la.c.texts.views.splice(${k}, 1); renderLoopAdmin()"><i class="fa-solid fa-trash-can"></i></button></span></h3>
+        <div class="la-grid"><div class="ops-field"><span class="lb">이름</span><input class="ops-in" ${laP(['texts', 'views', k, 'name'])} value="${laEsc(v.name)}" oninput="laInput(this)"></div>
+        <div class="ops-field la-span2"><span class="lb">붙는 태그</span><input class="ops-in" ${laP(['texts', 'views', k, 'tag'])} value="${laEsc(v.tag)}" oninput="laInput(this)"></div></div>
+        <div class="ops-field"><span class="lb">나레이션</span>${laTa(['texts', 'views', k, 'text'], v.text, 3)}</div></div>`).join('')}
+      <div class="ops-card la-add" onclick="la.c.texts.views.push({ id: 'v' + Date.now().toString(36), name: '새 문명관', tag: '', text: [''] }); renderLoopAdmin()"><i class="fa-solid fa-plus"></i> 문명관 추가</div></div>
+    <div class="la-sec" style="margin-top:20px"><b>나머지 문장</b></div>
+    <div class="ops-grid">
       <div class="ops-card"><h3><i class="fa-solid fa-seedling"></i> 새 생애 소개</h3>${laTa(['texts', 'intro'], t.intro, 6)}</div>
+      <div class="ops-card"><h3><i class="fa-solid fa-house-crack"></i> 재난 문장<span class="sub">균열 압력으로 재난이 덮칠 때, 한 줄에 하나</span></h3>${laTa(['texts', 'purge'], t.purge, 6)}</div>
       <div class="ops-card"><h3><i class="fa-solid fa-leaf"></i> 행운 문장<span class="sub">한 줄에 하나</span></h3>
         <div class="ops-field"><span class="lb">체력이 채워질 때</span>${laTa(['texts', 'luck', 'hp'], t.luck.hp, 3)}</div>
         <div class="ops-field"><span class="lb">정신이 채워질 때</span>${laTa(['texts', 'luck', 'mind'], t.luck.mind, 3)}</div></div>
