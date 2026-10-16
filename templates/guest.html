@@ -3,6 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 첫 로딩 가림막 : 화면이 다 그려지고 글꼴이 준비될 때까지 조용한 화면으로 덮어 두고, 준비되면 한 번에 부드럽게 보여 줘요.
+     (그동안은 등장 애니메이션을 멈춰서, 카드가 하나씩 다다닥 그려지며 흔들리는 걸 보이지 않게 해요) -->
+<style>
+  html.booting *, html.booting *::before, html.booting *::after { animation-duration:0s !important; animation-delay:0s !important; transition:none !important; }
+  #bootVeil { position:fixed; inset:0; z-index:2147483000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+    background:#050505; transition: opacity .35s ease, visibility 0s linear .35s; }
+  #bootVeil.gone { opacity:0; visibility:hidden; pointer-events:none; }
+  #bootVeil .bv-sk { width:min(420px, 72vw); display:flex; flex-direction:column; gap:10px; }
+  #bootVeil .bv-sk i { display:block; height:12px; border-radius:6px; background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.09), rgba(255,255,255,.04)); background-size:200% 100%; animation: bvSh 1.2s ease-in-out infinite !important; animation-duration:1.2s !important; }
+  #bootVeil .bv-sk i:nth-child(1) { width:42%; height:16px; } #bootVeil .bv-sk i:nth-child(2) { width:100%; } #bootVeil .bv-sk i:nth-child(3) { width:86%; } #bootVeil .bv-sk i:nth-child(4) { width:64%; }
+  @keyframes bvSh { 0% { background-position:100% 0; } 100% { background-position:-100% 0; } }
+</style>
+<script>document.documentElement.classList.add('booting');</script>
 <title>참가자 화면 - {{ room_id }}</title>
 <link rel="manifest" href="/manifest.webmanifest?start={{ request.full_path|urlencode }}">
 <meta name="theme-color" content="#050505">
@@ -4387,6 +4400,7 @@
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}{% if battle_type == 'play' %} is-play{% endif %}">
+<div id="bootVeil" aria-hidden="true"><div class="bv-sk"><i></i><i></i><i></i><i></i></div></div>
 <div id="wmToast" class="wm-toast" role="status" aria-live="polite"></div>
 <div id="loginGate" class="on checking">
   <div class="gate-bg"><span class="gate-orbit o2"></span><span class="gate-orbit o1"></span></div>
@@ -5351,6 +5365,20 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
   });
 }
 var lastPublicStateAt = 0;
+// 첫 로딩 가림막 걷기 : 첫 상태를 받아 그리고, 글꼴이 준비된 뒤(최대 7초) 두 프레임 쉬고 부드럽게.
+var bootDone = false;
+function bootReady(why) {
+  if (bootDone) return;
+  if (why === 'state') bootReady.state = true;
+  if (!(bootReady.state || why === 'timeout')) return;
+  bootDone = true;
+  const go = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.documentElement.classList.remove('booting');
+    const v = document.getElementById('bootVeil'); if (v) { v.classList.add('gone'); setTimeout(() => v.remove(), 500); }
+  }));
+  (document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]) : Promise.resolve()).then(() => setTimeout(go, 120));
+}
+setTimeout(() => bootReady('timeout'), 7000);
 
 // ------------------------------------------------------------------
 // 캐릭터 이름으로 입장/로그아웃 (아바타 동그라미 한 번 클릭으로 둘 다 처리)
@@ -5571,9 +5599,10 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.67";
+const EXPECTED_SERVER_BUILD = "2026-10-13.68";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
+  bootReady('state');
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
   const roomNameEl = document.getElementById('roomNameLabel');
@@ -13627,7 +13656,7 @@ function loopStartHtml(d) {
   // 연출 : 처음에는 문구만 가운데에 크게(영어가 메인, 한국어가 서브) → 잠시 뒤 작아지며 제자리로 → 제목 · 카드가 떠올라요.
   // 로그인 화면이 아직 덮고 있으면 연출을 아껴 두었다가, 화면이 보이는 순간 시작해요.
   const gate = document.getElementById('loginGate');
-  if (!loopShown.has('intro|en') && gate && gate.classList.contains('on')) {
+  if (!loopShown.has('intro|en') && ((gate && gate.classList.contains('on')) || document.documentElement.classList.contains('booting'))) {
     setTimeout(() => { if (loopData && !loopData.run) renderLoop(); }, 200);
     return { main: '<div class="pl-box pl-intro opening"></div>', dock: '' };
   }
@@ -13703,7 +13732,7 @@ function renderLoopLog() {
 function loopEmit(ev, data) { if (loopBusy) return; loopBusy = true; renderLoop(); socket.emit(ev, data || {}); }
 function loopChoose(id, idx) { loopEmit('loop_choose', { event: id, idx }); }
 if (IS_PLAY) {
-  socket.on('loop_data', d => { loopData = d; loopBusy = false; loopSyncPoint(d); loopTopSub(d); renderLoop(); });
+  socket.on('loop_data', d => { bootReady('state'); loopData = d; loopBusy = false; loopSyncPoint(d); loopTopSub(d); renderLoop(); });
   socket.on('loop_result', r => { loopBusy = false; if (r && !r.ok) uiToast(r.message); });
   socket.on('joined', () => socket.emit('loop_state'));
   socket.on('connect', () => setTimeout(() => socket.emit('loop_state'), 400));

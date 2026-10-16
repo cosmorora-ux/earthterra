@@ -10,6 +10,7 @@ Flask-SocketIO로 방(room) 단위 실시간 동기화 + 역할(운영진/참가
     .venv\\Scripts\\python.exe webapp.py
 """
 
+import gzip
 import hmac
 import json
 import secrets
@@ -40,7 +41,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.67"
+SERVER_BUILD = "2026-10-13.68"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -158,13 +159,37 @@ LOG_SEND_CAP = 300
 @app.after_request
 def add_no_cache_headers(response):
     """개발 중 수정한 화면이 브라우저 캐시에 걸려 옛 버전이 보이는 걸 방지합니다. + 기본 보안 헤더."""
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    if request.path.startswith("/static/"):
+        # 그림 · 글꼴 · 소리 : 매번 새로 받지 않고, 바뀌었는지만 확인(바뀌지 않았으면 304)해서 빠르게
+        response.headers["Cache-Control"] = "no-cache"
+    else:
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     h = response.headers
+    _maybe_gzip(response)
     h.setdefault("X-Content-Type-Options", "nosniff")          # 올린 파일을 다른 형식(스크립트)으로 해석 못 하게
     h.setdefault("X-Frame-Options", "SAMEORIGIN")              # 다른 사이트가 우리 화면을 몰래 틀 안에 넣지 못하게
     h.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")   # 바깥 사이트로는 주소(방 키)가 넘어가지 않게
     h.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
     return response
+
+
+def _maybe_gzip(response):
+    """화면(html) · 데이터(json) 응답을 gzip으로 압축해 보내요 : 1MB 화면이 약 270KB로 줄어 휴대폰 첫 로딩이 빨라져요."""
+    try:
+        if (response.direct_passthrough or response.status_code != 200 or "Content-Encoding" in response.headers
+                or "gzip" not in (request.headers.get("Accept-Encoding") or "").lower()):
+            return
+        if response.mimetype not in ("text/html", "application/json", "text/css", "application/javascript", "text/plain"):
+            return
+        data = response.get_data()
+        if len(data) < 2048:
+            return
+        response.set_data(gzip.compress(data, compresslevel=5))
+        response.headers["Content-Encoding"] = "gzip"
+        response.headers["Vary"] = "Accept-Encoding"
+        response.headers["Content-Length"] = str(len(response.get_data()))
+    except Exception:
+        pass
 
 
 # ── 보안 : 접속 IP · 비밀번호 시도 제한 · 운영진 로그인 ──────────────────────
