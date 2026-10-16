@@ -2204,6 +2204,16 @@
   .pl-death p { margin:0 0 8px; font-size:15.5px; line-height:1.8; color:#dcdce1; opacity:0; animation: plIn .6s ease forwards; }
   .pl-death .at { color: var(--muted); font-size:13px; margin-top:14px; }
   .pl-death .pl-actions { justify-content:center; margin-top:24px; }
+  /* 끝 장면 카드 : 사망 · 엔딩 · 기록됨 모두 같은 자리 · 같은 크기, 버튼은 카드 안 글 바로 아래 */
+  .pl-endpage { min-height:min(58vh, 520px); }
+  .pl-endpage.still, .pl-endpage.still .pl-fade { animation:none !important; opacity:1 !important; }
+  .pl-end-text { max-width:560px; margin:0 auto; }
+  .pl-end-foot { margin-top:22px; display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .pl-end-foot .at { margin:0; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:8px; }
+  .pl-end-acts { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; width:100%; max-width:440px; }
+  .pl-end-acts .pl-btn { flex:1 1 0; min-width:160px; justify-content:center; }
+  .pl-end-note { color:#6c6c74; font-size:12.5px; line-height:1.6; max-width:440px; }
+  .pl-end-stamp { display:inline-flex; align-items:center; gap:6px; height:24px; padding:0 10px; border-radius:10px; background: rgba(255,255,255,.06); color:#cfcfd4; font-size:12px; font-weight:700; }
   .pl-intro p { margin:0 0 8px; font-size:15px; line-height:1.8; color:#dcdce1; }
   .pl-res { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
   .pl-res.one { grid-template-columns: minmax(0, 1fr); }   /* 카드 하나일 때는 자리를 꽉 채워요 */
@@ -13039,7 +13049,7 @@ function renderLoop() {
     if (isEnd && (loopEndPage[endKey] || !r.event)) {
       loopTailMs = 0;
       const x = r.status === 'dead' ? loopDeathHtml(r, marks) : loopEndingHtml(r, marks);
-      main = x.main.replace('class="pl-box glow pl-death', 'class="pl-box glow pl-endpage pl-death'); dock = x.dock;
+      main = x.main; dock = x.dock;
     } else {
       main = loopStatusHtml(d, r);
       const pk = `${r.life_no}|${r.loop_no}|${(r.log || []).length}`;
@@ -13323,17 +13333,25 @@ function loopPeekHtml(d, r, i) {
     <button class="pl-btn primary" onclick="event.stopPropagation(); ${i + 1 < cur ? `loopPeekGo(${i + 1})` : 'loopPeek = null; renderLoop()'}">${i + 1 < cur ? '다음 사건' : '지금으로 돌아가기'}<i class="fa-solid fa-chevron-right"></i></button></div>`;
   return { main, dock };
 }
+// 끝 장면(사망 · 엔딩 · 기록됨)은 모두 같은 카드 하나 : 글자 자리 그대로, 버튼도 카드 안에서 바로 아래.
+var loopEndCache = {};   // 이번 운명의 끝 장면(기록된 뒤에도 같은 글을 그대로 보여 주려고)
+function loopEndCardHtml(o) {
+  return `<div class="pl-box glow pl-death pl-endpage ${o.cls || ''} ${o.still ? 'still' : ''}"><div class="t">${o.tag}</div><h3>${loopEsc(o.title)}</h3>
+    <div class="pl-end-text">${o.text}</div>
+    <div class="pl-end-foot pl-fade"${o.after || ''}>${o.meta ? `<div class="at">${o.meta}</div>` : ''}${o.actions ? `<div class="pl-end-acts">${o.actions}</div>` : ''}${o.note ? `<div class="pl-end-note">${o.note}</div>` : ''}</div></div>`;
+}
 function loopDeathHtml(r, marks) {
   const d = r.death, k = `death|${r.life_no}|${r.loop_no}|${r.count}`;
   const tx = loopType(d.text, k, loopTailMs + 500);
   if (tx.fresh) marks.push(k);
   const tag = d.kind === 'loop' ? 'LOOP' : d.kind === 'mind' ? 'COLLAPSE' : 'DEATH';
-  return { main: `<div class="pl-box glow pl-death ${d.kind === 'loop' ? 'loop' : ''} ${d.kind === 'mind' ? 'mind' : ''}"><div class="t">${tag}</div><h3>${loopEsc(d.title)}</h3>${tx.html}
-    <div class="pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><div class="at">${loopEsc(d.at)}에서 · ${r.count}개의 사건을 지나왔습니다</div>
-    ${r.loop_open ? '<div class="at" style="margin-top:8px">운명 종료 : 기록을 남기고 끝냅니다 · 루프 진입 : 기억 일부를 안고 전쟁 이전의 평행 세계에서 다시 시작합니다</div>' : ''}</div></div>`,
-    dock: r.loop_open ? `<div class="pl-actions two pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>운명 종료</button>
-    <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'loop' })"><i class="fa-solid fa-infinity"></i>루프 진입</button></div>`
-      : `<div class="pl-actions pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>운명 종료</button></div>` };
+  const cls = `${d.kind === 'loop' ? 'loop' : ''} ${d.kind === 'mind' ? 'mind' : ''}`;
+  const meta = `${loopEsc(d.at)}에서 · ${r.count}개의 사건을 지나왔습니다`;
+  loopEndCache[`${r.life_no}|${r.loop_no}`] = { tag, cls, title: d.title, text: d.text, meta };
+  const btn = (mode, ic, t, primary) => `<button class="pl-btn ${primary ? 'primary' : ''}" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: '${mode}' })"><i class="fa-solid ${ic}"></i>${t}</button>`;
+  return { main: loopEndCardHtml({ tag, cls, title: d.title, text: tx.html, meta, after: loopAfter(tx.end + 200, tx.fresh),
+    actions: r.loop_open ? btn('end', 'fa-book', '기록 남기고 끝내기') + btn('loop', 'fa-infinity', '루프 진입', true) : btn('end', 'fa-book', '기록 남기기', true),
+    note: r.loop_open ? '루프 진입 : 기억 일부를 안고 전쟁 이전의 평행 세계에서 다시 시작합니다' : '' }), dock: '' };
 }
 // 프롤로그 : 서력의 역사 → 탄생 → 문명관. 고르는 것 없이 자동으로 정해진 나레이션이에요.
 // 프롤로그는 두 장 : 서력의 역사만 먼저 보여 주고, '다음'을 누르면 탄생(출신 · 공명 · 집안 · 문명관).
@@ -13360,18 +13378,26 @@ function loopEndingHtml(r, marks) {
   const e = r.ending, k = `ending|${r.life_no}|${r.loop_no}`;
   const tx = loopType(e.text, k, 400);
   if (tx.fresh) marks.push(k);
-  return { main: `<div class="pl-box glow pl-death loop"><div class="t">${e.paused ? 'TO BE CONTINUED' : 'SURVIVED'}</div><h3>${loopEsc(e.title)}</h3>${tx.html}
-    <div class="pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><div class="at">${r.count}개의 매듭을 잇습니다 · 남은 체력 ${r.hp} · 정신 ${r.mind}</div></div></div>`,
-    dock: r.can_resume ? `<div class="pl-actions two pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_finish')"><i class="fa-solid fa-book"></i>여기서 기록 남기기</button>
-      <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_resume')"><i class="fa-solid fa-forward"></i>이어서 살기</button></div>`
-      : `<div class="pl-actions pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_finish')"><i class="fa-solid fa-book"></i>기록 남기기</button>${e.paused ? '<div class="pl-k-note" style="margin-top:8px;text-align:center"><i class="fa-solid fa-hourglass-half"></i> 기록을 남기지 않고 두면, 다음 이야기가 열릴 때 이 자리에서 이어서 살 수 있어요.</div>' : ''}</div>` };
+  const tag = e.paused ? 'TO BE CONTINUED' : 'SURVIVED', meta = `${r.count}개의 매듭을 잇습니다 · 남은 체력 ${r.hp} · 정신 ${r.mind}`;
+  loopEndCache[`${r.life_no}|${r.loop_no}`] = { tag, cls: 'loop', title: e.title, text: e.text, meta };
+  const b = (ev, ic, t, primary) => `<button class="pl-btn ${primary ? 'primary' : ''}" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('${ev}')"><i class="fa-solid ${ic}"></i>${t}</button>`;
+  return { main: loopEndCardHtml({ tag, cls: 'loop', title: e.title, text: tx.html, meta, after: loopAfter(tx.end + 200, tx.fresh),
+    actions: r.can_resume ? b('loop_finish', 'fa-book', '여기서 기록 남기기') + b('loop_resume', 'fa-forward', '이어서 살기', true) : b('loop_finish', 'fa-book', '기록 남기기', true),
+    note: e.paused && !r.can_resume ? '기록을 남기지 않고 두면, 다음 이야기가 열릴 때 이 자리에서 이어서 살 수 있어요.' : '' }), dock: '' };
 }
+// 기록된 뒤 : 방금 본 끝 장면과 같은 카드 그대로, '기록됨' 표시와 다음 운명(Loop) 버튼만 바뀌어요.
 function loopEndedHtml(d, r) {
-  const last = (d.lives || [])[0];
+  const last = (d.lives || [])[0] || {};
+  const c = loopEndCache[`${r.life_no}|${r.loop_no}`];
   const survived = r.outcome === 'survived' || r.outcome === 'paused';
-  return { main: `<div class="pl-box glow pl-death ${survived ? 'loop' : ''}"><div class="t">${survived ? 'SURVIVED' : 'RECORD'}</div><h3>${r.outcome === 'paused' ? '여기까지 살아남았습니다' : survived ? '전쟁 이후에 도달했습니다' : '운명이 끝났습니다'}</h3>
-    <p>${last ? `${last.count}개의 사건 · ${last.loop_no ? `루프 ${last.loop_no} · ` : ''}${survived ? '생존' : loopEsc((last.death || {}).at || '') + '에서 ' + ((last.death || {}).kind === 'mind' ? '정신 붕괴' : '사망')}` : ''}</p></div>`,
-    dock: `<div class="pl-actions"><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopRetry()"><i class="fa-solid fa-infinity"></i>Loop</button></div>` };
+  const summary = `${last.count || 0}개의 사건 · ${last.loop_no ? `루프 ${last.loop_no} · ` : ''}${survived ? '생존' : loopEsc((last.death || {}).at || '') + '에서 ' + ((last.death || {}).kind === 'mind' ? '정신 붕괴' : '사망')}`;
+  const actions = `<button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopRetry()"><i class="fa-solid fa-infinity"></i>새 운명 (Loop)</button>`;
+  const stamp = '<span class="pl-end-stamp"><i class="fa-solid fa-book"></i>기록에 남았습니다</span>';
+  if (c) return { main: loopEndCardHtml({ tag: c.tag, cls: c.cls, title: c.title, text: (c.text || []).map(t => `<p class="${/^["“]/.test(t) ? 'q' : ''}" style="opacity:1;animation:none">${loopEsc(t)}</p>`).join(''),
+    meta: `${stamp}${c.meta}`, actions, still: true }), dock: '' };
+  return { main: loopEndCardHtml({ tag: survived ? 'SURVIVED' : 'RECORD', cls: survived ? 'loop' : '',
+    title: r.outcome === 'paused' ? '여기까지 살아남았습니다' : survived ? '전쟁 이후에 도달했습니다' : '운명이 끝났습니다',
+    text: '', meta: `${stamp}${summary}`, actions, still: true }), dock: '' };
 }
 function loopStartHtml(d) {
   // 출신 국가는 생애마다 무작위 : 고르는 건 공명 여부뿐이에요.
