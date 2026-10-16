@@ -2073,6 +2073,9 @@
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
   body.is-lounge #sidebarBattleBtn, body.is-lounge #sidebarUserListBtn, body.is-lounge .m-battle-tools { display:none !important; }
   body.is-battle #sidebarDormBtn, body.is-battle #sidebarMapBtn, body.is-battle #sidebarMailBtn, body.is-battle #newsMailRow, body.is-battle #myPageRoomBox { display:none !important; }
+  body.is-play.is-battle #newsMailRow { display:flex !important; }
+  .mail-preview { display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:11px 14px; border-radius:12px; background: rgba(var(--point-rgb),.08); color: var(--muted); font-size:13px; }
+  .mail-preview i { color: var(--point); }
   /* PLAY 룸(LOOP)에는 맵을 달아 둡니다(챕터 없음 · 학교 잠김) */
   body.is-play.is-battle .sidebar #sidebarMapBtn { display:flex !important; }
 
@@ -3106,8 +3109,8 @@
     body.is-battle .sidebar #sidebarChatBtn { order:4; }
     body.is-battle .sidebar #sidebarMyPageBtn { order:5; }
     body.is-battle .sidebar #sidebarOpsBtn { order:6; }
-    body.is-play.is-battle .sidebar #sidebarMapBtn { order:4; }
-    body.is-play.is-battle .sidebar #sidebarChatBtn { order:5; }
+    body.is-play.is-battle .sidebar #sidebarChatBtn { order:4; }
+    body.is-play.is-battle .sidebar #sidebarMapBtn { order:5; }
     /* 일반 룸 하단 탭 순서 : 소식 · 상점 · 기숙사 · 맵 · 마이페이지 (운영진은 맨 끝에 운영) */
     body.is-lounge .sidebar #sidebarNewsBtn { order:1; }
     body.is-lounge .sidebar #sidebarShopBtn { order:2; }
@@ -3151,6 +3154,7 @@
   .shop-tab-sep { flex:none; }
   .news-switch { display:none; }
   .news-switch .notice-dot { top:8px; right:4px; }
+  body.is-play .news-switch { display:inline-flex; }
   /* 작은 자리(스킬 로그 카드 머리, 유저 리스트 검색 옆)에서는 조금 작게 */
   .mypage.v2 .mp-skill .seg-toggle { margin:0; }
   .mypage.v2 .mp-skill .seg-toggle button, #userInfoFilter button { font-size:14px; padding:9px 12px; }
@@ -4955,7 +4959,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.53";
+const EXPECTED_SERVER_BUILD = "2026-10-13.54";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -7677,6 +7681,28 @@ const SWIPE_TABS = [
       return;
     }
   }, { passive: true });
+  // LOOP(PLAY 룸) : 루프 화면을 왼쪽으로 밀면 지나온 사건 기록, 기록을 오른쪽으로 밀면 다시 루프 화면.
+  let ps = null;
+  if (BATTLE_TYPE === 'play') {
+    document.addEventListener('touchstart', (e) => {
+      ps = null;
+      if (e.touches.length !== 1 || document.querySelector('.modal-overlay[style*="flex"]')) return;
+      const b = document.body.classList;
+      if (b.contains('view-map') || b.contains('view-loopadmin') || b.contains('view-ops')) return;
+      const target = e.target, open = b.contains('m-chat-open');
+      const area = target.closest && target.closest(open ? '#playLogPanel' : '#playPage');
+      if (!area || skip(target, area)) return;
+      ps = { x: e.touches[0].clientX, y: e.touches[0].clientY, at: Date.now(), open };
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (!ps) return;
+      const t = e.changedTouches[0], dx = t.clientX - ps.x, dy = t.clientY - ps.y, p = ps;
+      ps = null;
+      if (Date.now() - p.at > 700 || Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+      if (!p.open && dx < 0) toggleMobileChat(true);
+      else if (p.open && dx > 0) toggleMobileChat(false);
+    }, { passive: true });
+  }
   document.addEventListener('touchend', (e) => {
     if (!st) return;
     const t = e.changedTouches[0], dx = t.clientX - st.x, dy = t.clientY - st.y, tabs = st.tabs, quick = Date.now() - st.at < 700;
@@ -9993,14 +10019,20 @@ function renderMail() {
   const tabs = [['inbox', 'fa-solid fa-inbox', '받은 편지', d.unread], ['outbox', 'fa-solid fa-paper-plane', '보낸 편지'], ['write', 'fa-solid fa-pen', '편지 쓰기']];
   if (d.is_gm) tabs.push(['all', 'fa-solid fa-envelopes-bulk', '전체 편지']);
   tabsEl.innerHTML = tabs.map(([k, ic, t, n]) => `<button class="shop-tab ${mailTab === k ? 'active' : ''}" onclick="setMailTab('${k}')"><i class="${ic}"></i>${t}${n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('');
-  if (mailTab === 'write') { body.innerHTML = mailComposeHtml(d); return; }
+  const pv = d.preview ? '<div class="mail-preview"><i class="fa-solid fa-eye"></i>미리보기예요. 이 방에서는 편지를 보내거나 받을 수 없어요.</div>' : '';
+  if (mailTab === 'write') {
+    body.innerHTML = pv + mailComposeHtml(d);
+    const sb = document.getElementById('mailSendBtn');
+    if (d.preview && sb) { sb.disabled = true; sb.innerHTML = '<i class="fa-solid fa-lock"></i> 미리보기'; }
+    return;
+  }
   const list = mailTab === 'outbox' ? d.outbox : mailTab === 'all' ? (d.all || []) : d.inbox;
   const open = mailOpenId && list.find(l => l.id === mailOpenId);
   if (open) { body.innerHTML = mailLetterHtml(open, d); return; }
   if (!list.length) {
-    body.innerHTML = mailTab === 'inbox' ? emptyHtml('fa-inbox', '아직 받은 편지가 없어요', '누군가 편지를 보내면 여기에 모여요.')
+    body.innerHTML = pv + (mailTab === 'inbox' ? emptyHtml('fa-inbox', '아직 받은 편지가 없어요', '누군가 편지를 보내면 여기에 모여요.')
       : mailTab === 'outbox' ? emptyHtml('fa-paper-plane', '아직 보낸 편지가 없어요', '첫 편지를 써 보세요.', ['편지 쓰기', "setMailTab('write')", 'fa-pen'])
-      : emptyHtml('fa-envelope-open', '편지가 없어요');
+      : emptyHtml('fa-envelope-open', '편지가 없어요'));
     return;
   }
   // 시기(대분류 · 연도) 순으로 쌓기 : 늦은 시기가 위, 같은 시기 안에서는 최근 편지가 위. 시기가 없는 옛 편지는 맨 아래.

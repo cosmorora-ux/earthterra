@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.53"
+SERVER_BUILD = "2026-10-13.54"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2897,7 +2897,11 @@ def _emit_mail_data(sid):
     if room is None:
         return
     if me is None:
-        socketio.emit("mail_data", {"me": None, "inbox": [], "outbox": [], "unread": 0, "eras": mailbox_mod.eras_payload(), "era_now": _mail_era_now(),
+        # PLAY 룸(LOOP)의 TEST는 우체통을 미리 보기만 해요(빈 우체통 · 보내기 불가).
+        info = CONNECTIONS.get(sid) or {}
+        preview = room.battle_type == "play" and info.get("nickname") == loop_mod.TEST_ID
+        socketio.emit("mail_data", {"me": loop_mod.TEST_ID if preview else None, "preview": preview, "inbox": [], "outbox": [], "unread": 0,
+                                    "eras": mailbox_mod.eras_payload(), "era_now": _mail_era_now(),
                                     "roster": _mail_candidates(room)}, to=sid)
         return
     data = mailbox_mod.shared_mailbox().payload(me, is_gm)
