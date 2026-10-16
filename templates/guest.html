@@ -2068,10 +2068,6 @@
   .ps-c > .pl-k { flex:none; width:52px; white-space:nowrap; }
   .ps-v { min-width:0; flex:1; }
   .pl-stat .ps-c.eras { grid-column: 1 / -1; }
-  #loopDyeMsg { position:fixed; left:0; right:0; top:38%; z-index:950; display:flex; justify-content:center; pointer-events:none; opacity:0; transition: opacity .8s ease; }
-  #loopDyeMsg.on { opacity:1; }
-  #loopDyeMsg span { padding:12px 26px; border-radius:12px; background: rgba(12,12,15,.82); backdrop-filter: blur(6px); color: var(--point); font-size:17px; font-weight:600; letter-spacing:.06em;
-    text-shadow: 0 0 10px rgba(var(--point-rgb),.3); box-shadow: 0 0 0 1px rgba(var(--point-rgb),.25), 0 12px 40px rgba(0,0,0,.5); }
   #loopNarrPop { position:fixed; left:50%; bottom:36px; z-index:900; display:flex; align-items:center; gap:10px; width:max-content; max-width:calc(100vw - 24px); box-sizing:border-box;
     padding:13px 18px; border-radius:12px; background: rgba(20,20,24,.94); border:1px solid rgba(255,255,255,.08); box-shadow: 0 14px 36px rgba(0,0,0,.5);
     backdrop-filter: blur(8px); cursor:pointer; opacity:0; pointer-events:none; transform: translate(-50%, 8px); transition: opacity .35s ease, transform .35s ease; }
@@ -12779,9 +12775,8 @@ function loopDye(target) {
   const hsl = (h, s, l) => { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
     return [0, 8, 4].map(n => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))))); };
   const set = c => { const v = c.join(','); root.setProperty('--point', `rgb(${v})`); root.setProperty('--point-rgb', v); root.setProperty('--accent-blue', `rgb(${v})`); };
-  let msg = document.getElementById('loopDyeMsg');
-  if (!msg) { msg = document.createElement('div'); msg.id = 'loopDyeMsg'; document.body.appendChild(msg); }
-  msg.innerHTML = '<span>운명의 색이 물듭니다.</span>'; msg.classList.remove('on'); void msg.offsetWidth; msg.classList.add('on');
+  // 안내는 상태 팝업과 같은 모양으로
+  clearTimeout(loopNarrTimer); loopNarrQ = [{ t: '운명의 색이 물듭니다.', ic: 'fa-droplet' }]; loopNarrNext();
   cancelAnimationFrame(loopDyeT);
   const step = now => {
     const p = Math.min(1, (now - t0) / T);
@@ -12791,7 +12786,6 @@ function loopDye(target) {
     set(wave.map((x, i) => Math.round(x + (to[i] - x) * k)));
     if (p < 1) { loopDyeT = requestAnimationFrame(step); return; }
     loopDyeT = 0; ['--point', '--point-rgb', '--accent-blue'].forEach(k2 => root.removeProperty(k2)); applyPointTheme();
-    setTimeout(() => msg.classList.remove('on'), 900);
   };
   loopDyeT = requestAnimationFrame(step);
 }
@@ -13071,7 +13065,7 @@ function loopNarrNext() {
   if (!it) { el.classList.remove('on'); return; }
   const show = () => {
     el.className = it.low ? 'low' : '';
-    el.innerHTML = `<i class="fa-solid fa-feather-pointed"></i><p>${loopEsc(it.t)}</p>`;
+    el.innerHTML = `<i class="fa-solid ${it.ic || 'fa-feather-pointed'}"></i><p>${loopEsc(it.t)}</p>`;
     void el.offsetWidth; el.classList.add('on');
     loopNarrTimer = setTimeout(() => { el.classList.remove('on'); loopNarrTimer = setTimeout(loopNarrNext, 380); }, 2600);
   };
