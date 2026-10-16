@@ -3504,6 +3504,14 @@
   .shop-tab:hover, .seg-toggle button:hover, .news-switch button:hover { color: var(--text); }
   .shop-tab.active, .seg-toggle button.on, .news-switch button.on { color:#fff; font-weight:600; border-bottom-color: var(--point); }
   .shop-tab-sep { flex:none; }
+  .modal-overlay.no-anim, .modal-overlay.no-anim > .modal-box, .modal-overlay.no-anim > div > .modal-box { animation:none !important; }
+  #mailTabs { align-items:center; }
+  .mail-compose { flex:none; display:inline-flex; align-items:center; gap:7px; height:34px; margin:0 0 4px 12px; padding:0 14px; border-radius:10px; border:none;
+    background: var(--point); color:#fff; font:inherit; font-size:13.5px; font-weight:700; cursor:pointer; transition: filter .15s; }
+  .mail-compose:hover { filter: brightness(1.1); }
+  .mail-compose.on { background: rgba(var(--point-rgb),.18); color: var(--point); }
+  .mail-compose i { font-size:12px; }
+  @media (max-width:600px) { .mail-compose span { display:none; } .mail-compose { width:38px; padding:0; justify-content:center; margin-left:8px; } .mail-compose i { font-size:14px; } }
   .news-switch { display:none; }
   .news-switch .notice-dot { top:8px; right:4px; }
   body.is-play .news-switch { display:inline-flex; }
@@ -9368,7 +9376,7 @@ function openNotices() {
   setTimeout(markNoticesSeen, 0);
 }
 function closeNotices() {
-  const doClose = () => { noticeEditing = false; noticeEditingId = null; document.getElementById('noticeModal').style.display = 'none'; };
+  const doClose = () => { noticeEditing = false; noticeEditingId = null; const m = document.getElementById('noticeModal'); m.style.display = 'none'; m.classList.remove('no-anim'); };
   if (!noticeEditing) { doClose(); return; }
   uiConfirm('작성 중인 내용이 사라져요. 닫을까요?', {title:'공지 닫기', okText:'닫기', danger:true}).then(ok => ok && doClose());
 }
@@ -10345,11 +10353,13 @@ function syncNewsDot() {
 function openNewsSheet() { syncNewsDot(); document.getElementById('newsSheet').style.display = 'flex'; }
 // 휴대폰 · 태블릿 '소식' 탭 : 바로 공지 페이지로. 일반 룸은 공지 · 우체통 페이지 위쪽 전환 버튼으로 오갑니다.
 function openNewsTab() { syncNewsDot(); openNotices(); }
+// 공지 ↔ 우체통 전환은 같은 창 안에서 탭을 바꾸는 것처럼 : 창이 새로 열리는 애니메이션 없이 바로 바꿔요.
 function switchNews(k) {
+  const still = id => document.getElementById(id).classList.add('no-anim');
   if (k === 'mail') {
     if (noticeEditing) { closeNotices(); return; }
-    closeNotices(); openMail();
-  } else { closeMail(); openNotices(); }
+    still('mailModal'); closeNotices(); openMail();
+  } else { still('noticeModal'); closeMail(); openNotices(); }
 }
 function openMail(tab) {
   if (tab) mailTab = tab;
@@ -10358,7 +10368,7 @@ function openMail(tab) {
   socket.emit('mail_list');
   renderMail();
 }
-function closeMail() { document.getElementById('mailModal').style.display = 'none'; }
+function closeMail() { const m = document.getElementById('mailModal'); m.style.display = 'none'; m.classList.remove('no-anim'); }
 function setMailTab(t) { mailTab = t; mailOpenId = null; renderMail(); }
 socket.on('joined', () => socket.emit('mail_list'));
 socket.on('mail_data', (d) => {
@@ -10384,9 +10394,11 @@ function renderMail() {
     body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '우체통을 불러오는 중이에요');
     return;
   }
-  const tabs = [['inbox', 'fa-solid fa-inbox', '받은 편지', d.unread], ['outbox', 'fa-solid fa-paper-plane', '보낸 편지'], ['write', 'fa-solid fa-pen', '편지 쓰기']];
+  // 받은 편지함 · 보낸 편지함(관리자는 전체)만 탭으로, 편지 쓰기는 오른쪽 별도 버튼(일반 메일 앱처럼)
+  const tabs = [['inbox', 'fa-solid fa-inbox', '받은 편지함', d.unread], ['outbox', 'fa-solid fa-paper-plane', '보낸 편지함']];
   if (d.is_gm) tabs.push(['all', 'fa-solid fa-envelopes-bulk', '전체 편지']);
-  tabsEl.innerHTML = tabs.map(([k, ic, t, n]) => `<button class="shop-tab ${mailTab === k ? 'active' : ''}" onclick="setMailTab('${k}')"><i class="${ic}"></i>${t}${n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('');
+  tabsEl.innerHTML = tabs.map(([k, ic, t, n]) => `<button class="shop-tab ${mailTab === k ? 'active' : ''}" onclick="setMailTab('${k}')"><i class="${ic}"></i>${t}${n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('')
+    + `<button class="mail-compose ${mailTab === 'write' ? 'on' : ''}" onclick="setMailTab('write')"><i class="fa-solid fa-pen"></i><span>편지 쓰기</span></button>`;
   const pv = d.preview ? '<div class="mail-preview"><i class="fa-solid fa-eye"></i>미리보기예요. 이 방에서는 편지를 보내거나 받을 수 없어요.</div>' : '';
   if (mailTab === 'write') {
     body.innerHTML = pv + mailComposeHtml(d);
