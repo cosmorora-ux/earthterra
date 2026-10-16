@@ -11532,7 +11532,8 @@ async function buildExportHtml(d) {
   }
   function hide() { cur = null; tip.style.display = 'none'; }
   document.addEventListener('mouseover', (e) => {
-    const el = e.target.closest && e.target.closest('[data-tip],[data-tip-html]');
+    let el = e.target.closest && e.target.closest('[data-tip],[data-tip-html]');
+    if (el && el.closest('.sidebar')) el = null;   // 메뉴 탭(사이드바 · 하단 바)에는 툴팁을 띄우지 않아요
     if (el === cur) return;
     if (el && (el.getAttribute('data-tip') || el.getAttribute('data-tip-html'))) show(el); else hide();
   });
