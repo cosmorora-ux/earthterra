@@ -515,7 +515,7 @@
   .notice-card.open .chev { transform: rotate(180deg); }
   .notice-card-body { display:none; padding:4px 20px 18px; border-top:1px solid var(--panel-border); }
   .notice-card.open .notice-card-body { display:block; }
-  .notice-content { padding-top:14px; font-size:15.5px; line-height:1.8; word-break:keep-all; overflow-wrap:anywhere; color:#e4e4e7; max-width:68ch; }
+  .notice-content { padding-top:14px; font-size:15.5px; line-height:1.8; word-break:keep-all; overflow-wrap:anywhere; color:#e4e4e7; max-width:none; }
   .notice-content h1 { font-size:22px; line-height:1.35; margin:14px 0 8px; letter-spacing:-0.025em; color: var(--text); }
   .notice-content h2 { font-size:19px; line-height:1.4; margin:12px 0 6px; letter-spacing:-0.02em; color: var(--text); }
   .notice-content h3 { font-size:17px; line-height:1.45; margin:10px 0 4px; color: var(--text); }
@@ -9465,6 +9465,12 @@ function closeNotices() {
   if (!noticeEditing) { doClose(); return; }
   uiConfirm('작성 중인 내용이 사라져요. 닫을까요?', {title:'공지 닫기', okText:'닫기', danger:true}).then(ok => ok && doClose());
 }
+// 공지는 현실 날짜로 : 2026.10.16 PM 10:18
+function fmtNoticeRealDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts * 1000), p = n => String(n).padStart(2, '0'), h = d.getHours();
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${h < 12 ? 'AM' : 'PM'} ${p(h % 12 || 12)}:${p(d.getMinutes())}`;
+}
 function fmtNoticeDate(ts) {
   if (!ts) return '';
   return etStamp(new Date(ts * 1000));
@@ -9492,7 +9498,6 @@ function renderNotices() {
   list.innerHTML = lastNotices.map(n => {
     const open = openNoticeIds.has(n.id);
     const isNew = (n.updated_at || n.created_at || 0) > seen;
-    const edited = n.updated_at && n.created_at && n.updated_at - n.created_at > 60 ? ' (수정됨)' : '';
     const tmp = document.createElement('div');
     tmp.innerHTML = (n.html || '').replace(/<\/(p|h1|h2|h3|li|div|blockquote)>|<br\s*\/?>/gi, ' $&');
     const preview = (tmp.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120);
@@ -9500,7 +9505,7 @@ function renderNotices() {
       <div class="notice-card-head" onclick="toggleNotice('${n.id}')">
         <div class="nc-main">
           <div class="nc-title">${n.pinned ? '<span class="pin"><i class="fa-solid fa-thumbtack"></i>고정</span>' : ''}<span class="t">${shopEsc(n.title)}</span>${isNew ? '<span class="new"></span>' : ''}</div>
-          <div class="nc-meta">${fmtNoticeDate(n.created_at)}${edited}${!open && preview ? ` · <span class="pv">${shopEsc(preview)}</span>` : ''}</div>
+          <div class="nc-meta">${fmtNoticeRealDate(n.created_at)}${!open && preview ? ` · <span class="pv">${shopEsc(preview)}</span>` : ''}</div>
         </div>
         <span class="chev"><i class="fa-solid fa-chevron-down"></i></span>
       </div>
