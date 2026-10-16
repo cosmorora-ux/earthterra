@@ -3555,11 +3555,11 @@
   .modal-overlay.no-anim, .modal-overlay.no-anim > .modal-box, .modal-overlay.no-anim > div > .modal-box { animation:none !important; }
   .modal-box.mail-modal { position:relative; }
   #mailBody { padding-bottom:84px; }
-  .modal-box.mail-modal > .mail-fab { position:absolute; right:24px; bottom:24px; width:auto; margin:0; z-index:3; display:inline-flex; align-items:center; gap:8px; height:46px; padding:0 20px;
-    border-radius:16px; border:none; background: var(--point); color:#fff; font:inherit; font-size:14px; font-weight:700; cursor:pointer;
+  .modal-box.mail-modal > .mail-fab { position:absolute; right:26px; bottom:26px; width:56px; height:56px; margin:0; padding:0; z-index:3; display:inline-flex; align-items:center; justify-content:center;
+    border-radius:50%; border:none; background: var(--point); color:#fff; font:inherit; font-size:14px; font-weight:700; cursor:pointer;
     box-shadow: 0 10px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06) inset; transition: transform .15s, filter .15s; }
   .mail-fab:hover { filter: brightness(1.1); transform: translateY(-1px); }
-  .mail-fab i { font-size:13px; }
+  .mail-fab i { font-size:19px; }
   @media (max-width:900px) { .modal-box.mail-modal > .mail-fab { right:18px; bottom: calc(18px + env(safe-area-inset-bottom)); } }
   .news-switch { display:none; }
   .news-switch .notice-dot { top:8px; right:4px; }
@@ -4528,7 +4528,7 @@
     </div>
     <div class="shop-tabs" id="mailTabs"></div>
     <div class="shop-body" id="mailBody"></div>
-    <button class="mail-fab" id="mailFab" onclick="setMailTab('write')" style="display:none"><i class="fa-solid fa-pen"></i><span>편지 쓰기</span></button>
+    <button class="mail-fab" id="mailFab" onclick="setMailTab('write')" style="display:none" aria-label="편지 쓰기" data-tip="편지 쓰기"><i class="fa-solid fa-pen"></i></button>
   </div>
 </div>
 <div id="shopModal" class="modal-overlay" onclick="if(event.target===this) closeShop()">
@@ -10510,7 +10510,7 @@ function renderMail() {
   if (d.is_gm) tabs.push(['all', 'fa-solid fa-envelopes-bulk', '전체 편지']);
   tabsEl.innerHTML = tabs.map(([k, ic, t, n]) => `<button class="shop-tab ${mailTab === k ? 'active' : ''}" onclick="setMailTab('${k}')"><i class="${ic}"></i>${t}${n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('');
   // 편지 쓰기 : 목록 위에 떠 있는 버튼(오른쪽 아래). 쓰는 중이거나 미리보기(보낼 수 없는 방)에서는 숨겨요.
-  document.getElementById('mailFab').style.display = mailTab === 'write' || d.preview ? 'none' : '';
+  document.getElementById('mailFab').style.display = mailTab === 'write' ? 'none' : '';
   const pv = d.preview ? '<div class="mail-preview"><i class="fa-solid fa-eye"></i>미리보기예요. 이 방에서는 편지를 보내거나 받을 수 없어요.</div>' : '';
   if (mailTab === 'write') {
     body.innerHTML = pv + mailComposeHtml(d);
@@ -10523,7 +10523,7 @@ function renderMail() {
   if (open) { body.innerHTML = mailLetterHtml(open, d); return; }
   if (!list.length) {
     body.innerHTML = pv + (mailTab === 'inbox' ? emptyHtml('fa-inbox', '아직 받은 편지가 없어요', '누군가 편지를 보내면 여기에 모여요.')
-      : mailTab === 'outbox' ? emptyHtml('fa-paper-plane', '아직 보낸 편지가 없어요', '첫 편지를 써 보세요.', ['편지 쓰기', "setMailTab('write')", 'fa-pen'])
+      : mailTab === 'outbox' ? emptyHtml('fa-paper-plane', '아직 보낸 편지가 없어요', '오른쪽 아래 버튼으로 첫 편지를 써 보세요.')
       : emptyHtml('fa-envelope-open', '편지가 없어요'));
     return;
   }
