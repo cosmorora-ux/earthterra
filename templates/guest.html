@@ -2516,7 +2516,18 @@
   .la-head { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
   .la-head .ops-seg button { height:34px; padding:0 14px; }
   .la-head .ops-hint b { color:#cfcfd4; }
-  .la-ev { display:grid; grid-template-columns: 320px minmax(0,1fr); gap:16px; align-items:start; }
+  .la-ev { display:grid; grid-template-columns: 300px minmax(0,1fr); gap:16px; align-items:start; }
+  .la-item { grid-template-columns: 1fr !important; }
+  .la-count { display:flex; align-items:center; gap:8px; margin:12px 2px 0; font-size:12.5px; color: var(--muted); }
+  .la-count b { color:#fff; font-size:14px; }
+  .la-count .f { margin-left:auto; color: var(--point); font-weight:600; }
+  .la-nav-fold { align-items:center !important; padding:8px 14px !important; color: var(--muted) !important; }
+  .la-nav-fold b { font-size:12.5px !important; color: var(--muted) !important; font-weight:600; }
+  .la-shell { transition: grid-template-columns .2s ease; }
+  .la-shell.mini { grid-template-columns: 52px minmax(0,1fr); }
+  .la-shell.mini .la-nav button { justify-content:center; padding:12px 0 !important; }
+  .la-shell.mini .la-nav button i { margin:0; }
+  .la-shell.mini .la-nav button span, .la-shell.mini .la-nav-hint { display:none; }
   /* Loop Studio 2 : 사건 · 규칙 편집기 — 머리(제목 · 메타) + 탭 + 본문 */
   .la-form2 { padding:0 !important; gap:0 !important; overflow:hidden; }
   .la-eh { display:flex; align-items:center; gap:10px; padding:16px 18px 12px; }
@@ -13010,7 +13021,7 @@ if (IS_PLAY) {
 // 다음 사건부터 바로 반영돼요(loop_content.json). 체력 · 정신 변동이 들어 있어서 운영진에게만 와요.
 // 입력칸은 고칠 때마다 작업본(la.c)에 바로 들어가고, '저장'을 눌러야 서버에 올라갑니다.
 // ==================================================================
-const la = { c: null, saved: '', custom: false, sub: 'events', sel: null, q: '', loading: false };
+const la = { c: null, saved: '', custom: false, sub: 'events', sel: null, q: '', loading: false, navMini: (() => { try { return localStorage.getItem('laNavMini') === '1'; } catch (e) { return false; } })() };
 const LA_KIND = { life: '일상', war: '전쟁', plague: '병', purge: '자정작용', loop: '루프', mind: '정신 붕괴' };
 const LA_DELTA = [3, 2, 1, 0, -1, -2, -3];
 const LA_RES = [['wealth', '재산', 'fa-coins'], ['intel', '지능', 'fa-lightbulb'], ['talent', '재능·기술', 'fa-star']];
@@ -13078,14 +13089,16 @@ function closeLoopAdmin() {
   document.getElementById('sidebarBattleBtn').classList.add('active');
 }
 function laOpen() { return document.body.classList.contains('view-loopadmin'); }
+function laToggleNav() { la.navMini = !la.navMini; try { localStorage.setItem('laNavMini', la.navMini ? '1' : '0'); } catch (e) {} renderLoopAdmin(); }
 function loopStudioHtml() {
   if (!la.c) { if (!la.loading) { la.loading = true; socket.emit('loop_admin_get'); } return emptyHtml('fa-circle-notch fa-spin', 'LOOP 내용을 불러오는 중이에요'); }
   const rel = la.c.rules.chapters[la.c.rules.release] || {};
-  const nav = LA_SECTIONS.map(([k, t, ic, d]) => `<button class="${la.sub === k ? 'on' : ''}" onclick="la.sub='${k}'; renderLoopAdmin(); document.getElementById('laMain').scrollTop = 0"><i class="fa-solid ${ic}"></i><span><b>${t}</b><em>${d}</em></span></button>`).join('');
+  const nav = `<button class="la-nav-fold" onclick="laToggleNav()" aria-label="메뉴 접기"><i class="fa-solid ${la.navMini ? 'fa-angles-right' : 'fa-angles-left'}"></i><span><b>${la.navMini ? '' : '메뉴 접기'}</b></span></button>`
+    + LA_SECTIONS.map(([k, t, ic, d]) => `<button class="${la.sub === k ? 'on' : ''}" onclick="la.sub='${k}'; renderLoopAdmin(); document.getElementById('laMain').scrollTop = 0" ${la.navMini ? `data-tip="${t}"` : ''}><i class="fa-solid ${ic}"></i><span><b>${t}</b><em>${d}</em></span></button>`).join('');
   const body = la.sub === 'release' ? laReleaseHtml() : la.sub === 'events' ? laEventsHtml() : la.sub === 'rules' ? laRulesHtml() : la.sub === 'prologue' ? laPrologueHtml() : laTextsHtml();
   return `<div class="topbar v2 panel la-top"><div class="seg la-brand">Loop Studio</div><span class="sep">▶</span><div class="seg">${laEsc((LA_SECTIONS.find(x => x[0] === la.sub) || [])[1] || '')}</div>
       <div class="spacer"></div><span class="la-live"><i class="fa-solid fa-circle"></i> 공개 중 : <b>${laEsc(rel.name || '')}</b> ${laEsc(rel.sub || '')}</span></div>
-    <div class="la-shell"><nav class="la-nav">${nav}<div class="la-nav-hint">이야기 속 <b>{조국}</b> · <b>{이웃}</b>은 출신 국가, <b>{적}</b>은 상대 진영으로 바뀌어요.</div></nav>
+    <div class="la-shell ${la.navMini ? 'mini' : ''}"><nav class="la-nav">${nav}<div class="la-nav-hint">이야기 속 <b>{조국}</b> · <b>{이웃}</b>은 출신 국가, <b>{적}</b>은 상대 진영으로 바뀌어요.</div></nav>
       <div class="la-main" id="laMain"><div class="la-wrap">${body}</div></div></div>
     <div class="la-bar" id="laBar"><span class="st"></span>
       <button class="ops-btn" onclick="laRevert()"><i class="fa-solid fa-rotate-left"></i> 마지막 저장으로</button>
@@ -13148,19 +13161,27 @@ function laEventsHtml() {
   if (la.sel == null || !evs[la.sel]) la.sel = evs.length ? 0 : null;
   const q = la.q.trim().toLowerCase();
   const groups = (la.c.eras || []).map(era => {
-    const items = evs.map((ev, i) => [ev, i]).filter(([ev]) => ev.era === era.id && (!q || `${ev.id} ${ev.title} ${(ev.story || []).join(' ')}`.toLowerCase().includes(q)));
+    const items = evs.map((ev, i) => [ev, i]).filter(([ev]) => ev.era === era.id && (!q || `${ev.title} ${(ev.story || []).join(' ')}`.toLowerCase().includes(q)));
     if (!items.length) return '';
     return `<div class="la-g">${laEsc(era.no)}. ${laEsc(era.name)} <span>${items.length}</span>${laEraChapter(era.id) > la.c.rules.release ? '<i class="fa-solid fa-lock"></i>' : ''}</div>` + items.map(([ev, i]) =>
-      `<button class="la-item ${i === la.sel ? 'on' : ''}" data-i="${i}" onclick="la.sel=${i}; renderLoopAdmin()"><span class="n">${laEsc(ev.id)}</span><span class="t">${laEsc(ev.title) || '(제목 없음)'}</span><span class="b">${laCondBadges(ev)}</span></button>`).join('');
+      `<button class="la-item ${i === la.sel ? 'on' : ''}" data-i="${i}" onclick="la.sel=${i}; renderLoopAdmin()"><span class="t">${laEsc(ev.title) || '(제목 없음)'}</span><span class="b">${laCondBadges(ev)}</span></button>`).join('');
   }).join('');
   return `<div class="la-ev">
-    <div class="ops-card la-left"><div class="ops-row"><input class="ops-in" placeholder="번호 · 제목 · 내용 검색" value="${laEsc(la.q)}" oninput="la.q=this.value; laFilterList()">
+    <div class="ops-card la-left"><div class="ops-row"><input class="ops-in" placeholder="제목 · 내용 검색" value="${laEsc(la.q)}" oninput="la.q=this.value; laFilterList()">
       <button class="ops-btn primary" onclick="laAddEvent()"><i class="fa-solid fa-plus"></i> 새 사건</button></div>
+      <div class="la-count" id="laCount">${laCountHtml()}</div>
       <div class="la-list" id="laList">${groups || '<div class="ops-empty">찾는 사건이 없어요.</div>'}</div></div>
     <div class="la-right">${la.sel == null ? `<div class="ops-card">${emptyHtml('fa-scroll', '사건을 골라 주세요', '왼쪽 목록에서 고치거나, 새 사건을 만들어요.')}</div>` : laEventForm(la.sel)}</div></div>`;
 }
 let laFilterT = null;
-function laFilterList() { clearTimeout(laFilterT); laFilterT = setTimeout(() => { const l = document.getElementById('laList'); if (!l) return; const tmp = document.createElement('div'); tmp.innerHTML = laEventsHtml(); l.innerHTML = tmp.querySelector('.la-list').innerHTML; }, 150); }
+function laFilterList() { clearTimeout(laFilterT); laFilterT = setTimeout(() => { const l = document.getElementById('laList'); if (!l) return; const tmp = document.createElement('div'); tmp.innerHTML = laEventsHtml(); l.innerHTML = tmp.querySelector('.la-list').innerHTML; const c = document.getElementById('laCount'); if (c) c.innerHTML = laCountHtml(); }, 150); }
+// 등록된 사건 수(검색 중이면 찾은 수도). 작업 중인 사건은 따로 세어요.
+function laCountHtml() {
+  const evs = la.c.events, q = la.q.trim().toLowerCase();
+  const found = q ? evs.filter(ev => `${ev.title} ${(ev.story || []).join(' ')}`.toLowerCase().includes(q)).length : null;
+  const drafts = evs.filter(ev => ev.draft).length;
+  return `<span><b>${evs.length}</b>건 등록${drafts ? ` · 작업 중 ${drafts}건` : ''}</span>${found != null ? `<span class="f">찾은 사건 ${found}건</span>` : ''}`;
+}
 // 숫자 하나를 − / + 로 바꾸는 작은 조절기(범위 안에서). 0이 아니면 색이 붙어요.
 function laStep(path, d, min, max) {
   const v = Math.max(min, Math.min(max, (Number(laGet(path)) || 0) + d));
@@ -13239,7 +13260,6 @@ function laEventForm(i) {
   }
   return `<div class="ops-card la-form2">
     <div class="la-eh">
-      <span class="la-eh-id">EVENT<input class="ops-in" ${laP(P(['id']))} value="${laEsc(ev.id)}" maxlength="12" onchange="laInput(this, true)"></span>
       <input class="ops-in la-eh-title" ${laP(P(['title']))} value="${laEsc(ev.title)}" maxlength="60" placeholder="사건 제목" oninput="laInput(this)">
       <button class="ops-btn icon" onclick="laDupEvent(${i})" data-tip="복제"><i class="fa-regular fa-copy"></i></button>
       <button class="ops-btn icon danger" onclick="laDelEvent(${i})" data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>
@@ -13269,7 +13289,7 @@ function laAddEvent() {
 }
 function laDupEvent(i) { const ev = JSON.parse(JSON.stringify(la.c.events[i])); ev.id = laNextId(); ev.title += ' (복제)'; la.c.events.splice(i + 1, 0, ev); la.sel = i + 1; renderLoopAdmin(); }
 function laDelEvent(i) {
-  uiConfirm(`EVENT ${la.c.events[i].id} 「${la.c.events[i].title}」을 지울까요? 저장해야 반영돼요.`, { title: '사건 지우기', okText: '지우기', icon: 'fa-trash-can' }).then(ok => {
+  uiConfirm(`「${la.c.events[i].title}」 사건을 지울까요? 저장해야 반영돼요.`, { title: '사건 지우기', okText: '지우기', icon: 'fa-trash-can' }).then(ok => {
     if (!ok) return; la.c.events.splice(i, 1); la.sel = Math.max(0, i - 1); renderLoopAdmin();
   });
 }
