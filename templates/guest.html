@@ -2068,6 +2068,10 @@
   .ps-c > .pl-k { flex:none; width:52px; white-space:nowrap; }
   .ps-v { min-width:0; flex:1; }
   .pl-stat .ps-c.eras { grid-column: 1 / -1; }
+  #loopDyeMsg { position:fixed; left:0; right:0; top:38%; z-index:950; display:flex; justify-content:center; pointer-events:none; opacity:0; transition: opacity .8s ease; }
+  #loopDyeMsg.on { opacity:1; }
+  #loopDyeMsg span { padding:12px 26px; border-radius:12px; background: rgba(12,12,15,.82); backdrop-filter: blur(6px); color: var(--point); font-size:17px; font-weight:600; letter-spacing:.06em;
+    text-shadow: 0 0 18px rgba(var(--point-rgb),.55); box-shadow: 0 0 0 1px rgba(var(--point-rgb),.25), 0 12px 40px rgba(0,0,0,.5); }
   #loopNarrPop { position:fixed; left:50%; bottom:36px; z-index:900; display:flex; align-items:center; gap:10px; width:max-content; max-width:calc(100vw - 24px); box-sizing:border-box;
     padding:13px 18px; border-radius:12px; background: rgba(20,20,24,.94); border:1px solid rgba(255,255,255,.08); box-shadow: 0 14px 36px rgba(0,0,0,.5);
     backdrop-filter: blur(8px); cursor:pointer; opacity:0; pointer-events:none; transform: translate(-50%, 8px); transition: opacity .35s ease, transform .35s ease; }
@@ -12759,8 +12763,35 @@ function loopSyncPoint(d) {
   // 출신 국가는 BIRTH에서 밝혀져요 : 프롤로그의 서력 역사를 읽는 동안에는 아직 보라.
   const r = d && d.run, c = r && r.country;
   const born = r && !(r.status === 'prologue' && loopProStep[`pro|${r.life_no}`] !== 'birth');
+  const before = loopPointTheme;
   loopPointTheme = born && c === 'arcadia' ? 'yellow' : born && c === 'nova' ? 'blue' : 'purple';
-  applyPointTheme();
+  // 탄생(BIRTH)에서 국가가 밝혀지는 순간 : 보라에서 일렁이다가 그 나라 색으로 물들어요(새로고침으로 들어온 때는 바로).
+  if (before === 'purple' && loopPointTheme !== 'purple' && r && r.status === 'prologue' && loopDyeArmed) loopDye(loopPointTheme);
+  else if (!loopDyeT) applyPointTheme();
+  loopDyeArmed = !!(r && r.status === 'prologue' && loopPointTheme === 'purple');
+}
+var loopDyeArmed = false, loopDyeT = 0;
+const LOOP_DYE_RGB = { purple: [164, 141, 255], yellow: [240, 200, 98], blue: [111, 147, 255] };
+function loopDye(target) {
+  const root = document.documentElement.style, to = LOOP_DYE_RGB[target] || LOOP_DYE_RGB.blue, T = 2600, t0 = performance.now();
+  const hsl = (h, s, l) => { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+    return [0, 8, 4].map(n => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))))); };
+  const set = c => { const v = c.join(','); root.setProperty('--point', `rgb(${v})`); root.setProperty('--point-rgb', v); root.setProperty('--accent-blue', `rgb(${v})`); };
+  let msg = document.getElementById('loopDyeMsg');
+  if (!msg) { msg = document.createElement('div'); msg.id = 'loopDyeMsg'; document.body.appendChild(msg); }
+  msg.innerHTML = '<span>운명의 색이 물듭니다.</span>'; msg.classList.remove('on'); void msg.offsetWidth; msg.classList.add('on');
+  cancelAnimationFrame(loopDyeT);
+  const step = now => {
+    const p = Math.min(1, (now - t0) / T);
+    // 앞 65% : 색이 물결치듯 일렁이고, 뒤 35% : 그 나라 색으로 가라앉아요.
+    const wave = hsl((268 + 150 * Math.sin(p * Math.PI * 3.2) + 360) % 360, 82, 72);
+    const k = p < .65 ? 0 : Math.pow((p - .65) / .35, .8);
+    set(wave.map((x, i) => Math.round(x + (to[i] - x) * k)));
+    if (p < 1) { loopDyeT = requestAnimationFrame(step); return; }
+    loopDyeT = 0; ['--point', '--point-rgb', '--accent-blue'].forEach(k2 => root.removeProperty(k2)); applyPointTheme();
+    setTimeout(() => msg.classList.remove('on'), 900);
+  };
+  loopDyeT = requestAnimationFrame(step);
 }
 if (IS_PLAY) applyPointTheme();
 let loopData = null, loopRes = null, loopCountry = null, loopBusy = false, loopLastKey = '', loopTailMs = 0;
