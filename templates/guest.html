@@ -1982,6 +1982,11 @@
   .pl-head { display:block; padding:18px 22px; }
   .pl-head-top { display:flex; align-items:center; gap:12px; }
   .pl-meta-gap { flex:1; }
+  .pl-quote { position:relative; margin:22px 0 8px; padding:26px 4px 24px 24px; border-left:2px solid rgba(var(--point-rgb),.5); }
+  .pl-quote::before { content:''; position:absolute; left:-2px; top:0; bottom:0; width:2px; background: linear-gradient(180deg, transparent, var(--point), transparent); box-shadow: 0 0 14px rgba(var(--point-rgb),.6); }
+  .pl-quote .en p { margin:0 0 14px; font-size:13px; letter-spacing:.06em; line-height:1.7; color: var(--muted); font-style:italic; }
+  .pl-quote .ko p { margin:0; font-size:20px; font-weight:700; line-height:1.6; letter-spacing:-.01em; color:#fff; }
+  @media (max-width:900px) { .pl-quote { padding:18px 0 18px 18px; margin-top:16px; } .pl-quote .en p { font-size:12px; } .pl-quote .ko p { font-size:17px; } }
   .pl-fold { margin-left:auto; }
   .pl-head .pl-fold + .pl-restart { margin-left:6px; }
   .pl-meta .pl-mini { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
@@ -12715,10 +12720,15 @@ function loopStartHtml(d) {
       <span class="prc-t"><small>${RES_ICON[k][1]}</small><b>${t}</b></span>
       <span class="prc-d">${ds}</span>
       <button class="prc-go" ${loopBusy ? 'disabled' : ''} onclick="event.stopPropagation(); loopRes='${k}'; loopEmit('loop_start', { res: '${k}' })">운명 시작<i class="fa-solid fa-arrow-right"></i></button></div>`).join('');
-  const intro = loopType(d.intro, 'intro', 0);
-  if (intro.fresh) loopShown.add('intro');
+  // 연출 문구 : 영어 한 줄이 먼저 타이핑되고, 한국어가 이어서 떠올라요.
+  const en = loopType(['— Life and death are inevitable. Destiny is a phenomenon beyond defiance.'], 'intro|en', 300);
+  const ko = loopType(['삶과 죽음은 필연. 운명은 거부할 수 없는 현상이다.'], 'intro|ko', en.end + 500);
+  const intro = { end: ko.end, fresh: en.fresh || ko.fresh };
+  if (en.fresh) loopShown.add('intro|en');
+  if (ko.fresh) loopShown.add('intro|ko');
   return { main: `<div class="pl-box glow pl-intro"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span>${d.loops ? `<span>${(d.lives || []).length + 1}번째 생애</span>` : ''}</div>
-    <h2 class="pl-ev-title">운명을 시작합니다</h2>${intro.html}
+    <h2 class="pl-ev-title">운명을 시작합니다</h2>
+    <div class="pl-quote"><div class="en">${en.html}</div><div class="ko">${ko.html}</div></div>
     <div class="pl-fade"${loopAfter(intro.end + 100, intro.fresh)}>
       <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res">${res}</div>
       <div class="pl-k-note" style="margin-top:14px"><i class="fa-solid fa-dice"></i> 출신 국가는 생애마다 무작위로 정해져요.</div></div></div>`,
