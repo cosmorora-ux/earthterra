@@ -1920,7 +1920,7 @@
   .pl-need em i { font-size:10px; }
   .pl-ch.locked { opacity:.45 !important; }
   .pl-ch.locked .k { background: rgba(255,255,255,.04); color: var(--muted); font-size:11px; }
-  .pl-solve { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:2px; padding:8px 4px 0; }
+  .pl-solve { display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:0 4px 10px; }
   .pl-solve > span:first-child { font-size:12.5px; font-weight:700; color: var(--muted); margin-right:4px; }
   .pl-sv { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px; border-radius:10px; border:1px solid rgba(var(--point-rgb),.3); background: rgba(var(--point-rgb),.08); color: var(--point); font: inherit; font-size:13px; font-weight:700; cursor:pointer; }
   .pl-sv:hover:not(:disabled) { background: rgba(var(--point-rgb),.16); }
@@ -2161,6 +2161,10 @@
   div.pl-k-note b { color: var(--text); }
   .pl-memory { margin-top:14px; padding:12px 14px; border-radius:12px; background: rgba(var(--point-rgb),.07); color:#cfcfe0; font-size:14px; line-height:1.7; }
   .pl-log { display:flex; flex-direction:column; }
+  .lp-past { margin-bottom:6px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .lp-past .lp-era span { margin-left:4px; opacity:.7; }
+  .lp-past .pl-log .row { grid-template-columns: 34px 1fr auto; gap:10px; padding:9px 2px; font-size:13px; }
+  .lp-past .pl-log .ttl b { font-size:13px; } .lp-past .pl-log .ttl span { font-size:12px; }
   .pl-log .row { display:grid; grid-template-columns: 44px 1fr auto; gap:12px; align-items:center; padding:10px 4px; border-top:1px solid rgba(255,255,255,.05); font-size:13.5px; }
   .pl-log .row:first-child { border-top:none; }
   .pl-log .era { color: var(--muted); font-size:12px; font-weight:800; letter-spacing:.04em; }
@@ -2179,7 +2183,7 @@
     .pl-result { padding:16px; }
     .pl-result p { font-size:14px; line-height:1.75; }
     .pl-picked { font-size:14px; padding:10px 12px; }
-    .pl-solve { padding:8px 2px 0; gap:6px; }
+    .pl-solve { padding:0 2px 8px; gap:6px; }
     .pl-sv { height:30px; padding:0 10px; font-size:12.5px; }
     .pl-sv-note { flex-basis:100%; margin:2px 0 0 2px; font-size:11.5px; }
     .pl-top-brand b { font-size:22px; }
@@ -12746,7 +12750,7 @@ function renderLoop() {
   const keep = old ? old.scrollTop : 0;
   page.classList.toggle('pl-opening', !r && loopIntroStage === 'opening');
   document.body.classList.toggle('pl-intro-on', !r && loopIntroStage === 'opening');
-  page.innerHTML = `<div class="pl-scroll" onclick="loopSkip()"><div class="pl-wrap">${loopHeadHtml(d)}${main}${loopLivesHtml(d)}</div></div>`
+  page.innerHTML = `<div class="pl-scroll" onclick="loopSkip()"><div class="pl-wrap">${loopHeadHtml(d)}${main}</div></div>`
     + (dock ? `<div class="pl-dock"><div class="pl-dock-in">${dock}</div></div>` : '');
   const sc = page.querySelector('.pl-scroll');
   sc.scrollTop = keep;
@@ -12923,9 +12927,11 @@ function loopEventHtml(r, marks) {
   if (!done) {
     const lock = c => (c.need || []).some(x => !x.ok);
     const need = c => (c.need || []).map(x => `<em class="${x.ok ? 'ok' : ''}"><i class="fa-solid ${(LOOP_ASSETS.find(a => a[0] === x.k) || [])[1]}"></i>${loopEsc(x.name)} ${x.v}${x.ok ? '' : ' 필요'}</em>`).join('');
-    const solve = (r.solve || []).length ? `<div class="pl-solve pl-fade"${loopAfter(story.end + 200 + 3 * 140 + 120, story.fresh)}><span><i class="fa-solid fa-key"></i> 해결하기</span>${r.solve.map(x => `<button class="pl-sv" ${!x.ok || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_solve', { event: '${ev.id}', kind: '${x.k}' })"><i class="fa-solid ${x.k === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>${loopEsc(x.name)} ${x.cost} 쓰기</button>`).join('')}</div>` : '';
-    const chAt = i => story.end + 200 + i * 140;
-    dock = `<div class="pl-choices">${ev.choices.map((c, i) => `<button class="pl-ch pl-fade ${lock(c) ? 'locked' : ''}"${loopAfter(chAt(i), story.fresh)} ${loopBusy || lock(c) ? 'disabled' : ''} onclick="loopChoose('${ev.id}', ${i})"><span class="k">${lock(c) ? '<i class="fa-solid fa-lock"></i>' : 'ABC'[i]}</span><span class="lbl">${loopEsc(c.label)}${need(c) ? `<span class="pl-need">${need(c)}</span>` : ''}</span></button>`).join('')}${solve}</div>`;
+    const canSolve = (r.solve || []).filter(x => x.ok);
+    const solve = canSolve.length ? `<div class="pl-solve pl-fade"${loopAfter(story.end + 200, story.fresh)}><span><i class="fa-solid fa-key"></i> 해결하기</span>${canSolve.map(x => `<button class="pl-sv" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_solve', { event: '${ev.id}', kind: '${x.k}' })"><i class="fa-solid ${x.k === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>${loopEsc(x.name)} ${x.cost} 쓰기</button>`).join('')}</div>` : '';
+    // 해결하기(쓸 수 있을 때만)가 선택지 위에 먼저, 그다음 A · B · C
+    const chAt = i => story.end + 200 + (canSolve.length ? 160 : 0) + i * 140;
+    dock = `${solve}<div class="pl-choices">${ev.choices.map((c, i) => `<button class="pl-ch pl-fade ${lock(c) ? 'locked' : ''}"${loopAfter(chAt(i), story.fresh)} ${loopBusy || lock(c) ? 'disabled' : ''} onclick="loopChoose('${ev.id}', ${i})"><span class="k">${lock(c) ? '<i class="fa-solid fa-lock"></i>' : 'ABC'[i]}</span><span class="lbl">${loopEsc(c.label)}${need(c) ? `<span class="pl-need">${need(c)}</span>` : ''}</span></button>`).join('')}</div>`;
   } else if (res) {
     const rk = 'res|' + base;
     const rt = loopType(res.text, rk, 200);
@@ -12953,10 +12959,10 @@ function loopDeathHtml(r, marks) {
   const tag = d.kind === 'loop' ? 'LOOP' : d.kind === 'mind' ? 'COLLAPSE' : 'DEATH';
   return { main: `<div class="pl-box glow pl-death ${d.kind === 'loop' ? 'loop' : ''} ${d.kind === 'mind' ? 'mind' : ''}"><div class="t">${tag}</div><h3>${loopEsc(d.title)}</h3>${tx.html}
     <div class="pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><div class="at">${loopEsc(d.at)}에서 · ${r.count}개의 사건을 지나왔습니다</div>
-    ${r.loop_open ? '<div class="at" style="margin-top:8px">생애 종료 : 기록을 남기고 끝냅니다 · 루프 진입 : 기억 일부를 안고 전쟁 이전의 평행 세계에서 다시 시작합니다</div>' : ''}</div></div>`,
-    dock: r.loop_open ? `<div class="pl-actions two pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>생애 종료</button>
+    ${r.loop_open ? '<div class="at" style="margin-top:8px">운명 종료 : 기록을 남기고 끝냅니다 · 루프 진입 : 기억 일부를 안고 전쟁 이전의 평행 세계에서 다시 시작합니다</div>' : ''}</div></div>`,
+    dock: r.loop_open ? `<div class="pl-actions two pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>운명 종료</button>
     <button class="pl-btn primary" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'loop' })"><i class="fa-solid fa-infinity"></i>루프 진입</button></div>`
-      : `<div class="pl-actions pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>생애 종료</button></div>` };
+      : `<div class="pl-actions pl-fade"${loopAfter(tx.end + 200, tx.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_death', { mode: 'end' })"><i class="fa-solid fa-book"></i>운명 종료</button></div>` };
 }
 // 프롤로그 : 서력의 역사 → 탄생 → 문명관. 고르는 것 없이 자동으로 정해진 나레이션이에요.
 // 프롤로그는 두 장 : 서력의 역사만 먼저 보여 주고, '다음'을 누르면 탄생(출신 · 공명 · 집안 · 문명관).
@@ -13038,7 +13044,7 @@ function loopLivesHtml(d) {
   const lives = d.lives || [];
   if (!lives.length) return '';
   const eraNo = id => ((d.eras || []).find(e => e.id === id) || {}).no || '';
-  return `<div class="pl-box pl-rec"><div class="pl-k" style="margin-bottom:6px">지난 운명</div><div class="pl-log">${lives.map(l => `<div class="row"><span class="era">${loopEsc(eraNo(l.era))}</span><span class="ttl"><b>${l.life_no}번째 운명${l.loop_no ? ` · 루프 ${l.loop_no}` : ''} · ${l.outcome === 'survived' ? '생존' : l.outcome === 'paused' ? '잠시 멈춤' : (l.death || {}).kind === 'mind' ? '정신 붕괴' : '사망'}</b><span>${l.country ? loopEsc((LOOP_COUNTRY[l.country] || [''])[0]) + ' · ' : ''}${loopEsc((LOOP_RES[l.res] || [''])[0])} · ${l.outcome === 'survived' ? '전쟁 이후까지' : loopEsc((l.death || {}).at || '') + '에서'}</span></span><span class="d zero">${l.count}사건</span></div>`).join('')}</div></div>`;
+  return `<div class="lp-past"><div class="lp-era">지난 운명 <span>${lives.length}</span></div><div class="pl-log">${lives.map(l => `<div class="row"><span class="era">${loopEsc(eraNo(l.era))}</span><span class="ttl"><b>${l.life_no}번째 운명${l.loop_no ? ` · 루프 ${l.loop_no}` : ''} · ${l.outcome === 'survived' ? '생존' : l.outcome === 'paused' ? '잠시 멈춤' : (l.death || {}).kind === 'mind' ? '정신 붕괴' : '사망'}</b><span>${l.country ? loopEsc((LOOP_COUNTRY[l.country] || [''])[0]) + ' · ' : ''}${loopEsc((LOOP_RES[l.res] || [''])[0])} · ${l.outcome === 'survived' ? '전쟁 이후까지' : loopEsc((l.death || {}).at || '') + '에서'}</span></span><span class="d zero">${l.count}사건</span></div>`).join('')}</div></div>${(d.run && (d.run.log || []).length) ? '<div class="lp-era lp-now">${d.run.status === 'ended' ? '방금 끝난 운명' : '이번 운명'}</div>' : ''}`;
 }
 // 오른쪽 기록판 : 이번 생애에 지나온 사건(오래된 것부터 아래로 쌓이고, 새 사건이 생기면 맨 아래로).
 function renderLoopLog() {
@@ -13046,7 +13052,9 @@ function renderLoopLog() {
   if (!body) return;
   const d = loopData, r = d && d.run;
   const log = (r && r.log) || [];
-  if (!log.length) { body.innerHTML = emptyHtml('fa-scroll', '아직 지나온 사건이 없어요', '사건을 고를 때마다 여기에 기록돼요.', null, true); body.dataset.n = 0; return; }
+  // 지난 운명은 기록판 맨 위에, 그 아래로 이번 운명의 사건이 쌓여요.
+  const past = d ? loopLivesHtml(d) : '';
+  if (!log.length) { body.innerHTML = past || emptyHtml('fa-scroll', '아직 지나온 사건이 없어요', '사건을 고를 때마다 여기에 기록돼요.', null, true); body.dataset.n = 0; return; }
   const eraBy = Object.fromEntries(((d && d.eras) || []).map(e => [e.id, e]));
   let last = null, html = '';
   log.forEach((l, i) => {
@@ -13056,7 +13064,7 @@ function renderLoopLog() {
   });
   const atEnd = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
   const grew = (body.dataset.n | 0) !== log.length;
-  body.innerHTML = html;
+  body.innerHTML = past + html;
   body.dataset.n = log.length;
   if (grew || atEnd) body.scrollTop = body.scrollHeight;
 }
