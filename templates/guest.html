@@ -1982,6 +1982,19 @@
   .pl-head { display:block; padding:18px 22px; }
   .pl-head-top { display:flex; align-items:center; gap:12px; }
   .pl-meta-gap { flex:1; }
+  .pl-fold { margin-left:auto; }
+  .pl-head .pl-fold + .pl-restart { margin-left:6px; }
+  .pl-meta .pl-mini { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .pl-meta .pl-mini::after { display:none !important; }
+  .pm { display:inline-flex; align-items:center; gap:7px; font-size:13px; color:#cfcfd4; }
+  .pm > i { font-size:12px; color: var(--muted); }
+  .pm-d { display:inline-flex; gap:3px; }
+  .pm-d i { width:12px; height:7px; border-radius:3px; background: rgba(255,255,255,.08); }
+  .pm.hp .pm-d i.on { background: var(--point); }
+  .pm.mind .pm-d i.on { background:#5ec8b8; }
+  .pm.low .pm-d i.on { background:#ff6b5e; }
+  .pm b { font-weight:700; color:#fff; font-variant-numeric: tabular-nums; }
+  .pm.era em { font-style:normal; color: var(--muted); font-size:12px; }
   .pl-restart { flex:none; height:30px; display:inline-flex; align-items:center; gap:6px; padding:0 12px; border:none; border-radius:10px; background: rgba(255,255,255,.04); color: var(--muted); font: inherit; font-size:12.5px; font-weight:600; cursor:pointer; transition: color .15s, background .15s; }
   .pl-restart:hover { color:#fff; background: rgba(255,255,255,.09); }
   .pl-meta { flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; row-gap:6px; margin-left:12px; padding:4px 0 4px 24px; border-left:1px solid rgba(255,255,255,.08); color:#bdbdc3; font-size:13px; }
@@ -12559,8 +12572,12 @@ function loopHeadHtml(d) {
     if (r.view) it.push(`<span>문명관 ${loopEsc(r.view.name)}</span>`);
     if (r.loop_no) it.push(`<span>${r.life_no}번째 생애</span><span class="up"><i class="fa-solid fa-infinity"></i> 루프 ${r.loop_no}</span>`);
   }
-  const restart = r && r.status !== 'ended' ? `<button class="pl-restart" onclick="event.stopPropagation(); loopRestart()"><i class="fa-solid fa-rotate-left"></i><span>새로 시작</span></button>` : '';
-  return `<div class="pl-box glow pl-head"><div class="pl-head-top"><div class="pl-logo"><small>RUNNING SIMULATION</small>Loop</div>
+  const playing = r && !['prologue', 'ended'].includes(r.status) && r.era;
+  const folded = playing && loopFold;
+  const fold = playing ? `<button class="pl-restart pl-fold" onclick="event.stopPropagation(); loopToggleFold()"><i class="fa-solid ${folded ? 'fa-chevron-down' : 'fa-chevron-up'}"></i><span>${folded ? '펼치기' : '접기'}</span></button>` : '';
+  if (folded) { it.length = 0; it.push(loopMiniHtml(d, r)); }
+  const restart = r && r.status !== 'ended' ? `${fold}<button class="pl-restart" onclick="event.stopPropagation(); loopRestart()"><i class="fa-solid fa-rotate-left"></i><span>새로 시작</span></button>` : '';
+  return `<div class="pl-box glow pl-head ${folded ? 'folded' : ''}"><div class="pl-head-top"><div class="pl-logo"><small>RUNNING SIMULATION</small>Loop</div>
     ${it.length ? `<div class="pl-meta">${it.join('')}</div>` : '<div class="pl-meta-gap"></div>'}${restart}</div></div>`;
 }
 // 진행 중인 생애를 버리고 처음(공명 여부 고르기)부터. 지난 생애 기록은 남아요. 기록은 이 브라우저에만 저장돼요.
@@ -12571,7 +12588,16 @@ function loopRestart() {
     loopEmit('loop_reset', { force: true });
   });
 }
+// 상태판 접기 : 접으면 헤더에 체력 · 정신 · 시대만. 기기마다 기억해요(처음엔 휴대폰은 접힘, PC는 펼침).
+var loopFold = (() => { try { const v = localStorage.getItem('loopFold'); if (v != null) return v === '1'; } catch (e) {} return window.matchMedia('(max-width:900px)').matches; })();
+function loopToggleFold() { loopFold = !loopFold; try { localStorage.setItem('loopFold', loopFold ? '1' : '0'); } catch (e) {} renderLoop(); }
+function loopMiniHtml(d, r) {
+  const dots = (k, v, max) => `<span class="pm ${k} ${v <= 1 ? 'low' : ''}"><i class="fa-solid ${LOOP_STAT[k][1]}"></i><span class="pm-d">${Array.from({ length: max }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</span><b>${v}</b></span>`;
+  const e = r.era || {};
+  return `<span class="pl-mini">${dots('hp', r.hp, d.hp_max || 5)}${dots('mind', r.mind, d.mind_max || 5)}<span class="pm era"><i class="fa-solid fa-hourglass-half"></i><b>${loopEsc(e.no || '')}</b><em>${Math.min(r.era_step + (r.status === 'event' ? 1 : 0), r.era_len)}/${r.era_len}</em></span></span>`;
+}
 function loopStatusHtml(d, r) {
+  if (loopFold) return '';
   const bar = (k, v, max) => `<div class="pl-hp ${k} ${v <= 1 ? 'low' : ''}">${Array.from({ length: max }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}<b>${v}<span> / ${max}</span></b></div>`;
   const nowIdx = r.eras.indexOf(r.era.id);
   const eraById = Object.fromEntries((d.eras || []).map(e => [e.id, e]));
