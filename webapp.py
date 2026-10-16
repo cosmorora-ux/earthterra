@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.55"
+SERVER_BUILD = "2026-10-13.56"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2913,7 +2913,7 @@ def _emit_mail_data(sid):
 
 
 # ==================================================================
-# PLAY 룸 : LOOP 생존 시뮬레이션 (loop_game.py) — 캐릭터마다 자기 생애를 진행합니다.
+# PLAY 룸 : LOOP 러닝 시뮬레이션 (loop_game.py) — 캐릭터마다 자기 생애를 진행합니다.
 # 체력 · 정신 변동은 고른 뒤에만 보냅니다. 출신 국가는 생애마다 무작위, 진영(使徒 / Void)은 캐릭터 정보의 진영 칸을 씁니다.
 # ==================================================================
 def _loop_identity(sid):

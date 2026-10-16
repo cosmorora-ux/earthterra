@@ -1879,7 +1879,7 @@
 
 
   /* ================================================================
-     PLAY 룸 : LOOP 생존 시뮬레이션 — 전투 칸 자리에 플레이 화면을 띄웁니다.
+     PLAY 룸 : LOOP 러닝 시뮬레이션 — 전투 칸 자리에 플레이 화면을 띄웁니다.
      ================================================================ */
   body.is-play .teams-col > *:not(#playPage) { display:none !important; }
   /* PLAY 룸은 혼자 하는 플레이라 채팅창 없이 플레이 화면만 넓게 씁니다. */
@@ -2029,10 +2029,34 @@
   .pl-death .at { color: var(--muted); font-size:13px; margin-top:14px; }
   .pl-death .pl-actions { justify-content:center; margin-top:24px; }
   .pl-intro p { margin:0 0 8px; font-size:15px; line-height:1.8; color:#dcdce1; }
-  .pl-res { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px; }
+  .pl-res { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+  /* 공명 여부 카드 : 은은한 상자 + 고르면 위쪽 빛줄 */
+  .pl-res .prc { position:relative; display:flex; flex-direction:column; gap:12px; padding:18px; border-radius:16px; border:1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); text-align:left; transition: background .2s, border-color .2s, transform .2s; }
+  .pl-res .prc:hover { background: rgba(255,255,255,.045); }
+  .pl-res .prc::before { content:''; position:absolute; left:18px; right:18px; top:0; height:1px; background: linear-gradient(90deg, transparent, rgba(var(--point-rgb),.9), transparent); opacity:0; transition: opacity .2s; }
+  .pl-res .prc.on { background: rgba(var(--point-rgb),.07); border-color: rgba(var(--point-rgb),.18); box-shadow: 0 10px 30px -18px rgba(var(--point-rgb),.7); }
+  .pl-res .prc.on::before { opacity:1; }
+  .prc-check { position:absolute; top:14px; right:14px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; background: var(--point); opacity:0; transform: scale(.6); transition: opacity .2s, transform .2s; }
+  .prc.on .prc-check { opacity:1; transform:none; }
+  .prc-head { display:flex; align-items:center; gap:12px; }
+  .prc-ic { flex:none; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:17px; color: var(--muted); background: rgba(255,255,255,.05); transition: color .2s, background .2s; }
+  .prc.on .prc-ic { color: var(--point); background: rgba(var(--point-rgb),.14); }
+  .prc-t { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .prc-t small { font-size:10.5px; letter-spacing:.14em; font-weight:700; color: var(--muted); }
+  .prc-t b { font-size:17px; margin:0 !important; color:#fff; }
+  .pl-res .prc .prc-d { display:block; color: var(--muted); font-size:13px; line-height:1.6; }
+  .prc-rows { display:flex; flex-direction:column; gap:6px; padding:10px 12px; border-radius:12px; background: rgba(0,0,0,.22); }
+  .prc-row { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12.5px; }
+  .pl-res .prc .prc-c { display:flex; align-items:center; gap:7px; color:#cfcfd4; font-size:12.5px; }
+  .prc-c i { width:7px; height:7px; border-radius:50%; background: var(--nc); box-shadow: 0 0 8px var(--nc); }
+  .prc-row.arcadia { --nc:#e9c05b; } .prc-row.nova { --nc:#6aa5ff; }
+  .pl-res .prc .prc-v { display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 9px; border-radius:10px; font-size:11.5px; font-weight:700; color:#9d9da5; background: rgba(255,255,255,.05); }
+  .pl-res .prc .prc-v.up { color: var(--nc-up, #fff); background: rgba(255,255,255,.1); }
+  .prc-row.arcadia .prc-v.up { color:#e9c05b; background: rgba(233,192,91,.12); } .prc-row.nova .prc-v.up { color:#6aa5ff; background: rgba(106,165,255,.12); }
+  .prc-v i { font-size:10px; }
   .pl-res button { padding:14px; border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); font: inherit; cursor:pointer; text-align:left; }
   .pl-res button b { display:block; font-size:15px; margin-bottom:3px; }
-  .pl-res button span { color: var(--muted); font-size:13px; line-height:1.5; }
+  .pl-res button:not(.prc) span { color: var(--muted); font-size:13px; line-height:1.5; }
   .pl-res button.on { border-color: rgba(var(--point-rgb),.55); background: rgba(var(--point-rgb),.10); }
   .pl-res button b em { font-style:normal; margin-left:8px; padding:2px 8px; border-radius:8px; font-size:11.5px; font-weight:700; background: rgba(255,255,255,.07); color:#bdbdc3; vertical-align:2px; }
   .pl-res button b em.up { background: rgba(var(--point-rgb),.16); color: var(--point); }
@@ -4959,7 +4983,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.55";
+const EXPECTED_SERVER_BUILD = "2026-10-13.56";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -12344,7 +12368,7 @@ if (window.ResizeObserver) {
 }
 
 // ==================================================================
-// PLAY 룸 : LOOP 생존 시뮬레이션 — 무작위 사건에서 선택을 이어 가며 전쟁 이후까지 살아남습니다.
+// PLAY 룸 : LOOP 러닝 시뮬레이션 — 무작위 사건에서 선택을 이어 가며 전쟁 이후까지 살아남습니다.
 // 체력(몸)과 정신(마음) 두 가지를 지켜야 해요. 체력 0 = 사망, 정신 0 = 정신 붕괴.
 // 변동은 고른 뒤에만 서버가 알려 줘요(고르기 전에는 선택지 문장만 와요).
 // 새로 나타나는 글은 한 글자씩 부드럽게 떠오르고, 화면을 누르면 바로 다 보여요.
@@ -12446,7 +12470,7 @@ function loopHeadHtml(d) {
   if (r) pills.push(`<span class="pl-pill">${r.life_no}번째 생애</span>`);
   if (r && r.loop_no) pills.push(`<span class="pl-pill loop"><i class="fa-solid fa-infinity"></i>루프 ${r.loop_no}</span>`);
   if (r && r.status !== 'ended') pills.push(`<button class="pl-pill pl-restart" onclick="event.stopPropagation(); loopRestart()"><i class="fa-solid fa-rotate-left"></i>새로 시작</button>`);
-  return `<div class="pl-box glow pl-head"><div class="pl-logo"><small>SURVIVAL SIMULATION</small>Loop</div><div class="pl-sub">생존 시뮬레이션</div><div class="pl-life">${pills.join('')}</div></div>`;
+  return `<div class="pl-box glow pl-head"><div class="pl-logo"><small>RUNNING SIMULATION</small>Loop</div><div class="pl-sub">러닝 시뮬레이션</div><div class="pl-life">${pills.join('')}</div></div>`;
 }
 // 진행 중인 생애를 버리고 처음(공명 여부 고르기)부터. 지난 생애 기록은 남아요. 기록은 이 브라우저에만 저장돼요.
 function loopRestart() {
@@ -12560,15 +12584,21 @@ function loopEndedHtml(d, r) {
 }
 function loopStartHtml(d) {
   // 출신 국가는 생애마다 무작위 : 고르는 건 공명 여부뿐이에요.
-  const res = Object.entries(LOOP_RES).map(([k, [t, ds]]) => `<button class="${loopRes === k ? 'on' : ''}" onclick="event.stopPropagation(); loopRes='${k}'; renderLoop()"><b>${t}</b><span>${ds}</span><span class="pl-res-c">아르카디아에서는 <em class="${loopPriv('arcadia', k) ? 'up' : ''}">${loopPriv('arcadia', k) ? '기득권' : '비기득권'}</em> · 노바에서는 <em class="${loopPriv('nova', k) ? 'up' : ''}">${loopPriv('nova', k) ? '기득권' : '비기득권'}</em></span></button>`).join('');
+  const RES_ICON = { res: ['fa-wave-square', 'RESONANT'], non: ['fa-circle-half-stroke', 'NON-RESONANT'] };
+  const row = (c, k) => `<div class="prc-row ${c}"><span class="prc-c"><i></i>${(LOOP_COUNTRY[c] || [''])[0]}</span><span class="prc-v ${loopPriv(c, k) ? 'up' : ''}">${loopPriv(c, k) ? '<i class="fa-solid fa-crown"></i>기득권' : '비기득권'}</span></div>`;
+  const res = Object.entries(LOOP_RES).map(([k, [t, ds]]) => `<button class="prc ${k} ${loopRes === k ? 'on' : ''}" onclick="event.stopPropagation(); loopRes='${k}'; renderLoop()">
+      <span class="prc-check"><i class="fa-solid fa-check"></i></span>
+      <span class="prc-head"><span class="prc-ic"><i class="fa-solid ${RES_ICON[k][0]}"></i></span><span class="prc-t"><small>${RES_ICON[k][1]}</small><b>${t}</b></span></span>
+      <span class="prc-d">${ds}</span>
+      <span class="prc-rows">${row('arcadia', k)}${row('nova', k)}</span></button>`).join('');
   const intro = loopType(d.intro, 'intro', 0);
   if (intro.fresh) loopShown.add('intro');
   return { main: `<div class="pl-box glow pl-intro"><div class="pl-ev-meta"><span class="pl-ev-no">NEW LIFE</span><span>${(d.lives || []).length + 1}번째 생애</span></div>
-    <h2 class="pl-ev-title">새 생애를 시작합니다</h2>${intro.html}
+    <h2 class="pl-ev-title">운명을 시작합니다</h2>${intro.html}
     <div class="pl-fade"${loopAfter(intro.end + 100, intro.fresh)}>
       <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res">${res}</div>
-      <div class="pl-k-note" style="margin-top:12px"><i class="fa-solid fa-dice"></i> 출신 국가(아르카디아 연방 / 노바 공화국)는 생애마다 무작위로 정해져요. 전쟁이 시작되면 아르카디아는 使徒, 노바는 Void의 편에 섭니다.</div></div></div>`,
-    dock: `<div class="pl-actions pl-fade"${loopAfter(intro.end + 100, intro.fresh)}><button class="pl-btn primary wide" ${!loopRes || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_start', { res: loopRes })">${loopRes ? '생애 시작' : '공명 여부를 골라 주세요'}<i class="fa-solid fa-arrow-right"></i></button></div>` };
+      <div class="pl-k-note" style="margin-top:12px"><i class="fa-solid fa-dice"></i> 출신 국가(아르카디아 연방 / 노바 공화국)는 생애마다 무작위로 정해져요.</div></div></div>`,
+    dock: `<div class="pl-actions pl-fade"${loopAfter(intro.end + 100, intro.fresh)}><button class="pl-btn primary wide" ${!loopRes || loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_start', { res: loopRes })">${loopRes ? '운명 시작' : '공명 여부를 골라 주세요'}<i class="fa-solid fa-arrow-right"></i></button></div>` };
 }
 // 지난 생애 : 끝난 생애가 있을 때만 아래에 보여요.
 function loopLivesHtml(d) {

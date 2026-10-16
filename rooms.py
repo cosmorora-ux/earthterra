@@ -35,7 +35,7 @@ BATTLE_TYPE_LABELS = {
     "pvp": "PVP",
     "siege": "공성전",
     "mass_raid": "마스 레이드",
-    # PLAY 룸 : 전투 대신 「LOOP : 생존 시뮬레이션」을 하는 방(loop_game.py)
+    # PLAY 룸 : 전투 대신 「LOOP : 러닝 시뮬레이션」을 하는 방(loop_game.py)
     "play": "PLAY",
 }
 # 전투 유형별 팀 인원 기본값 : (1팀/러너팀 기본 인원, 2팀/GM팀 기본 인원)
