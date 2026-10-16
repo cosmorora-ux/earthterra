@@ -2113,6 +2113,10 @@
   .pl-ch:disabled { cursor:default; opacity:.35; }
   .pl-ch.picked { opacity:1; border-color: rgba(var(--point-rgb),.55); background: rgba(var(--point-rgb),.10); }
   .pl-ch.picked .k { background: var(--point); color: var(--on-accent, #fff); }
+  /* 고른 답과 결과 : 이야기 카드 아래, 선택지가 있던 자리 쪽에 따로 */
+  .pl-answer { display:flex; flex-direction:column; gap:8px; }
+  .pl-answer .pl-picked { margin:0; padding:14px 16px; border:1px solid rgba(var(--point-rgb),.25); }
+  .pl-answer .pl-result { margin:0; padding:18px 18px; background: rgba(255,255,255,.025); }
   .pl-result { margin:12px -14px 0; padding:16px 14px; border-radius:12px; background: rgba(0,0,0,.25); animation: plIn .35s ease; }
   .pl-result p { margin:0 0 6px; font-size:15px; line-height:1.75; color:#e6e6ea; }
   .pl-result .pl-res-fx { margin-top:12px; }
@@ -13108,7 +13112,7 @@ function loopEventHtml(r, marks) {
     if (r.status === 'result') dock = `<div class="pl-actions pl-fade"${loopAfter(loopTailMs, rt.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_next')">다음 사건<i class="fa-solid fa-arrow-right"></i></button></div>`;
   }
   return { main: `<div class="pl-box glow pl-ev"><div class="pl-ev-meta pl-fade"${loopAfter(0, story.fresh)}><span class="pl-ev-no">EVENT ${String(r.count + (done ? 0 : 1)).padStart(2, '0')}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span></div>
-    ${origin}<h2 class="pl-ev-title pl-fade"${loopAfter(120, story.fresh)}>${loopEsc(ev.title)}</h2><div class="pl-story">${story.html}</div>${memory}${resHtml}</div>`, dock };
+    ${origin}<h2 class="pl-ev-title pl-fade"${loopAfter(120, story.fresh)}>${loopEsc(ev.title)}</h2><div class="pl-story">${story.html}</div>${memory}</div>${resHtml ? `<div class="pl-answer">${resHtml}</div>` : ''}`, dock };
 }
 // 지난 사건 다시 보기 : 읽기만 해요(고른 결과 · 깎인 체력 · 정신은 그대로).
 var loopPeek = null, loopPeekKey = '';
@@ -13123,7 +13127,7 @@ function loopPeekHtml(d, r, i) {
   const fx = l.solved ? `<div class="pl-deltas">${loopGainHtml(l.gain, r)}</div>` : loopDeltaHtml(l.delta, l.dmind).replace('</div>', loopGainHtml(l.gain, r) + '</div>');
   const main = `<div class="pl-box glow pl-ev peek"><div class="pl-ev-meta"><span class="pl-ev-no">EVENT ${String(i + 1).padStart(2, '0')}</span><span>${loopEsc(e.no || '')}. ${loopEsc(e.name || '')}</span><span class="pl-peek-tag"><i class="fa-solid fa-clock-rotate-left"></i>지난 사건</span></div>
     <h2 class="pl-ev-title">${loopEsc(l.title)}</h2><div class="pl-story">${story.html || '<p class="q">기록이 흐릿합니다.</p>'}</div>
-    <div class="pl-picked"><span class="k">${l.solved ? `<i class="fa-solid ${l.solved === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>` : 'ABC'[l.pick] || '·'}</span>${loopEsc(l.choice)}</div>
+    </div><div class="pl-answer"><div class="pl-picked"><span class="k">${l.solved ? `<i class="fa-solid ${l.solved === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>` : 'ABC'[l.pick] || '·'}</span>${loopEsc(l.choice)}</div>
     ${res.html || fx || tw ? `<div class="pl-result">${res.html}<div class="pl-res-fx">${fx}</div>${tw}</div>` : ''}</div>`;
   const dock = `<div class="pl-actions two peek"><button class="pl-btn" ${i <= 0 ? 'disabled' : ''} onclick="event.stopPropagation(); loopPeekGo(${i - 1})"><i class="fa-solid fa-chevron-left"></i>이전 사건</button>
     <button class="pl-btn primary" onclick="event.stopPropagation(); ${i + 1 < cur ? `loopPeekGo(${i + 1})` : 'loopPeek = null; renderLoop()'}">${i + 1 < cur ? '다음 사건' : '지금으로 돌아가기'}<i class="fa-solid fa-chevron-right"></i></button></div>`;
