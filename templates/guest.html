@@ -2691,6 +2691,16 @@
   .la-tbl2 td.cc { font-weight:700; color:#fff; }
   .la-tbl2 td.pv { color: var(--muted); font-size:12.5px; }
   .la-tbl2 tr.first td { padding-top:8px; }
+  /* 자원 표 : 왼쪽 라벨 열(170px)을 아래 행들과 맞추고, 값 열은 내용 폭으로 */
+  .la-mx { display:grid; align-items:center; column-gap:32px; row-gap:8px; justify-content:start; }
+  .la-mx.cost { grid-template-columns: 150px repeat(2, max-content); }
+  .la-mx.start { grid-template-columns: 150px 64px repeat(3, max-content); }
+  .la-mx > .h { font-size:12px; font-weight:700; color: var(--muted); padding-bottom:2px; }
+  .la-mx > .h i { width:14px; margin-right:2px; }
+  .la-mx > .cc { font-size:13px; font-weight:700; color:#fff; align-self:center; }
+  .la-mx > .pv { font-size:12.5px; color: var(--muted); }
+  .la-mx > .sep { grid-column: 1 / -1; height:1px; background: rgba(255,255,255,.06); margin:6px 0; }
+  .la-mx .la-stp { height:30px; } .la-mx .la-stp button { height:30px; }
   .la-rng2 { display:inline-flex; align-items:center; gap:6px; } .la-rng2 > i { font-style:normal; color: var(--muted); font-size:12px; }
   @media (max-width:1200px) { .la-chc-b { grid-template-columns: 1fr; } .la-x-row { grid-template-columns: 1fr 1fr 18px 1fr 38px; } }
 
@@ -13524,14 +13534,14 @@ function laRulesHtml() {
     const rng = (cc, pv, k) => { const v = rr.start[cc][pv][k]; return `<span class="la-rng2">${laStepper(['rules', 'res', 'start', cc, pv, k, 0], v[0], 0, 10)}<i>~</i>${laStepper(['rules', 'res', 'start', cc, pv, k, 1], v[1], 0, 10)}</span>`; };
     body = `<div class="la-hint-line"><i class="fa-solid fa-circle-info"></i> 재산 · 지능은 써서 줄어드는 자원, 재능(노바는 '기술')은 선택지 조건으로 쓰는 능력치예요.</div>
       <div class="la-blk"><div class="la-blk-h"><b>해결 비용</b><span>사건을 자원으로 넘길 때 드는 양 · 0이면 그 자원으로는 해결 못 해요</span></div>
-        <table class="la-tbl2"><tr><th></th><th><i class="fa-solid fa-coins"></i> 재산</th><th><i class="fa-solid fa-lightbulb"></i> 지능</th></tr>
-        ${Object.entries(C2).map(([cc, cn]) => `<tr><td>${cn}</td>${['wealth', 'intel'].map(k => `<td>${laStepper(['rules', 'res', 'cost', cc, k], rr.cost[cc][k], 0, 10)}</td>`).join('')}</tr>`).join('')}</table>
+        <div class="la-mx cost"><span></span><span class="h"><i class="fa-solid fa-coins"></i> 재산</span><span class="h"><i class="fa-solid fa-lightbulb"></i> 지능</span>
+        ${Object.entries(C2).map(([cc, cn]) => `<span class="cc">${cn}</span>${['wealth', 'intel'].map(k => `<span>${laStepper(['rules', 'res', 'cost', cc, k], rr.cost[cc][k], 0, 10)}</span>`).join('')}`).join('')}</div>
         <div class="la-rows" style="margin-top:12px">
           <div class="la-r"><span class="lb">해결 쓰는 시대</span><input class="ops-in" ${laP(['rules', 'res', 'solve_eras'])} data-t="seq" value="${(rr.solve_eras || []).join(', ')}" onchange="laInput(this, true)">${laSeqChips(rr.solve_eras || [])}</div>
           <div class="la-r"><span class="lb">자원 최대</span>${laStepper(['rules', 'res', 'max'], rr.max, 1, 10)}</div></div></div>
       <div class="la-blk"><div class="la-blk-h"><b>시작 자원</b><span>생애를 시작할 때 이 범위에서 무작위</span></div>
-        <table class="la-tbl2"><tr><th></th><th></th>${LA_RES.map(([, rn, ic]) => `<th><i class="fa-solid ${ic}"></i> ${rn}</th>`).join('')}</tr>
-        ${Object.entries(C2).map(([cc, cn]) => [['priv', '기득권'], ['non', '비기득권']].map(([pv, pn], n) => `<tr class="${n ? '' : 'first'}">${n ? '<td></td>' : `<td rowspan="1" class="cc">${cn}</td>`}<td class="pv">${pn}</td>${LA_RES.map(([rk]) => `<td>${rng(cc, pv, rk)}</td>`).join('')}</tr>`).join('')).join('')}</table>
+        <div class="la-mx start"><span></span><span></span>${LA_RES.map(([, rn, ic]) => `<span class="h"><i class="fa-solid ${ic}"></i> ${rn}</span>`).join('')}
+        ${Object.entries(C2).map(([cc, cn], ci) => `${ci ? '<i class="sep"></i>' : ''}<span class="cc" style="grid-row: span 2">${cn}</span>` + [['priv', '기득권'], ['non', '비기득권']].map(([pv, pn]) => `<span class="pv">${pn}</span>${LA_RES.map(([rk]) => `<span>${rng(cc, pv, rk)}</span>`).join('')}`).join('')).join('')}</div>
         <div class="la-hint-line" style="margin-top:10px">아르카디아는 공명자, 노바는 비공명자가 기득권이에요.</div></div>`;
   } else {
     const st = r.strain;
