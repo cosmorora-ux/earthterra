@@ -1636,7 +1636,11 @@
      우체통
      ================================================================ */
   .modal-box.mail-modal { width:640px; max-width:calc(100vw - 32px); height:80vh; display:flex; flex-direction:column; padding:18px 20px; }
-  .mail-me { font-size:13px; color: var(--muted); }
+  .mail-me { font-size:13px; color: var(--muted); margin-left:12px; white-space:nowrap; }
+  .mail-me:empty { display:none; }
+  .modal-box.mail-modal .shop-head .modal-title { flex:none !important; margin-right:0; }
+  .modal-box.mail-modal .shop-head .mail-me { margin-right:auto; align-self:center; }
+  .modal-box.mail-modal .shop-head .mail-me:empty { display:block; margin-left:0; }
   .mail-me b { color: var(--text); font-weight:600; }
   .mail-list { display:flex; flex-direction:column; gap:8px; padding:2px 0 12px; }
   .mail-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:16px; border:1px solid var(--line, rgba(255,255,255,.07));
@@ -4702,9 +4706,8 @@
 <div id="mailModal" class="modal-overlay" onclick="if(event.target===this) closeMail()">
   <div class="modal-box mail-modal panel">
     <div class="shop-head">
-      <div class="modal-title page-title">Mail</div>
+      <div class="modal-title page-title">Mail</div><span class="mail-me" id="mailMe"></span>
       <div class="news-switch"><button class="" onclick="switchNews('notice')">공지<span class="notice-dot nsw-notice-dot"></span></button><button class="on" onclick="switchNews('mail')">우체통<span class="notice-dot nsw-mail-dot"></span></button></div>
-      <span class="mail-me" id="mailMe"></span>
       <button class="shop-close" onclick="closeMail()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="shop-tabs" id="mailTabs"></div>
@@ -10721,7 +10724,8 @@ socket.on('mail_result', (d) => {
 function renderMail() {
   const d = mailData || { me: null, inbox: [], outbox: [], roster: [] };
   const body = document.getElementById('mailBody'), tabsEl = document.getElementById('mailTabs');
-  document.getElementById('mailMe').innerHTML = d.me ? `<b>${mailEsc(d.me)}</b>의 우체통` : '';
+  // 운영진일 때만 누구의 우체통인지 보여요(참가자는 늘 자기 우체통이라 필요 없어요)
+  document.getElementById('mailMe').innerHTML = d.me && d.is_gm ? `<b>${mailEsc(d.me)}</b>의 우체통` : '';
   if (!d.me) {
     tabsEl.innerHTML = '';
     body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '우체통을 불러오는 중이에요');
