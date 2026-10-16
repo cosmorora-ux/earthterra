@@ -1884,6 +1884,7 @@
   body.is-play .teams-col > *:not(#playPage) { display:none !important; }
   /* PLAY 룸은 혼자 하는 플레이라 채팅창 없이 플레이 화면만 넓게 씁니다. */
   body.is-play .member-col .member-panel:not(#playLogPanel) { display:none !important; }
+  .pl-logpanel::before, .pl-logpanel::after { display:none !important; }   /* 기록판은 글리터 효과 없이 */
   .pl-logpanel .member-header { justify-content:flex-start; gap:10px; }
   .pl-logpanel .member-header b { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; }
   .pl-logpanel .member-header span { color: var(--muted); font-size:13px; }
@@ -9720,7 +9721,7 @@ function fitMySoundVolume() {
 // 포인터 위치를 넣고 .holo-on을 붙입니다. 화면이 자주 다시 그려지므로 문서 전체에서 이벤트를 받아 처리합니다.
 // ==================================================================
 (function setupHoloCards() {
-  const SEL = '.char-card, .site-card, .compact-card, .member-panel, .topbar.v2, .action-bar-bottom, .map-frame, .bgm-player';
+  const SEL = '.char-card, .site-card, .compact-card, .member-panel:not(.pl-logpanel), .topbar.v2, .action-bar-bottom, .map-frame, .bgm-player';
   let activeEls = [];
   function clear() { activeEls.forEach(el => el.classList.remove('holo-on')); activeEls = []; }
   document.addEventListener('pointermove', (e) => {
