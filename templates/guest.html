@@ -2548,6 +2548,14 @@
   .la-add-blk { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:16px; border:1px dashed rgba(var(--point-rgb),.35); background: rgba(var(--point-rgb),.04); color: var(--point); font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
   .la-add-blk:hover { background: rgba(var(--point-rgb),.1); }
   .la-meta select.la-slot-sel { min-width:96px; }
+  .la-blk-row .k i, .la-eh-no i { display:none; }
+  .la-blk-row { cursor:grab; } .la-blk-row:hover .k i { display:inline; font-size:11px; } .la-blk-row:hover .k { font-size:0; }
+  .la-eh-no { cursor:grab; } .la-eh-no:hover { font-size:0; } .la-eh-no:hover i { display:inline; font-size:11px; }
+  body.la-dragging .la-slot, body.la-dragging .la-blk-row, body.la-dragging .la-form2, body.la-dragging .la-add-blk { transition: box-shadow .12s, background .12s; }
+  body.la-dragging .la-slot { outline:1px dashed rgba(255,255,255,.08); outline-offset:-1px; }
+  .la-slot.la-drop { background: rgba(var(--point-rgb),.18) !important; outline:1px solid rgba(var(--point-rgb),.6) !important; }
+  .la-blk-row.la-drop, .la-form2.la-drop { box-shadow: 0 -3px 0 0 var(--point); }
+  .la-add-blk.la-drop { background: rgba(var(--point-rgb),.16); border-style:solid; }
   @media (max-width:900px) { .la-blk-row .b { display:none; } }
   .la-item em.lock { color: var(--muted); }
   .la-g i { margin-left:6px; font-size:10px; opacity:.7; }
@@ -13277,6 +13285,25 @@ function laPickSlot(era, slot) {
   const b = laBlocks(era, slot); la.sel = b.length ? b[0][1] : null;
   renderLoopAdmin(); const m = document.getElementById('laMain'); if (m) m.scrollTop = 0;
 }
+// 블럭 끌어서 옮기기 : 왼쪽 칸에 놓으면 그 칸의 맨 뒤로(다른 챕터 · 다른 칸), 오른쪽 블럭 위에 놓으면 그 블럭 앞으로.
+let laDragI = null;
+function laDragStart(e, i) { laDragI = i; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(i)); } catch (x) {} document.body.classList.add('la-dragging'); }
+function laDragEnd() { laDragI = null; document.body.classList.remove('la-dragging'); document.querySelectorAll('.la-drop').forEach(x => x.classList.remove('la-drop')); }
+function laDragOver(e) { if (laDragI == null) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('la-drop'); }
+function laDragLeave(e) { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('la-drop'); }
+function laDrop(e, era, slot, before) {
+  e.preventDefault(); e.stopPropagation();
+  const i = laDragI; laDragEnd();
+  if (i == null || i === before || !la.c.events[i]) return;
+  const evs = la.c.events, ev = evs.splice(i, 1)[0];
+  ev.era = era; ev.slot = slot;
+  let at;
+  if (before != null) at = before > i ? before - 1 : before;
+  else { at = evs.length; for (let k = evs.length - 1; k >= 0; k--) if (evs[k].era === era && laSlotOf(evs[k]) === slot) { at = k + 1; break; } }
+  evs.splice(at, 0, ev);
+  la.sel = at; la.slot = { era, slot };
+  renderLoopAdmin();
+}
 function laPickBlock(i) { la.sel = la.sel === i ? null : i; renderLoopAdmin(); }
 // 칸에 두 나라 모두 나올 블럭이 있는지(작업 중 제외). 없으면 그 나라 플레이어는 이 칸을 건너뛰어요.
 function laSlotCover(blocks) {
@@ -13308,7 +13335,7 @@ function laEventsHtml() {
       if (q && !bl.some(([ev]) => laMatch(ev, q))) continue;
       const on = la.slot && la.slot.era === era.id && la.slot.slot === s;
       const first = bl.find(([ev]) => laMatch(ev, q));
-      items += `<button class="la-item la-slot ${on ? 'on' : ''} ${s > len ? 'out' : ''}" onclick="laPickSlot(${era.id}, ${s})">
+      items += `<button class="la-item la-slot ${on ? 'on' : ''} ${s > len ? 'out' : ''}" onclick="laPickSlot(${era.id}, ${s})" ondragover="laDragOver(event)" ondragleave="laDragLeave(event)" ondrop="laDrop(event, ${era.id}, ${s})">
         <span class="sn">${s}</span><span class="t">${first ? laEsc(first[0].title) || '(제목 없음)' : '사건 ' + s}</span>
         <span class="b">${s > len ? '<em class="lock">칸 밖 · 안 나옴</em>' : laSlotCover(bl)}${bl.length ? `<em class="cnt">블럭 ${bl.length}</em>` : ''}</span></button>`;
     }
@@ -13327,11 +13354,11 @@ function laEventsHtml() {
 function laSlotHtml() {
   const { era, slot } = la.slot, e = la.c.eras.find(x => x.id === era) || {}, bl = laBlocks(era, slot);
   const rows = bl.map(([ev, i], k) => i === la.sel ? laEventForm(i, k + 1) :
-    `<button class="ops-card la-blk-row" data-i="${i}" onclick="laPickBlock(${i})"><span class="k">${k + 1}</span><span class="t">${laEsc(ev.title) || '(제목 없음)'}</span><span class="b">${laCondBadges(ev)}</span><i class="fa-solid fa-chevron-down"></i></button>`).join('');
+    `<button class="ops-card la-blk-row" data-i="${i}" onclick="laPickBlock(${i})" draggable="true" ondragstart="laDragStart(event, ${i})" ondragend="laDragEnd()" ondragover="laDragOver(event)" ondragleave="laDragLeave(event)" ondrop="laDrop(event, ${era}, ${slot}, ${i})"><span class="k"><i class="fa-solid fa-grip-vertical"></i>${k + 1}</span><span class="t">${laEsc(ev.title) || '(제목 없음)'}</span><span class="b">${laCondBadges(ev)}</span><i class="fa-solid fa-chevron-down"></i></button>`).join('');
   return `<div class="la-slot-h"><span class="la-slot-tag">${laEsc(e.no)} · 사건 ${slot}</span><b>${laEsc(e.name)}</b>
       <span class="ops-hint">블럭 ${bl.length}개${bl.length > 1 ? ' · 조건이 맞는 블럭 중 하나가 무작위로 나와요' : ''}${slot > (Number(e.len) || 1) ? ' · 사건 개수보다 뒤라 지금은 안 나와요' : ''}</span></div>
     ${rows || `<div class="ops-card la-slot-empty">${emptyHtml('fa-scroll', '아직 블럭이 없어요', '이 칸이 비어 있으면 플레이 때 건너뛰어요.')}</div>`}
-    <button class="la-add-blk" onclick="laAddEvent()"><i class="fa-solid fa-plus"></i> 사건 추가하기</button>`;
+    <button class="la-add-blk" onclick="laAddEvent()" ondragover="laDragOver(event)" ondragleave="laDragLeave(event)" ondrop="laDrop(event, ${era}, ${slot})"><i class="fa-solid fa-plus"></i> 사건 추가하기</button>`;
 }
 let laFilterT = null;
 function laFilterList() { clearTimeout(laFilterT); laFilterT = setTimeout(() => { const l = document.getElementById('laList'); if (!l) return; const tmp = document.createElement('div'); tmp.innerHTML = laEventsHtml(); l.innerHTML = tmp.querySelector('.la-list').innerHTML; const c = document.getElementById('laCount'); if (c) c.innerHTML = laCountHtml(); }, 150); }
@@ -13419,9 +13446,9 @@ function laEventForm(i, no) {
     body = `<div class="la-memo"><div class="la-memo-h"><i class="fa-solid fa-note-sticky"></i> 작업 메모 <span>주제 · 필요한 내용 · 예상 선택지 · 예상 결과 — 플레이어에게는 안 보여요</span></div>
       <textarea class="ops-in" rows="10" ${laP(P(['note']))} placeholder="예) 주제 : 공명로 사고 / 필요 : 도시 정전, 공명자 책임론 / A 복구 지원 → 체력−, 균열+ / B 피신 → 정신− / C 고발 → 재산−" oninput="laInput(this)">${laEsc(ev.note || '')}</textarea></div>`;
   }
-  return `<div class="ops-card la-form2" data-i="${i}">
+  return `<div class="ops-card la-form2" data-i="${i}" ondragover="laDragOver(event)" ondragleave="laDragLeave(event)" ondrop="laDrop(event, ${ev.era}, ${laSlotOf(ev)}, ${i})">
     <div class="la-eh">
-      <button class="la-eh-no" onclick="laPickBlock(${i})" data-tip="접기">${no || ''}</button>
+      <button class="la-eh-no" onclick="laPickBlock(${i})" data-tip="접기 · 끌어서 옮기기" draggable="true" ondragstart="laDragStart(event, ${i})" ondragend="laDragEnd()"><i class="fa-solid fa-grip-vertical"></i>${no || ''}</button>
       <input class="ops-in la-eh-title" ${laP(P(['title']))} value="${laEsc(ev.title)}" maxlength="60" placeholder="사건 제목" oninput="laInput(this)">
       <button class="ops-btn icon" onclick="laDupEvent(${i})" data-tip="복제"><i class="fa-regular fa-copy"></i></button>
       <button class="ops-btn icon danger" onclick="laDelEvent(${i})" data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>
