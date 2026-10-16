@@ -4279,7 +4279,6 @@
   }
   select:not([multiple]):not([size]):hover:not(:disabled) { background-color: rgba(255,255,255,.07) !important; border-color: rgba(255,255,255,.14) !important; }
   select:not([multiple]):not([size]):focus { outline:none; border-color: rgba(var(--point-rgb),.6) !important; background-color: rgba(255,255,255,.06) !important; }
-  select:disabled { opacity:.45; }
   select option, select optgroup { background:#17171a; color: var(--text); }
   /* 좁은 자리(편집 도구줄 · 작은 필터 · 숫자 선택)는 조금 낮게 */
   .notice-toolbar select, .la-meta select, .la-d, .dorm-pfilter select, .dorm-arow select, .dorm-hall-edit select,
@@ -4336,7 +4335,15 @@
   .dorm-ibtn { background: var(--ds-ctl) !important; color: var(--text) !important; }
   /* ── 비활성 ── */
   .btn:disabled, .btn-primary:disabled, .btn-plain:disabled, .shop-btn:disabled, .ops-btn:disabled, .pl-btn:disabled, .dorm-tbtn:disabled, .mail-send:disabled,
-  .shop-ico-btn:disabled, .dorm-ibtn:disabled { opacity:.4; filter:none !important; cursor:not-allowed; }
+  .shop-ico-btn:disabled, .dorm-ibtn:disabled, .pl-ch.locked:disabled, .mail-fab:disabled, .wm-go:disabled {
+    /* 비활성 : 색을 흐리게 하는 대신 무채색으로(포인트 · 경고 색을 모두 빼요) */
+    opacity:1 !important; filter:none !important; cursor:not-allowed !important;
+    background: rgba(255,255,255,.04) !important; border-color: rgba(255,255,255,.06) !important; color:#5c5c64 !important; box-shadow:none !important; }
+  .shop-ico-btn:disabled, .dorm-ibtn:disabled { background: transparent !important; }
+  :is(.btn, .btn-primary, .btn-plain, .shop-btn, .ops-btn, .pl-btn, .dorm-tbtn, .mail-send, .pl-ch.locked):disabled i { color:#5c5c64 !important; }
+  /* 입력 칸 · 드롭다운 · 체크박스도 같은 무채색 */
+  input:disabled, textarea:disabled, select:disabled { opacity:1 !important; color:#5c5c64 !important; background-color: rgba(255,255,255,.025) !important; border-color: rgba(255,255,255,.05) !important; cursor:not-allowed; }
+  input[type="checkbox"]:disabled, input[type="radio"]:disabled { accent-color:#4a4a52; }
   /* ── 입력 칸 : 한 줄 · 여러 줄 ── */
   input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):not(.idc-inline):not(.nice-range),
   textarea:not(.rich) {
@@ -4348,7 +4355,6 @@
   input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):focus,
   textarea:not(.rich):focus { outline:none !important; border-color: rgba(var(--point-rgb),.6) !important; background-color: rgba(255,255,255,.06) !important; box-shadow:none !important; }
   input::placeholder, textarea::placeholder, [contenteditable][data-placeholder]:empty::before { color: var(--ds-placeholder) !important; opacity:1; }
-  input:disabled, textarea:disabled { opacity:.5; }
   /* 리치 편집기 · 스킬 로그 칸 등 묶음 상자도 같은 선 · 모서리 */
   .idc-editor, .mypage.v2 .idc-editor { border:1px solid var(--ds-line) !important; border-radius: var(--ds-r-box) !important; background: var(--ds-ctl) !important; }
   /* ── 체크박스 · 라디오 : 포인트 색 ── */
