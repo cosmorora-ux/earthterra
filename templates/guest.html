@@ -3611,6 +3611,12 @@
   .modal-overlay.no-anim, .modal-overlay.no-anim > .modal-box, .modal-overlay.no-anim > div > .modal-box { animation:none !important; }
   .modal-box.mail-modal { position:relative; }
   #mailBody { padding-bottom:84px; }
+  #mailBody.writing { padding-bottom:0; }   /* 편지 쓰기 화면은 아래 '보내기' 줄이 맨 아래에 붙어요 */
+  .mail-write-head { display:flex; align-items:center; gap:10px; width:100%; padding:2px 0 12px; }
+  .mail-write-head b { font-size:16px; font-weight:700; }
+  .mail-back { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:none; border-radius:10px; background: rgba(255,255,255,.05); color: var(--text); cursor:pointer; font-size:14px; }
+  .mail-back:hover { background: rgba(255,255,255,.1); }
+  #mailTabs.write-mode { border-bottom:1px solid var(--line); }
   .modal-box.mail-modal > .mail-fab { position:absolute; right:26px; bottom:26px; width:56px; height:56px; margin:0; padding:0; z-index:3; display:inline-flex; align-items:center; justify-content:center;
     border-radius:50%; border:none; background: var(--point); color:#fff; font:inherit; font-size:14px; font-weight:700; cursor:pointer;
     box-shadow: 0 10px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06) inset; transition: transform .15s, filter .15s; }
@@ -10590,7 +10596,12 @@ function mailRetry(n) {
   }, 2500);
 }
 function closeMail() { const m = document.getElementById('mailModal'); m.style.display = 'none'; m.classList.remove('no-anim'); }
-function setMailTab(t) { mailTab = t; mailOpenId = null; renderMail(); }
+var mailListTab = 'inbox';   // 편지 쓰기에서 돌아갈 목록
+function setMailTab(t) {
+  if (t === 'write' && mailTab !== 'write') mailListTab = mailTab;
+  mailTab = t; mailOpenId = null; renderMail();
+  const b = document.getElementById('mailBody'); if (b) b.scrollTop = 0;
+}
 socket.on('joined', () => socket.emit('mail_list'));
 socket.on('mail_data', (d) => {
   mailData = d; updateMailDot();
@@ -10618,7 +10629,12 @@ function renderMail() {
   // 받은 편지함 · 보낸 편지함(관리자는 전체)만 탭으로, 편지 쓰기는 오른쪽 별도 버튼(일반 메일 앱처럼)
   const tabs = [['inbox', 'fa-solid fa-inbox', '받은 편지함', d.unread], ['outbox', 'fa-solid fa-paper-plane', '보낸 편지함']];
   if (d.is_gm) tabs.push(['all', 'fa-solid fa-envelopes-bulk', '전체 편지']);
-  tabsEl.innerHTML = tabs.map(([k, ic, t, n]) => `<button class="shop-tab ${mailTab === k ? 'active' : ''}" onclick="setMailTab('${k}')"><i class="${ic}"></i>${t}${n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('');
+  // 편지 쓰기는 따로 들어가는 화면 : 탭 대신 '← 새 편지' 머리(눌러서 목록으로 돌아가기)
+  tabsEl.classList.toggle('write-mode', mailTab === 'write');
+  document.getElementById('mailBody').classList.toggle('writing', mailTab === 'write');
+  tabsEl.innerHTML = mailTab === 'write'
+    ? `<div class="mail-write-head"><button class="mail-back" onclick="setMailTab(mailListTab || 'inbox')" aria-label="목록으로" data-tip="목록으로"><i class="fa-solid fa-arrow-left"></i></button><b>새 편지</b></div>`
+    : tabs.map(([k, ic, t, n]) => `<button class="shop-tab ${mailTab === k ? 'active' : ''}" onclick="setMailTab('${k}')"><i class="${ic}"></i>${t}${n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('');
   // 편지 쓰기 : 목록 위에 떠 있는 버튼(오른쪽 아래). 쓰는 중이거나 미리보기(보낼 수 없는 방)에서는 숨겨요.
   document.getElementById('mailFab').style.display = mailTab === 'write' ? 'none' : '';
   const pv = d.preview ? '<div class="mail-preview"><i class="fa-solid fa-eye"></i>미리보기예요. 이 방에서는 편지를 보내거나 받을 수 없어요.</div>' : '';
