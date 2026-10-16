@@ -2510,6 +2510,45 @@
   .la-now { font-size:13px; font-weight:700; color: var(--point); display:inline-flex; align-items:center; gap:6px; }
   .la-ch-del { position:absolute; top:14px; right:84px; }
   .la-item em.draft { background: rgba(255,207,90,.14); color:#ffcf5a; }
+  /* 사건 : 챕터 → 사건 칸 → 스크립트 블럭 */
+  .la-g2 { display:flex; align-items:center; gap:8px; padding:16px 4px 6px; border-top:1px solid var(--line); margin-top:6px; }
+  .la-list .la-g2:first-child { border-top:none; margin-top:0; padding-top:8px; }
+  .la-g2 .nm { flex:1; min-width:0; color:#e6e6ea; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .la-g2 .la-g-n { display:inline-flex; align-items:center; gap:6px; margin:0; opacity:1; }
+  .la-g2 .la-g-n > em { font-style:normal; font-size:11.5px; font-weight:600; color: var(--muted); }
+  .la-g2 .la-stp { height:26px; } .la-g2 .la-stp button { height:26px; width:24px; } .la-g2 .la-stp b { min-width:22px; font-size:12.5px; color:#fff; }
+  .la-g2 .la-g-x { width:26px; height:26px; }
+  .la-item.la-slot { display:flex; align-items:center; gap:8px; }
+  .la-slot .t { flex:1; min-width:0; }
+  .la-slot .b { flex:none; flex-wrap:nowrap; }
+  .la-slot .sn { flex:none; width:24px; height:24px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; background: rgba(255,255,255,.06); font-size:12px; font-weight:800; color:#cfcfd4; font-variant-numeric: tabular-nums; }
+  .la-slot.on .sn { background: rgba(var(--point-rgb),.2); color: var(--point); }
+  .la-slot .t small { font-size:11.5px; font-weight:500; color: var(--muted); }
+  .la-slot.out { opacity:.5; }
+  .la-item em.cnt { margin-left:auto; background:none; color: var(--muted); padding-right:0; }
+  .la-item em.warn { background: rgba(255,138,128,.12); color:#ff9a90; }
+  .la-item em.empty { background:none; color:#6c6c74; padding-left:0; }
+  .la-add-era { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin:12px 0 4px; padding:10px; border-radius:10px; border:1px dashed var(--line); background:none; color: var(--muted); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .la-add-era:hover { color:#fff; border-color: rgba(255,255,255,.25); }
+  .la-right { display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .la-right > .ops-card { margin:0; }
+  .la-slot-h { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:2px 2px 4px; }
+  .la-slot-h b { font-size:15px; }
+  .la-slot-h .ops-hint { flex-basis:100%; margin:0; }
+  .la-slot-tag { font-family: var(--font-title); font-size:13px; letter-spacing:.04em; color: var(--point); padding:4px 10px; border-radius:10px; background: rgba(var(--point-rgb),.12); }
+  .la-blk-row { display:flex !important; flex-direction:row !important; align-items:center; gap:10px !important; width:100%; padding:12px 16px !important; text-align:left; cursor:pointer; color: var(--text); font:inherit; }
+  .la-blk-row:hover { border-color: rgba(255,255,255,.18); }
+  .la-blk-row .k, .la-eh-no { flex:none; width:26px; height:26px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; background: rgba(255,255,255,.06); font-size:12.5px; font-weight:800; color:#cfcfd4; border:none; font-family:inherit; }
+  .la-eh-no { background: rgba(var(--point-rgb),.18); color: var(--point); cursor:pointer; }
+  .la-blk-row .t { flex:1; min-width:0; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .la-blk-row .b { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+  .la-blk-row .b em { font-style:normal; font-size:11px; font-weight:600; padding:1px 7px; border-radius:6px; background: rgba(255,255,255,.06); color:#bdbdc3; }
+  .la-blk-row .b em.draft { background: rgba(255,207,90,.14); color:#ffcf5a; }
+  .la-blk-row > i { color: var(--muted); font-size:11px; }
+  .la-add-blk { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:16px; border:1px dashed rgba(var(--point-rgb),.35); background: rgba(var(--point-rgb),.04); color: var(--point); font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+  .la-add-blk:hover { background: rgba(var(--point-rgb),.1); }
+  .la-meta select.la-slot-sel { min-width:96px; }
+  @media (max-width:900px) { .la-blk-row .b { display:none; } }
   .la-item em.lock { color: var(--muted); }
   .la-g i { margin-left:6px; font-size:10px; opacity:.7; }
   .la-memo { border-radius:12px; background: rgba(255,207,90,.05); border:1px dashed rgba(255,207,90,.25); padding:12px; margin-bottom:16px; }
@@ -5240,7 +5279,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.57";
+const EXPECTED_SERVER_BUILD = "2026-10-13.58";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
@@ -13115,7 +13154,6 @@ function laInput(el, rerender) {
   else if (t === 'fixed') v = el.checked ? 'open' : undefined;
   else if (t === 'chapter') v = v === '' ? undefined : Number(v);
   laSetPath(path, v);
-  if (path[0] === 'events' && path[2] === 'title') { const it = document.querySelector(`.la-item[data-i="${path[1]}"] .t`); if (it) it.textContent = v || '(제목 없음)'; }
   if (rerender) renderLoopAdmin(); else laSyncBar();
 }
 function laSyncBar() {
@@ -13217,29 +13255,83 @@ function laCondBadges(ev) {
   const c = ev.cond || {}, b = [];
   if (ev.draft) b.push('<em class="draft">작업 중</em>');
   else if (laEvChapter(ev) > la.c.rules.release) b.push(`<em class="lock"><i class="fa-solid fa-lock"></i> ${laEsc((la.c.rules.chapters[laEvChapter(ev)] || {}).name || '')}</em>`);
-  if (ev.fixed === 'open') b.push('<em class="open">첫 사건</em>');
   if (c.country) b.push(`<em>${c.country === 'arcadia' ? '아르카디아' : '노바'}</em>`);
   if (c.res) b.push(`<em>${c.res === 'res' ? '공명자' : '비공명자'}</em>`);
   if ((c.tags || []).length) b.push('<em>태그</em>');
   if (c.loops) b.push(`<em>루프 ${c.loops}+</em>`);
   return b.join('');
 }
+// 챕터(시대) → 사건 칸(1 ~ 사건 개수) → 칸마다 스크립트 블럭 여러 개. 플레이 때는 칸마다 조건이 맞는 블럭 하나가 무작위로 나와요.
+function laSlotOf(ev) { return Number(ev.slot) || 1; }
+function laMatch(ev, q) { return !q || `${ev.title} ${(ev.story || []).join(' ')}`.toLowerCase().includes(q); }
+function laBlocks(era, slot) { return la.c.events.map((ev, i) => [ev, i]).filter(([ev]) => ev.era === era && laSlotOf(ev) === slot); }
+function laSlotCount(era) { const e = la.c.eras.find(x => x.id === era) || {}; return Math.max(Number(e.len) || 1, ...la.c.events.filter(ev => ev.era === era).map(laSlotOf)); }
+function laEnsureSlot() {
+  const eras = la.c.eras || [], ev = la.c.events[la.sel];
+  if (ev && (!la.slot || la.slot.era !== ev.era || la.slot.slot !== laSlotOf(ev))) la.slot = { era: ev.era, slot: laSlotOf(ev) };
+  if (!la.slot || !eras.some(e => e.id === la.slot.era)) la.slot = eras[0] ? { era: eras[0].id, slot: 1 } : null;
+  if (la.sel != null && !ev) la.sel = null;
+}
+function laPickSlot(era, slot) {
+  la.slot = { era, slot };
+  const b = laBlocks(era, slot); la.sel = b.length ? b[0][1] : null;
+  renderLoopAdmin(); const m = document.getElementById('laMain'); if (m) m.scrollTop = 0;
+}
+function laPickBlock(i) { la.sel = la.sel === i ? null : i; renderLoopAdmin(); }
+// 칸에 두 나라 모두 나올 블럭이 있는지(작업 중 제외). 없으면 그 나라 플레이어는 이 칸을 건너뛰어요.
+function laSlotCover(blocks) {
+  const live = blocks.filter(([ev]) => !ev.draft);
+  const miss = ['arcadia', 'nova'].filter(cc => !live.some(([ev]) => !(ev.cond || {}).country || ev.cond.country === cc));
+  if (!blocks.length) return '<em class="empty">비어 있음</em>';
+  if (miss.length === 2) return '<em class="draft">작업 중만</em>';
+  return miss.map(cc => `<em class="warn">${cc === 'arcadia' ? '아르카디아' : '노바'} 없음</em>`).join('');
+}
+const LA_ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+function laAddEra() {
+  const id = Math.max(0, ...la.c.eras.map(e => e.id)) + 1;
+  if (la.c.eras.length >= 12) { uiToast('챕터는 12개까지 만들 수 있어요.'); return; }
+  la.c.eras.push({ id, no: LA_ROMAN[id] || String(id), name: '새 챕터', period: '', level: '', len: 3, risk: 0, luck: 0, risk_text: [] });
+  la.slot = { era: id, slot: 1 }; la.sel = null; renderLoopAdmin();
+}
+function laDelEra(id) {
+  if (la.c.events.some(ev => ev.era === id)) { uiToast('블럭이 남아 있는 챕터는 지울 수 없어요.'); return; }
+  la.c.eras = la.c.eras.filter(e => e.id !== id); la.slot = null; renderLoopAdmin();
+}
 function laEventsHtml() {
-  const evs = la.c.events;
-  if (la.sel == null || !evs[la.sel]) la.sel = evs.length ? 0 : null;
+  laEnsureSlot();
   const q = la.q.trim().toLowerCase();
-  const groups = (la.c.eras || []).map(era => {
-    const items = evs.map((ev, i) => [ev, i]).filter(([ev]) => ev.era === era.id && (!q || `${ev.title} ${(ev.story || []).join(' ')}`.toLowerCase().includes(q)));
-    if (!items.length) return '';
-    return `<div class="la-g">${laEsc(era.no)}. ${laEsc(era.name)} <span>${items.length}</span>${laEraChapter(era.id) > la.c.rules.release ? '<i class="fa-solid fa-lock"></i>' : ''}</div>` + items.map(([ev, i]) =>
-      `<button class="la-item ${i === la.sel ? 'on' : ''}" data-i="${i}" onclick="la.sel=${i}; renderLoopAdmin()"><span class="t">${laEsc(ev.title) || '(제목 없음)'}</span><span class="b">${laCondBadges(ev)}</span></button>`).join('');
+  const groups = (la.c.eras || []).map((era, ei) => {
+    const n = laSlotCount(era.id), len = Number(era.len) || 1;
+    let items = '';
+    for (let s = 1; s <= n; s++) {
+      const bl = laBlocks(era.id, s);
+      if (q && !bl.some(([ev]) => laMatch(ev, q))) continue;
+      const on = la.slot && la.slot.era === era.id && la.slot.slot === s;
+      const first = bl.find(([ev]) => laMatch(ev, q));
+      items += `<button class="la-item la-slot ${on ? 'on' : ''} ${s > len ? 'out' : ''}" onclick="laPickSlot(${era.id}, ${s})">
+        <span class="sn">${s}</span><span class="t">${first ? laEsc(first[0].title) || '(제목 없음)' : '사건 ' + s}</span>
+        <span class="b">${s > len ? '<em class="lock">칸 밖 · 안 나옴</em>' : laSlotCover(bl)}${bl.length ? `<em class="cnt">블럭 ${bl.length}</em>` : ''}</span></button>`;
+    }
+    if (q && !items) return '';
+    const empty = !la.c.events.some(ev => ev.era === era.id);
+    return `<div class="la-g la-g2"><span class="nm">${laEsc(era.no)}. ${laEsc(era.name)}${laEraChapter(era.id) > la.c.rules.release ? '<i class="fa-solid fa-lock"></i>' : ''}</span>
+        <span class="la-g-n"><em>사건</em>${laStepper(['eras', ei, 'len'], len, 1, 30)}</span>${empty ? `<button class="ops-btn icon danger la-g-x" onclick="laDelEra(${era.id})" data-tip="챕터 지우기"><i class="fa-solid fa-trash-can"></i></button>` : ''}</div>${items}`;
   }).join('');
   return `<div class="la-ev">
-    <div class="ops-card la-left"><div class="ops-row"><input class="ops-in" placeholder="제목 · 내용 검색" value="${laEsc(la.q)}" oninput="la.q=this.value; laFilterList()">
-      <button class="ops-btn primary" onclick="laAddEvent()"><i class="fa-solid fa-plus"></i> 새 사건</button></div>
+    <div class="ops-card la-left"><div class="ops-row"><input class="ops-in" placeholder="제목 · 내용 검색" value="${laEsc(la.q)}" oninput="la.q=this.value; laFilterList()"></div>
       <div class="la-count" id="laCount">${laCountHtml()}</div>
-      <div class="la-list" id="laList">${groups || '<div class="ops-empty">찾는 사건이 없어요.</div>'}</div></div>
-    <div class="la-right">${la.sel == null ? `<div class="ops-card">${emptyHtml('fa-scroll', '사건을 골라 주세요', '왼쪽 목록에서 고치거나, 새 사건을 만들어요.')}</div>` : laEventForm(la.sel)}</div></div>`;
+      <div class="la-list" id="laList">${groups || '<div class="ops-empty">찾는 사건이 없어요.</div>'}${q ? '' : '<button class="la-add-era" onclick="laAddEra()"><i class="fa-solid fa-plus"></i> 챕터 추가</button>'}</div></div>
+    <div class="la-right">${la.slot ? laSlotHtml() : `<div class="ops-card">${emptyHtml('fa-scroll', '챕터를 만들어 주세요', '왼쪽 아래 챕터 추가로 시작해요.')}</div>`}</div></div>`;
+}
+// 오른쪽 : 고른 사건 칸의 스크립트 블럭들. 펼친 블럭 하나만 편집기로, 나머지는 한 줄 요약.
+function laSlotHtml() {
+  const { era, slot } = la.slot, e = la.c.eras.find(x => x.id === era) || {}, bl = laBlocks(era, slot);
+  const rows = bl.map(([ev, i], k) => i === la.sel ? laEventForm(i, k + 1) :
+    `<button class="ops-card la-blk-row" data-i="${i}" onclick="laPickBlock(${i})"><span class="k">${k + 1}</span><span class="t">${laEsc(ev.title) || '(제목 없음)'}</span><span class="b">${laCondBadges(ev)}</span><i class="fa-solid fa-chevron-down"></i></button>`).join('');
+  return `<div class="la-slot-h"><span class="la-slot-tag">${laEsc(e.no)} · 사건 ${slot}</span><b>${laEsc(e.name)}</b>
+      <span class="ops-hint">블럭 ${bl.length}개${bl.length > 1 ? ' · 조건이 맞는 블럭 중 하나가 무작위로 나와요' : ''}${slot > (Number(e.len) || 1) ? ' · 사건 개수보다 뒤라 지금은 안 나와요' : ''}</span></div>
+    ${rows || `<div class="ops-card la-slot-empty">${emptyHtml('fa-scroll', '아직 블럭이 없어요', '이 칸이 비어 있으면 플레이 때 건너뛰어요.')}</div>`}
+    <button class="la-add-blk" onclick="laAddEvent()"><i class="fa-solid fa-plus"></i> 사건 추가하기</button>`;
 }
 let laFilterT = null;
 function laFilterList() { clearTimeout(laFilterT); laFilterT = setTimeout(() => { const l = document.getElementById('laList'); if (!l) return; const tmp = document.createElement('div'); tmp.innerHTML = laEventsHtml(); l.innerHTML = tmp.querySelector('.la-list').innerHTML; const c = document.getElementById('laCount'); if (c) c.innerHTML = laCountHtml(); }, 150); }
@@ -13248,7 +13340,7 @@ function laCountHtml() {
   const evs = la.c.events, q = la.q.trim().toLowerCase();
   const found = q ? evs.filter(ev => `${ev.title} ${(ev.story || []).join(' ')}`.toLowerCase().includes(q)).length : null;
   const drafts = evs.filter(ev => ev.draft).length;
-  return `<span><b>${evs.length}</b>건 등록${drafts ? ` · 작업 중 ${drafts}건` : ''}</span>${found != null ? `<span class="f">찾은 사건 ${found}건</span>` : ''}`;
+  return `<span>챕터 <b>${la.c.eras.length}</b> · 블럭 <b>${evs.length}</b>${drafts ? ` · 작업 중 ${drafts}` : ''}</span>${found != null ? `<span class="f">찾은 블럭 ${found}</span>` : ''}`;
 }
 // 숫자 하나를 − / + 로 바꾸는 작은 조절기(범위 안에서). 0이 아니면 색이 붙어요.
 function laStep(path, d, min, max) {
@@ -13262,10 +13354,11 @@ function laStepper(path, v, min, max, cls, signed) {
   return `<span class="la-stp ${cls || ''} ${tone}"><button type="button" ${v <= min ? 'disabled' : ''} onclick='laStep(${P}, -1, ${min}, ${max})'><i class="fa-solid fa-minus"></i></button><b>${signed && v > 0 ? '+' + v : v}</b><button type="button" ${v >= max ? 'disabled' : ''} onclick='laStep(${P}, 1, ${min}, ${max})'><i class="fa-solid fa-plus"></i></button></span>`;
 }
 const LA_ETABS = [['story', '이야기', 'fa-book-open'], ['choices', '선택지', 'fa-list-ol'], ['cond', '출현 조건', 'fa-filter'], ['memo', '작업 메모', 'fa-note-sticky']];
-function laEventForm(i) {
+function laEventForm(i, no) {
   const ev = la.c.events[i], P = k => ['events', i, ...k], c = ev.cond || {};
   la.etab = la.etab || 'story';
   const eraOpts = (la.c.eras || []).map(e => `<option value="${e.id}" ${e.id === ev.era ? 'selected' : ''}>${laEsc(e.no)}. ${laEsc(e.name)}</option>`).join('');
+  const slotOpts = Array.from({ length: laSlotCount(ev.era) }, (_, k) => k + 1).map(n => `<option value="${n}" ${n === laSlotOf(ev) ? 'selected' : ''}>사건 ${n}</option>`).join('');
   const kindOpts = Object.entries(LA_KIND).filter(([k]) => k !== 'mind').map(([k, t]) => `<option value="${k}" ${k === (ev.kind || 'life') ? 'selected' : ''}>${t}</option>`).join('');
   const chOpts = `<option value="" ${ev.chapter == null || ev.chapter === '' ? 'selected' : ''}>시대를 따라 (${laEsc((la.c.rules.chapters[laEraChapter(ev.era)] || {}).name || '')})</option>` + la.c.rules.chapters.map(ch => `<option value="${ch.id}" ${ev.chapter != null && ev.chapter !== '' && Number(ev.chapter) === ch.id ? 'selected' : ''}>${laEsc(ch.name)}</option>`).join('');
   const condCount = ['res', 'country'].filter(k => c[k]).length + (c.loops ? 1 : 0) + ((c.tags || []).length ? 1 : 0) + ((c.no_tags || []).length ? 1 : 0) + Object.values(c.min || {}).filter(Boolean).length;
@@ -13326,16 +13419,17 @@ function laEventForm(i) {
     body = `<div class="la-memo"><div class="la-memo-h"><i class="fa-solid fa-note-sticky"></i> 작업 메모 <span>주제 · 필요한 내용 · 예상 선택지 · 예상 결과 — 플레이어에게는 안 보여요</span></div>
       <textarea class="ops-in" rows="10" ${laP(P(['note']))} placeholder="예) 주제 : 공명로 사고 / 필요 : 도시 정전, 공명자 책임론 / A 복구 지원 → 체력−, 균열+ / B 피신 → 정신− / C 고발 → 재산−" oninput="laInput(this)">${laEsc(ev.note || '')}</textarea></div>`;
   }
-  return `<div class="ops-card la-form2">
+  return `<div class="ops-card la-form2" data-i="${i}">
     <div class="la-eh">
+      <button class="la-eh-no" onclick="laPickBlock(${i})" data-tip="접기">${no || ''}</button>
       <input class="ops-in la-eh-title" ${laP(P(['title']))} value="${laEsc(ev.title)}" maxlength="60" placeholder="사건 제목" oninput="laInput(this)">
       <button class="ops-btn icon" onclick="laDupEvent(${i})" data-tip="복제"><i class="fa-regular fa-copy"></i></button>
       <button class="ops-btn icon danger" onclick="laDelEvent(${i})" data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>
     <div class="la-meta">
-      <label><span>시대</span><select class="ops-in" ${laP(P(['era']))} data-t="num" onchange="laInput(this, true)">${eraOpts}</select></label>
+      <label><span>챕터</span><select class="ops-in" ${laP(P(['era']))} data-t="num" onchange="laInput(this, true)">${eraOpts}</select></label>
+      <label><span>칸</span><select class="ops-in la-slot-sel" ${laP(P(['slot']))} data-t="num" onchange="laInput(this, true)">${slotOpts}</select></label>
       <label><span>종류 <i class="la-q" data-tip="체력이 0이 되어 죽을 때 이 종류의 사망 문장이 나와요.">?</i></span><select class="ops-in" ${laP(P(['kind']))} onchange="laInput(this)">${kindOpts}</select></label>
       <label><span>공개 단계</span><select class="ops-in" ${laP(P(['chapter']))} data-t="chapter" onchange="laInput(this, true)">${chOpts}</select></label>
-      <label class="tg ${ev.fixed === 'open' ? 'on' : ''}"><input type="checkbox" ${laP(P(['fixed']))} data-t="fixed" ${ev.fixed === 'open' ? 'checked' : ''} onchange="laInput(this, true)"><i class="fa-solid fa-thumbtack"></i> 시대 첫 사건</label>
       <label class="tg warn ${ev.draft ? 'on' : ''}"><input type="checkbox" ${laP(P(['draft']))} ${ev.draft ? 'checked' : ''} onchange="laInput(this, true)"><i class="fa-solid fa-pen"></i> 작업 중 (플레이에 안 나옴)</label>
     </div>
     <div class="la-etabs">${tabs}</div>
@@ -13350,15 +13444,15 @@ function laExtraWhen(i, k, type, val) {
 }
 function laNextId() { let n = 1; const ids = new Set(la.c.events.map(e => e.id)); while (ids.has(String(n).padStart(3, '0'))) n++; return String(n).padStart(3, '0'); }
 function laAddEvent() {
-  const era = (la.c.events[la.sel] || {}).era || (la.c.eras[0] || {}).id || 1;
-  la.c.events.push({ id: laNextId(), era, title: '새 사건', kind: 'life', story: [''], choices: [0, 1, 2].map(() => ({ label: '', hp: 0, mind: 0, result: '', tags: [] })) });
+  const at = la.slot || { era: (la.c.eras[0] || {}).id || 1, slot: 1 };
+  la.c.events.push({ id: laNextId(), era: at.era, slot: at.slot, title: '새 사건', kind: 'life', draft: true, story: [''], choices: [0, 1, 2].map(() => ({ label: '', hp: 0, mind: 0, result: '', tags: [] })) });
   la.sel = la.c.events.length - 1; la.q = '';
   renderLoopAdmin();
 }
 function laDupEvent(i) { const ev = JSON.parse(JSON.stringify(la.c.events[i])); ev.id = laNextId(); ev.title += ' (복제)'; la.c.events.splice(i + 1, 0, ev); la.sel = i + 1; renderLoopAdmin(); }
 function laDelEvent(i) {
   uiConfirm(`「${la.c.events[i].title}」 사건을 지울까요? 저장해야 반영돼요.`, { title: '사건 지우기', okText: '지우기', icon: 'fa-trash-can' }).then(ok => {
-    if (!ok) return; la.c.events.splice(i, 1); la.sel = Math.max(0, i - 1); renderLoopAdmin();
+    if (!ok) return; la.c.events.splice(i, 1); la.sel = null; renderLoopAdmin();
   });
 }
 

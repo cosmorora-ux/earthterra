@@ -100,6 +100,29 @@ def _tags(v):
     return out[:20]
 
 
+def _assign_slots(events, eras):
+    """사건 칸(slot)이 없는 예전 사건을 칸에 나눠 넣습니다. '시대 첫 사건'은 사건 1 칸,
+    나머지는 국가 조건별로 남은 칸에 고르게 돌려 넣어서 칸마다 두 나라 모두 나올 거리가 남게 해요."""
+    lens = {e.get("id"): _int(e.get("len"), 1, 30, 3) for e in eras if isinstance(e, dict)}
+    by_era = {}
+    for ev in events:
+        if isinstance(ev, dict) and ev.get("slot") in (None, ""):
+            by_era.setdefault(ev.get("era"), []).append(ev)
+    for era, evs in by_era.items():
+        n = lens.get(_int(era, 1, 99, 0), 3)
+        has_open = any(ev.get("fixed") == "open" for ev in evs)
+        rest = list(range(2, n + 1)) if has_open and n > 1 else list(range(1, n + 1))
+        turn = {}
+        for ev in evs:
+            if ev.get("fixed") == "open":
+                ev["slot"] = 1
+                continue
+            key = (ev.get("cond") or {}).get("country") or ""
+            k = turn.get(key, 0)
+            ev["slot"] = rest[k % len(rest)]
+            turn[key] = k + 1
+
+
 def clean_content(c):
     """편집 페이지에서 온 내용을 검사해서 게임이 쓸 수 있는 모양으로 다듬습니다. 잘못된 곳이 있으면 LoopError."""
     if not isinstance(c, dict):
@@ -125,6 +148,7 @@ def clean_content(c):
     if not eras:
         raise LoopError("시대가 하나 이상 있어야 해요.")
     era_ids = {e["id"] for e in eras}
+    _assign_slots(c.get("events") or [], eras)
     rr = r.get("res") or {}
     dr = d["rules"]["res"]
     res_max = _int(rr.get("max"), 1, 10, dr["max"])
@@ -234,8 +258,8 @@ def clean_content(c):
             if at == "result":
                 item["choice"] = _int(x.get("choice"), 0, 2, 0)
             extra.append(item)
-        item = {"id": eid, "era": era, "title": title, "kind": ev.get("kind") if ev.get("kind") in KINDS else "life",
-                "story": story, "choices": choices}
+        item = {"id": eid, "era": era, "slot": _int(ev.get("slot"), 1, 30, 1), "title": title,
+                "kind": ev.get("kind") if ev.get("kind") in KINDS else "life", "story": story, "choices": choices}
         if ev.get("chapter") not in (None, "", -1):
             item["chapter"] = _int(ev.get("chapter"), 0, 9, 0)
         if _s(ev.get("note"), 3000):
@@ -244,8 +268,6 @@ def clean_content(c):
             item["draft"] = True                         # 작업 중 : 플레이에 나오지 않아요
         if cond:
             item["cond"] = cond
-        if ev.get("fixed") == "open":
-            item["fixed"] = "open"
         if extra:
             item["extra"] = extra
         events.append(item)
@@ -522,18 +544,16 @@ class LoopBook:
                 "loop_no": loop_no, "life_no": life_no, "memory": memory, "started": time.time(), "count": 0}
 
     def _pick(self, run, era):
+        """지금 사건 칸(step + 1)의 스크립트 블럭 중 조건이 맞는 것 하나를 무작위로."""
         seen = set(run["seen"])
         C = content()
-        pool = [ev for ev in C.events if ev["era"] == era and ev["id"] not in seen and C.event_open(ev) and _cond_ok(ev, run)]
-        if run["step"] == 0:
-            fixed = [ev for ev in pool if ev.get("fixed") == "open"]
-            if fixed:
-                return random.choice(fixed)
-        pool = [ev for ev in pool if ev.get("fixed") != "open"] or pool
+        slot = run["step"] + 1
+        pool = [ev for ev in C.events if ev["era"] == era and ev.get("slot", 1) == slot and ev["id"] not in seen
+                and C.event_open(ev) and _cond_ok(ev, run)]
         return random.choice(pool) if pool else None
 
     def _next_event(self, run):
-        """다음 사건을 고릅니다. 시대가 끝났거나 고를 사건이 없으면 다음 시대로, 마지막 시대가 끝나면 엔딩."""
+        """다음 사건을 고릅니다. 칸에 맞는 블럭이 없으면 그 칸은 건너뛰고, 시대의 칸이 끝나면 다음 시대로, 마지막 시대가 끝나면 엔딩."""
         C = content()
         eras = C.eras
         run["paused"] = False
@@ -553,6 +573,8 @@ class LoopBook:
                     run["status"] = "event"
                     run["result"] = None
                     return
+                run["step"] += 1
+                continue
             run["era_i"] += 1
             run["step"] = 0
         run["event"] = None
