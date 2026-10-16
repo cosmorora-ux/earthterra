@@ -47,6 +47,8 @@ GAINABLE = RESOURCES + (STRAIN,)
 LOOP_KEEP_TAGS = {"LOOP_CONTACT", "LOOP_NOTES", "LOOP_ALLY", "TRUTH", "FRACTURE_SEEN", "LEFT_BEHIND", "KILLED", "SAVED_ONE"}
 
 # 출신 국가 : 아르카디아에서는 공명자가 기득권, 노바에서는 비공명자가 기득권.
+# 국가별 세계관을 나눌 때 조건을 바꾼 사건(노바 전용 : 공장 · 산업, 공명자 관리 · 감시 / 아르카디아 공명자의 II 시대 첫 사건 = 043)
+NATION_SPLIT = ("002", "043", "051", "004", "020", "058", "021", "037")
 TEST_ID = "TEST"  # PLAY 룸 공용 아이디. 기록은 기기마다 따로("TEST#기기번호")
 
 
@@ -304,6 +306,21 @@ class Content:
             for v in ((raw.get("texts") or {}).get("views") or []) if isinstance(raw, dict) else []:
                 if isinstance(v, dict) and v.get("id") == "earth" and "country" not in v:
                     v["country"] = "arcadia"
+            # 예전에 저장한 사건 중 국가별로 나눈 사건(공장 · 공명자 관리)은 출신 국가 조건을 기본 내용과 맞춰 줍니다.
+            defaults = {e["id"]: e for e in default_content()["events"]}
+            for ev in (raw.get("events") or []) if isinstance(raw, dict) else []:
+                d = defaults.get(ev.get("id")) if isinstance(ev, dict) else None
+                if not d or ev.get("id") not in NATION_SPLIT or ev.get("title") != d["title"]:
+                    continue
+                cond = ev.get("cond") if isinstance(ev.get("cond"), dict) else {}
+                want = (d.get("cond") or {}).get("country")
+                if want and cond.get("country") != want:
+                    ev["cond"] = dict(cond, country=want)
+                if ev["id"] in ("002", "043"):
+                    if d.get("fixed"):
+                        ev["fixed"] = d["fixed"]
+                    else:
+                        ev.pop("fixed", None)
             c = clean_content(raw)
             if c["texts"].get("history") == OLD_HISTORY:
                 c["texts"]["history"] = list(HISTORY)

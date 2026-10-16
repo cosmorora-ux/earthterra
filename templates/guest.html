@@ -1921,12 +1921,11 @@
   .pl-ch.locked { opacity:.45 !important; }
   .pl-ch.locked .k { background: rgba(255,255,255,.04); color: var(--muted); font-size:11px; }
   .pl-solve { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:2px; padding:8px 4px 0; }
-  .pl-solve > span:first-child { font-size:12.5px; font-weight:700; color: var(--point); margin-right:4px; }
+  .pl-solve > span:first-child { font-size:12.5px; font-weight:700; color: var(--muted); margin-right:4px; }
   .pl-sv { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px; border-radius:10px; border:1px solid rgba(var(--point-rgb),.3); background: rgba(var(--point-rgb),.08); color: var(--point); font: inherit; font-size:13px; font-weight:700; cursor:pointer; }
   .pl-sv:hover:not(:disabled) { background: rgba(var(--point-rgb),.16); }
-  .pl-solve > span:first-child i { color: var(--point); }
   .pl-sv:disabled { opacity:.35; cursor:default; }
-  .pl-sv-note { font-size:12px; color: rgba(var(--point-rgb),.7); margin-left:4px; }
+  .pl-sv-note { font-size:12px; color: var(--muted); margin-left:4px; }
   .pl-picked .k i { font-size:11px; }
   .pl-lp-body .lp-gain { display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
   .pl-lp-body .lp-gain em.strain.up { color:#c9b0ff !important; } .pl-lp-body .lp-gain em.strain.down { color:#7fe0d0 !important; }
@@ -5048,7 +5047,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.56";
+const EXPECTED_SERVER_BUILD = "2026-10-13.57";
 socket.on('public_state', (state) => {
   const notice = document.getElementById('serverRestartNotice');
   if (notice) notice.style.display = state.server_build === EXPECTED_SERVER_BUILD ? 'none' : '';
