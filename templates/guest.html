@@ -4369,8 +4369,17 @@
   /* ── 빈 화면 : 아이콘 상자도 같은 모서리 ── */
   .empty-state .es-ic { border-radius: var(--ds-r-box) !important; }
 
-  /* 스크롤 막대가 생기거나 사라져도 화면 폭이 흔들리지 않게 : 스크롤 되는 칸은 막대 자리를 늘 비워 둬요. */
-  #chatLog, #gridSection.map-v2 .map-frame.zoomed, #loginGate, #pubLog, .dorm-assets, .dorm-gb-list, .dorm-main, .dorm-modal[data-view="room"] .dorm-main, .dorm-side-body, .home-menu, .idc-editor .rich, .la-list, .la-main, .la-nav, .mail-names, .modal-box.dorm-credit-modal, .modal-box.mapbg-modal, .modal-box.mypage, .modal-box.sound-modal, .modal-box.wide #formulaFields, .modal-overlay > .modal-box.panel.mypage, .notice-edit-area, .notice-list, .ops-body, .ops-pool, .ops-roster, .pl-lp-body, .pl-scroll, .shop-body, .teams-col > .teams-col-scroll:has(> .main-grid:not(.with-grid-map)), .teams-col-scroll, .teams-col:has(> .round-track) > .teams-col-scroll, .userinfo-list, .wm-reader .wr-body, .world-body { scrollbar-gutter: stable; }
+
+  /* 스크롤 막대 : 브라우저 막대는 숨기고(자리를 차지하지 않아 화면 폭이 흔들리지 않아요),
+     내용 위에 얇은 막대를 한 겹 띄워 그려요. 스크롤하거나 그 칸에 마우스가 들어오면 잠깐 보였다가 사라져요(끌어서 움직일 수도 있어요). */
+  html.ovs, html.ovs * { scrollbar-width: none; }
+  html.ovs ::-webkit-scrollbar { width:0 !important; height:0 !important; display:none; }
+  .ovs-thumb { position:fixed; z-index:99990; border-radius:6px; background: rgba(255,255,255,.24); opacity:0; pointer-events:none;
+    transition: opacity .25s ease, background-color .15s, width .15s, height .15s; }
+  .ovs-thumb.v { width:6px; } .ovs-thumb.h { height:6px; }
+  .ovs-thumb.on { opacity:1; pointer-events:auto; }
+  .ovs-thumb:hover, .ovs-thumb.drag { background: rgba(255,255,255,.42); }
+  .ovs-thumb.v:hover, .ovs-thumb.v.drag { width:8px; } .ovs-thumb.h:hover, .ovs-thumb.h.drag { height:8px; }
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}{% if battle_type == 'play' %} is-play{% endif %}">
@@ -12231,6 +12240,71 @@ function applyPointTheme() {
 }
 </script>
 <script>
+// ---------- 떠 있는 스크롤 막대(PC) : 자리를 차지하지 않는 얇은 막대를 내용 위에 그려요 ----------
+(function overlayScrollbars() {
+  if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) return;   // 휴대폰 · 태블릿은 원래 막대가 없어요
+  document.documentElement.classList.add('ovs');
+  const mk = cls => { const d = document.createElement('div'); d.className = 'ovs-thumb ' + cls; document.body.appendChild(d); return d; };
+  let tv, th, curY = null, curX = null, hideT = null, drag = null, raf = 0;
+  const canY = n => n.scrollHeight > n.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowY);
+  const canX = n => n.scrollWidth > n.clientWidth + 1 && /(auto|scroll)/.test(getComputedStyle(n).overflowX);
+  const find = (t, can) => { for (let n = t; n && n.nodeType === 1 && n !== document.documentElement; n = n.parentElement) if (can(n)) return n; return null; };
+  function place() {
+    [[tv, curY, 'y'], [th, curX, 'x']].forEach(([t, el, ax]) => {
+      if (!t) return;
+      if (!el || !document.body.contains(el) || !(ax === 'y' ? canY(el) : canX(el))) { t.classList.remove('on'); return; }
+      const r = el.getBoundingClientRect();
+      if (ax === 'y') {
+        const len = Math.max(28, r.height * el.clientHeight / el.scrollHeight), max = el.scrollHeight - el.clientHeight;
+        t.style.height = len + 'px'; t.style.left = (r.right - 9) + 'px';
+        t.style.top = (r.top + 2 + (r.height - len - 4) * (max ? el.scrollTop / max : 0)) + 'px';
+      } else {
+        const len = Math.max(28, r.width * el.clientWidth / el.scrollWidth), max = el.scrollWidth - el.clientWidth;
+        t.style.width = len + 'px'; t.style.top = (r.bottom - 9) + 'px';
+        t.style.left = (r.left + 2 + (r.width - len - 4) * (max ? el.scrollLeft / max : 0)) + 'px';
+      }
+    });
+  }
+  function show() {
+    place();
+    if (curY && canY(curY)) tv.classList.add('on');
+    if (curX && canX(curX)) th.classList.add('on');
+    clearTimeout(hideT);
+    hideT = setTimeout(() => { if (drag || tv.matches(':hover') || th.matches(':hover')) return show(); tv.classList.remove('on'); th.classList.remove('on'); }, 1100);
+  }
+  const ready = () => { tv = mk('v'); th = mk('h');
+    [tv, th].forEach((t, k) => t.addEventListener('pointerdown', e => {
+      const el = k ? curX : curY; if (!el) return;
+      e.preventDefault(); t.setPointerCapture(e.pointerId); t.classList.add('drag');
+      drag = { k, el, p: k ? e.clientX : e.clientY, s: k ? el.scrollLeft : el.scrollTop };
+    }));
+    window.addEventListener('pointermove', e => {
+      if (!drag) return;
+      const el = drag.el, r = el.getBoundingClientRect();
+      if (drag.k) { const len = parseFloat(th.style.width) || 28; el.scrollLeft = drag.s + (e.clientX - drag.p) * (el.scrollWidth - el.clientWidth) / Math.max(1, r.width - len - 4); }
+      else { const len = parseFloat(tv.style.height) || 28; el.scrollTop = drag.s + (e.clientY - drag.p) * (el.scrollHeight - el.clientHeight) / Math.max(1, r.height - len - 4); }
+    });
+    window.addEventListener('pointerup', () => { if (!drag) return; drag = null; tv.classList.remove('drag'); th.classList.remove('drag'); show(); });
+  };
+  if (document.body) ready(); else document.addEventListener('DOMContentLoaded', ready);
+  // 스크롤할 때 : 그 칸의 막대를 보여요
+  document.addEventListener('scroll', e => {
+    const el = e.target; if (!tv || !el || el.nodeType !== 1) return;
+    if (canY(el)) curY = el; if (canX(el)) curX = el;
+    show();
+  }, true);
+  // 마우스가 스크롤 되는 칸으로 들어오면 잠깐 보여 줘요(맥처럼)
+  document.addEventListener('mousemove', e => {
+    if (!tv || drag || raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      if (e.target === tv || e.target === th) return;
+      const y = find(e.target, canY), x = find(e.target, canX);
+      if (y !== curY || x !== curX) { curY = y; curX = x; if (y || x) show(); else { tv.classList.remove('on'); th.classList.remove('on'); } }
+    });
+  }, { passive: true });
+  window.addEventListener('resize', place);
+})();
 (function setupFloatTip() {
   const tip = document.getElementById('floatTip');
   let cur = null;
