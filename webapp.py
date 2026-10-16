@@ -38,7 +38,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.45"
+SERVER_BUILD = "2026-10-13.46"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "dev-only-change-me"
@@ -2998,6 +2998,12 @@ def on_loop_choose(data):
     except (TypeError, ValueError):
         idx = -1
     _loop_action(loop_mod.shared_book().choose, str(data.get("event") or ""), idx)
+
+
+@socketio.on("loop_solve")
+def on_loop_solve(data):
+    data = data or {}
+    _loop_action(loop_mod.shared_book().solve, str(data.get("event") or ""), str(data.get("kind") or ""))
 
 
 @socketio.on("loop_next")

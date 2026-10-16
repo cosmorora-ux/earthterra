@@ -35,6 +35,9 @@ RESONANCE = ("res", "non")
 KINDS = ("life", "war", "plague", "purge", "loop")       # 사건 종류(체력으로 죽을 때 사망 문장을 고름)
 DEATH_KINDS = KINDS + ("mind",)
 STATS = ("hp", "mind")
+# 자원 : 재산 · 지능은 쓰면 줄어드는 자원(전쟁 전 사건 '해결'), 재능(= 노바의 '기술')은 선택지 조건으로 쓰는 능력치.
+RESOURCES = ("wealth", "intel", "talent")
+SPENDABLE = ("wealth", "intel")
 # 루프를 넘어가도 남는 태그(나머지 기억은 흐려집니다)
 LOOP_KEEP_TAGS = {"LOOP_CONTACT", "LOOP_NOTES", "LOOP_ALLY", "TRUTH", "FRACTURE_SEEN", "LEFT_BEHIND", "KILLED", "SAVED_ONE"}
 
@@ -105,6 +108,20 @@ def clean_content(c):
     if not eras:
         raise LoopError("시대가 하나 이상 있어야 해요.")
     era_ids = {e["id"] for e in eras}
+    rr = r.get("res") or {}
+    dr = d["rules"]["res"]
+    res_max = _int(rr.get("max"), 1, 10, dr["max"])
+    start = {}
+    for cc in COUNTRIES:
+        start[cc] = {}
+        for pv in ("priv", "non"):
+            start[cc][pv] = {}
+            for k in RESOURCES:
+                v = (((rr.get("start") or {}).get(cc) or {}).get(pv) or {}).get(k) or dr["start"][cc][pv][k]
+                lo, hi = _int(v[0], 0, res_max, 0), _int(v[1], 0, res_max, 0)
+                start[cc][pv][k] = [min(lo, hi), max(lo, hi)]
+    cost = {cc: {k: _int(((rr.get("cost") or {}).get(cc) or {}).get(k), 0, 10, dr["cost"][cc][k]) for k in SPENDABLE} for cc in COUNTRIES}
+    rules["res"] = {"max": res_max, "start": start, "cost": cost, "solve_eras": [_int(x, 1, 99, 0) for x in (rr.get("solve_eras") or []) if _int(x, 1, 99, 0)]}
     for key in ("first_life", "loop_life"):
         seq = [_int(x, 1, 99, 0) for x in (r.get(key) or [])]
         seq = [x for x in seq if x in era_ids][:12]
@@ -136,6 +153,10 @@ def clean_content(c):
             cond["no_tags"] = _tags(cond_in.get("no_tags"))
         if _int(cond_in.get("loops"), 0, 99, 0):
             cond["loops"] = _int(cond_in.get("loops"), 0, 99, 0)
+        mins = {k: _int((cond_in.get("min") or {}).get(k), 0, 10, 0) for k in RESOURCES}
+        mins = {k: v for k, v in mins.items() if v}
+        if mins:
+            cond["min"] = mins
         story = _lines(ev.get("story"))
         if not story:
             raise LoopError(f"EVENT {eid} : 상황 서술을 써 주세요.")
@@ -144,8 +165,15 @@ def clean_content(c):
             label = _s(ch.get("label"), 200)
             if not label:
                 raise LoopError(f"EVENT {eid} : 선택지 {'ABC'[i]} 문장을 써 주세요.")
-            choices.append({"label": label, "hp": _int(ch.get("hp"), -3, 3, 0), "mind": _int(ch.get("mind"), -3, 3, 0),
-                            "result": "\n".join(_lines(ch.get("result"), 10)), "tags": _tags(ch.get("tags"))})
+            item = {"label": label, "hp": _int(ch.get("hp"), -3, 3, 0), "mind": _int(ch.get("mind"), -3, 3, 0),
+                    "result": "\n".join(_lines(ch.get("result"), 10)), "tags": _tags(ch.get("tags"))}
+            need = {k: _int((ch.get("need") or {}).get(k), 0, 10, 0) for k in RESOURCES}
+            gain = {k: _int((ch.get("gain") or {}).get(k), -5, 5, 0) for k in RESOURCES}
+            if any(need.values()):
+                item["need"] = {k: v for k, v in need.items() if v}
+            if any(gain.values()):
+                item["gain"] = {k: v for k, v in gain.items() if v}
+            choices.append(item)
         if len(choices) != 3:
             raise LoopError(f"EVENT {eid} : 선택지는 3개여야 해요.")
         extra = []
@@ -197,7 +225,8 @@ def clean_content(c):
     texts = {"intro": _lines(t.get("intro"), 12) or dt["intro"],
              "mood_hp": mood(t.get("mood_hp"), dt["mood_hp"]), "mood_mind": mood(t.get("mood_mind"), dt["mood_mind"]),
              "death": titled(t.get("death"), dt["death"]), "ending": titled(t.get("ending"), dt["ending"]),
-             "luck": {k: _lines((t.get("luck") or {}).get(k), 20) or dt["luck"][k] for k in STATS}}
+             "luck": {k: _lines((t.get("luck") or {}).get(k), 20) or dt["luck"][k] for k in STATS},
+             "solve": {k: _lines((t.get("solve") or {}).get(k), 20) or dt["solve"][k] for k in SPENDABLE}}
     return {"rules": rules, "eras": eras, "events": events, "texts": texts}
 
 
@@ -251,6 +280,9 @@ class Content:
         with self.lock:
             return {"content": copy.deepcopy(self.c), "custom": self.custom, "kinds": list(KINDS), "death_kinds": list(DEATH_KINDS)}
 
+    def res_rules(self):
+        return self.rules.get("res") or default_content()["rules"]["res"]
+
 
 _CONTENT = None
 
@@ -301,7 +333,22 @@ def _cond_ok(ev, run):
         return False
     if c.get("loops") and run["loop_no"] < c["loops"]:
         return False
+    for k, v in (c.get("min") or {}).items():
+        if run.get(k, 0) < v:
+            return False
     return True
+
+
+def _talent_name(run):
+    """재능과 기술은 같은 능력치 : 아르카디아에서는 '재능', 노바에서는 '기술'."""
+    return "기술" if run.get("country") == "nova" else "재능"
+
+
+RES_NAME = {"wealth": "재산", "intel": "지능"}
+
+
+def _res_name(k, run):
+    return _talent_name(run) if k == "talent" else RES_NAME[k]
 
 
 def _when_ok(when, run):
@@ -349,6 +396,9 @@ class LoopBook:
             e["run"] = self._new_run(res, loop_no=0, eras=content().rules["first_life"], life_no=len(e["lives"]) + 1)
             e["run"]["country"] = country if country in COUNTRIES else random.choice(list(COUNTRIES))
             e["run"]["faction"] = faction if faction in FACTIONS else ""
+            st = content().res_rules()["start"][e["run"]["country"]]["priv" if privileged(e["run"]) else "non"]
+            for k in RESOURCES:
+                e["run"][k] = random.randint(st[k][0], st[k][1])
             self._next_event(e["run"])
             self.save()
 
@@ -408,6 +458,16 @@ class LoopBook:
             if not isinstance(idx, int) or not 0 <= idx < len(ev["choices"]):
                 raise LoopError("선택지를 다시 골라 주세요.")
             ch = ev["choices"][idx]
+            for k, v in (ch.get("need") or {}).items():
+                if run.get(k, 0) < v:
+                    raise LoopError(f"{_res_name(k, run)}이(가) {v} 이상이어야 고를 수 있어요.")
+            rmax = C.res_rules()["max"]
+            gained = {}
+            for k, v in (ch.get("gain") or {}).items():
+                b = run.get(k, 0)
+                run[k] = max(0, min(rmax, b + v))
+                if run[k] != b:
+                    gained[k] = run[k] - b
             hp_max, mind_max = C.rules["hp_max"], C.rules["mind_max"]
             before, mbefore = run["hp"], run.get("mind", C.rules["mind_start"])
             run["hp"] = max(HP_MIN, min(hp_max, before + ch["hp"]))
@@ -435,10 +495,10 @@ class LoopBook:
                         run[stat] += 1
                         twist = {"kind": "luck", "stat": stat, "text": _fmt(random.choice(C.texts["luck"][stat]), run)}
             dh, dm = run["hp"] - before, run["mind"] - mbefore
-            run["result"] = {"choice": idx, "delta": dh, "dmind": dm, "twist": twist, "text": text,
+            run["result"] = {"choice": idx, "delta": dh, "dmind": dm, "twist": twist, "text": text, "gain": gained,
                              "title": ev["title"], "label": _fmt(ch["label"], run)}
             run["log"].append({"id": ev["id"], "title": ev["title"], "era": ev["era"], "choice": _fmt(ch["label"], run),
-                               "delta": dh, "dmind": dm, "hp": run["hp"], "mind": run["mind"]})
+                               "delta": dh, "dmind": dm, "gain": gained, "hp": run["hp"], "mind": run["mind"]})
             run["step"] += 1
             run["count"] += 1
             if run["hp"] <= HP_MIN or run["mind"] <= 0:
@@ -449,6 +509,41 @@ class LoopBook:
                 run["death"] = {"kind": kind if kind in DEATH_KINDS else "life", "at": ev["title"], "era": ev["era"]}
             else:
                 run["status"] = "result"
+            self.save()
+
+    def solve_costs(self, run, ev=None):
+        """이 사건을 재산 · 지능으로 '해결'할 수 있으면 {자원: 값}. 전쟁 전 시대에서만, 값이 0이면 그 자원은 못 써요."""
+        C = content()
+        ev = ev or C.by_id.get(run.get("event"))
+        rr = C.res_rules()
+        if not ev or ev["era"] not in rr.get("solve_eras", []) or run.get("country") not in rr["cost"]:
+            return {}
+        return {k: v for k, v in rr["cost"][run["country"]].items() if v > 0}
+
+    def solve(self, name, event_id, kind):
+        """재산 · 지능을 써서 사건을 해결 : 체력 · 정신 변화 없이, 시대의 위험도 피해서 넘어갑니다."""
+        with self.lock:
+            run = self._entry(name)["run"]
+            if not run or run["status"] != "event" or run["event"] != event_id:
+                raise LoopError("지금 해결할 수 있는 사건이 아니에요. 화면을 새로 불러올게요.")
+            C = content()
+            ev = C.by_id.get(event_id)
+            costs = self.solve_costs(run, ev)
+            if kind not in costs:
+                raise LoopError("이 사건은 그렇게 해결할 수 없어요.")
+            cost = costs[kind]
+            if run.get(kind, 0) < cost:
+                raise LoopError(f"{RES_NAME[kind]}이(가) 모자라요.")
+            run[kind] -= cost
+            text = [_fmt(random.choice(C.texts["solve"][kind]), run)]
+            label = f"{RES_NAME[kind]} {cost}을(를) 써서 해결했다."
+            run["result"] = {"choice": -1, "solved": kind, "cost": cost, "delta": 0, "dmind": 0, "twist": None, "text": text,
+                             "gain": {kind: -cost}, "title": ev["title"], "label": label}
+            run["log"].append({"id": ev["id"], "title": ev["title"], "era": ev["era"], "choice": label, "solved": kind,
+                               "delta": 0, "dmind": 0, "gain": {kind: -cost}, "hp": run["hp"], "mind": run["mind"]})
+            run["step"] += 1
+            run["count"] += 1
+            run["status"] = "result"
             self.save()
 
     def next(self, name):
@@ -481,6 +576,8 @@ class LoopBook:
                                          life_no=run["life_no"], tags=sorted(set(tags)), memory=memory)
                 e["run"]["country"] = run.get("country", "")
                 e["run"]["faction"] = run.get("faction", "")
+                for k in RESOURCES:
+                    e["run"][k] = run.get(k, 0)
                 self._next_event(e["run"])
             else:
                 run["status"] = "ended"
@@ -533,8 +630,13 @@ class LoopBook:
                 story += x["text"]
         story = [_fmt(t, run) for t in story]
         # 체력 변동은 고른 뒤에만 : 고르기 전에는 선택지 문장만 보냅니다.
-        choices = [{"label": _fmt(c["label"], run)} for c in ev["choices"]]
-        if run["result"] is not None:
+        choices = []
+        for c in ev["choices"]:
+            item = {"label": _fmt(c["label"], run)}
+            if c.get("need"):
+                item["need"] = [{"k": k, "name": _res_name(k, run), "v": v, "ok": run.get(k, 0) >= v} for k, v in c["need"].items()]
+            choices.append(item)
+        if run["result"] is not None and 0 <= run["result"].get("choice", -1) < len(choices):
             choices[run["result"]["choice"]]["picked"] = True
         return {"id": ev["id"], "title": ev["title"], "era": self._era_view(ev["era"]), "story": story, "choices": choices}
 
@@ -554,7 +656,8 @@ class LoopBook:
                  "country": run.get("country", ""), "faction": run.get("faction", ""), "privileged": privileged(run),
                  "loop_no": run["loop_no"], "life_no": run["life_no"], "count": run["count"], "log": run["log"],
                  "mood": _mood(run["hp"], C.texts["mood_hp"]), "mood_mind": _mood(run.get("mind", 0), C.texts["mood_mind"]),
-                 "eras": run["eras"], "memory": run.get("memory")}
+                 "eras": run["eras"], "memory": run.get("memory"),
+                 "assets": {k: run.get(k, 0) for k in RESOURCES}, "res_max": C.res_rules()["max"], "talent_name": _talent_name(run)}
             era_now = run["eras"][min(run["era_i"], len(run["eras"]) - 1)]
             r["era"] = self._era_view(era_now)
             r["era_step"] = run["step"]
@@ -562,7 +665,9 @@ class LoopBook:
             if run["status"] in ("event", "result", "dead") and run["event"]:
                 r["event"] = self._event_view(run)
             if run["result"] is not None and run["status"] in ("result", "dead"):
-                r["result"] = {k: run["result"].get(k) for k in ("choice", "delta", "dmind", "twist", "text")}
+                r["result"] = {k: run["result"].get(k) for k in ("choice", "delta", "dmind", "twist", "text", "gain", "solved", "cost")}
+            if run["status"] == "event":
+                r["solve"] = [{"k": k, "name": RES_NAME[k], "cost": v, "ok": run.get(k, 0) >= v} for k, v in self.solve_costs(run).items()]
             if run["status"] == "dead" and run.get("death"):
                 d = C.texts["death"].get(run["death"]["kind"]) or C.texts["death"]["life"]
                 r["death"] = {"title": d["title"], "text": d["text"], "at": run["death"]["at"], "kind": run["death"]["kind"]}
