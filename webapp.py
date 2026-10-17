@@ -43,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.79"
+SERVER_BUILD = "2026-10-13.80"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -783,6 +783,7 @@ def build_public_state(room, for_gm=False):
         "chat": [_with_chat_id(e) for e in room.chat_log[-CHAT_SEND_CAP:]],
         "chat_total": len(room.chat_log),  # 더 예전 대화가 있으면 채팅창 맨 위에 '이전 대화 더보기'를 띄웁니다
         "chat_tabs": room.chat_tabs_enabled,
+        "battle_thumb": getattr(room, "thumb", None),
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
         # 전투에 참여하지 않은 캐릭터도 로그인하면 마이페이지를 볼/수정할 수 있도록 등록 정보를 함께 보냅니다
@@ -1215,7 +1216,7 @@ def _battle_card(room, me, is_gm):
     card = {"id": room.id, "name": room.name, "type": room.battle_type, "type_label": BATTLE_TYPE_LABELS.get(room.battle_type, ""),
             "state": "live" if live else "done" if b is not None else "ready", "live": live, "count": len(members),
             "mine": mine, "watch": watch, "watch_ok": battle_watch_ok(room), "can_enter": is_gm or mine or watch,
-            "thumb": (room.scene or {}).get("url") or (room.map_bg or {}).get("url") or None}
+            "thumb": getattr(room, "thumb", None) or (room.scene or {}).get("url") or (room.map_bg or {}).get("url") or None}
     if is_gm:
         card["url"] = url_for("guest_page", room_id=room.id, key=room.guest_key)
     return card
@@ -3954,6 +3955,34 @@ def on_dorm_credits_save(data):
 SCENE_WEATHERS = ("none", "snow", "blizzard", "rain", "storm", "lightning", "fog", "sakura", "leaves", "dandelion",
                   "fireflies", "embers", "ash", "sand", "bloodrain", "meteors", "hail", "aurora", "godrays", "stars",
                   "water", "arrows", "smoke", "poison", "feathers", "arcane", "glitch")
+
+
+@socketio.on("set_battle_thumb")
+def on_set_battle_thumb(data):
+    """운영진 : 룸 목록 카드에 보일 전투 썸네일(없으면 배경 · 맵 이미지를 써요)."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None or room.battle_type not in BATTLE_TYPES_SCHEDULED:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    data = data or {}
+    if data.get("clear"):
+        room.thumb = None
+    else:
+        blob = data.get("data")
+        ext = os.path.splitext((data.get("filename") or "").lower())[1]
+        if ext not in MAP_BG_ALLOWED_EXTS or not isinstance(blob, (bytes, bytearray)):
+            emit("action_error", {"message": "png/apng/jpg/webp/gif 이미지만 올릴 수 있습니다."})
+            return
+        if len(blob) > MAP_BG_MAX_BYTES:
+            emit("action_error", {"message": f"이미지가 너무 큽니다 (최대 {IMAGE_UPLOAD_MAX_BYTES // (1024 * 1024)}MB)."})
+            return
+        filename = f"thumb_{uuid.uuid4().hex}{ext}"
+        with open(os.path.join(MAP_BG_DIR, filename), "wb") as f:
+            f.write(blob)
+        room.thumb = f"/static/map_bg/{filename}"
+    save_rooms()
+    broadcast_state(room)
+    _broadcast_battle_lists()
 
 
 @socketio.on("set_scene")

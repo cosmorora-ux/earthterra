@@ -3689,6 +3689,10 @@
   .bt-gm-row input[type=text] { flex:1 1 200px !important; width:auto !important; min-width:0; height:38px; padding:0 12px; }
   .bt-gm-row .btn, .bt-gm-row .btn-plain, .bt-gm-row .ops-btn { flex:none; height:38px; }
   .bt-sched { margin-bottom:16px; }
+  .ops-thumb { position:relative; aspect-ratio: 16 / 9; max-height:150px; border-radius: var(--ds-r-box, 12px); border:1px solid var(--ds-line, var(--line)); background:#0c0c0d center / cover no-repeat;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color: var(--muted); font-size:13px; }
+  .ops-thumb > i { font-size:26px; opacity:.5; }
+  .ops-thumb .tag { position:absolute; left:10px; top:10px; height:22px; display:inline-flex; align-items:center; padding:0 9px; border-radius:10px; background: rgba(12,12,13,.72); color:#cfcfd4; font-size:11.5px; font-weight:700; }
   .ops-check { display:flex; align-items:center; gap:10px; font-size:14px; color: var(--text); cursor:pointer; user-select:none; }
   .bt-gm-row input[type=datetime-local] { flex:none; width:220px !important; height:38px !important; padding:0 10px; border-radius:10px; border:1px solid var(--ds-line, rgba(255,255,255,.08)); background: rgba(255,255,255,.05); color: var(--text); color-scheme: dark; }
   .bt-names { display:flex; flex-wrap:wrap; gap:6px; max-height:132px; overflow:auto; }
@@ -5723,7 +5727,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.79";
+const EXPECTED_SERVER_BUILD = "2026-10-13.80";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -13026,6 +13030,20 @@ function opsRoomHtml(kind) {
       <div class="ops-foot"><button class="ops-btn" onclick="openSceneModal()"><i class="fa-solid fa-sliders"></i> 배경 · 날씨 설정</button></div>
     </div>
 `,
+    thumb: `    <div class="ops-card">
+      <h3><i class="fa-regular fa-image"></i> 썸네일<span class="sub">룸 목록 카드에 보여요 · 없으면 배경이나 맵 이미지를 써요</span></h3>
+      <div class="ops-thumb" id="opsThumb"></div>
+      <div class="ops-foot"><input type="file" id="opsThumbFile" accept="image/png,image/jpeg,image/webp,image/gif,.apng" style="display:none" onchange="opsThumbUpload(this)">
+        <button class="ops-btn" id="opsThumbClear" onclick="socket.emit('set_battle_thumb', {clear: true})"><i class="fa-solid fa-trash-can"></i> 지우기</button>
+        <button class="ops-btn primary" onclick="document.getElementById('opsThumbFile').click()"><i class="fa-solid fa-upload"></i> 이미지 올리기</button></div>
+    </div>
+`,
+    mapbg: `    <div class="ops-card">
+      <h3><i class="fa-solid fa-map"></i> 지도 배경 · 몹 이미지<span class="sub">격자 지도에 깔리는 배경과 몹(2x2) 이미지</span></h3>
+      <div class="ops-thumb" id="opsMapBg"></div>
+      <div class="ops-foot"><button class="ops-btn primary" onclick="openMapBgModal()"><i class="fa-solid fa-sliders"></i> 지도 배경 · 몹 이미지 설정</button></div>
+    </div>
+`,
     watch: `    <div class="ops-card">
       <h3><i class="fa-solid fa-eye"></i> 관전<span class="sub">룸 목록에는 모든 전투가 보이고, 들어올 수 있는 건 이 전투의 참여자(팀 편성)예요</span></h3>
       <label class="ops-check"><input type="checkbox" id="opsWatchOk" onchange="socket.emit('set_chat_tabs', {tabs: {spectator: this.checked}})"> 관전자도 들어올 수 있게(전투 관전 탭)</label>
@@ -13039,7 +13057,9 @@ function opsRoomHtml(kind) {
 `,
   };
   // 전투 방 : 방 이름 · 링크 · 배경은 전투 설정으로, 일반 방 설정에는 사이트 공통 설정만
-  const keys = kind === 'battle' ? ['room', 'watch', 'remind', 'scene', 'formula']
+  // 격자 지도를 쓰는 전투(마스 레이드)만 지도 배경 · 몹 이미지
+  const grid = !!document.getElementById('mapBgBtn');
+  const keys = kind === 'battle' ? ['room', 'thumb', ...(grid ? ['mapbg'] : []), 'watch', 'remind', 'scene', 'formula']
     : OPS_BATTLE_ROOM ? ['point', 'mail', 'chat'] : ['room', 'point', 'mail', 'chat', 'scene'];
   return `<div class="ops-grid">${keys.map(k => C[k]).join('')}</div>`;
 }
@@ -13077,7 +13097,27 @@ function opsRenderChatLimit() {
   const cur = (opsLastPublic && opsLastPublic.chat_limit) || 'off';
   el.innerHTML = OPS_CHAT_LIMIT.map(([v, t]) => `<button class="${v === cur ? 'on' : ''}" onclick="socket.emit('set_chat_limit', {limit:'${v}'})">${t}</button>`).join('');
 }
+function opsThumbUpload(inp) {
+  const f = inp.files && inp.files[0]; inp.value = ''; if (!f) return;
+  f.arrayBuffer().then(buf => socket.emit('set_battle_thumb', { filename: f.name, data: buf }));
+}
+function opsRenderThumb() {
+  const el = document.getElementById('opsThumb'); if (!el) return;
+  const st = opsLastPublic || {}, own = st.battle_thumb;
+  const fb = own || (st.scene && st.scene.url) || (st.map_bg && st.map_bg.url) || '';
+  el.style.backgroundImage = fb ? `url('${fb}')` : '';
+  el.classList.toggle('fallback', !own && !!fb);
+  el.innerHTML = own ? '' : fb ? '<span class="tag">배경 · 맵 이미지 사용 중</span>' : '<i class="fa-regular fa-image"></i><span>썸네일 없음</span>';
+  const c = document.getElementById('opsThumbClear'); if (c) c.disabled = !own;
+}
+function opsRenderMapBg() {
+  const el = document.getElementById('opsMapBg'); if (!el) return;
+  const mb = (opsLastPublic && opsLastPublic.map_bg) || {};
+  el.style.backgroundImage = mb.url ? `url('${mb.url}')` : '';
+  el.innerHTML = mb.url ? '' : '<i class="fa-regular fa-image"></i><span>배경 없음</span>';
+}
 function opsRenderRoomInfo() {
+  opsRenderThumb(); opsRenderMapBg();
   const w = document.getElementById('opsWatchOk'); if (w) w.checked = !!((opsLastPublic && opsLastPublic.chat_tabs) || {}).spectator;
   opsRenderSwatches(); opsRenderScene(); opsRenderMailEras(); opsRenderRemind(); opsRenderChatLimit();
   const n = document.getElementById('opsRoomName');
