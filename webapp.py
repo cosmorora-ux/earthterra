@@ -43,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.80"
+SERVER_BUILD = "2026-10-13.81"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -784,6 +784,7 @@ def build_public_state(room, for_gm=False):
         "chat_total": len(room.chat_log),  # 더 예전 대화가 있으면 채팅창 맨 위에 '이전 대화 더보기'를 띄웁니다
         "chat_tabs": room.chat_tabs_enabled,
         "battle_thumb": getattr(room, "thumb", None),
+        "battle_hidden": bool(getattr(room, "hidden", False)),
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
         # 전투에 참여하지 않은 캐릭터도 로그인하면 마이페이지를 볼/수정할 수 있도록 등록 정보를 함께 보냅니다
@@ -1215,7 +1216,8 @@ def _battle_card(room, me, is_gm):
     watch = (not is_gm) and (not mine) and battle_watch_ok(room)
     card = {"id": room.id, "name": room.name, "type": room.battle_type, "type_label": BATTLE_TYPE_LABELS.get(room.battle_type, ""),
             "state": "live" if live else "done" if b is not None else "ready", "live": live, "count": len(members),
-            "mine": mine, "watch": watch, "watch_ok": battle_watch_ok(room), "can_enter": is_gm or mine or watch,
+            "mine": mine, "watch": watch, "watch_ok": battle_watch_ok(room), "can_enter": is_gm or ((mine or watch) and not getattr(room, "hidden", False)),
+            "hidden": bool(getattr(room, "hidden", False)),
             "thumb": getattr(room, "thumb", None) or (room.scene or {}).get("url") or (room.map_bg or {}).get("url") or None}
     if is_gm:
         card["url"] = url_for("guest_page", room_id=room.id, key=room.guest_key)
@@ -1228,9 +1230,11 @@ def _battle_list_payload(sid):
     is_gm = _require_gm_or_guest_gm(sid) is not None
     me = (info.get("nickname") or "").strip()
     rooms = [r for r in list_rooms() if r.battle_type in BATTLE_TYPES_SCHEDULED]
+    if not is_gm:
+        rooms = [r for r in rooms if not getattr(r, "hidden", False)]   # 비공개 전투는 운영진에게만
+    # 운영진이 끌어서 정한 순서(정하지 않은 방은 뒤에, 만든 순서대로)
+    rooms.sort(key=lambda r: (getattr(r, "order", None) is None, getattr(r, "order", None) or 0, r.created_at or 0))
     cards = [_battle_card(r, me, is_gm) for r in rooms]
-    order = {"live": 0, "ready": 1, "done": 2}
-    cards.sort(key=lambda c: (not c["mine"], order.get(c["state"], 3)))
     return {"battles": cards, "is_gm": is_gm, "now": time.time()}
 
 
@@ -1308,8 +1312,38 @@ def on_battle_room_create(data):
     data = data or {}
     bt = data.get("type") if data.get("type") in BATTLE_TYPES_SCHEDULED else "pvp"
     room = create_room(bt, name=str(data.get("name") or "").strip()[:30] or None)
+    room.hidden = True   # 새 전투는 비공개로 만들어 두고, 준비가 끝나면 전투 설정에서 공개해요
+    save_rooms()
     _broadcast_battle_lists()
     emit("battle_saved", {"ok": True, "room_id": room.id})
+
+
+@socketio.on("battle_reorder")
+def on_battle_reorder(data):
+    """운영진 : 룸 목록 순서(끌어서 놓기)."""
+    if _require_gm_or_guest_gm(request.sid) is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    ids = [str(x) for x in ((data or {}).get("ids") or [])][:500]
+    for i, rid in enumerate(ids):
+        r = get_room(rid)
+        if r is not None and r.battle_type in BATTLE_TYPES_SCHEDULED:
+            r.order = i
+    save_rooms()
+    _broadcast_battle_lists()
+
+
+@socketio.on("battle_set_hidden")
+def on_battle_set_hidden(data):
+    """운영진 : 비공개 / 공개."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None or room.battle_type not in BATTLE_TYPES_SCHEDULED:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    room.hidden = bool((data or {}).get("hidden"))
+    save_rooms()
+    broadcast_state(room)
+    _broadcast_battle_lists()
 
 
 @socketio.on("battle_room_delete")
@@ -1422,6 +1456,9 @@ def on_join(data):
 
     # 전투 방 : 캐릭터로는 이 전투의 참여자만, 익명(관전)은 관전 허용일 때만. 운영진은 언제나.
     if room.battle_type in BATTLE_TYPES_SCHEDULED and nickname.lower() != "gm":
+        if getattr(room, "hidden", False):
+            emit("error", {"message": "아직 공개되지 않은 전투예요."})
+            return
         if nickname == "익명":
             if not battle_watch_ok(room):
                 emit("error", {"message": "관전이 허용되지 않은 전투예요.", "quiet": True})
