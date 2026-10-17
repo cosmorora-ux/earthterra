@@ -7845,10 +7845,10 @@ function onChatTabConfigChange() {
 function refreshChatTabSettingsVisibility() {
   const gear = document.getElementById('chatTabSettingsBtn');
   const isGm = myControlInfo(lastBattleForPanel).scope === 'all';
-  if (gear) gear.style.display = isGm ? '' : 'none';
-  // 러너는 톱니 메뉴가 없으니 로그 내려받기 버튼을 따로 보여줍니다 (운영진 로그는 빠진 파일을 받아요)
+  // 채팅 탭 설정은 전투 설정(운영 페이지)으로 옮겼어요 : 채팅창 머리에는 로그 내려받기 버튼만
+  if (gear) gear.style.display = 'none';
   const dl = document.getElementById('chatLogDlBtn');
-  if (dl) dl.style.display = isGm ? 'none' : '';
+  if (dl) dl.style.display = '';
 }
 
 // 아군 회의(팀 전용 채팅)는 새는 걸 막으려고 서버가 공용 스냅샷(room.chat_log)에는 안
@@ -13044,6 +13044,12 @@ function opsRoomHtml(kind) {
       <div class="ops-foot"><button class="ops-btn primary" onclick="openMapBgModal()"><i class="fa-solid fa-sliders"></i> 지도 배경 · 몹 이미지 설정</button></div>
     </div>
 `,
+    chattabs: `    <div class="ops-card">
+      <h3><i class="fa-solid fa-comments"></i> 채팅 탭<span class="sub">전투 관전 · 아군 회의 탭을 켜고 끄거나 이름을 바꿔요</span></h3>
+      <div class="ops-hint" id="opsChatTabsNow"></div>
+      <div class="ops-foot"><button class="ops-btn" onclick="toggleChatTabSettings()"><i class="fa-solid fa-sliders"></i> 채팅 탭 설정</button></div>
+    </div>
+`,
     watch: `    <div class="ops-card">
       <h3><i class="fa-solid fa-eye"></i> 관전<span class="sub">룸 목록에는 모든 전투가 보이고, 들어올 수 있는 건 이 전투의 참여자(팀 편성)예요</span></h3>
       <label class="ops-check"><input type="checkbox" id="opsWatchOk" onchange="socket.emit('set_chat_tabs', {tabs: {spectator: this.checked}})"> 관전자도 들어올 수 있게(전투 관전 탭)</label>
@@ -13059,7 +13065,7 @@ function opsRoomHtml(kind) {
   // 전투 방 : 방 이름 · 링크 · 배경은 전투 설정으로, 일반 방 설정에는 사이트 공통 설정만
   // 격자 지도를 쓰는 전투(마스 레이드)만 지도 배경 · 몹 이미지
   const grid = !!document.getElementById('mapBgBtn');
-  const keys = kind === 'battle' ? ['room', 'thumb', ...(grid ? ['mapbg'] : []), 'watch', 'remind', 'scene', 'formula']
+  const keys = kind === 'battle' ? ['room', 'thumb', ...(grid ? ['mapbg'] : []), 'watch', 'chattabs', 'remind', 'scene', 'formula']
     : OPS_BATTLE_ROOM ? ['point', 'mail', 'chat'] : ['room', 'point', 'mail', 'chat', 'scene'];
   return `<div class="ops-grid">${keys.map(k => C[k]).join('')}</div>`;
 }
@@ -13118,6 +13124,8 @@ function opsRenderMapBg() {
 }
 function opsRenderRoomInfo() {
   opsRenderThumb(); opsRenderMapBg();
+  const ct = document.getElementById('opsChatTabsNow');
+  if (ct) ct.textContent = `${chatTabLabels.spectator} ${chatTabsEnabled.spectator ? '켜짐' : '꺼짐'} · ${chatTabLabels.team} ${chatTabsEnabled.team ? '켜짐' : '꺼짐'}`;
   const w = document.getElementById('opsWatchOk'); if (w) w.checked = !!((opsLastPublic && opsLastPublic.chat_tabs) || {}).spectator;
   opsRenderSwatches(); opsRenderScene(); opsRenderMailEras(); opsRenderRemind(); opsRenderChatLimit();
   const n = document.getElementById('opsRoomName');
