@@ -2678,6 +2678,11 @@
   .la-slot-h { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:2px 2px 4px; }
   .la-slot-h b { font-size:15px; }
   .la-slot-h .ops-hint { flex-basis:100%; margin:0; }
+  .la-slot-cover { margin-left:auto; display:flex; gap:6px; }
+  .la-slot-cover em { font-style:normal; font-size:12px; font-weight:700; padding:3px 9px; border-radius:8px; background: rgba(255,255,255,.06); color:#bdbdc3; }
+  .la-slot-cover em.warn { background: rgba(255,138,128,.12); color:#ff9a90; }
+  .la-slot-cover em.draft { background: rgba(255,207,90,.14); color:#ffcf5a; }
+  .la-slot-cover em.empty { background:none; color:#6c6c74; }
   .la-slot-tag { font-family: var(--font-title); font-size:13px; letter-spacing:.04em; color: var(--point); padding:4px 10px; border-radius:10px; background: rgba(var(--point-rgb),.12); }
   .la-blk-row { display:flex !important; flex-direction:row !important; align-items:center; gap:10px !important; width:100%; padding:12px 16px !important; text-align:left; cursor:pointer; color: var(--text); font:inherit; }
   .la-blk-row:hover { border-color: rgba(255,255,255,.18); }
@@ -14184,7 +14189,7 @@ function laEventsHtml() {
       const first = bl.find(([ev]) => laMatch(ev, q));
       items += `<button class="la-item la-slot ${on ? 'on' : ''} ${s > len ? 'out' : ''}" onclick="laPickSlot(${era.id}, ${s})" ondragover="laDragOver(event)" ondragleave="laDragLeave(event)" ondrop="laDrop(event, ${era.id}, ${s})">
         <span class="sn">${s}</span><span class="t">${first ? laEsc(first[0].title) || '(제목 없음)' : '사건 ' + s}</span>
-        <span class="b">${s > len ? '<em class="lock">칸 밖 · 안 나옴</em>' : laSlotCover(bl)}${bl.length ? `<em class="cnt">블럭 ${bl.length}</em>` : ''}</span></button>`;
+        <span class="b">${s > len ? '<em class="lock">칸 밖 · 안 나옴</em>' : ''}${bl.length ? `<em class="cnt">블럭 ${bl.length}</em>` : ''}</span></button>`;
     }
     if (q && !items) return '';
     const empty = !la.c.events.some(ev => ev.era === era.id);
@@ -14202,7 +14207,8 @@ function laSlotHtml() {
   const { era, slot } = la.slot, e = la.c.eras.find(x => x.id === era) || {}, bl = laBlocks(era, slot);
   const rows = bl.map(([ev, i], k) => i === la.sel ? laEventForm(i, k + 1) :
     `<button class="ops-card la-blk-row" data-i="${i}" onclick="laPickBlock(${i})" draggable="true" ondragstart="laDragStart(event, ${i})" ondragend="laDragEnd()" ondragover="laDragOver(event)" ondragleave="laDragLeave(event)" ondrop="laDrop(event, ${era}, ${slot}, ${i})"><span class="k"><i class="fa-solid fa-grip-vertical"></i>${k + 1}</span><span class="t">${laEsc(ev.title) || '(제목 없음)'}</span><span class="b">${laCondBadges(ev)}</span><i class="fa-solid fa-chevron-down"></i></button>`).join('');
-  return `<div class="la-slot-h"><span class="la-slot-tag">${laEsc(e.no)} · 사건 ${slot}</span><b>${laEsc(e.name)}</b>
+  const cover = laSlotCover(bl);   // 국가별로 빠진 블럭 경고 : 오른쪽 위에
+  return `<div class="la-slot-h"><span class="la-slot-tag">${laEsc(e.no)} · 사건 ${slot}</span><b>${laEsc(e.name)}</b>${cover ? `<span class="la-slot-cover">${cover}</span>` : ''}
       <span class="ops-hint">블럭 ${bl.length}개${bl.length > 1 ? ' · 조건이 맞는 블럭 중 하나가 무작위로 나와요' : ''}${slot > (Number(e.len) || 1) ? ' · 사건 개수보다 뒤라 지금은 안 나와요' : ''}</span></div>
     ${rows || `<div class="ops-card la-slot-empty">${emptyHtml('fa-scroll', '아직 블럭이 없어요', '이 칸이 비어 있으면 플레이 때 건너뛰어요.')}</div>`}
     <button class="la-add-blk" onclick="laAddEvent()" ondragover="laDragOver(event)" ondragleave="laDragLeave(event)" ondrop="laDrop(event, ${era}, ${slot})"><i class="fa-solid fa-plus"></i> 사건 추가하기</button>`;
