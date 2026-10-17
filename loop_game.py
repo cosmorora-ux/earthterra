@@ -561,7 +561,8 @@ class LoopBook:
             e = self._entry(name)
             if e["run"] and e["run"]["status"] not in ("ended",):
                 raise LoopError("이미 진행 중인 생애가 있어요.")
-            prev = e["lives"][0].get("country") if e["lives"] else None
+            # '새로 시작'으로 처음부터면 지난 생애 국가를 따라가지 않고 완전히 무작위(반반)
+            prev = None if e.pop("fresh", False) else (e["lives"][0].get("country") if e["lives"] else None)
             e["run"] = self._new_run(res, loop_no=0, eras=content().rules["first_life"], life_no=len(e["lives"]) + 1)
             e["run"]["country"] = country if country in COUNTRIES else _reborn_country(prev)
             e["run"]["faction"] = COUNTRY_FACTION[e["run"]["country"]]
@@ -826,6 +827,8 @@ class LoopBook:
             e = self._entry(name)
             if not force and e["run"] and e["run"]["status"] not in ("ended",):
                 raise LoopError("진행 중인 생애는 끝까지 가야 해요.")
+            if force:
+                e["fresh"] = True   # 다음 운명은 국가도 새로 뽑아요(지난 생애를 따라 같은 나라로 고정되지 않게)
             e["run"] = None
             self.save()
 
