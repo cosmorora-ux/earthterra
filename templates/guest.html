@@ -4243,7 +4243,9 @@
   .sc-desc { margin:0; font-size:13px; line-height:1.55; color: var(--muted); min-height:3.1em;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .sc-foot { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:auto; }
-  .sc-owned { margin-right:auto; font-size:12px; color: var(--muted); }
+  .sc-owned { margin-right:auto; display:inline-flex; align-items:center; gap:6px; font-size:12px; color: var(--muted); }
+  .sc-owned i { font-size:11px; }
+  .sc-owned.on { color:#cfcfd4; font-weight:700; }
   .sc-use select, .sc-use input { flex:1; min-width:0; background:#0c0c0d; border:1px solid var(--card-border); color: var(--text); border-radius:8px; padding:7px 9px; font-size:13px; }
   .shop-card .shop-btn { padding:7px 16px; border-radius:10px; }
   /* 운영진 : 아이콘 고르기 칸(상품 줄 아래로 펼쳐짐) */
@@ -4505,7 +4507,7 @@
   <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps()" data-tip="운영" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsTab()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
-  <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()"><i class="fa-solid fa-briefcase"></i></button>
+  <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" data-tip="상점" style="display:none;"><i class="fa-solid fa-store"></i></button>
   <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <div class="sidebar-grow"></div>
   <div class="sb-sound" id="sbSound"><button class="sidebar-icon" id="sidebarSoundBtn" onclick="toggleSoundPop(event)" aria-label="음악 음량"><i class="fa-solid fa-volume-high"></i></button>
@@ -9432,7 +9434,7 @@ function renderShop() {
   const modal = document.getElementById('shopModal');
   if (!modal || modal.style.display !== 'flex') return;
   const gm = shopIsGm();
-  if (!gm && ['items', 'wallets', 'requests'].includes(shopTab)) shopTab = 'shop';
+  if (shopTab === 'inventory' || (!gm && ['items', 'wallets', 'requests'].includes(shopTab))) shopTab = 'shop';
 
   // 상단 지갑 : 참가자는 본인 P, 운영진은 대신 조작할 캐릭터 선택
   const wallet = document.getElementById('shopWallet');
@@ -9448,10 +9450,11 @@ function renderShop() {
   }
 
   const pending = (lastShopRequests || []).filter(r => !r.done).length;
-  const tabs = [['shop', '상점', '', 0, 'fa-store'], ['inventory', '소지품', '', 0, 'fa-briefcase']];
+  const tabs = [['shop', '상점', '', 0, 'fa-store']];   // 소지품은 상점 카드마다 보유 개수 · 사용으로 합쳤어요
   if (gm) tabs.push(['items', '상품 관리', 'gm', 0, 'fa-tags'], ['wallets', '재화·소지품', 'gm', 0, 'fa-coins'], ['requests', '처리 요청', 'gm', pending, 'fa-inbox']);
+  document.getElementById('shopTabs').style.display = tabs.length > 1 ? '' : 'none';   // 참가자는 상점 하나라 탭 줄 없이
   document.getElementById('shopTabs').innerHTML = tabs.map(([k, label, cls, cnt, ic], i) =>
-    (cls === 'gm' && i === 2 ? '<span class="shop-tab-sep">운영진</span>' : '') +
+    (cls === 'gm' && i === 1 ? '<span class="shop-tab-sep">운영진</span>' : '') +
     `<button class="shop-tab ${cls || ''} ${shopTab === k ? 'active' : ''}" onclick="setShopTab('${k}')"><i class="fa-solid ${ic}"></i>${label}${cnt ? `<span class="cnt">${cnt}</span>` : ''}</button>`).join('');
 
   const body = document.getElementById('shopBody');
@@ -9460,7 +9463,6 @@ function renderShop() {
   const scroll = body.scrollTop;
   if (!lastShop) { body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '상점을 불러오는 중이에요'); return; }
   if (shopTab === 'shop') body.innerHTML = renderShopList(target, data);
-  else if (shopTab === 'inventory') body.innerHTML = renderShopInventory(target, data);
   else if (shopTab === 'items') body.innerHTML = renderShopItemsAdmin();
   else if (shopTab === 'wallets') body.innerHTML = renderShopWallets();
   else if (shopTab === 'requests') body.innerHTML = renderShopRequests();
@@ -9469,20 +9471,34 @@ function renderShop() {
 
 function renderShopList(target, data) {
   const items = lastShop.items || [];
-  if (!items.length) return emptyHtml('fa-store', '판매 중인 상품이 없어요', '운영진이 상품을 올리면 여기에 보여요.');
+  const mine = (data && data.items) || {};
+  // 판매가 끝났지만 아직 가지고 있는 상품은 맨 아래에 따로
+  const gone = Object.entries(mine).filter(([id, n]) => n > 0 && !shopItemById(id));
+  if (!items.length && !gone.length) return emptyHtml('fa-store', '판매 중인 상품이 없어요', '운영진이 상품을 올리면 여기에 보여요.');
   const points = data ? (data.points || 0) : 0;
-  return items.map(it => {
+  const statKeys = lastShop.stat_keys || [];
+  const cards = items.map(it => {
     const can = !!target && points >= it.price;
-    const owned = data && data.items ? (data.items[it.id] || 0) : 0;
-    return `<div class="shop-card">
+    const owned = mine[it.id] || 0;
+    let extra = '';
+    if (owned && it.effect === 'stat_up') extra = `<select id="shopStat_${it.id}">${statKeys.map(k => `<option>${k}</option>`).join('')}</select>`;
+    if (owned && it.effect === 'request') extra = `<input id="shopMemo_${it.id}" maxlength="200" placeholder="요청 내용 (선택)">`;
+    const use = !owned ? '' : it.effect === 'role_change'
+      ? `<button class="shop-btn ghost" onclick="closeShop(); openMyPage();">마이페이지에서 사용</button>`
+      : `<button class="shop-btn ghost" onclick="shopUse('${it.id}')">사용</button>`;
+    return `<div class="shop-card ${owned ? 'has' : ''}">
       <div class="sc-head">${shopIconHtml(it, false)}
         <div class="sc-title"><b>${shopEsc(it.name)}</b><span>${shopMetaText(it)}</span></div>
         <span class="sc-price">${it.price}<small>P</small></span></div>
       <p class="sc-desc">${shopEsc(it.desc)}</p>
-      <div class="sc-foot">${owned ? `<span class="sc-owned">보유 ${owned}개</span>` : ''}
-        <button class="shop-btn" ${can ? '' : 'disabled'} onclick="shopBuy('${it.id}')">구매</button></div>
+      ${extra ? `<div class="sc-foot sc-use">${extra}</div>` : ''}
+      <div class="sc-foot">${target ? `<span class="sc-owned ${owned ? 'on' : ''}"><i class="fa-solid fa-briefcase"></i>보유 ${owned}개</span>` : ''}
+        ${use}<button class="shop-btn" ${can ? '' : 'disabled'} onclick="shopBuy('${it.id}')">구매</button></div>
     </div>`;
-  }).join('').replace(/^/, '<div class="shop-grid">') + '</div>' + '';
+  });
+  gone.forEach(([id, n]) => cards.push(`<div class="shop-card has"><div class="sc-head"><span class="shop-icon"><i class="fa-solid fa-ban"></i></span>
+      <div class="sc-title"><b>삭제된 상품</b><span>판매가 끝난 상품이에요</span></div><span class="sc-count">×${n}</span></div></div>`));
+  return '<div class="shop-grid">' + cards.join('') + '</div>';
 }
 
 // 빈 화면(공통) : 아이콘 · 제목 · 설명 · 버튼([글자, onclick, 아이콘])
@@ -9491,30 +9507,6 @@ function emptyHtml(icon, title, desc, btn, small) {
     + (desc ? `<span class="es-d">${desc}</span>` : '')
     + (btn ? `<button type="button" class="es-btn" onclick="${btn[1]}">${btn[2] ? `<i class="fa-solid ${btn[2]}"></i>` : ''}${btn[0]}</button>` : '') + '</div>';
 }
-function renderShopInventory(target, data) {
-  if (!target) return emptyHtml('fa-user', '캐릭터를 골라 주세요', '위에서 캐릭터를 고르면 그 캐릭터의 소지품이 보여요.');
-  const owned = Object.entries((data && data.items) || {}).filter(([, n]) => n > 0);
-  if (!owned.length) return emptyHtml('fa-briefcase', '아직 소지품이 없어요', '상점에서 아이템을 사면 여기에 모여요.', ['상점 둘러보기', "setShopTab('shop')", 'fa-store']);
-  const statKeys = lastShop.stat_keys || [];
-  return owned.map(([id, n]) => {
-    const it = shopItemById(id);
-    if (!it) return `<div class="shop-card"><div class="sc-head"><span class="shop-icon"><i class="fa-solid fa-ban"></i></span>
-      <div class="sc-title"><b>삭제된 상품</b><span>판매가 끝난 상품이에요</span></div><span class="sc-count">×${n}</span></div></div>`;
-    let extra = '';
-    if (it.effect === 'stat_up') extra = `<select id="shopStat_${it.id}">${statKeys.map(k => `<option>${k}</option>`).join('')}</select>`;
-    if (it.effect === 'request') extra = `<input id="shopMemo_${it.id}" maxlength="200" placeholder="요청 내용 (선택)">`;
-    return `<div class="shop-card">
-      <div class="sc-head">${shopIconHtml(it, false)}
-        <div class="sc-title"><b>${shopEsc(it.name)}</b><span>${shopMetaText(it)}</span></div>
-        <span class="sc-count">×${n}</span></div>
-      <p class="sc-desc">${shopEsc(it.desc)}</p>
-      <div class="sc-foot sc-use">${extra}${it.effect === 'role_change'
-        ? `<button class="shop-btn" onclick="closeShop(); openMyPage();">마이페이지에서 사용</button>`
-        : `<button class="shop-btn" onclick="shopUse('${it.id}')">사용</button>`}</div>
-    </div>`;
-  }).join('').replace(/^/, '<div class="shop-grid">') + '</div>';
-}
-
 function renderShopItemsAdmin() {
   const el = lastShop.effect_labels || {}, tl = lastShop.timing_labels || {};
   const sel = (map, cur) => Object.entries(map).map(([k, v]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${shopEsc(v)}</option>`).join('');
@@ -9640,7 +9632,7 @@ function openShopFromMyPage() {
   const c = myPageTargetChar();
   if (shopIsGm() && c) shopGmTarget = c.name;
   closeMyPage();
-  openShop('inventory');
+  openShop('shop');
 }
 function onMyPagePointsChange() {
   const c = myPageTargetChar();
@@ -12576,7 +12568,7 @@ function renderBattleHub(tickOnly) {
       ${gmHtml}</div>`;
   };
   const list = battleHub.battles || [];
-  const tools = document.getElementById('btTools'); if (tools) tools.innerHTML = '';
+  const tools = document.getElementById('btTools'); if (tools) tools.innerHTML = `<button class="dorm-tbtn" onclick="openShop('shop')" data-tip="상점"><i class="fa-solid fa-store"></i><span class="t">상점</span></button>`;
   const fab = document.getElementById('btFab'); if (fab) { fab.classList.toggle('gm', !!gm); fab.classList.toggle('on', !!battleAddOpen); }
   const add = gm && battleAddOpen ? `<div class="bt-add"><select id="btNewType">${BT_TYPES.map(t => `<option value="${t[0]}">${t[1]}</option>`).join('')}</select>
       <input type="text" id="btNewName" placeholder="새 전투 이름" onkeydown="if (event.key === 'Enter') battleCreate()"><button class="btn" onclick="battleCreate()"><i class="fa-solid fa-plus"></i>전투 추가</button></div>` : '';
@@ -12611,6 +12603,8 @@ function syncOpsBtn() {
   const gm = opsIsGm();
   btn.style.display = gm ? '' : 'none';
   if (!gm && opsOpen()) closeOps();
+  // 소지품(상점) 탭은 운영진만 : 참가자는 마이페이지 소지품 · 전투 룸 목록의 상점 아이콘으로 들어가요
+  const sb = document.getElementById('sidebarShopBtn'); if (sb) sb.style.display = gm ? '' : 'none';
   const lb = document.getElementById('sidebarLoopEditBtn');
   if (lb) { lb.style.display = gm ? '' : 'none'; if (!gm && typeof closeLoopAdmin === 'function') closeLoopAdmin(); }
 }
