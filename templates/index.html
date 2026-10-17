@@ -203,7 +203,7 @@
   <div class="head">
     <div class="eyebrow">EARTHTERRA</div>
     <h1>Rooms</h1>
-    <p>기존 방으로 들어가거나 새 방을 만드세요. 방은 서버를 다시 켜도 그대로 남아 있어요.</p>
+    <p>일반 룸과 LOOP 룸이에요. 전투 방은 일반 룸의 배틀 메뉴에서 만들고 들어가요.</p>
   </div>
 
   <div class="sec-title">방 목록 <span class="count">{{ rooms|length }}</span></div>
@@ -235,22 +235,7 @@
       <input class="field" type="text" name="room_name" placeholder="방 이름 (비워두면 자동으로 지어요)" maxlength="30" autocomplete="off">
       <div class="types">
         <label class="type-option">
-          <input type="radio" name="battle_type" value="pvp" checked>
-          <div class="t"><i class="fa-solid fa-people-arrows"></i>PVP</div>
-          <div class="d">러너 대 러너. 양쪽 팀 모두 참가자가 각자 캐릭터를 조작해요.</div>
-        </label>
-        <label class="type-option">
-          <input type="radio" name="battle_type" value="siege">
-          <div class="t"><i class="fa-solid fa-chess-rook"></i>공성전</div>
-          <div class="d">GM이 거점을 조작하고, 러너 5~6인이 한 팀으로 맞서요.</div>
-        </label>
-        <label class="type-option">
-          <input type="radio" name="battle_type" value="mass_raid">
-          <div class="t"><i class="fa-solid fa-border-all"></i>마스 레이드</div>
-          <div class="d">격자 지도에서 보스 대 러너 최대 30인. 민첩에 따라 1~6칸 이동해요.</div>
-        </label>
-        <label class="type-option">
-          <input type="radio" name="battle_type" value="play">
+          <input type="radio" name="battle_type" value="play" checked>
           <div class="t"><i class="fa-solid fa-infinity"></i>PLAY</div>
           <div class="d">LOOP : 러닝 시뮬레이션. 무작위 사건에서 선택을 이어 가며 전쟁 이후까지 살아남아요.</div>
         </label>

@@ -5715,7 +5715,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.76";
+const EXPECTED_SERVER_BUILD = "2026-10-13.77";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -12582,8 +12582,10 @@ function renderBattleHub(tickOnly) {
   const now = Date.now() / 1000 + (battleHub.offset || 0), gm = battleHub.is_gm, me = myLoggedInName();
   const card = b => {
     const st = b.state === 'none' ? 'none' : now < b.opens ? 'upcoming' : now <= b.closes ? 'open' : 'closed';
-    const stChip = st === 'open' ? (b.live ? '<span class="bt-chip st-live"><i class="fa-solid fa-circle"></i>진행 중</span>' : '<span class="bt-chip st-open">입장 가능</span>')
-      : st === 'upcoming' ? '<span class="bt-chip">입장 전</span>' : st === 'closed' ? '<span class="bt-chip">종료</span>' : '<span class="bt-chip">일정 없음</span>';
+    // 맨 앞은 전투 유형 뱃지, 그 뒤에 상태(일정이 없으면 상태는 생략)
+    const typeChip = `<span class="bt-chip"><i class="fa-solid ${(BT_TYPES.find(t => t[0] === b.type) || [])[2] || 'fa-shield-halved'}"></i>${mailEsc(b.type_label || '')}</span>`;
+    const stChip = typeChip + (st === 'open' ? (b.live ? '<span class="bt-chip st-live"><i class="fa-solid fa-circle"></i>진행 중</span>' : '<span class="bt-chip st-open">입장 가능</span>')
+      : st === 'upcoming' ? '<span class="bt-chip">입장 전</span>' : st === 'closed' ? '<span class="bt-chip">종료</span>' : '');
     const can = gm || (st === 'open' && (b.mine || b.watch));
     const ed = battleEdit[b.id] || (battleEdit[b.id] = { name: b.name, start: btLocalInput(b.start), assigned: [...b.assigned], open: false, edit: false });
     const ic = (BT_TYPES.find(t => t[0] === b.type) || [])[2] || 'fa-shield-halved';
@@ -12615,9 +12617,8 @@ function renderBattleHub(tickOnly) {
   const fab = document.getElementById('btFab'); if (fab) { fab.classList.toggle('gm', !!gm); fab.classList.toggle('on', !!battleAddOpen); }
   const add = gm && battleAddOpen ? `<div class="bt-add"><select id="btNewType">${BT_TYPES.map(t => `<option value="${t[0]}">${t[1]}</option>`).join('')}</select>
       <input type="text" id="btNewName" placeholder="새 전투 이름" onkeydown="if (event.key === 'Enter') battleCreate()"><button class="btn" onclick="battleCreate()"><i class="fa-solid fa-plus"></i>전투 추가</button></div>` : '';
-  // 룸 형식별로 묶어서 : PVP · 공성전 · 마스 레이드
-  const groups = BT_TYPES.map(([t, label, ic]) => [label, ic, list.filter(b => b.type === t)]).filter(([, , xs]) => xs.length);
-  body.innerHTML = `<div class="bt-list">${shop}${add}${groups.length ? groups.map(([label, ic, xs]) => `<div class="bt-sec"><i class="fa-solid ${ic}"></i>${label}<span>${xs.length}</span></div><div class="bt-grid">${xs.map(card).join('')}</div>`).join('')
+  // 유형별 소제목 없이 순서대로 쭉(유형은 카드의 뱃지 · 아이콘으로 구분)
+  body.innerHTML = `<div class="bt-list">${shop}${add}${list.length ? `<div class="bt-grid">${list.map(card).join('')}</div>`
     : emptyHtml('fa-shield-halved', '예정된 전투가 없어요', gm ? '오른쪽 아래 + 로 전투를 추가하고 날짜 · 시간을 정해 주세요.' : '운영진이 전투를 등록하면 여기에 보여요.')}</div>`;
 }
 function btShopHtml() {

@@ -43,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.76"
+SERVER_BUILD = "2026-10-13.77"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -370,6 +370,8 @@ def index():
             "guest_key": room.guest_key,
         }
         for room in list_rooms()
+        # 메인 페이지에는 일반 룸 · LOOP 룸만(전투 방은 일반 룸의 배틀 메뉴에서 만들고 들어가요)
+        if room.battle_type in ("lounge", "play")
     ]
     return render_template("index.html", rooms=rooms_view, battle_type_labels=BATTLE_TYPE_LABELS, point_theme=point_theme())
 
@@ -383,9 +385,8 @@ def yacht_page():
 def create_room_route():
     if not is_admin():
         abort(403)
-    battle_type = request.form.get("battle_type", "pvp")
-    if battle_type == "lounge":
-        battle_type = "pvp"
+    # 메인 페이지에서는 LOOP(PLAY) 룸만 만들어요. 전투 방은 일반 룸의 배틀 메뉴에서 만들어요.
+    battle_type = "play"
     room_name = request.form.get("room_name", "")
     room = create_room(battle_type, name=room_name)
     return redirect(url_for("guest_page", room_id=room.id, key=room.guest_key))
