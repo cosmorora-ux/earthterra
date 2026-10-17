@@ -3644,6 +3644,9 @@
   .battles-page .world-body { overflow-y:auto; padding:16px 0 40px; }
   .bt-back { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px 0 10px; margin-right:6px; border:none; border-radius:10px; background: rgba(255,255,255,.05); color:#cfcfd4; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; flex:none; }
   .bt-back:hover { background: rgba(255,255,255,.1); color:#fff; }
+  .topbar .bt-back { width:32px; padding:0; justify-content:center; }
+  /* 전투 방 머리 : 인원 · 유형(28:4 마스 레이드)과 날짜 시계는 빼고, 라운드 타이머를 오른쪽 끝(시계 자리)에 */
+  body:not(.is-play) .topbar.v2 #formatLabel, body:not(.is-play) .topbar.v2 .sep:has(+ #formatLabel), body:not(.is-play) .topbar.v2 #liveClock { display:none !important; }
   .bt-back i { font-size:11px; }
   @media (max-width:600px) { .bt-back span { display:none; } .bt-back { padding:0 10px; } }
   /* 좁은 화면(상단 바가 격자일 때) : 방 이름 칸 앞에 겹쳐 두고 이름을 그만큼 밀어요 */
@@ -5038,15 +5041,15 @@
   ⚠ 서버가 예전 버전으로 실행 중이에요. 일부 기능(마이페이지 저장 등)이 막힐 수 있어요. 서버 창에서 Ctrl + C → ↑ → Enter로 서버를 다시 켜 주세요.
 </div>
 <div class="topbar v2 panel main-topbar">
-  <button class="bt-back" id="btBackLobby" style="display:none" onclick="if (window.BT_LOBBY_URL) location.href = BT_LOBBY_URL" data-tip="룸 목록으로"><i class="fa-solid fa-chevron-left"></i><span>룸 목록</span></button>
+  <button class="bt-back" id="btBackLobby" style="display:none" onclick="if (window.BT_LOBBY_URL) location.href = BT_LOBBY_URL" data-tip="룸 목록으로" aria-label="룸 목록으로"><i class="fa-solid fa-chevron-left"></i></button>
   <div class="seg" id="roomNameLabel">{{ room_id }}</div>
   {% if battle_type == 'play' %}<div class="seg pl-top-brand"><b>Loop</b><span id="plTopSub">러닝 시뮬레이션</span></div>{% endif %}
   <span class="sep">▶</span>
   <div class="seg" id="formatLabel">-</div>
   <span class="sep">▶</span>
   <div class="seg" id="roundInfo">-</div>
-  <span class="label" id="roundTimerLabel"><span id="roundTimer" class="flip-clock"></span></span>
   <div class="spacer"></div>
+  <span class="label" id="roundTimerLabel"><span id="roundTimer" class="flip-clock"></span></span>
   <div class="clock" id="liveClock">--:--:--</div>
   <div class="m-battle-tools"><button onclick="toggleUserInfoPanel()" data-tip="유저 리스트"><i class="fa-solid fa-list-ul"></i></button>
     <button onclick="toggleMobileChat(true)" data-tip="채팅"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot2"></span></button></div>
