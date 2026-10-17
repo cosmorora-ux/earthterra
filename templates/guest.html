@@ -489,7 +489,8 @@
   #shopToast .t-ic { flex:none; display:flex; }
   #shopToast .t-ic svg { width:18px; height:18px; display:block; }
   #shopToast.err { border-color: rgba(255,110,110,.5); }
-  #shopToast.err .t-ic svg path:first-child { fill:#ff6e6e; fill-opacity:.3; }
+  #shopToast.err .t-ic svg path:first-child { fill:#ff6e6e; fill-opacity:.18; stroke:#ff6e6e; opacity:1; }
+  #shopToast.err .t-ic svg path:last-child { fill:#ff6e6e; }
   @media (max-width: 640px) {
     .shop-edit, .shop-edit-head { grid-template-columns: 40px 1fr 70px; }
     .shop-edit-head { display:none; }
@@ -12964,7 +12965,7 @@ function opsRoomHtml() {
         <button class="ops-btn" onclick="opsCopyLink()"><i class="fa-regular fa-copy"></i> 복사</button></div></div>
     </div>
     <div class="ops-card">
-      <h3><i class="fa-solid fa-palette"></i> 포인트 컬러<span class="sub">모든 방 · 모든 화면에 바로 적용</span></h3>
+      <h3><i class="fa-solid fa-palette"></i> 포인트 컬러</h3>
       <div class="ops-swatches" id="opsSwatches"></div>
       <div class="ops-hint" style="margin-top:12px;">진영 색(Resonans · 使徒 · Void)은 바뀌지 않아요.</div>
     </div>
