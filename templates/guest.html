@@ -5421,7 +5421,7 @@ function refreshChatSendEnabled() {
 
 const SAVED_NAME_KEY = 'joinedName_' + ROOM_ID;
 // 방을 옮겨도 로그인이 이어지도록 : 마지막으로 로그인한 캐릭터(모든 방 공통)와 운영진 통행증(7일)
-const LAST_NAME_KEY = 'joinedName_last', GM_PASS_KEY = 'gmPass';
+const LAST_NAME_KEY = 'joinedName_last', GM_PASS_KEY = 'gmPass', NO_AUTO_ADMIN_KEY = 'noAutoAdmin';
 const WATCH_ONLY = new URLSearchParams(location.search).get('watch') === '1';   // 룸 목록에서 관전으로 들어옴
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
@@ -5497,7 +5497,7 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
       updateChatVisibility();
       updateAvatarDots();
       localStorage.setItem(SAVED_NAME_KEY, MY_NICKNAME);
-      if (BATTLE_TYPE !== 'play' && MY_NICKNAME !== '익명') lsSet(LAST_NAME_KEY, MY_NICKNAME);
+      if (BATTLE_TYPE !== 'play' && MY_NICKNAME !== '익명') { lsSet(LAST_NAME_KEY, MY_NICKNAME); lsSet(NO_AUTO_ADMIN_KEY, null); }
       // 전투 시작 전(팀 편성 미리보기 단계)에 입장하면 lastAllForCards가 아직 비어있으므로,
       // renderCards() 대신 미리보기 카드를 다시 그려줘야 방금 그렸던 카드가 사라지지 않습니다.
       if (lastBattleForPanel) renderCards();
@@ -5551,8 +5551,10 @@ function onInputAvatarDotDblClick() {
 function logout() {
   lastTeamChat = [];
   localStorage.removeItem(SAVED_NAME_KEY);
-  if (lsGet(LAST_NAME_KEY) === MY_NICKNAME) lsSet(LAST_NAME_KEY, null);   // 로그아웃하면 다른 방에서도 이어지지 않게
-  if (String(MY_NICKNAME).toLowerCase() === 'gm') lsSet(GM_PASS_KEY, null);
+  // 로그아웃하면 모든 방에서 이어지지 않게 : 방마다 저장된 이름 · 마지막 이름 · 운영진 통행증을 다 지워요(LOOP의 TEST는 그대로)
+  try { Object.keys(localStorage).filter(k => k.startsWith('joinedName_') && localStorage.getItem(k) !== 'TEST').forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  lsSet(LAST_NAME_KEY, null); lsSet(GM_PASS_KEY, null);
+  lsSet(NO_AUTO_ADMIN_KEY, '1');   // 메인 페이지 운영진 로그인으로 자동 입장하던 것도 멈춰요(다시 로그인하면 풀려요)
   MY_NICKNAME = '익명';
   socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, device: MY_DEVICE });
   explicitlyJoined = false;
@@ -5566,6 +5568,8 @@ function logout() {
   refreshLogViewControls();
   refreshChatTabSettingsVisibility();
   renderMyPage();
+  // 전투 방은 관전이 막혀 있을 수 있어요 : 로그아웃하면 룸 목록으로
+  if (!IS_LOUNGE && BATTLE_TYPE !== 'play' && window.BT_LOBBY_URL) { location.href = BT_LOBBY_URL; return; }
   openJoinModal();
 }
 
@@ -5728,7 +5732,7 @@ document.querySelector('.sidebar').addEventListener('click', (e) => {
 
 socket.on('joined', (d) => {
   if (d && d.gm_pass) lsSet(GM_PASS_KEY, d.gm_pass);
-  if (d && d.admin && !explicitlyJoined && BATTLE_TYPE !== 'play' && !WATCH_ONLY) attemptCharacterJoin('GM', null, hideLoginGate);
+  if (d && d.admin && !explicitlyJoined && BATTLE_TYPE !== 'play' && !WATCH_ONLY && !lsGet(NO_AUTO_ADMIN_KEY)) attemptCharacterJoin('GM', null, hideLoginGate);
   updateAvatarDots();
 });
 
@@ -5753,7 +5757,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.81";
+const EXPECTED_SERVER_BUILD = "2026-10-13.82";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');

@@ -43,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.81"
+SERVER_BUILD = "2026-10-13.82"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -1461,6 +1461,13 @@ def on_join(data):
             return
         if nickname == "익명":
             if not battle_watch_ok(room):
+                # 로그아웃(익명으로 다시 입장)이면 이전 캐릭터 연결도 끊어 둬요 : 로그인 상태가 남지 않게
+                prev = CONNECTIONS.pop(request.sid, None)
+                if prev is not None:
+                    leave_room(room_channel(room_id, "gm"))
+                    leave_room(_team_channel(room.id, "A"))
+                    leave_room(_team_channel(room.id, "B"))
+                    broadcast_state(room)
                 emit("error", {"message": "관전이 허용되지 않은 전투예요.", "quiet": True})
                 return
         elif nickname not in battle_participants(room):
