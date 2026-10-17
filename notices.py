@@ -156,7 +156,7 @@ SEED_NOTICES = [
 </ul>
 <p>관련 문의는 운영진에게 남겨 주세요.</p>
 """),
-    ("loop_guide_v1", "LOOP 이용 안내 · 시뮬레이터 하는 법", """
+    ("loop_guide_v2", "LOOP 이용 안내 · 시뮬레이터 하는 법", """
 <p><b>LOOP</b>는 한 사람의 생애를 사건 하나하나 골라 가며 살아 보는 러닝 시뮬레이션입니다. 누구나 웹에서 바로 해 볼 수 있어요.</p>
 <h3>들어가기</h3>
 <ul>
@@ -165,14 +165,13 @@ SEED_NOTICES = [
 </ul>
 <h3>하는 법</h3>
 <ul>
-<li><b>운명 시작</b> : 공명자 / 비공명자 중 하나를 고릅니다. 태어날 국가(아르카디아 · 노바)는 무작위로 정해집니다.</li>
+<li><b>운명 시작</b> : 모두 <b>공명자(Resonant)</b>로 플레이합니다. 태어날 국가(아르카디아 · 노바)는 무작위로 정해집니다.</li>
 <li><b>프롤로그</b> : 서력의 역사와 탄생(출신 · 집안 · 문명관)을 읽고 <b>삶을 시작한다</b>를 누르세요.</li>
 <li><b>사건</b> : 사건마다 선택지 A · B · C 중 하나를 고릅니다. 체력 · 정신이 얼마나 바뀌는지는 <b>고른 뒤에만</b> 알 수 있어요.</li>
 <li><b>체력</b>이 0이 되면 사망, <b>정신</b>이 0이 되면 정신 붕괴로 생애가 끝납니다. 재산 · 지능 · 재능은 선택지 조건이나 위기 해결에 쓰입니다.</li>
 <li>시대 I부터 차례로 사건이 이어지고, 마지막 시대까지 견디면 생존 엔딩입니다.</li>
 <li>생애가 끝나면 <b>기록 남기기</b>로 끝내거나, 열려 있다면 <b>루프 진입</b>으로 기억 일부를 안고 평행 세계에서 다시 시작할 수 있어요.</li>
 <li>기록을 남긴 뒤에는 <b>새 운명 (Loop)</b>으로 다음 생애를 시작합니다. 다음 생애도 높은 확률로 같은 국가에서 태어나요.</li>
-<li>한 번 공명자 / 비공명자로 기록을 남기면 그 뒤로는 바뀌지 않습니다.</li>
 </ul>
 <h3>기록 보기</h3>
 <ul>
@@ -199,6 +198,8 @@ SEED_NOTICES = [
 </ul>
 """),
 ]
+# 내용을 고친 고정 공지 : 예전 판이 이미 올라가 있으면 새 글을 더 올리지 않고 그 글(같은 제목)의 본문만 바꿔요.
+SEED_REPLACES = {"loop_guide_v2": "loop_guide_v1"}
 
 
 class NoticeBoard:
@@ -221,6 +222,15 @@ class NoticeBoard:
 
     def seed(self):
         """SEED_NOTICES 중 아직 올린 적 없는 것만 고정 공지로 올립니다(위에서부터 1번 · 2번 순서)."""
+        for key, title, body in SEED_NOTICES:
+            old = SEED_REPLACES.get(key)
+            if key in self.seeded or not old or old not in self.seeded:
+                continue
+            for n in self.notices:
+                if n.get("title") == title:
+                    n["html"] = sanitize_html(body)
+            self.seeded.append(key)
+            self.save()
         todo = [x for x in SEED_NOTICES if x[0] not in self.seeded]
         if not todo:
             return

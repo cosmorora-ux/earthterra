@@ -214,8 +214,8 @@ def clean_content(c):
             raise LoopError(f"EVENT {eid} : 없는 시대예요.")
         cond_in = ev.get("cond") or {}
         cond = {}
-        if cond_in.get("res") in RESONANCE:
-            cond["res"] = cond_in["res"]
+        # 모두 공명자로 플레이해요 : 공명 여부 조건은 없애고, 비공명자 전용 사건은 '작업 중'으로 돌려 둡니다.
+        was_non = cond_in.get("res") == "non"
         if cond_in.get("country") in COUNTRIES:
             cond["country"] = cond_in["country"]
         if _tags(cond_in.get("tags")):
@@ -229,7 +229,7 @@ def clean_content(c):
         if mins:
             cond["min"] = mins
         story = _lines(ev.get("story"))
-        draft = bool(ev.get("draft"))
+        draft = bool(ev.get("draft")) or was_non
         if not story and not draft:
             raise LoopError(f"EVENT {eid} : 상황 서술을 써 주세요. (아직 작업 중이면 '작업 중'을 켜 두세요)")
         choices = []
@@ -272,9 +272,12 @@ def clean_content(c):
                 "kind": ev.get("kind") if ev.get("kind") in KINDS else "life", "story": story, "choices": choices}
         if ev.get("chapter") not in (None, "", -1):
             item["chapter"] = _int(ev.get("chapter"), 0, 9, 0)
-        if _s(ev.get("note"), 3000):
-            item["note"] = _s(ev.get("note"), 3000)      # 운영진 작업 메모(플레이어에게는 안 보여요)
-        if ev.get("draft"):
+        note = _s(ev.get("note"), 3000)
+        if was_non:
+            note = ("[비공명자 사건 · 작업 중으로 옮겨 둠] " + note).strip()[:3000]
+        if note:
+            item["note"] = note                           # 운영진 작업 메모(플레이어에게는 안 보여요)
+        if draft:
             item["draft"] = True                         # 작업 중 : 플레이에 나오지 않아요
         if cond:
             item["cond"] = cond
@@ -514,6 +517,11 @@ class LoopBook:
             with open(self.path, "r", encoding="utf-8") as f:
                 d = json.load(f)
             self.data = d if isinstance(d, dict) else {}
+            # 모두 공명자로 : 비공명자로 진행 중이던 생애도 공명자로 바꿔요(지난 기록은 그대로).
+            for e in self.data.values():
+                run = e.get("run") if isinstance(e, dict) else None
+                if isinstance(run, dict) and run.get("res") == "non":
+                    run["res"] = "res"
         except (OSError, json.JSONDecodeError):
             self.data = {}
 
@@ -546,15 +554,13 @@ class LoopBook:
         return e
 
     # ── 진행 ──────────────────────────────────────────────
-    def start(self, name, res, faction="", country=None):
-        """새 생애. 출신 국가는 생애마다 무작위(시험용으로만 country를 넘깁니다)."""
-        if res not in RESONANCE:
-            raise LoopError("공명 여부를 골라 주세요.")
+    def start(self, name, res="res", faction="", country=None):
+        """새 생애. 모두 공명자로 시작해요. 출신 국가는 생애마다 무작위(시험용으로만 country를 넘깁니다)."""
+        res = "res"
         with self.lock:
             e = self._entry(name)
             if e["run"] and e["run"]["status"] not in ("ended",):
                 raise LoopError("이미 진행 중인 생애가 있어요.")
-            res = self.fixed_res(e) or res      # 한 번 기록을 남긴 공명 여부는 다음 운명에도 그대로
             prev = e["lives"][0].get("country") if e["lives"] else None
             e["run"] = self._new_run(res, loop_no=0, eras=content().rules["first_life"], life_no=len(e["lives"]) + 1)
             e["run"]["country"] = country if country in COUNTRIES else _reborn_country(prev)
@@ -573,11 +579,8 @@ class LoopBook:
 
     @staticmethod
     def fixed_res(e):
-        """기록을 남긴 운명이 있으면 그 공명 여부로 고정(가장 최근 기록 기준)."""
-        for l in e.get("lives") or []:
-            if l.get("res") in RESONANCE:
-                return l["res"]
-        return None
+        """기록을 남긴 운명이 있으면 공명 여부가 정해진 것(이제 모두 공명자)."""
+        return "res" if e.get("lives") else None
 
     def _new_run(self, res, loop_no, eras, life_no, tags=(), memory=None):
         r = content().rules

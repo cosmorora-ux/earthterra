@@ -5672,7 +5672,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.74";
+const EXPECTED_SERVER_BUILD = "2026-10-13.75";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -13856,7 +13856,7 @@ function loopStartHtml(d) {
   // 출신 국가는 생애마다 무작위 : 고르는 건 공명 여부뿐이에요.
   const RES_ICON = { res: ['fa-wave-square', 'RESONANT'], non: ['fa-circle-half-stroke', 'NON-RESONANT'] };
   // 한 번 기록을 남긴 공명 여부는 고정 : 그 카드만 보여요.
-  const res = Object.entries(LOOP_RES).filter(([k]) => !d.res_fixed || k === d.res_fixed).map(([k, [t, ds]]) => `<div class="prc ${k}">
+  const res = Object.entries(LOOP_RES).filter(([k]) => k === 'res').map(([k, [t, ds]]) => `<div class="prc ${k}">
       <span class="prc-ic"><i class="fa-solid ${RES_ICON[k][0]}"></i></span>
       <span class="prc-t"><small>${RES_ICON[k][1]}</small><b>${t}</b></span>
       <span class="prc-d">${ds}</span>
@@ -13886,7 +13886,7 @@ function loopStartHtml(d) {
     ${loopIntroStage === 'opening' ? `<div class="pq-term">${loopIntroText.term.map(() => '<p></p>').join('')}</div>` : ''}
     <div class="pl-quote"><div class="en">${enHtml}</div><div class="ko">${koHtml}</div>${loopIntroStage === 'opening' ? '<span class="pq-caret"></span>' : ''}</div>
     <div class="pl-intro-rest">
-      <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res ${d.res_fixed ? 'one' : ''}">${res}</div>
+      <div class="pl-k" style="margin-top:18px">이번 생애의 당신은</div><div class="pl-res one">${res}</div>
       <div class="pl-k-note" style="margin-top:14px"><i class="fa-solid fa-dice"></i> ${d.res_fixed ? '대개 이전과 같은 나라에서 다시 태어나요.' : '출신 국가는 무작위로 정해져요.'}</div></div></div>`,
     dock: '' };
 }
@@ -14085,7 +14085,6 @@ function laCondBadges(ev) {
   if (ev.draft) b.push('<em class="draft">작업 중</em>');
   else if (laEvChapter(ev) > la.c.rules.release) b.push(`<em class="lock"><i class="fa-solid fa-lock"></i> ${laEsc((la.c.rules.chapters[laEvChapter(ev)] || {}).name || '')}</em>`);
   if (c.country) b.push(`<em>${c.country === 'arcadia' ? '아르카디아' : '노바'}</em>`);
-  if (c.res) b.push(`<em>${c.res === 'res' ? '공명자' : '비공명자'}</em>`);
   if ((c.tags || []).length) b.push('<em>태그</em>');
   if (c.loops) b.push(`<em>루프 ${c.loops}+</em>`);
   return b.join('');
@@ -14209,7 +14208,7 @@ function laEventForm(i, no) {
   const slotOpts = Array.from({ length: laSlotCount(ev.era) }, (_, k) => k + 1).map(n => `<option value="${n}" ${n === laSlotOf(ev) ? 'selected' : ''}>사건 ${n}</option>`).join('');
   const kindOpts = Object.entries(LA_KIND).filter(([k]) => k !== 'mind').map(([k, t]) => `<option value="${k}" ${k === (ev.kind || 'life') ? 'selected' : ''}>${t}</option>`).join('');
   const chOpts = `<option value="" ${ev.chapter == null || ev.chapter === '' ? 'selected' : ''}>시대를 따라 (${laEsc((la.c.rules.chapters[laEraChapter(ev.era)] || {}).name || '')})</option>` + la.c.rules.chapters.map(ch => `<option value="${ch.id}" ${ev.chapter != null && ev.chapter !== '' && Number(ev.chapter) === ch.id ? 'selected' : ''}>${laEsc(ch.name)}</option>`).join('');
-  const condCount = ['res', 'country'].filter(k => c[k]).length + (c.loops ? 1 : 0) + ((c.tags || []).length ? 1 : 0) + ((c.no_tags || []).length ? 1 : 0) + Object.values(c.min || {}).filter(Boolean).length;
+  const condCount = ['country'].filter(k => c[k]).length + (c.loops ? 1 : 0) + ((c.tags || []).length ? 1 : 0) + ((c.no_tags || []).length ? 1 : 0) + Object.values(c.min || {}).filter(Boolean).length;
   const tabs = LA_ETABS.map(([k, t, ic]) => {
     const n = k === 'cond' ? condCount : k === 'story' ? (ev.extra || []).length : 0;
     const dot = k === 'memo' && (ev.note || '').trim() ? '<span class="dot"></span>' : '';
@@ -14256,7 +14255,6 @@ function laEventForm(i, no) {
   } else if (la.etab === 'cond') {
     body = `<div class="la-hint-line"><i class="fa-solid fa-circle-info"></i> 아무것도 정하지 않으면 누구에게나 나와요.</div>
       <div class="la-rows">
-        <div class="la-r"><span class="lb">공명 여부</span>${laSeg(P(['cond', 'res']), c.res, [['', '전체'], ['res', '공명자'], ['non', '비공명자']])}</div>
         <div class="la-r"><span class="lb">출신 국가</span>${laSeg(P(['cond', 'country']), c.country, [['', '전체'], ['arcadia', '아르카디아'], ['nova', '노바']])}</div>
         <div class="la-r"><span class="lb">루프 횟수</span>${laStepper(P(['cond', 'loops']), c.loops, 0, 20)}<span class="la-r-note">회 이상 (0 = 상관없음)</span></div>
         <div class="la-r"><span class="lb">있어야 하는 태그</span><input class="ops-in" ${laP(P(['cond', 'tags']))} data-t="tags" value="${laEsc((c.tags || []).join(', '))}" placeholder="하나라도 있으면 나와요 · 쉼표로 구분" onchange="laInput(this, true)"></div>
