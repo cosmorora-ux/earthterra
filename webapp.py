@@ -43,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.78"
+SERVER_BUILD = "2026-10-13.79"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -1192,16 +1192,29 @@ def battle_window(room, now=None):
     return opens, closes, state
 
 
+def battle_participants(room):
+    """전투 참여자 : 진행 중(또는 끝난) 전투의 양 팀, 전투 전이면 운영진이 편성해 둔 팀."""
+    b = room.game.battle
+    if b is not None:
+        return [c.name for c in list(b.team_a) + list(b.team_b)]
+    pt = room.preview_teams or {}
+    return list(pt.get("team_a") or []) + list(pt.get("team_b") or [])
+
+
+def battle_watch_ok(room):
+    """관전자 입장 허용(전투 설정의 체크박스 = 관전 탭)."""
+    return bool((room.chat_tabs_enabled or {}).get("spectator"))
+
+
 def _battle_card(room, me, is_gm):
-    opens, closes, state = battle_window(room)
-    sc = room.schedule or {}
-    assigned = list(sc.get("assigned") or [])
-    mine = bool(me and me in assigned)
+    members = battle_participants(room)
+    mine = bool(me and me in members)
+    b = room.game.battle
+    live = bool(b and not b.finished)
+    watch = (not is_gm) and (not mine) and battle_watch_ok(room)
     card = {"id": room.id, "name": room.name, "type": room.battle_type, "type_label": BATTLE_TYPE_LABELS.get(room.battle_type, ""),
-            "start": sc.get("start"), "ended_at": sc.get("ended_at"), "opens": opens, "closes": closes, "state": state,
-            "assigned": assigned, "mine": mine, "live": bool(room.game.battle and not room.game.battle.finished),
-            "watch": (not is_gm) and (not mine) and bool((room.chat_tabs_enabled or {}).get("spectator")),
-            "can_enter": is_gm or (state == "open" and (mine or bool((room.chat_tabs_enabled or {}).get("spectator")))),
+            "state": "live" if live else "done" if b is not None else "ready", "live": live, "count": len(members),
+            "mine": mine, "watch": watch, "watch_ok": battle_watch_ok(room), "can_enter": is_gm or mine or watch,
             "thumb": (room.scene or {}).get("url") or (room.map_bg or {}).get("url") or None}
     if is_gm:
         card["url"] = url_for("guest_page", room_id=room.id, key=room.guest_key)
@@ -1209,17 +1222,15 @@ def _battle_card(room, me, is_gm):
 
 
 def _battle_list_payload(sid):
+    """모든 친구에게 모든 전투 방이 보여요. 들어갈 수 있는 건 참여자(와 관전 허용 방의 관전자)."""
     info = CONNECTIONS.get(sid) or {}
     is_gm = _require_gm_or_guest_gm(sid) is not None
     me = (info.get("nickname") or "").strip()
     rooms = [r for r in list_rooms() if r.battle_type in BATTLE_TYPES_SCHEDULED]
-    if not is_gm:
-        rooms = [r for r in rooms if (r.schedule or {}).get("start")]   # 러너에게는 일정이 잡힌 전투만
-        # 그중 내가 배정된 방 + 관전 탭이 켜진 방만
-        rooms = [r for r in rooms if me in ((r.schedule or {}).get("assigned") or []) or (r.chat_tabs_enabled or {}).get("spectator")]
     cards = [_battle_card(r, me, is_gm) for r in rooms]
-    cards.sort(key=lambda c: (c["state"] == "closed", c["start"] or 9e18))
-    return {"battles": cards, "is_gm": is_gm, "now": time.time(), "roster": room_roster_names() if is_gm else []}
+    order = {"live": 0, "ready": 1, "done": 2}
+    cards.sort(key=lambda c: (not c["mine"], order.get(c["state"], 3)))
+    return {"battles": cards, "is_gm": is_gm, "now": time.time()}
 
 
 def room_roster_names():
@@ -1247,7 +1258,7 @@ def on_battle_enter(data):
     is_gm = _require_gm_or_guest_gm(request.sid) is not None
     card = _battle_card(room, (info.get("nickname") or "").strip(), is_gm)
     if not card["can_enter"]:
-        msg = "아직 입장 시간이 아니에요." if card["state"] == "upcoming" else "입장 시간이 지났어요." if card["state"] == "closed" else "이 전투에 배정되지 않았어요."
+        msg = "이 전투의 참여자만 들어갈 수 있어요."
         emit("battle_enter", {"ok": False, "message": msg})
         return
     url = url_for("guest_page", room_id=room.id, key=room.guest_key)
@@ -1408,16 +1419,14 @@ def on_join(data):
             emit("error", {"message": "비밀번호가 올바르지 않습니다."})
             return
 
-    # 일정이 잡힌 전투 방 : 입장 가능 시간(시작 3시간 전 ~ 끝난 뒤 3시간)에만, 배정된 캐릭터(와 관전)만. 운영진은 언제나.
+    # 전투 방 : 캐릭터로는 이 전투의 참여자만, 익명(관전)은 관전 허용일 때만. 운영진은 언제나.
     if room.battle_type in BATTLE_TYPES_SCHEDULED and nickname.lower() != "gm":
-        opens, closes, state = battle_window(room)
-        if state in ("upcoming", "closed"):
-            when = time.strftime("%m월 %d일 %H:%M", time.localtime(opens)) if state == "upcoming" else ""
-            emit("error", {"message": f"아직 입장 시간이 아니에요. {when}부터 들어올 수 있어요." if when else "입장 시간이 지났어요."})
-            return
-        assigned = (room.schedule or {}).get("assigned") or []
-        if state == "open" and assigned and nickname not in assigned and nickname != "익명":
-            emit("error", {"message": "이 전투에 배정되지 않은 캐릭터예요."})
+        if nickname == "익명":
+            if not battle_watch_ok(room):
+                emit("error", {"message": "관전이 허용되지 않은 전투예요.", "quiet": True})
+                return
+        elif nickname not in battle_participants(room):
+            emit("error", {"message": "이 전투의 참여자만 들어갈 수 있어요."})
             return
 
     # PLAY 룸(LOOP)은 공용 아이디 TEST(와 운영진)로만 들어옵니다. 기록은 기기마다 따로 저장돼요.
@@ -1592,6 +1601,8 @@ def on_set_chat_tabs(data):
     for key in ("player", "spectator", "entry", "team"):
         if key in values:
             room.chat_tabs_enabled[key] = bool(values[key])
+    if "spectator" in values and room.battle_type in BATTLE_TYPES_SCHEDULED:
+        _broadcast_battle_lists()   # 관전 허용이 바뀌면 룸 목록도
     labels = data.get("labels", {})
     for key in ("player", "spectator", "entry", "team"):
         if key in labels:
@@ -2204,6 +2215,7 @@ def on_preview_teams(data):
         "team_b": data.get("team_b", []),
     }
     broadcast_state(room)
+    _broadcast_battle_lists()   # 편성된 참여자가 룸 목록에서 바로 입장할 수 있게
 
 
 def _apply_battle_rules(room, formula_overrides, grid_width, grid_height):

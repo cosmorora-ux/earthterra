@@ -27,7 +27,7 @@ ROOMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rooms.jso
 _PERSISTED_FIELDS = [
     "name", "battle_type", "gm_key", "guest_key", "created_at",
     "chat_tabs_enabled", "chat_tab_labels", "userinfo_hidden", "map_bg", "boss_images", "track_bg", "scene",
-    "schedule",
+    "schedule", "preview_teams",
 ]
 
 BATTLE_TYPE_LABELS = {

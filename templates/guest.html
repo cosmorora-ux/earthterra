@@ -3689,6 +3689,7 @@
   .bt-gm-row input[type=text] { flex:1 1 200px !important; width:auto !important; min-width:0; height:38px; padding:0 12px; }
   .bt-gm-row .btn, .bt-gm-row .btn-plain, .bt-gm-row .ops-btn { flex:none; height:38px; }
   .bt-sched { margin-bottom:16px; }
+  .ops-check { display:flex; align-items:center; gap:10px; font-size:14px; color: var(--text); cursor:pointer; user-select:none; }
   .bt-gm-row input[type=datetime-local] { flex:none; width:220px !important; height:38px !important; padding:0 10px; border-radius:10px; border:1px solid var(--ds-line, rgba(255,255,255,.08)); background: rgba(255,255,255,.05); color: var(--text); color-scheme: dark; }
   .bt-names { display:flex; flex-wrap:wrap; gap:6px; max-height:132px; overflow:auto; }
   .bt-names button { height:28px; padding:0 10px; border-radius:10px; border:1px solid var(--line); background:none; color: var(--muted); font:inherit; font-size:12.5px; cursor:pointer; }
@@ -5722,7 +5723,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.78";
+const EXPECTED_SERVER_BUILD = "2026-10-13.79";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -12558,9 +12559,8 @@ function closeBattleHub() {
 }
 socket.on('battle_list', d => {
   battleHub = d; battleHub.offset = (d.now || Date.now() / 1000) - Date.now() / 1000;
-  const dot = document.getElementById('battlesDot'); if (dot) dot.classList.toggle('on', (d.battles || []).some(b => b.mine && b.state === 'open'));
+  const dot = document.getElementById('battlesDot'); if (dot) dot.classList.toggle('on', (d.battles || []).some(b => b.mine && b.live));
   if (battleHubOpen()) renderBattleHub();
-  if (typeof opsOpen === 'function' && opsOpen() && opsTab === 'battle') opsRenderSchedule(true);
 });
 socket.on('joined', (d) => {
   if (IS_LOUNGE) socket.emit('battle_list');
@@ -12601,20 +12601,18 @@ function renderBattleHub(tickOnly) {
   if (tickOnly && body.querySelector(':focus')) return;   // 운영진이 입력 중이면 다시 그리지 않아요
   const now = Date.now() / 1000 + (battleHub.offset || 0), gm = battleHub.is_gm, me = myLoggedInName();
   const card = b => {
-    const st = b.state === 'none' ? 'none' : now < b.opens ? 'upcoming' : now <= b.closes ? 'open' : 'closed';
-    // 맨 앞은 전투 유형 뱃지, 그 뒤에 상태(일정이 없으면 상태는 생략)
+    // 일정 · 배정 없이 : 상태는 진행 중 / 종료만, 들어갈 수 있는 건 참여자(와 관전 허용 방의 관전자)
+    const st = b.live ? 'open' : b.state === 'done' ? 'closed' : 'ready';
     const typeChip = `<span class="bt-chip"><i class="fa-solid ${(BT_TYPES.find(t => t[0] === b.type) || [])[2] || 'fa-shield-halved'}"></i>${mailEsc(b.type_label || '')}</span>`;
-    const stChip = typeChip + (st === 'open' ? (b.live ? '<span class="bt-chip st-live"><i class="fa-solid fa-circle"></i>진행 중</span>' : '<span class="bt-chip st-open">입장 가능</span>')
-      : st === 'upcoming' ? '<span class="bt-chip">입장 전</span>' : st === 'closed' ? '<span class="bt-chip">종료</span>' : '');
-    const can = gm || (st === 'open' && (b.mine || b.watch));
-    const ed = battleEdit[b.id] || (battleEdit[b.id] = { name: b.name, start: btLocalInput(b.start), assigned: [...b.assigned], open: false, edit: false });
+    const stChip = typeChip + (b.live ? '<span class="bt-chip st-live"><i class="fa-solid fa-circle"></i>진행 중</span>' : st === 'closed' ? '<span class="bt-chip">종료</span>' : '');
+    const can = !!b.can_enter;
     const ic = (BT_TYPES.find(t => t[0] === b.type) || [])[2] || 'fa-shield-halved';
     // 남은 시간 · 마감 · 입장 조건 문구는 표시하지 않아요(날짜 · 시간과 상태 표시만)
-    const when = (b.start ? btFmt(b.start) : '날짜 · 시간 미정') + (gm && b.assigned.length ? ` · 배정 ${b.assigned.length}명` : '');
+    const when = `참여 ${b.count || 0}명` + (b.watch_ok ? ' · 관전 가능' : ' · 관전 불가');
     const thumbStyle = b.thumb ? ` style="background-image:url('${mailEsc(b.thumb)}')"` : '';
     return `<div class="bt-card ${st}${can ? ' can' : ''}"${can ? ` onclick="socket.emit('battle_enter', {room_id:'${b.id}'})"` : ''}>
       <div class="bt-thumb${b.thumb ? ' has-img' : ''}"${thumbStyle}>${b.thumb ? '' : `<i class="fa-solid ${ic} ic"></i>`}
-        <div class="bt-tags">${stChip}${b.mine ? '<span class="bt-chip mine"><i class="fa-solid fa-check"></i>배정됨</span>' : b.watch ? '<span class="bt-chip"><i class="fa-solid fa-eye"></i>관전</span>' : ''}</div>
+        <div class="bt-tags">${stChip}${b.mine ? '<span class="bt-chip mine"><i class="fa-solid fa-check"></i>참여</span>' : b.watch ? '<span class="bt-chip"><i class="fa-solid fa-eye"></i>관전</span>' : ''}</div>
         ${can ? `<div class="bt-go"><i class="fa-solid ${b.watch ? 'fa-eye' : 'fa-right-to-bracket'}"></i>${b.watch ? '관전하기' : '입장하기'}</div>` : ''}</div>
       <div class="bt-foot"><div class="bt-info"><div class="bt-name">${mailEsc(b.name)}</div><div class="bt-when">${when}</div></div>
         ${gm ? `<div class="bt-icons" onclick="event.stopPropagation()"><button class="ops-btn icon" onclick="location.href = '${b.url || ''}' + '&view=ops'" data-tip="방 설정 · 일정 · 배정"><i class="fa-solid fa-pen"></i></button>
@@ -12629,7 +12627,7 @@ function renderBattleHub(tickOnly) {
       <input type="text" id="btNewName" placeholder="새 전투 이름" onkeydown="if (event.key === 'Enter') battleCreate()"><button class="btn" onclick="battleCreate()"><i class="fa-solid fa-plus"></i>전투 추가</button></div>` : '';
   // 유형별 소제목 없이 순서대로 쭉(유형은 카드의 뱃지 · 아이콘으로 구분)
   body.innerHTML = `<div class="bt-list">${shop}${add}${list.length ? `<div class="bt-grid">${list.map(card).join('')}</div>`
-    : emptyHtml('fa-shield-halved', '예정된 전투가 없어요', gm ? '오른쪽 아래 + 로 전투를 추가하고 날짜 · 시간을 정해 주세요.' : '운영진이 전투를 등록하면 여기에 보여요.')}</div>`;
+    : emptyHtml('fa-shield-halved', '예정된 전투가 없어요', gm ? '오른쪽 아래 + 로 전투를 추가하고, 연필에서 팀을 편성해 주세요.' : '운영진이 전투를 등록하면 여기에 보여요.')}</div>`;
 }
 function btShopHtml() {
   const gm = !!(battleHub && battleHub.is_gm), me = myLoggedInName();
@@ -12718,7 +12716,7 @@ function renderOps() {
 // 서버 상태가 바뀔 때는 입력칸을 건드리지 않고 목록 부분만 다시 그립니다(입력 중 포커스가 날아가지 않게).
 function renderOpsData() {
   if (!opsOpen()) return;
-  if (opsTab === 'battle') { opsRenderTeams(); opsRenderPool(); opsRenderLive(); opsRenderSchedule(); }
+  if (opsTab === 'battle') { opsRenderTeams(); opsRenderPool(); opsRenderLive(); }
   else if (opsTab === 'chars') { opsRenderRoster(); opsQuickRefresh(); }
   else if (opsTab === 'music') opsRenderMusicNow();
   else if (opsTab === 'room' || opsTab === 'bset') opsRenderRoomInfo();
@@ -12727,7 +12725,7 @@ function renderOpsData() {
 // ---------- 전투 준비 ----------
 function opsBattleHtml() {
   const [la, lb] = opsTeamLabels();
-  return `<div id="opsLive"></div><div id="opsSchedule"></div>
+  return `<div id="opsLive"></div>
   <div class="ops-grid wide-left">
     <div class="ops-card">
       <h3><i class="fa-solid fa-users"></i> 팀 편성<span class="sub">{{ battle_type_label }} · 편성을 바꾸면 러너 화면에 미리보기로 보여요</span></h3>
@@ -12747,26 +12745,6 @@ function opsBattleHtml() {
       <input class="ops-in" id="opsPoolQ" placeholder="이름 검색" autocomplete="off" oninput="opsRenderPool()">
       <div class="ops-pool" id="opsPool"></div>
     </div>
-  </div>`;
-}
-// 전투 일정 · 배정 : 일정이 있는 전투 방(PVP · 공성전 · 마스 레이드)의 전투 준비 맨 위. 룸 목록의 연필 버튼으로 여기로 와요.
-let opsSchedAsked = false;
-function opsRenderSchedule(fresh) {
-  const el = document.getElementById('opsSchedule'); if (!el) return;
-  if (!['pvp', 'siege', 'mass_raid'].includes(BATTLE_TYPE)) { el.innerHTML = ''; return; }
-  const b = battleHub && (battleHub.battles || []).find(x => x.id === ROOM_ID);
-  if (!b) { if (!opsSchedAsked) { opsSchedAsked = true; socket.emit('battle_list'); } return; }
-  if (!fresh && el.contains(document.activeElement)) return;   // 입력 중이면 다시 그리지 않아요
-  const ed = battleEdit[b.id] || (battleEdit[b.id] = { name: b.name, start: btLocalInput(b.start), assigned: [...b.assigned], open: false });
-  const roster = battleHub.roster || [];
-  el.innerHTML = `<div class="ops-card bt-sched">
-    <h3><i class="fa-solid fa-calendar-days"></i> 일정 · 배정<span class="sub">룸 목록에 이 이름 · 날짜로 보이고, 배정된 캐릭터만 들어와요(시작 3시간 전 ~ 끝난 뒤 3시간)</span></h3>
-    <div class="bt-gm-row"><input type="text" class="ops-in" value="${mailEsc(ed.name)}" placeholder="전투 이름" oninput="battleEdit['${b.id}'].name=this.value">
-      <input type="datetime-local" value="${ed.start}" onchange="battleEdit['${b.id}'].start=this.value">
-      <button class="ops-btn primary" onclick="battleSave('${b.id}')"><i class="fa-solid fa-floppy-disk"></i>저장</button></div>
-    <div class="bt-gm-row" style="margin-top:12px"><span class="ops-hint" style="margin:0">배정 ${ed.assigned.length}명</span>
-      <button class="ops-btn" onclick="battleEdit['${b.id}'].open=!battleEdit['${b.id}'].open; opsRenderSchedule(true)">${ed.open ? '접기' : '캐릭터 고르기'}</button></div>
-    ${ed.open ? `<div class="bt-names" style="margin-top:10px">${roster.map(n => `<button class="${ed.assigned.includes(n) ? 'on' : ''}" onclick="battleToggle('${b.id}', ${mailEsc(JSON.stringify(n))})">${mailEsc(n)}</button>`).join('') || '<span class="ops-hint">등록된 캐릭터가 없어요</span>'}</div>` : ''}
   </div>`;
 }
 function opsRoleColor(role) { return roleColorVar(role); }
@@ -13048,6 +13026,11 @@ function opsRoomHtml(kind) {
       <div class="ops-foot"><button class="ops-btn" onclick="openSceneModal()"><i class="fa-solid fa-sliders"></i> 배경 · 날씨 설정</button></div>
     </div>
 `,
+    watch: `    <div class="ops-card">
+      <h3><i class="fa-solid fa-eye"></i> 관전<span class="sub">룸 목록에는 모든 전투가 보이고, 들어올 수 있는 건 이 전투의 참여자(팀 편성)예요</span></h3>
+      <label class="ops-check"><input type="checkbox" id="opsWatchOk" onchange="socket.emit('set_chat_tabs', {tabs: {spectator: this.checked}})"> 관전자도 들어올 수 있게(전투 관전 탭)</label>
+    </div>
+`,
     formula: `    <div class="ops-card">
       <h3><i class="fa-solid fa-lock"></i> 전투 수식</h3>
       <div class="ops-hint">수식과 운영진 로그는 GM으로 로그인한 화면에만 서버가 보내요. 러너 화면에는 데이터가 가지 않아요.</div>
@@ -13056,7 +13039,7 @@ function opsRoomHtml(kind) {
 `,
   };
   // 전투 방 : 방 이름 · 링크 · 배경은 전투 설정으로, 일반 방 설정에는 사이트 공통 설정만
-  const keys = kind === 'battle' ? ['room', 'remind', 'scene', 'formula']
+  const keys = kind === 'battle' ? ['room', 'watch', 'remind', 'scene', 'formula']
     : OPS_BATTLE_ROOM ? ['point', 'mail', 'chat'] : ['room', 'point', 'mail', 'chat', 'scene'];
   return `<div class="ops-grid">${keys.map(k => C[k]).join('')}</div>`;
 }
@@ -13095,6 +13078,7 @@ function opsRenderChatLimit() {
   el.innerHTML = OPS_CHAT_LIMIT.map(([v, t]) => `<button class="${v === cur ? 'on' : ''}" onclick="socket.emit('set_chat_limit', {limit:'${v}'})">${t}</button>`).join('');
 }
 function opsRenderRoomInfo() {
+  const w = document.getElementById('opsWatchOk'); if (w) w.checked = !!((opsLastPublic && opsLastPublic.chat_tabs) || {}).spectator;
   opsRenderSwatches(); opsRenderScene(); opsRenderMailEras(); opsRenderRemind(); opsRenderChatLimit();
   const n = document.getElementById('opsRoomName');
   if (n && document.activeElement !== n) n.value = (opsLastPublic && opsLastPublic.room_name) || ROOM_ID;
