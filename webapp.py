@@ -43,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.77"
+SERVER_BUILD = "2026-10-13.78"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -1401,8 +1401,8 @@ def on_join(data):
         if too_many_fails(ip):
             emit("error", {"message": "비밀번호 시도가 너무 많아요. 10분 뒤에 다시 해 주세요."})
             return
-        if data.get("gm_password") in (None, "") and gm_pass_ok(data.get("gm_pass")):
-            pass   # 통행증으로 다시 들어옴
+        if data.get("gm_password") in (None, "") and (gm_pass_ok(data.get("gm_pass")) or is_admin()):
+            pass   # 통행증으로 다시 들어옴 · 메인 페이지에 운영진으로 로그인한 브라우저
         elif not same_secret(data.get("gm_password"), GM_GUEST_PASSWORD):
             note_fail(ip)
             emit("error", {"message": "비밀번호가 올바르지 않습니다."})
@@ -1447,6 +1447,8 @@ def on_join(data):
     joined = {"role": role, "room_id": room_id}
     if nickname.lower() == "gm":
         joined["gm_pass"] = _GM_PASS.dumps("gm")
+    elif nickname == "익명" and is_admin():
+        joined["admin"] = True   # 메인 페이지에 운영진으로 로그인한 브라우저 : 화면이 바로 운영진으로 들어와요
     if room.battle_type in BATTLE_TYPES_SCHEDULED:
         # 전투 방에서 '룸 목록'으로 돌아갈 주소(일반 룸 · 전투 화면)
         lounge = next((r for r in list_rooms() if r.battle_type == "lounge"), None)

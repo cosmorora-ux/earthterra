@@ -5692,6 +5692,7 @@ document.querySelector('.sidebar').addEventListener('click', (e) => {
 
 socket.on('joined', (d) => {
   if (d && d.gm_pass) lsSet(GM_PASS_KEY, d.gm_pass);
+  if (d && d.admin && !explicitlyJoined && BATTLE_TYPE !== 'play' && !WATCH_ONLY) attemptCharacterJoin('GM', null, hideLoginGate);
   updateAvatarDots();
 });
 
@@ -5716,7 +5717,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.77";
+const EXPECTED_SERVER_BUILD = "2026-10-13.78";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
