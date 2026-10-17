@@ -8557,7 +8557,8 @@ const SWIPE_TABS = [
 })();
 ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, () => {
   const btn = document.getElementById('sidebarFullscreenBtn');
-  if (btn) btn.classList.toggle('active', fsActive());
+  // 켜진 탭처럼 표시하지 않고 아이콘만 바꿔요(전체 화면 ↔ 원래 크기)
+  if (btn) { btn.classList.remove('active'); btn.innerHTML = `<i class="fa-solid ${fsActive() ? 'fa-compress' : 'fa-expand'}"></i>`; btn.blur(); }
 }));
 
 // 등록된 캐릭터 전원을 보여주고, 지금 그 이름으로 접속 중이면 초록 점을 켭니다.
