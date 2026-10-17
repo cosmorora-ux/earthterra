@@ -3602,6 +3602,7 @@
     body.is-lounge .sidebar #sidebarMapBtn { order:5; }
     body.is-lounge .sidebar #sidebarMyPageBtn { order:6; }
     body.is-lounge .sidebar #sidebarOpsBtn { order:7; }
+    .sidebar #sidebarSettingsBtn { order:9; }
     /* 하단 탭 : 눌린 회색 배경 없이, 채팅이 열려 있으면 채팅만 켜진 탭으로 표시 */
     .sidebar .sidebar-icon:hover, .sidebar .sidebar-icon:focus { background:none !important; }
     .sidebar .sidebar-icon:hover { color: var(--muted); }
@@ -4534,12 +4535,13 @@
   <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i></button>
   <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps(); if (typeof closeLoopAdmin === 'function') closeLoopAdmin(); if (!IS_LOUNGE) closeWorldMap(true)" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
   {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" data-tip="LOOP 편집" style="display:none;"><i class="fa-solid fa-pen-ruler"></i></button>{% endif %}
-  <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps()" data-tip="운영" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
+  <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps('battle')" data-tip="전투 관리" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
   <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsTab()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" data-tip="상점" style="display:none;"><i class="fa-solid fa-store"></i></button>
   <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <div class="sidebar-grow"></div>
+  <button class="sidebar-icon" id="sidebarSettingsBtn" onclick="openOps('general')" data-tip="방 설정" style="display:none;"><i class="fa-solid fa-gear"></i></button>
   <div class="sb-sound" id="sbSound"><button class="sidebar-icon" id="sidebarSoundBtn" onclick="toggleSoundPop(event)" aria-label="음악 음량"><i class="fa-solid fa-volume-high"></i></button>
     <div class="sb-sound-pop" id="sbSoundPop" onclick="event.stopPropagation()"><button type="button" class="sb-mute" onclick="toggleMusicMute()" aria-label="음소거" data-tip="음소거"><span class="bgm-eq" id="sbEq"><span></span><span></span><span></span><span></span></span></button>
       <input type="range" class="nice-range" id="sbVolSlider" min="0" max="100" oninput="onVolumeChange(this.value)" aria-label="음악 음량"><span class="sb-vol-num" id="sbVolNum"></span></div></div>
@@ -12516,8 +12518,14 @@ const IS_LOUNGE = BATTLE_TYPE === 'lounge';
 // 일반 룸은 전투가 없으므로 전투 준비 탭을 뺍니다.
 // PLAY 룸은 전투 준비 대신 LOOP 편집(사건 · 규칙 · 문장)이 첫 탭이에요.
 // PLAY 룸은 전투가 없어서 전투 준비 탭을 빼요(LOOP 편집은 사이드바의 따로 된 페이지).
-const OPS_TABS = [['battle', '전투 준비'], ['chars', '캐릭터'], ['music', '음악'], ['room', '방 설정']]
-  .filter(t => !((IS_LOUNGE || BATTLE_TYPE === 'play') && t[0] === 'battle'));
+// 운영 페이지는 두 가지 : 전투 관리(전투 방 · 사이드 슬라이더 / 룸 목록 연필) · 방 설정(모든 방 · 사이드 톱니바퀴)
+const OPS_BATTLE_ROOM = ['pvp', 'siege', 'mass_raid'].includes(BATTLE_TYPE);
+const OPS_TAB_SETS = {
+  battle: [['battle', '전투 준비'], ['music', '음악'], ['bset', '전투 설정']],
+  general: [['chars', '캐릭터']].concat(OPS_BATTLE_ROOM ? [] : [['music', '음악']], [['room', '방 설정']]),
+};
+let opsMode = OPS_BATTLE_ROOM ? 'battle' : 'general';
+let OPS_TABS = OPS_TAB_SETS[opsMode];
 let opsTab = OPS_TABS[0][0];
 let opsTeamA = [], opsTeamB = [];
 let opsLastPublic = null;
@@ -12536,7 +12544,7 @@ function openBattleHub() {
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;
   closeWorldMap(true);
-  if (typeof opsOpen === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); }
+  if (typeof opsOpen === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); document.getElementById('sidebarSettingsBtn').classList.remove('active'); }
   document.body.classList.add('view-battles');
   ['sidebarBattleBtn', 'sidebarDormBtn', 'sidebarMapBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.classList.remove('active'); });
   document.getElementById('sidebarBattlesBtn').classList.add('active');
@@ -12561,7 +12569,7 @@ socket.on('joined', (d) => {
 // 룸 목록의 연필 버튼(?view=ops) : 운영진 로그인이 확인되면 이 방의 운영 페이지(전투 준비)를 열어요
 if (!IS_LOUNGE && new URLSearchParams(location.search).get('view') === 'ops') {
   const t0 = Date.now();
-  const tryOps = () => { if (typeof opsIsGm === 'function' && opsIsGm()) { opsTab = OPS_TABS[0][0]; openOps(); } else if (Date.now() - t0 < 12000) setTimeout(tryOps, 200); };
+  const tryOps = () => { if (typeof opsIsGm === 'function' && opsIsGm()) { opsTab = 'battle'; openOps('battle'); } else if (Date.now() - t0 < 12000) setTimeout(tryOps, 200); };
   setTimeout(tryOps, 300);
 }
 // 전투 방에서 '룸 목록'으로 돌아오면(?view=battles) 바로 룸 목록 화면을 열어요
@@ -12659,27 +12667,33 @@ function syncOpsBtn() {
   const btn = document.getElementById('sidebarOpsBtn');
   if (!btn) return;
   const gm = opsIsGm();
-  btn.style.display = gm ? '' : 'none';
+  btn.style.display = gm && OPS_BATTLE_ROOM ? '' : 'none';   // 전투 관리는 전투 방에서만
+  const gb = document.getElementById('sidebarSettingsBtn'); if (gb) gb.style.display = gm ? '' : 'none';   // 방 설정(톱니바퀴)
   if (!gm && opsOpen()) closeOps();
   // 소지품(상점) 탭은 운영진만 : 참가자는 마이페이지 소지품 · 전투 룸 목록의 상점 아이콘으로 들어가요
   const sb = document.getElementById('sidebarShopBtn'); if (sb) sb.style.display = gm ? '' : 'none';
   const lb = document.getElementById('sidebarLoopEditBtn');
   if (lb) { lb.style.display = gm ? '' : 'none'; if (!gm && typeof closeLoopAdmin === 'function') closeLoopAdmin(); }
 }
-function openOps() {
+function openOps(mode) {
   if (!opsIsGm()) return;
+  mode = mode === 'battle' && OPS_BATTLE_ROOM ? 'battle' : mode === 'general' || !OPS_BATTLE_ROOM ? 'general' : opsMode;
+  if (mode !== opsMode || !OPS_TAB_SETS[mode].some(t => t[0] === opsTab)) { opsMode = mode; OPS_TABS = OPS_TAB_SETS[mode]; opsTab = OPS_TABS[0][0]; }
   if (typeof closeLoopAdmin === 'function') closeLoopAdmin();
   closeWorldMap(true);
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
   if (typeof closeBattleHub === 'function') closeBattleHub();
   document.body.classList.add('view-ops');
-  document.getElementById('sidebarOpsBtn').classList.add('active');
+  document.getElementById('sidebarOpsBtn').classList.toggle('active', opsMode === 'battle');
+  document.getElementById('sidebarSettingsBtn').classList.toggle('active', opsMode === 'general');
+  const brand = document.querySelector('#opsPage .ops-brand'); if (brand) brand.textContent = opsMode === 'battle' ? 'Admin' : 'Settings';
   document.getElementById('sidebarBattleBtn').classList.remove('active');
   renderOps();
 }
 function closeOps() {
   if (!opsOpen()) return;
+  document.getElementById('sidebarSettingsBtn').classList.remove('active');
   if (IS_LOUNGE) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); openDorm(); return; }
   document.body.classList.remove('view-ops');
   document.getElementById('sidebarOpsBtn').classList.remove('active');
@@ -12698,7 +12712,7 @@ function renderOps() {
   if (opsTab === 'battle') body.innerHTML = opsBattleHtml();
   else if (opsTab === 'chars') body.innerHTML = opsCharsHtml();
   else if (opsTab === 'music') body.innerHTML = opsMusicHtml();
-  else body.innerHTML = opsRoomHtml();
+  else body.innerHTML = opsRoomHtml(opsTab === 'bset' ? 'battle' : 'general');
   renderOpsData();
 }
 // 서버 상태가 바뀔 때는 입력칸을 건드리지 않고 목록 부분만 다시 그립니다(입력 중 포커스가 날아가지 않게).
@@ -12707,7 +12721,7 @@ function renderOpsData() {
   if (opsTab === 'battle') { opsRenderTeams(); opsRenderPool(); opsRenderLive(); opsRenderSchedule(); }
   else if (opsTab === 'chars') { opsRenderRoster(); opsQuickRefresh(); }
   else if (opsTab === 'music') opsRenderMusicNow();
-  else if (opsTab === 'room') opsRenderRoomInfo();
+  else if (opsTab === 'room' || opsTab === 'bset') opsRenderRoomInfo();
 }
 
 // ---------- 전투 준비 ----------
@@ -12992,9 +13006,10 @@ function opsPlayMp3() {
 }
 
 // ---------- 방 설정 ----------
-function opsRoomHtml() {
-  return `<div class="ops-grid">
-    <div class="ops-card">
+// 방 설정(일반 · 톱니바퀴) / 전투 설정(전투 방 · 전투 관리)
+function opsRoomHtml(kind) {
+  const C = {
+    room: `    <div class="ops-card">
       <h3><i class="fa-solid fa-door-open"></i> 방</h3>
       <div class="ops-field"><span class="lb">방 이름</span>
         <div class="ops-row"><input class="ops-in" id="opsRoomName" maxlength="40" autocomplete="off" onkeydown="if(event.key==='Enter') opsSaveRoomName()">
@@ -13003,36 +13018,47 @@ function opsRoomHtml() {
         <div class="ops-row"><input class="ops-in" id="opsGuestLink" readonly onclick="this.select()">
         <button class="ops-btn" onclick="opsCopyLink()"><i class="fa-regular fa-copy"></i> 복사</button></div></div>
     </div>
-    <div class="ops-card">
+`,
+    point: `    <div class="ops-card">
       <h3><i class="fa-solid fa-palette"></i> 포인트 컬러</h3>
       <div class="ops-swatches" id="opsSwatches"></div>
       <div class="ops-hint" style="margin-top:12px;">진영 색(Resonans · 使徒 · Void)은 바뀌지 않아요.</div>
     </div>
-    <div class="ops-card">
+`,
+    mail: `    <div class="ops-card">
       <h3><i class="fa-solid fa-envelope"></i> 편지 시기<span class="sub">러너는 이 기간 안에서 연도만 골라요</span></h3>
       <div class="mail-eras" id="opsMailEras"></div>
       <div class="ops-hint" style="margin-top:12px;">캐릭터 나이는 1차 입학(空歷 514年) 기준 13~16세(기본 13세)이고, 운영진이 마이페이지나 캐릭터 수정에서 바꿀 수 있어요.</div>
     </div>
-    <div class="ops-card">
+`,
+    remind: `    <div class="ops-card">
       <h3><i class="fa-solid fa-hourglass-half"></i> 미행동자 안내<span class="sub">라운드 제한시간이 이만큼 남으면 커맨드 창에 한 번 안내</span></h3>
       <div class="mail-eras" id="opsRemind"></div>
       <div class="ops-hint" style="margin-top:12px;">예) 제한시간 1분 남았습니다. 미행동자 하루, 노아, 세린 · 모두 행동했으면 안내하지 않아요.</div>
     </div>
-    <div class="ops-card">
+`,
+    chat: `    <div class="ops-card">
       <h3><i class="fa-solid fa-comment-slash"></i> 채팅 도배 방지<span class="sub">이 시간 안에 이 횟수를 넘게 보내면 잠시 막아요 · 운영진은 제한 없음</span></h3>
       <div class="mail-eras" id="opsChatLimit"></div>
     </div>
-    <div class="ops-card">
+`,
+    scene: `    <div class="ops-card">
       <h3><i class="fa-solid fa-cloud-sun"></i> 배경 · 날씨</h3>
       <div class="ops-scene" id="opsScene"></div>
       <div class="ops-foot"><button class="ops-btn" onclick="openSceneModal()"><i class="fa-solid fa-sliders"></i> 배경 · 날씨 설정</button></div>
     </div>
-    <div class="ops-card">
+`,
+    formula: `    <div class="ops-card">
       <h3><i class="fa-solid fa-lock"></i> 전투 수식</h3>
       <div class="ops-hint">수식과 운영진 로그는 GM으로 로그인한 화면에만 서버가 보내요. 러너 화면에는 데이터가 가지 않아요.</div>
       <div class="ops-foot"><button class="ops-btn" onclick="toggleFormulaPanel()"><i class="fa-solid fa-square-root-variable"></i> 전투 수식 설정</button></div>
     </div>
-  </div>`;
+`,
+  };
+  // 전투 방 : 방 이름 · 링크 · 배경은 전투 설정으로, 일반 방 설정에는 사이트 공통 설정만
+  const keys = kind === 'battle' ? ['room', 'remind', 'scene', 'formula']
+    : OPS_BATTLE_ROOM ? ['point', 'mail', 'chat'] : ['room', 'point', 'mail', 'chat', 'scene'];
+  return `<div class="ops-grid">${keys.map(k => C[k]).join('')}</div>`;
 }
 function opsRenderScene() {
   const el = document.getElementById('opsScene'); if (!el) return;
@@ -13105,7 +13131,7 @@ function worldIsGm() { return !!(worldData && worldData.gm) && myControlInfo(las
 function openWorldMap() {
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
-  if (typeof closeOps === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); }
+  if (typeof closeOps === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); document.getElementById('sidebarSettingsBtn').classList.remove('active'); }
   if (typeof closeBattleHub === 'function') closeBattleHub();
   document.body.classList.add('view-map');
   if (typeof closeLoopAdmin === 'function' && document.body.classList.contains('view-loopadmin')) closeLoopAdmin();
