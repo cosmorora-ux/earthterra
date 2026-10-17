@@ -10,10 +10,6 @@
   #bootVeil { position:fixed; inset:0; z-index:2147483000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
     background:#050505; transition: opacity .35s ease, visibility 0s linear .35s; }
   #bootVeil.gone { opacity:0; visibility:hidden; pointer-events:none; }
-  #bootVeil .bv-sk { width:min(420px, 72vw); display:flex; flex-direction:column; gap:10px; }
-  #bootVeil .bv-sk i { display:block; height:12px; border-radius:6px; background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.09), rgba(255,255,255,.04)); background-size:200% 100%; animation: bvSh 1.2s ease-in-out infinite !important; animation-duration:1.2s !important; }
-  #bootVeil .bv-sk i:nth-child(1) { width:42%; height:16px; } #bootVeil .bv-sk i:nth-child(2) { width:100%; } #bootVeil .bv-sk i:nth-child(3) { width:86%; } #bootVeil .bv-sk i:nth-child(4) { width:64%; }
-  @keyframes bvSh { 0% { background-position:100% 0; } 100% { background-position:-100% 0; } }
 </style>
 <script>document.documentElement.classList.add('booting');</script>
 <title>참가자 화면 - {{ room_id }}</title>
@@ -2365,8 +2361,11 @@
   }
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
   body.is-lounge #sidebarBattleBtn, body.is-lounge #sidebarUserListBtn, body.is-lounge .m-battle-tools { display:none !important; }
-  body.is-battle #sidebarDormBtn, body.is-battle #sidebarMapBtn, body.is-battle #sidebarMailBtn, body.is-battle #newsMailRow, body.is-battle #myPageRoomBox { display:none !important; }
-  body.is-play.is-battle #newsMailRow { display:flex !important; }
+  /* 메뉴는 일반 룸 · 전투 룸이 같아요 : 종 · 배틀 · 마이룸 · 우체통 · 지도 · 마이페이지 (전투 방에서 누르면 일반 룸의 그 화면으로) */
+  body.is-play #sidebarDormBtn, body.is-play #sidebarMailBtn, body.is-battle #myPageRoomBox { display:none !important; }
+  body.is-play #newsMailRow { display:flex !important; }
+  body.is-battle:not(.is-play) #sidebarUserListBtn, body.is-battle:not(.is-play) #sidebarShopBtn { display:none !important; }
+  body.is-battle:not(.is-play) .member-header .m-userlist-btn { display:inline-flex; }
   .mail-preview { display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:11px 14px; border-radius:12px; background: rgba(var(--point-rgb),.08); color: var(--muted); font-size:13px; }
   .mail-preview i { color: var(--point); }
   /* PLAY 룸(LOOP)에는 맵을 달아 둡니다(챕터 없음 · 학교 잠김) */
@@ -3584,14 +3583,21 @@
     .topbar.v2 #liveClock { display:none; }
     .topbar .m-battle-tools { display:none !important; }
     /* 전투 룸 : 하단 탭에 채팅, 유저 리스트는 채팅창 위쪽 도구에서 엽니다. 채팅은 채팅 탭을 다시 누르면 닫힙니다(X 없음). */
-    body.is-battle .sidebar #sidebarChatBtn { display:flex !important; }
-    /* 전투 룸 하단 탭 순서 : 공지(소식) · 상점 · 전투 · 채팅 · 마이페이지 (운영진은 맨 끝에 운영) */
+    body.is-play .sidebar #sidebarChatBtn { display:flex !important; }
     body.is-battle .sidebar #sidebarNewsBtn { order:1; }
     body.is-battle .sidebar #sidebarShopBtn { order:2; }
     body.is-battle .sidebar #sidebarBattleBtn { order:3; }
     body.is-battle .sidebar #sidebarChatBtn { order:4; }
     body.is-battle .sidebar #sidebarMyPageBtn { order:5; }
     body.is-battle .sidebar #sidebarOpsBtn { order:6; }
+    /* 전투 룸 하단 탭 = 일반 룸과 같게 : 소식 · 배틀 · 마이룸 · 지도 · 마이페이지. 채팅 · 유저 리스트는 전투 머리 오른쪽 위 */
+    body.is-battle:not(.is-play) .sidebar #sidebarBattleBtn { order:3; }
+    body.is-battle:not(.is-play) .sidebar #sidebarDormBtn { order:4; }
+    body.is-battle:not(.is-play) .sidebar #sidebarMapBtn { order:5; }
+    body.is-battle:not(.is-play) .sidebar #sidebarMyPageBtn { order:6; }
+    body.is-battle:not(.is-play) .sidebar #sidebarOpsBtn { order:7; }
+    body.is-battle:not(.is-play) .topbar .m-battle-tools { display:flex !important; gap:6px; grid-area:tools; justify-self:end; }
+    body.is-battle:not(.is-play) .member-header .m-chat-close { display:inline-flex !important; }
     body.is-play.is-battle .sidebar #sidebarChatBtn { order:4; }
     body.is-play.is-battle .sidebar #sidebarMapBtn { order:5; }
     /* 일반 룸 하단 탭 순서 : 소식 · 상점 · 기숙사 · 맵 · 마이페이지 (운영진은 맨 끝에 운영) */
@@ -4523,7 +4529,7 @@
 </style>
 </head>
 <body class="{% if battle_type == 'lounge' %}is-lounge{% else %}is-battle{% endif %}{% if battle_type == 'play' %} is-play{% endif %}">
-<div id="bootVeil" aria-hidden="true"><div class="bv-sk"><i></i><i></i><i></i><i></i></div></div>
+<div id="bootVeil" aria-hidden="true"></div>
 <div id="wmToast" class="wm-toast" role="status" aria-live="polite"></div>
 <div id="loginGate" class="on checking">
   <div class="gate-bg"><span class="gate-orbit o2"></span><span class="gate-orbit o1"></span></div>
@@ -4555,13 +4561,13 @@
   <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
   <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
   <button class="sidebar-icon" id="sidebarBattlesBtn" onclick="openBattleHub()" data-tip="전투"><i class="fa-solid fa-shield-halved"></i><span class="notice-dot" id="battlesDot"></span></button>
+  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="sidebarBattleClick()" data-tip="전투"><i class="fa-solid {% if battle_type == 'play' %}fa-globe{% else %}fa-shield-halved{% endif %}"></i></button>
   <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i></button>
   <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
   <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i></button>
-  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps(); if (typeof closeLoopAdmin === 'function') closeLoopAdmin(); if (!IS_LOUNGE) closeWorldMap(true)" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
   {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" data-tip="LOOP 편집" style="display:none;"><i class="fa-solid fa-pen-ruler"></i></button>{% endif %}
-  <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps('battle')" data-tip="전투 관리" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
+  <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps('battle')" data-tip="전투 관리" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
   <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsTab()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
   <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" data-tip="상점" style="display:none;"><i class="fa-solid fa-store"></i></button>
   <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
@@ -5743,7 +5749,7 @@ function uiToast(msg, kind) {
 }
 function showError(msg) { uiToast(msg, 'error'); }
 
-socket.on('error', (d) => showError(d.message));
+socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // quiet : 로그인 전 관전 입장 거절(로그인 창으로 충분)
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
@@ -12595,6 +12601,28 @@ if (!IS_LOUNGE && new URLSearchParams(location.search).get('view') === 'ops') {
   const t0 = Date.now();
   const tryOps = () => { if (typeof opsIsGm === 'function' && opsIsGm()) { opsTab = 'battle'; openOps('battle'); } else if (Date.now() - t0 < 12000) setTimeout(tryOps, 200); };
   setTimeout(tryOps, 300);
+}
+// 전투 방의 메뉴 : 일반 룸과 같은 아이콘. 마이룸 · 우체통 · 지도는 일반 룸의 그 화면으로 이동해요.
+function goLounge(view) { if (window.BT_LOBBY_URL) location.href = BT_LOBBY_URL.replace(/view=battles/, 'view=' + view); }
+function sidebarBattleClick() {
+  const busy = (typeof opsOpen === 'function' && opsOpen()) || document.body.classList.contains('view-loopadmin') || document.body.classList.contains('view-dorm')
+    || document.body.classList.contains('view-map') || document.body.classList.contains('m-chat-open');
+  if (document.body.classList.contains('m-chat-open')) toggleMobileChat(false);
+  closeDorm(); closeOps(); if (typeof closeLoopAdmin === 'function') closeLoopAdmin(); if (!IS_LOUNGE) closeWorldMap(true);
+  // 이미 전투 화면이면 룸 목록으로(일반 룸의 배틀 탭과 같은 자리)
+  if (!busy && !IS_LOUNGE && BATTLE_TYPE !== 'play' && window.BT_LOBBY_URL) location.href = BT_LOBBY_URL;
+}
+if (!IS_LOUNGE && BATTLE_TYPE !== 'play') document.addEventListener('DOMContentLoaded', () => {
+  const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
+  on('sidebarDormBtn', () => goLounge('dorm'));
+  on('sidebarMapBtn', () => goLounge('map'));
+  on('sidebarMailBtn', () => goLounge('mail'));
+  on('newsMailRow', () => goLounge('mail'));
+});
+if (IS_LOUNGE && ['map', 'mail'].includes(new URLSearchParams(location.search).get('view'))) {
+  const v = new URLSearchParams(location.search).get('view');
+  const tryV = () => { if (document.getElementById('dormModal') && typeof openWorldMap === 'function') { if (v === 'map') openWorldMap(); else openMail(); } else setTimeout(tryV, 100); };
+  setTimeout(tryV, 500);
 }
 // 전투 방에서 '룸 목록'으로 돌아오면(?view=battles) 바로 룸 목록 화면을 열어요
 if (IS_LOUNGE && new URLSearchParams(location.search).get('view') === 'battles') {
