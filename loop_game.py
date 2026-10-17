@@ -822,13 +822,15 @@ class LoopBook:
 
     def reset(self, name, force=False):
         """새 생애 : 끝난 생애를 치우고 시작 화면으로.
-        force면 진행 중인 생애를 기록 없이 버리고 처음부터(지난 생애 기록 · 루프 횟수는 그대로)."""
+        force('새로 시작')면 완전 초기화 : 진행 중인 생애 · 지난 운명 기록 · 루프 횟수를 모두 지우고 처음부터."""
         with self.lock:
             e = self._entry(name)
             if not force and e["run"] and e["run"]["status"] not in ("ended",):
                 raise LoopError("진행 중인 생애는 끝까지 가야 해요.")
             if force:
-                e["fresh"] = True   # 다음 운명은 국가도 새로 뽑아요(지난 생애를 따라 같은 나라로 고정되지 않게)
+                e["lives"] = []
+                e["loops"] = 0
+                e["fresh"] = True   # 다음 운명은 국가도 새로 뽑아요
             e["run"] = None
             self.save()
 

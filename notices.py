@@ -156,7 +156,7 @@ SEED_NOTICES = [
 </ul>
 <p>관련 문의는 운영진에게 남겨 주세요.</p>
 """),
-    ("loop_guide_v2", "LOOP 이용 안내 · 시뮬레이터 하는 법", """
+    ("loop_guide_v3", "LOOP 이용 안내 · 시뮬레이터 하는 법", """
 <p><b>LOOP</b>는 한 사람의 생애를 사건 하나하나 골라 가며 살아 보는 러닝 시뮬레이션입니다. 누구나 웹에서 바로 해 볼 수 있어요.</p>
 <h3>들어가기</h3>
 <ul>
@@ -180,8 +180,8 @@ SEED_NOTICES = [
 </ul>
 <h3>새로 시작</h3>
 <ul>
-<li>Log 위쪽의 <b>새로 시작</b>을 누르면 지금 생애를 <b>기록 없이 버리고</b> 처음부터 다시 시작합니다. 되돌릴 수 없으니 주의해 주세요.</li>
-<li>이미 남긴 지난 운명 기록은 새로 시작해도 지워지지 않습니다.</li>
+<li>Log 위쪽의 <b>새로 시작</b>을 누르면 지금 생애와 <b>지난 운명 기록까지 모두 지우고</b> 처음부터 다시 시작합니다. 태어날 국가도 새로 정해져요.</li>
+<li>되돌릴 수 없으니 주의해 주세요.</li>
 </ul>
 <h3>PC · 휴대폰</h3>
 <ul>
@@ -199,7 +199,7 @@ SEED_NOTICES = [
 """),
 ]
 # 내용을 고친 고정 공지 : 예전 판이 이미 올라가 있으면 새 글을 더 올리지 않고 그 글(같은 제목)의 본문만 바꿔요.
-SEED_REPLACES = {"loop_guide_v2": "loop_guide_v1"}
+SEED_REPLACES = {"loop_guide_v2": ("loop_guide_v1",), "loop_guide_v3": ("loop_guide_v1", "loop_guide_v2")}
 
 
 class NoticeBoard:
@@ -223,8 +223,8 @@ class NoticeBoard:
     def seed(self):
         """SEED_NOTICES 중 아직 올린 적 없는 것만 고정 공지로 올립니다(위에서부터 1번 · 2번 순서)."""
         for key, title, body in SEED_NOTICES:
-            old = SEED_REPLACES.get(key)
-            if key in self.seeded or not old or old not in self.seeded:
+            old = SEED_REPLACES.get(key) or ()
+            if key in self.seeded or not any(o in self.seeded for o in old):
                 continue
             for n in self.notices:
                 if n.get("title") == title:

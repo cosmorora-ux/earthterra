@@ -5757,7 +5757,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.83";
+const EXPECTED_SERVER_BUILD = "2026-10-13.84";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -13857,9 +13857,9 @@ function loopRetry() {
   loopEmit('loop_reset');
 }
 function loopRestart() {
-  uiConfirm('지금 생애를 기록 없이 버리고 처음부터 다시 시작할까요?', { title: '새로 시작', okText: '새로 시작', icon: 'fa-rotate-left' }).then(ok => {
+  uiConfirm('지금 생애와 지난 운명 기록을 모두 지우고 처음부터 다시 시작할까요?\n되돌릴 수 없어요.', { title: '새로 시작', okText: '모두 지우고 시작', icon: 'fa-rotate-left', danger: true }).then(ok => {
     if (!ok) return;
-    loopShown.clear(); loopProStep = {};
+    loopShown.clear(); loopProStep = {}; loopLifePeek = null; loopEndCache = {};
     loopEmit('loop_reset', { force: true });
   });
 }
