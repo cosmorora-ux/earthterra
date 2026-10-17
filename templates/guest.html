@@ -14227,15 +14227,14 @@ function laStepper(path, v, min, max, cls, signed) {
   const P = laEsc(JSON.stringify(path));
   return `<span class="la-stp ${cls || ''} ${tone}"><button type="button" ${v <= min ? 'disabled' : ''} onclick='laStep(${P}, -1, ${min}, ${max})'><i class="fa-solid fa-minus"></i></button><b>${signed && v > 0 ? '+' + v : v}</b><button type="button" ${v >= max ? 'disabled' : ''} onclick='laStep(${P}, 1, ${min}, ${max})'><i class="fa-solid fa-plus"></i></button></span>`;
 }
-const LA_ETABS = [['story', '이야기', 'fa-book-open'], ['choices', '선택지', 'fa-list-ol'], ['cond', '출현 조건', 'fa-filter'], ['memo', '작업 메모', 'fa-note-sticky']];
+const LA_ETABS = [['story', '이야기', 'fa-book-open'], ['choices', '선택지', 'fa-list-ol'], ['cond', '세부 조건', 'fa-filter'], ['memo', '작업 메모', 'fa-note-sticky']];
 function laEventForm(i, no) {
   const ev = la.c.events[i], P = k => ['events', i, ...k], c = ev.cond || {};
   la.etab = la.etab || 'story';
   const eraOpts = (la.c.eras || []).map(e => `<option value="${e.id}" ${e.id === ev.era ? 'selected' : ''}>${laEsc(e.no)}. ${laEsc(e.name)}</option>`).join('');
-  const slotOpts = Array.from({ length: laSlotCount(ev.era) }, (_, k) => k + 1).map(n => `<option value="${n}" ${n === laSlotOf(ev) ? 'selected' : ''}>사건 ${n}</option>`).join('');
   const kindOpts = Object.entries(LA_KIND).filter(([k]) => k !== 'mind').map(([k, t]) => `<option value="${k}" ${k === (ev.kind || 'life') ? 'selected' : ''}>${t}</option>`).join('');
   const chOpts = `<option value="" ${ev.chapter == null || ev.chapter === '' ? 'selected' : ''}>시대를 따라 (${laEsc((la.c.rules.chapters[laEraChapter(ev.era)] || {}).name || '')})</option>` + la.c.rules.chapters.map(ch => `<option value="${ch.id}" ${ev.chapter != null && ev.chapter !== '' && Number(ev.chapter) === ch.id ? 'selected' : ''}>${laEsc(ch.name)}</option>`).join('');
-  const condCount = ['country'].filter(k => c[k]).length + (c.loops ? 1 : 0) + ((c.tags || []).length ? 1 : 0) + ((c.no_tags || []).length ? 1 : 0) + Object.values(c.min || {}).filter(Boolean).length;
+  const condCount = (c.loops ? 1 : 0) + ((c.tags || []).length ? 1 : 0) + ((c.no_tags || []).length ? 1 : 0) + Object.values(c.min || {}).filter(Boolean).length;
   const tabs = LA_ETABS.map(([k, t, ic]) => {
     const n = k === 'cond' ? condCount : k === 'story' ? (ev.extra || []).length : 0;
     const dot = k === 'memo' && (ev.note || '').trim() ? '<span class="dot"></span>' : '';
@@ -14280,9 +14279,8 @@ function laEventForm(i, no) {
           </div></details></div>`;
     }).join('');
   } else if (la.etab === 'cond') {
-    body = `<div class="la-hint-line"><i class="fa-solid fa-circle-info"></i> 아무것도 정하지 않으면 누구에게나 나와요.</div>
+    body = `<div class="la-hint-line"><i class="fa-solid fa-circle-info"></i> 루프 횟수 · 태그 · 자원 조건이에요. 아무것도 정하지 않으면 누구에게나 나와요. (출신 국가는 위에서 골라요)</div>
       <div class="la-rows">
-        <div class="la-r"><span class="lb">출신 국가</span>${laSeg(P(['cond', 'country']), c.country, [['', '전체'], ['arcadia', '아르카디아'], ['nova', '노바']])}</div>
         <div class="la-r"><span class="lb">루프 횟수</span>${laStepper(P(['cond', 'loops']), c.loops, 0, 20)}<span class="la-r-note">회 이상 (0 = 상관없음)</span></div>
         <div class="la-r"><span class="lb">있어야 하는 태그</span><input class="ops-in" ${laP(P(['cond', 'tags']))} data-t="tags" value="${laEsc((c.tags || []).join(', '))}" placeholder="하나라도 있으면 나와요 · 쉼표로 구분" onchange="laInput(this, true)"></div>
         <div class="la-r"><span class="lb">있으면 안 되는 태그</span><input class="ops-in" ${laP(P(['cond', 'no_tags']))} data-t="tags" value="${laEsc((c.no_tags || []).join(', '))}" placeholder="하나라도 있으면 안 나와요" onchange="laInput(this, true)"></div>
@@ -14300,7 +14298,7 @@ function laEventForm(i, no) {
       <button class="ops-btn icon danger" onclick="laDelEvent(${i})" data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>
     <div class="la-meta">
       <label><span>챕터</span><select class="ops-in" ${laP(P(['era']))} data-t="num" onchange="laInput(this, true)">${eraOpts}</select></label>
-      <label><span>칸</span><select class="ops-in la-slot-sel" ${laP(P(['slot']))} data-t="num" onchange="laInput(this, true)">${slotOpts}</select></label>
+      <label><span>출신 국가</span><select class="ops-in" onchange='laSetPath(${JSON.stringify(P(["cond", "country"]))}, this.value || undefined); renderLoopAdmin()'>${[['', '전체'], ['arcadia', '아르카디아'], ['nova', '노바']].map(([v, t]) => `<option value="${v}" ${(c.country || '') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <label><span>종류 <i class="la-q" data-tip="체력이 0이 되어 죽을 때 이 종류의 사망 문장이 나와요.">?</i></span><select class="ops-in" ${laP(P(['kind']))} onchange="laInput(this)">${kindOpts}</select></label>
       <label><span>공개 단계</span><select class="ops-in" ${laP(P(['chapter']))} data-t="chapter" onchange="laInput(this, true)">${chOpts}</select></label>
       <label class="tg warn ${ev.draft ? 'on' : ''}"><input type="checkbox" ${laP(P(['draft']))} ${ev.draft ? 'checked' : ''} onchange="laInput(this, true)"><i class="fa-solid fa-pen"></i> 작업 중 (플레이에 안 나옴)</label>
