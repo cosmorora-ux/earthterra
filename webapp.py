@@ -24,6 +24,7 @@ import uuid
 
 from flask import Flask, request, render_template, redirect, url_for, abort, jsonify, session
 from flask_socketio import SocketIO, join_room, leave_room, emit
+from itsdangerous import URLSafeTimedSerializer, BadSignature
 
 import config
 import shop as shop_mod
@@ -42,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.75"
+SERVER_BUILD = "2026-10-13.76"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -65,6 +66,16 @@ def _load_secret_key():
 
 
 app.config["SECRET_KEY"] = _load_secret_key()
+# 운영진 로그인 유지 : 비밀번호로 한 번 들어오면 서명된 통행증(7일)을 브라우저에 맡겨, 다른 방 · 새로고침에서 다시 묻지 않아요.
+_GM_PASS = URLSafeTimedSerializer(app.config["SECRET_KEY"], salt="gm-pass")
+GM_PASS_AGE = 7 * 86400
+
+
+def gm_pass_ok(token):
+    try:
+        return _GM_PASS.loads(str(token or ""), max_age=GM_PASS_AGE) == "gm"
+    except (BadSignature, ValueError, TypeError):
+        return False
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 7
@@ -1188,7 +1199,8 @@ def _battle_card(room, me, is_gm):
     card = {"id": room.id, "name": room.name, "type": room.battle_type, "type_label": BATTLE_TYPE_LABELS.get(room.battle_type, ""),
             "start": sc.get("start"), "ended_at": sc.get("ended_at"), "opens": opens, "closes": closes, "state": state,
             "assigned": assigned, "mine": mine, "live": bool(room.game.battle and not room.game.battle.finished),
-            "can_enter": is_gm or (state == "open" and (mine or not assigned)),
+            "watch": (not is_gm) and (not mine) and bool((room.chat_tabs_enabled or {}).get("spectator")),
+            "can_enter": is_gm or (state == "open" and (mine or bool((room.chat_tabs_enabled or {}).get("spectator")))),
             "thumb": (room.scene or {}).get("url") or (room.map_bg or {}).get("url") or None}
     if is_gm:
         card["url"] = url_for("guest_page", room_id=room.id, key=room.guest_key)
@@ -1202,6 +1214,8 @@ def _battle_list_payload(sid):
     rooms = [r for r in list_rooms() if r.battle_type in BATTLE_TYPES_SCHEDULED]
     if not is_gm:
         rooms = [r for r in rooms if (r.schedule or {}).get("start")]   # 러너에게는 일정이 잡힌 전투만
+        # 그중 내가 배정된 방 + 관전 탭이 켜진 방만
+        rooms = [r for r in rooms if me in ((r.schedule or {}).get("assigned") or []) or (r.chat_tabs_enabled or {}).get("spectator")]
     cards = [_battle_card(r, me, is_gm) for r in rooms]
     cards.sort(key=lambda c: (c["state"] == "closed", c["start"] or 9e18))
     return {"battles": cards, "is_gm": is_gm, "now": time.time(), "roster": room_roster_names() if is_gm else []}
@@ -1235,7 +1249,9 @@ def on_battle_enter(data):
         msg = "아직 입장 시간이 아니에요." if card["state"] == "upcoming" else "입장 시간이 지났어요." if card["state"] == "closed" else "이 전투에 배정되지 않았어요."
         emit("battle_enter", {"ok": False, "message": msg})
         return
-    emit("battle_enter", {"ok": True, "room_id": room.id, "url": url_for("guest_page", room_id=room.id, key=room.guest_key)})
+    url = url_for("guest_page", room_id=room.id, key=room.guest_key)
+    watch = bool(card.get("watch"))
+    emit("battle_enter", {"ok": True, "room_id": room.id, "url": url + ("&watch=1" if watch else ""), "watch": watch})
 
 
 def _broadcast_battle_lists():
@@ -1384,7 +1400,9 @@ def on_join(data):
         if too_many_fails(ip):
             emit("error", {"message": "비밀번호 시도가 너무 많아요. 10분 뒤에 다시 해 주세요."})
             return
-        if not same_secret(data.get("gm_password"), GM_GUEST_PASSWORD):
+        if data.get("gm_password") in (None, "") and gm_pass_ok(data.get("gm_pass")):
+            pass   # 통행증으로 다시 들어옴
+        elif not same_secret(data.get("gm_password"), GM_GUEST_PASSWORD):
             note_fail(ip)
             emit("error", {"message": "비밀번호가 올바르지 않습니다."})
             return
@@ -1426,6 +1444,8 @@ def on_join(data):
     # 입장/퇴장 알림은 쓰지 않으므로 채팅 기록에도 남기지 않습니다.
 
     joined = {"role": role, "room_id": room_id}
+    if nickname.lower() == "gm":
+        joined["gm_pass"] = _GM_PASS.dumps("gm")
     if room.battle_type in BATTLE_TYPES_SCHEDULED:
         # 전투 방에서 '룸 목록'으로 돌아갈 주소(일반 룸 · 전투 화면)
         lounge = next((r for r in list_rooms() if r.battle_type == "lounge"), None)

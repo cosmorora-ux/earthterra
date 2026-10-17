@@ -5383,6 +5383,11 @@ function refreshChatSendEnabled() {
 }
 
 const SAVED_NAME_KEY = 'joinedName_' + ROOM_ID;
+// 방을 옮겨도 로그인이 이어지도록 : 마지막으로 로그인한 캐릭터(모든 방 공통)와 운영진 통행증(7일)
+const LAST_NAME_KEY = 'joinedName_last', GM_PASS_KEY = 'gmPass';
+const WATCH_ONLY = new URLSearchParams(location.search).get('watch') === '1';   // 룸 목록에서 관전으로 들어옴
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
 
 function silentJoin() {
   // 페이지에 들어오면 일단 '익명'으로 관전만 가능하게 조용히 접속합니다.
@@ -5393,12 +5398,17 @@ function silentJoin() {
 
 // 새로고침해도 로그인이 유지되도록, 저장된 캐릭터 이름이 있으면 그걸로 바로 재입장을 시도합니다.
 function autoRejoinOrSilentJoin() {
-  const saved = localStorage.getItem(SAVED_NAME_KEY);
+  let saved = localStorage.getItem(SAVED_NAME_KEY);
+  // 관전으로 들어왔으면 로그인 창 없이 바로 관전
+  if (!saved && WATCH_ONLY) { silentJoin(); hideLoginGate(); return; }
+  // 이 방에 처음 왔어도, 다른 방에서 로그인한 캐릭터가 있으면 그대로 이어서(LOOP는 TEST 전용이라 제외)
+  if (!saved && BATTLE_TYPE !== 'play') saved = lsGet(LAST_NAME_KEY);
   if (saved) {
     // 저장된 이름이 "GM"이었더라도 비밀번호는 저장하지 않으므로, 새로고침 후에는
     // 다시 비밀번호를 입력해야 합니다(권한 우회 방지) - 실패하면 조용히 관전으로 전환합니다.
     attemptCharacterJoin(saved, null, hideLoginGate, () => {
       localStorage.removeItem(SAVED_NAME_KEY);
+      if (saved.toLowerCase() === 'gm') lsSet(GM_PASS_KEY, null);
       silentJoin();
       openJoinModal();
     });
@@ -5420,7 +5430,8 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
   const onErr = () => { rejected = true; };
   socket.once('error', onErr);
   const sentAt = Date.now();
-  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, gm_password: password || undefined, device: MY_DEVICE, loop_device: LOOP_DEVICE });
+  const gmPass = !password && String(name).toLowerCase() === 'gm' ? lsGet(GM_PASS_KEY) || undefined : undefined;
+  socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, gm_password: password || undefined, gm_pass: gmPass, device: MY_DEVICE, loop_device: LOOP_DEVICE });
   // 서버가 join → public_state 순으로 응답할 때까지 기다린 뒤(회선이 느리면 오래 걸려요 : 최대 8초), 이 이름이 실제 전투에
   // 참여 중인 캐릭터거나(전투 시작 전이어도) 캐릭터 데이터베이스에 등록되어 있는지 확인합니다.
   // 예전에는 0.35초만 기다려서, 느린 회선 · 재접속 때 로그인된 사람을 '로그인 실패'로 잘못 처리하곤 했어요.
@@ -5449,6 +5460,7 @@ function attemptCharacterJoin(name, password, onSuccess, onFail) {
       updateChatVisibility();
       updateAvatarDots();
       localStorage.setItem(SAVED_NAME_KEY, MY_NICKNAME);
+      if (BATTLE_TYPE !== 'play' && MY_NICKNAME !== '익명') lsSet(LAST_NAME_KEY, MY_NICKNAME);
       // 전투 시작 전(팀 편성 미리보기 단계)에 입장하면 lastAllForCards가 아직 비어있으므로,
       // renderCards() 대신 미리보기 카드를 다시 그려줘야 방금 그렸던 카드가 사라지지 않습니다.
       if (lastBattleForPanel) renderCards();
@@ -5502,6 +5514,8 @@ function onInputAvatarDotDblClick() {
 function logout() {
   lastTeamChat = [];
   localStorage.removeItem(SAVED_NAME_KEY);
+  if (lsGet(LAST_NAME_KEY) === MY_NICKNAME) lsSet(LAST_NAME_KEY, null);   // 로그아웃하면 다른 방에서도 이어지지 않게
+  if (String(MY_NICKNAME).toLowerCase() === 'gm') lsSet(GM_PASS_KEY, null);
   MY_NICKNAME = '익명';
   socket.emit('join', { room_id: ROOM_ID, key: KEY, nickname: MY_NICKNAME, device: MY_DEVICE });
   explicitlyJoined = false;
@@ -5675,7 +5689,8 @@ document.querySelector('.sidebar').addEventListener('click', (e) => {
   document.body.classList.remove('m-chat-open');
 }, true);
 
-socket.on('joined', () => {
+socket.on('joined', (d) => {
+  if (d && d.gm_pass) lsSet(GM_PASS_KEY, d.gm_pass);
   updateAvatarDots();
 });
 
@@ -5700,7 +5715,7 @@ socket.on('error', (d) => showError(d.message));
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.75";
+const EXPECTED_SERVER_BUILD = "2026-10-13.76";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -12545,7 +12560,8 @@ if (IS_LOUNGE && new URLSearchParams(location.search).get('view') === 'battles')
 socket.on('battle_enter', r => {
   if (!r || !r.ok) { uiToast((r && r.message) || '들어갈 수 없어요.', 'error'); return; }
   // 지금 로그인한 캐릭터 그대로 전투 방에 들어가요
-  const n = myLoggedInName(); if (n) { try { localStorage.setItem('joinedName_' + r.room_id, n); } catch (e) {} }
+  // 배정된 방은 지금 캐릭터 그대로, 관전으로 들어가는 방은 로그인 없이 관전으로
+  const n = myLoggedInName(); if (n && !r.watch) { try { localStorage.setItem('joinedName_' + r.room_id, n); } catch (e) {} }
   location.href = r.url;
 });
 socket.on('battle_saved', r => { if (r && r.ok) uiToast('저장했어요.'); });
@@ -12568,7 +12584,7 @@ function renderBattleHub(tickOnly) {
     const st = b.state === 'none' ? 'none' : now < b.opens ? 'upcoming' : now <= b.closes ? 'open' : 'closed';
     const stChip = st === 'open' ? (b.live ? '<span class="bt-chip st-live"><i class="fa-solid fa-circle"></i>진행 중</span>' : '<span class="bt-chip st-open">입장 가능</span>')
       : st === 'upcoming' ? '<span class="bt-chip">입장 전</span>' : st === 'closed' ? '<span class="bt-chip">종료</span>' : '<span class="bt-chip">일정 없음</span>';
-    const can = gm || (st === 'open' && (b.mine || !b.assigned.length));
+    const can = gm || (st === 'open' && (b.mine || b.watch));
     const ed = battleEdit[b.id] || (battleEdit[b.id] = { name: b.name, start: btLocalInput(b.start), assigned: [...b.assigned], open: false, edit: false });
     const ic = (BT_TYPES.find(t => t[0] === b.type) || [])[2] || 'fa-shield-halved';
     const gmHtml = gm && ed.edit ? `<div class="bt-gm">
@@ -12586,8 +12602,8 @@ function renderBattleHub(tickOnly) {
     const thumbStyle = b.thumb ? ` style="background-image:url('${mailEsc(b.thumb)}')"` : '';
     return `<div class="bt-card ${st}${can ? ' can' : ''}${gm && ed.edit ? ' editing' : ''}"${can && !(gm && ed.edit) ? ` onclick="socket.emit('battle_enter', {room_id:'${b.id}'})"` : ''}>
       <div class="bt-thumb${b.thumb ? ' has-img' : ''}"${thumbStyle}>${b.thumb ? '' : `<i class="fa-solid ${ic} ic"></i>`}
-        <div class="bt-tags">${stChip}${b.mine ? '<span class="bt-chip mine"><i class="fa-solid fa-check"></i>배정됨</span>' : ''}</div>
-        ${can ? '<div class="bt-go"><i class="fa-solid fa-right-to-bracket"></i>입장하기</div>' : ''}</div>
+        <div class="bt-tags">${stChip}${b.mine ? '<span class="bt-chip mine"><i class="fa-solid fa-check"></i>배정됨</span>' : b.watch ? '<span class="bt-chip"><i class="fa-solid fa-eye"></i>관전</span>' : ''}</div>
+        ${can ? `<div class="bt-go"><i class="fa-solid ${b.watch ? 'fa-eye' : 'fa-right-to-bracket'}"></i>${b.watch ? '관전하기' : '입장하기'}</div>` : ''}</div>
       <div class="bt-foot"><div class="bt-info"><div class="bt-name">${mailEsc(b.name)}</div><div class="bt-when">${when}</div></div>
         ${gm ? `<div class="bt-icons" onclick="event.stopPropagation()"><button class="ops-btn icon" onclick="battleEdit['${b.id}'].edit=!battleEdit['${b.id}'].edit; renderBattleHub()" data-tip="${ed.edit ? '닫기' : '일정 · 배정'}"><i class="fa-solid ${ed.edit ? 'fa-xmark' : 'fa-pen'}"></i></button>
           <button class="ops-btn icon danger" onclick="battleDelete('${b.id}')" data-tip="전투 방 지우기"><i class="fa-regular fa-trash-can"></i></button></div>` : ''}</div>
