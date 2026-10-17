@@ -3692,6 +3692,8 @@
   .bt-fab i { font-size:19px; transition: transform .2s; }
   .bt-fab.on i { transform: rotate(45deg); }
   body.view-battles .bt-fab.gm { display:inline-flex; }
+  /* 일반 룸 메뉴 : 종 · 배틀 · 마이룸 · (우체통) · 지도 · 마이페이지. 상점은 배틀 룸 목록 위 버튼으로 들어가요(운영진 포함) */
+  body.is-lounge .sidebar #sidebarShopBtn { display:none !important; }
   @media (max-width:900px) { .bt-fab { right:18px; bottom: calc(100px + env(safe-area-inset-bottom)); } }
   @media (max-width:600px) { .bt-grid { grid-template-columns: minmax(0,1fr); } .bt-thumb { aspect-ratio: 21 / 9; } .bt-gm-row input[type=datetime-local] { width:100% !important; } }
   #mailBody { padding-bottom:84px; }
@@ -4498,8 +4500,8 @@
   <div class="sidebar-gap" id="sidebarAlign"></div>
   <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
   <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
-  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i></button>
   <button class="sidebar-icon" id="sidebarBattlesBtn" onclick="openBattleHub()" data-tip="전투"><i class="fa-solid fa-shield-halved"></i><span class="notice-dot" id="battlesDot"></span></button>
+  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i></button>
   <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
   <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i></button>
   <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="closeDorm(); closeOps(); if (typeof closeLoopAdmin === 'function') closeLoopAdmin(); if (!IS_LOUNGE) closeWorldMap(true)" data-tip="전투"><i class="fa-solid fa-globe"></i></button>
