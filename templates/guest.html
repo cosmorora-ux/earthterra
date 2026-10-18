@@ -2244,6 +2244,11 @@
   .pl-res.one { grid-template-columns: minmax(0, 1fr); }   /* 카드 하나일 때는 자리를 꽉 채워요 */
   /* 지난 사건 다시 보기 */
   .pl-lp-restart { margin-left:auto; height:28px; }
+  /* 초기화 : 새로고침처럼 보이지 않게, 위험 동작 색(붉은 테두리 · 글자)으로 */
+  .pl-reset { margin-left:auto; flex:none; height:30px; display:inline-flex; align-items:center; gap:6px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,138,128,.35);
+    background: rgba(255,138,128,.08); color:#ff9a90; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; transition: background .15s, border-color .15s, color .15s; }
+  .pl-reset:hover { background: rgba(255,138,128,.16); border-color: rgba(255,138,128,.6); color:#ffb4ac; }
+  .pl-reset i { font-size:11.5px; }
   .pl-lp-body .lp-row.go { cursor:pointer; margin:0 -8px; padding-left:10px; padding-right:10px; border-radius:10px; transition: background .15s; }
   .pl-lp-body .lp-row.go:hover { background: rgba(255,255,255,.04); }
   .pl-lp-body .lp-row.go { position:relative; }
@@ -5207,7 +5212,7 @@
   </div>
 </div>
 {% endif %}
-{% if battle_type == 'play' %}<div class="member-panel panel pl-logpanel" id="playLogPanel"><div class="member-header"><b>Log</b><span>지나온 사건</span><button class="pl-restart pl-lp-restart" id="playLogRestart" onclick="event.stopPropagation(); loopRestart()" style="display:none"><i class="fa-solid fa-rotate-left"></i><span>새로 시작</span></button></div><div class="pl-lp-body" id="playLogBody"></div></div>{% endif %}
+{% if battle_type == 'play' %}<div class="member-panel panel pl-logpanel" id="playLogPanel"><div class="member-header"><b>Log</b><span>지나온 사건</span><button class="pl-reset" id="playLogRestart" onclick="event.stopPropagation(); loopRestart()" style="display:none" data-tip="기록을 모두 지우고 다른 인물로 새로 시작"><i class="fa-solid fa-eraser"></i><span>초기화</span></button></div><div class="pl-lp-body" id="playLogBody"></div></div>{% endif %}
 <div class="member-panel panel">
   <div class="member-header">
     <b id="memberTitle">Chat</b>
@@ -5757,7 +5762,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.85";
+const EXPECTED_SERVER_BUILD = "2026-10-13.86";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -13858,7 +13863,7 @@ function loopRetry() {
   loopEmit('loop_reset');
 }
 function loopRestart() {
-  uiConfirm('지금 생애와 지난 운명 기록을 모두 지우고 처음부터 다시 시작할까요?\n되돌릴 수 없어요.', { title: '새로 시작', okText: '모두 지우고 시작', icon: 'fa-rotate-left', danger: true }).then(ok => {
+  uiConfirm('지금 기록된 인물의 삶을 버리고, 다른 인물로 새로 시작할까요?', { title: '초기화', okText: '초기화', icon: 'fa-eraser', danger: true }).then(ok => {
     if (!ok) return;
     loopShown.clear(); loopProStep = {}; loopLifePeek = null; loopEndCache = {};
     loopEmit('loop_reset', { force: true });
@@ -14133,7 +14138,7 @@ function renderLoopLog() {
   const log = (r && r.log) || [];
   // 지난 운명은 기록판 맨 위에, 그 아래로 이번 운명의 사건이 쌓여요.
   const past = d ? loopLivesHtml(d) : '';
-  const rs = document.getElementById('playLogRestart'); if (rs) rs.style.display = r && r.status !== 'ended' ? '' : 'none';
+  const rs = document.getElementById('playLogRestart'); if (rs) rs.style.display = r || (d && (d.lives || []).length) ? '' : 'none';   // 기록이 있으면 언제든 초기화
   if (!log.length) { body.innerHTML = past || emptyHtml('fa-scroll', '아직 지나온 사건이 없어요', '사건을 고를 때마다 여기에 기록돼요.', null, true); body.dataset.n = 0; return; }
   const eraBy = Object.fromEntries(((d && d.eras) || []).map(e => [e.id, e]));
   let last = null, html = '';
