@@ -12182,13 +12182,15 @@ function countHpText(node, from, to) {
   }
   requestAnimationFrame(step);
 }
-// 라운드가 바뀌면 화면 가운데에 짧게 "ROUND n" 띠가 지나갑니다(처음 접속했을 때는 띄우지 않음).
+// 라운드나 선공 · 후공 차례가 바뀌면 화면 가운데에 짧게 "ROUND n" 띠가 지나갑니다(처음 접속했을 때는 띄우지 않음).
 function maybeShowRoundBanner(battle) {
   const r = battle.finished ? null : battle.round_no;
   if (r == null) { fxLastRound = null; return; }
+  // 라운드뿐 아니라 같은 라운드 안에서 선공 → 후공으로 넘어갈 때도 띄워요
+  const key = `${r}|${battle.current_turn_team}`;
   const prev = fxLastRound;
-  fxLastRound = r;
-  if (prev == null || prev === r || FX_REDUCED) return;
+  fxLastRound = key;
+  if (prev == null || prev === key || FX_REDUCED) return;
   const sub = `${battle.round_first_team === battle.current_turn_team ? '선공' : '후공'} · ${battle.current_turn_team}`;
   // 앞 연출(컷인 · 숫자)이 다 끝난 뒤에 라운드 띠
   fxSchedule(() => {
