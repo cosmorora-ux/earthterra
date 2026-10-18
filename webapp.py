@@ -43,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.86"
+SERVER_BUILD = "2026-10-13.87"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -576,6 +576,8 @@ def build_character_public(c):
         "status": c.status,
         "team": c.team,
         "has_acted": c.has_acted,
+        "actions_per_turn": int(getattr(c, "actions_per_turn", 1) or 1),
+        "actions_left": c.actions_left,
         "defended_this_round": c.defended_this_round,
         "dodging_this_round": c.dodging_this_round,
         "protecting_ally": c.protecting_ally,
@@ -785,6 +787,7 @@ def build_public_state(room, for_gm=False):
         "chat_tabs": room.chat_tabs_enabled,
         "battle_thumb": getattr(room, "thumb", None),
         "battle_hidden": bool(getattr(room, "hidden", False)),
+        "action_counts": getattr(room, "action_counts", None) or {},
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
         # 전투에 참여하지 않은 캐릭터도 로그인하면 마이페이지를 볼/수정할 수 있도록 등록 정보를 함께 보냅니다
@@ -2263,6 +2266,48 @@ def on_preview_teams(data):
     _broadcast_battle_lists()   # 편성된 참여자가 룸 목록에서 바로 입장할 수 있게
 
 
+def _apply_action_counts(room):
+    """PVP 한정 : 운영진이 정한 캐릭터별 한 차례 행동 횟수(NPC 등)를 전투 캐릭터에 적용해요."""
+    b = room.game.battle
+    if b is None or room.battle_type != "pvp":
+        return
+    counts = getattr(room, "action_counts", None) or {}
+    for c in list(b.team_a) + list(b.team_b):
+        n = int(counts.get(c.name, 1) or 1)
+        c.actions_per_turn = max(1, min(ACTION_COUNT_MAX, n))
+        if c._acts_used is not None and c._acts_used > c.actions_per_turn:
+            c._acts_used = c.actions_per_turn
+
+
+ACTION_COUNT_MAX = 5
+
+
+@socketio.on("set_action_count")
+def on_set_action_count(data):
+    """운영진 · PVP : 캐릭터 한 명의 한 차례 행동 횟수(1~5). 진행 중인 전투에도 바로 적용돼요."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None or room.battle_type != "pvp":
+        emit("action_error", {"message": "PVP 전투 방에서 운영진만 바꿀 수 있어요."})
+        return
+    data = data or {}
+    name = str(data.get("name") or "").strip()
+    if not name:
+        return
+    try:
+        n = max(1, min(ACTION_COUNT_MAX, int(data.get("count") or 1)))
+    except (TypeError, ValueError):
+        n = 1
+    counts = dict(getattr(room, "action_counts", None) or {})
+    if n == 1:
+        counts.pop(name, None)
+    else:
+        counts[name] = n
+    room.action_counts = counts
+    _apply_action_counts(room)
+    save_rooms()
+    broadcast_state(room)
+
+
 def _apply_battle_rules(room, formula_overrides, grid_width, grid_height):
     """전투가 막 만들어진 직후, 전투 유형별 행동 목록 · 격자 배치 · 방 상태 초기화를 적용합니다
     (전투 시작과 모의전투 데모 방 만들기가 함께 씁니다)."""
@@ -2361,6 +2406,7 @@ def on_start_battle(data):
             _sync_team_channel(room, sid, info.get("nickname"), info.get("role"))
 
     _apply_battle_rules(room, formula_overrides, grid_width, grid_height)
+    _apply_action_counts(room)
 
     # 선후공은 이미 결정됐지만(room.game.start_battle 내부), 화면에는 "다이스 굴리는 중"
     # 서스펜스를 잠깐 보여준 뒤에 결과와 함께 라운드 제한시간을 시작시킵니다.

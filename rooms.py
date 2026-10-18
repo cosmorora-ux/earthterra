@@ -27,7 +27,7 @@ ROOMS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rooms.jso
 _PERSISTED_FIELDS = [
     "name", "battle_type", "gm_key", "guest_key", "created_at",
     "chat_tabs_enabled", "chat_tab_labels", "userinfo_hidden", "map_bg", "boss_images", "track_bg", "scene",
-    "schedule", "preview_teams", "thumb", "order", "hidden",
+    "schedule", "preview_teams", "thumb", "order", "hidden", "action_counts",
 ]
 
 BATTLE_TYPE_LABELS = {
@@ -127,6 +127,7 @@ class RoomState:
         self.scene = None
         self.thumb = None   # 룸 목록 카드 썸네일(전투 방)
         self.order = None   # 룸 목록 순서(운영진이 끌어서 정해요)
+        self.action_counts = {}   # PVP : 캐릭터별 한 차례 행동 횟수(운영진, 기본 1회)
         self.hidden = False   # 비공개 : 운영진에게만 보이고 들어올 수 없어요
         # 전투 일정(운영진이 등록) : {"start": epoch|None, "assigned": [캐릭터 이름...], "ended_at": epoch|None}
         # 일정이 있으면 러너는 일반 룸의 '전투' 메뉴에서, 시작 3시간 전부터 끝난 뒤 3시간까지만 들어올 수 있어요.

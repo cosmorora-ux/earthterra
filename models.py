@@ -18,6 +18,39 @@ class Character:
     STATUS_DEAD = "dead"
     STATUS_FLED = "fled"        # 도주에 완전히 성공한 상태
 
+    # 한 턴(차례)에 할 수 있는 행동 횟수 : 기본 1회. PVP에서 운영진이 NPC 등에 여러 번을 줄 수 있어요.
+    # has_acted는 '이번 차례 행동을 다 썼는지'로, True를 넣을 때마다 1회씩 쓰고 False면 다시 0회로 돌아가요.
+    actions_per_turn = 1
+    _acts_used = None   # None이면 예전 저장본(has_acted만 있던 시절)을 그대로 읽어요
+
+    @property
+    def has_acted(self):
+        used = self._acts_used
+        if used is None:
+            used = 1 if self.__dict__.get("has_acted") else 0
+        return used >= max(1, int(self.actions_per_turn or 1))
+
+    @has_acted.setter
+    def has_acted(self, value):
+        self.__dict__.pop("has_acted", None)
+        if value:
+            used = self._acts_used
+            if used is None:
+                used = 0
+            self._acts_used = min(max(1, int(self.actions_per_turn or 1)), used + 1)
+        else:
+            self._acts_used = 0
+
+    @property
+    def actions_left(self):
+        used = self._acts_used if self._acts_used is not None else (1 if self.__dict__.get("has_acted") else 0)
+        return max(0, max(1, int(self.actions_per_turn or 1)) - used)
+
+    def use_all_actions(self):
+        """시간 초과 · 도주처럼 이번 차례를 통째로 넘기는 경우."""
+        self.__dict__.pop("has_acted", None)
+        self._acts_used = max(1, int(self.actions_per_turn or 1))
+
     def __init__(self, name: str, role: str, stats: dict, color: str = None, formula_overrides: dict = None,
                  skill: str = None):
         self.name = name

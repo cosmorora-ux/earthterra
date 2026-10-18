@@ -2935,6 +2935,8 @@
   .ops-chip { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 6px 0 10px; border-radius:999px; background: rgba(255,255,255,.06);
     font-size:13px; font-weight:600; }
   .ops-chip .dot { width:7px; height:7px; border-radius:50%; background: var(--rc, #888); }
+  .ops-chip select.ops-acts { height:22px !important; min-height:0 !important; max-height:22px; line-height:20px !important; box-sizing:border-box; width:auto !important; min-width:0 !important; padding:0 18px 0 7px !important; margin-left:2px; border-radius:8px !important; font-size:11.5px !important; font-weight:700; color: var(--muted); background-color: rgba(255,255,255,.05) !important; background-position: right 5px center !important; background-size:9px !important; border:1px solid transparent !important; box-shadow:none !important; }
+  .ops-chip select.ops-acts.on { color: var(--point); border-color: rgba(var(--point-rgb),.4); }
   .ops-chip button { width:22px; height:22px; border:none; border-radius:50%; background:none; color: var(--muted); cursor:pointer; font-size:11px; }
   .ops-chip button:hover { background: rgba(255,255,255,.1); color:#fff; }
   .ops-empty { font-size:13px; color: var(--muted); padding:8px 2px; }
@@ -5762,7 +5764,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.86";
+const EXPECTED_SERVER_BUILD = "2026-10-13.87";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -6076,6 +6078,12 @@ function isDefeatedStatus(c) {
   return c.status === 'dead' || c.status === 'fled';
 }
 function statusTagFor(c) {
+  const t = statusTagBase(c);
+  // PVP : 한 차례에 여러 번 행동하는 캐릭터(NPC 등)는 남은 횟수를 같이
+  if (!t && (c.actions_per_turn || 1) > 1) return ` *행동 ${c.actions_left != null ? c.actions_left : c.actions_per_turn}/${c.actions_per_turn}`;
+  return t;
+}
+function statusTagBase(c) {
   if (c.status === 'dead') return ' *사망';
   if (c.status === 'fled' || c.status === 'fleeing') return ' *도주';
   if (c.status === 'downed') return ' *기절';
@@ -12838,7 +12846,10 @@ function opsBattleHtml() {
 function opsRoleColor(role) { return roleColorVar(role); }
 function opsRoleOf(name) { const c = opsRosterDetail().find(r => r.name === name); return c ? c.role : ''; }
 function opsChip(name, team) {
-  return `<span class="ops-chip" style="--rc:${opsRoleColor(opsRoleOf(name))}"><span class="dot"></span>${mailEsc(name)}
+  // PVP : 한 차례 행동 횟수(NPC를 여러 번 행동하게)
+  const n = ((opsLastPublic && opsLastPublic.action_counts) || {})[name] || 1;
+  const acts = BATTLE_TYPE === 'pvp' ? `<select class="ops-acts ${n > 1 ? 'on' : ''}" data-tip="한 차례 행동 횟수" onchange='socket.emit("set_action_count", {name: ${JSON.stringify(name)}, count: +this.value})'>${[1, 2, 3, 4, 5].map(k => `<option value="${k}" ${k === n ? 'selected' : ''}>${k}회</option>`).join('')}</select>` : '';
+  return `<span class="ops-chip" style="--rc:${opsRoleColor(opsRoleOf(name))}"><span class="dot"></span>${mailEsc(name)}${acts}
     <button onclick='opsSetTeam(${JSON.stringify(name)}, null)' data-tip="빼기"><i class="fa-solid fa-xmark"></i></button></span>`;
 }
 function opsRenderTeams() {

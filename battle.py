@@ -339,6 +339,7 @@ class Battle:
                 "current_hp": c.current_hp,
                 "status": c.status,
                 "has_acted": c.has_acted,
+                "acts_used": c._acts_used,
                 "defended_this_round": c.defended_this_round,
                 "defense_grants": [g.name for g in c.defense_grants],
                 "interceptors": [g.name for g in c.interceptors],
@@ -419,7 +420,12 @@ class Battle:
             cs = snap["chars"][c.name]
             c.current_hp = cs["current_hp"]
             c.status = cs["status"]
-            c.has_acted = cs["has_acted"]
+            if "acts_used" in cs and cs["acts_used"] is not None:
+                c._acts_used = cs["acts_used"]
+            else:
+                c.has_acted = False
+                if cs["has_acted"]:
+                    c.use_all_actions()
             c.defended_this_round = cs["defended_this_round"]
             c.protecting_ally = cs["protecting_ally"]
             c.dodging_this_round = cs["dodging_this_round"]
@@ -1551,7 +1557,7 @@ class Battle:
             self._push_history()
         self.timeout_skill.execute(actor)
         self._resolve_pending_attacks(actor)
-        actor.has_acted = True
+        actor.use_all_actions()   # 시간 초과는 남은 행동 횟수를 모두 넘겨요
         actor.commanded_by = None  # 지휘로 강제된 행동 기회도 시간 초과로 사라집니다.
         if not _batch:
             self._log(f"{actor.name} 시간 초과", tag="wait")
@@ -1599,7 +1605,7 @@ class Battle:
         self._push_history()
         self._resolve_pending_attacks(actor)
         self.flee_skill.execute(actor)
-        actor.has_acted = True
+        actor.use_all_actions()
 
         watch_key = "B" if actor.team == "A" else "A"
         actor.fleeing_watch_key = watch_key
