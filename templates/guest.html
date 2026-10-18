@@ -8244,7 +8244,8 @@ function refreshGmActPanelVisibility() {
   if (!panel) return;
   const control = myControlInfo(lastBattleForPanel);
   const isGm = !!lastBattleForPanel && control.scope === 'all';
-  const fields = isGm && (BATTLE_TYPE === 'pvp' || BATTLE_TYPE === 'siege' || gridArmGm);
+  // 운영진의 캐릭터 조작 칸(캐릭터 · 행동 · 대상 · 실행)은 항상 보여요 : 마스 레이드도 지도에서 캐릭터를 누르지 않아도 고를 수 있게
+  const fields = isGm;
   // GM은 러너용 커맨드 바 대신 이 한 블록(캐릭터·행동·대상·실행 + 진행 버튼)만 씁니다.
   panel.style.display = isGm ? '' : 'none';
   document.getElementById('gmActFields').style.display = fields ? '' : 'none';
