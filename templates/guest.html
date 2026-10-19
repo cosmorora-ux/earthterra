@@ -1726,9 +1726,15 @@
   .my-cell b { font-size:15px; font-weight:700; white-space:nowrap; font-variant-numeric: tabular-nums; }
   .my-none { display:inline-flex; align-items:center; gap:8px; margin-top:2px; font-size:13px; color:#cfcfd4; cursor:pointer; user-select:none; width:max-content; }
   .my-none span { color: var(--muted); font-size:12px; }
+  /* 좁은 화면 : 나이 두 칸을 상자 없이 한 줄 글로(영역이 너무 커지지 않게), 연도 없음도 짧게 */
   @media (max-width:560px) {
-    .mail-year-grid { grid-template-columns: 1fr 1fr; }
+    .mail-year-grid { grid-template-columns: auto auto 1fr; gap:6px 14px; }
     .mail-year-grid .my-step { grid-column: 1 / -1; }
+    .mail-year-grid > .my-cell { min-height:0; border:none; background:none; border-radius:0; padding:0 2px; flex-direction:row; align-items:baseline; gap:6px; }
+    .my-cell em { font-size:12px; }
+    .my-cell b { font-size:13px; }
+    .my-none { font-size:12.5px; margin-top:0; }
+    .my-none span { display:none; }
   }
   .mail-year b { font-size:15px; min-width:96px; text-align:center; }
   .mail-year button { width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.03); color: var(--text); cursor:pointer; font-size:12px; }
@@ -11072,7 +11078,7 @@ function mailComposeHtml(d) {
         <div class="mail-picked" id="mailPicked">${mailPickedHtml()}</div>
         <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
         : `<div class="mail-rcount"><span>몇 명에게</span>${[1, 2, 3, 4, 5].map(n => `<button class="${mailDraft.randomCount === n ? 'on' : ''}" onclick="mailDraft.randomCount=${n}; renderMail()">${n}명</button>`).join('')}</div>
-          <div class="mail-rand"><i class="fa-solid fa-shuffle"></i><span>등록된 캐릭터 중 서로 다른 사람에게 무작위로 한 통씩 보내요.<br>누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</span></div>`}
+          <div class="mail-rand"><i class="fa-solid fa-shuffle"></i><span>누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</span></div>`}
     </section>
     <section class="mf-sec">
       <header class="mf-h"><span class="mf-n">3</span><b>내용</b><span class="mf-aside mail-count" id="mailCount">${mailDraft.text.length} / 2000</span></header>
