@@ -7783,6 +7783,12 @@ function isMobileChatHidden() {
 }
 function toggleMobileChat(force) {
   const open = typeof force === 'boolean' ? force : !document.body.classList.contains('m-chat-open');
+  // 지도 · 운영 · LOOP 편집 화면이 덮고 있으면 먼저 닫아요(LOOP 기록 · 전투 채팅이 그 화면 뒤에 가려서 안 열리던 문제)
+  if (open && !IS_LOUNGE) {
+    if (typeof worldOpen === 'function' && worldOpen()) closeWorldMap(true);
+    if (typeof opsOpen === 'function' && opsOpen()) closeOps();
+    if (document.body.classList.contains('view-loopadmin') && typeof closeLoopAdmin === 'function') closeLoopAdmin();
+  }
   document.body.classList.toggle('m-chat-open', open);
   if (open) {
     mobileChatUnread = false;
