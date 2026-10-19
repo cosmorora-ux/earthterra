@@ -2006,8 +2006,6 @@
   .pl-need em { font-style:normal; font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:7px; background: rgba(255,107,94,.12); color:#ff8a80; display:inline-flex; align-items:center; gap:4px; }
   .pl-need em.ok { background: rgba(var(--point-rgb),.12); color: var(--point); }
   .pl-need em i { font-size:10px; }
-  .pl-need em .st { display:inline-flex; align-items:center; gap:3px; margin-left:4px; padding-left:6px; border-left:1px solid currentColor; opacity:.85; font-weight:600; }
-  .pl-need em .st i { font-size:9px; }
   .pl-ch.locked { opacity:.45 !important; }
   .pl-ch.locked .k { background: rgba(255,255,255,.04); color: var(--muted); font-size:11px; }
   .pl-solve { display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:0 4px 10px; }
@@ -14026,8 +14024,7 @@ function loopEventHtml(r, marks) {
   if (!done) {
     const lock = c => (c.need || []).some(x => !x.ok);
     // 선택지 조건 : 쓰는(소모) 게 아니라 '이만큼 있어야 고를 수 있다'는 조건이라, 충족 / 부족으로 보여요
-    const have = k => ((r.assets || {})[k] != null ? r.assets[k] : 0);
-    const need = c => (c.need || []).map(x => `<em class="${x.ok ? 'ok' : ''}"><i class="fa-solid ${(LOOP_ASSETS.find(a => a[0] === x.k) || [])[1]}"></i>${loopEsc(x.name)} ${x.v} 이상<span class="st">${x.ok ? '<i class="fa-solid fa-check"></i>충족' : `부족 · 지금 ${have(x.k)}`}</span></em>`).join('');
+    const need = c => (c.need || []).map(x => `<em class="${x.ok ? 'ok' : ''}"><i class="fa-solid ${(LOOP_ASSETS.find(a => a[0] === x.k) || [])[1]}"></i>${loopEsc(x.name)} ${x.ok ? '충족' : '부족'}</em>`).join('');
     const canSolve = (r.solve || []).filter(x => x.ok);
     const solve = canSolve.length ? `<div class="pl-solve pl-fade"${loopAfter(story.end + 200, story.fresh)}><span><i class="fa-solid fa-key"></i> 해결하기</span>${canSolve.map(x => `<button class="pl-sv" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_solve', { event: '${ev.id}', kind: '${x.k}' })"><i class="fa-solid ${x.k === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>${loopEsc(x.name)} ${x.cost} 쓰기</button>`).join('')}</div>` : '';
     // 해결하기(쓸 수 있을 때만)가 선택지 위에 먼저, 그다음 A · B · C
