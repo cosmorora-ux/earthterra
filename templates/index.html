@@ -193,11 +193,13 @@
   .demo-row .demo-txt { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
   .demo-row .demo-txt b { font-size:14px; font-weight:700; }
   .demo-row .demo-txt span { font-size:12.5px; color: var(--muted); line-height:1.5; }
+  .practice-tag { position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:99999; pointer-events:none; display:flex; align-items:center; gap:6px; padding:5px 12px; border-radius:10px; font-size:11.5px; font-weight:600; color:#f0c862; background:rgba(20,18,10,.88); border:1px solid rgba(240,200,98,.45); white-space:nowrap; }
   .demo-row .btn { flex:none; }
   @media (max-width:560px) { .demo-row { flex-direction:column; align-items:stretch; } }
 </style>
 </head>
 <body>
+{% if practice_mode %}<div class="practice-tag" aria-label="연습 서버"><i class="fa-solid fa-flask"></i> 연습 서버 · 실제 데이터와 따로예요</div>{% endif %}
 <div class="bg"><span class="orbit o2"></span><span class="orbit o1"></span></div>
 <div class="wrap">
   <div class="head">

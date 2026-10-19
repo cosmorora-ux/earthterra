@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.91"
+SERVER_BUILD = "2026-10-13.92"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -78,6 +78,18 @@ def gm_pass_ok(token):
         return _GM_PASS.loads(str(token or ""), max_age=GM_PASS_AGE) == "gm"
     except (BadSignature, ValueError, TypeError):
         return False
+# 연습 서버(practice.py로 켠 것) : 실제 서버와 로그인 쿠키가 섞이지 않게 이름을 따로, 자동 백업은 하지 않아요.
+PRACTICE = os.environ.get("EARTHTERRA_PRACTICE") == "1" or os.path.exists(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "practice.txt"))
+if PRACTICE:
+    app.config["SESSION_COOKIE_NAME"] = "earthterra_practice"
+
+
+@app.context_processor
+def _inject_practice():
+    return {"practice_mode": PRACTICE}
+
+
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 24 * 7
@@ -4750,6 +4762,9 @@ if __name__ == "__main__":
     _ensure_demo_room_once()
     socketio.start_background_task(_round_reminder_loop)
     socketio.start_background_task(_runtime_save_loop)
-    socketio.start_background_task(_backup_loop)
+    if PRACTICE:
+        print("[연습 서버] 실제 서버와 따로 도는 연습용이에요(자동 백업 없음).")
+    else:
+        socketio.start_background_task(_backup_loop)
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)

@@ -43,3 +43,6 @@ backups/
 backup_dir.txt
 # 오류 기록(서버 컴퓨터별)
 logs/
+
+# 연습 서버 표시(연습 폴더에만 있어요)
+practice.txt

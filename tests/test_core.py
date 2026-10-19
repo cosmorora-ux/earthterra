@@ -308,6 +308,14 @@ class TestBackup(unittest.TestCase):
         g.close()
 
 
+class TestPractice(unittest.TestCase):
+    def test_real_server_has_no_practice_tag(self):
+        self.assertFalse(webapp.PRACTICE, "실제 서버가 연습 서버로 켜짐")
+        r = lounge()
+        html = webapp.app.test_client().get(f"/room/{r.id}?key={r.guest_key}").get_data(as_text=True)
+        self.assertNotIn('class="practice-tag"', html, "실제 서버에 연습 서버 표시가 붙음")
+
+
 class TestNotices(unittest.TestCase):
     def test_pinned_notices(self):
         import notices
