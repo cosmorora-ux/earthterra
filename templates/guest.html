@@ -3745,6 +3745,10 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color: var(--muted); font-size:13px; }
   .ops-thumb > i { font-size:26px; opacity:.5; }
   .ops-thumb .tag { position:absolute; left:10px; top:10px; height:22px; display:inline-flex; align-items:center; padding:0 9px; border-radius:10px; background: rgba(12,12,13,.72); color:#cfcfd4; font-size:11.5px; font-weight:700; }
+  .ops-bk { display:flex; flex-direction:column; gap:8px; }
+  .ops-bk .r { display:grid; grid-template-columns: 88px minmax(0,1fr); gap:10px; font-size:13px; align-items:baseline; }
+  .ops-bk .k { color: var(--muted); } .ops-bk .v { color: var(--text); word-break:break-all; }
+  .ops-bk .v.ok i { color:#7fe8a4; } .ops-bk .v.bad { color:#ff9a90; } .ops-bk .v.warn { color:#f0c862; }
   .ops-errs { display:flex; flex-direction:column; gap:6px; }
   .ops-errs-ok { color: var(--muted); font-size:13px; } .ops-errs-ok i { color:#7fe8a4; margin-right:4px; }
   .ops-errs-n { display:flex; align-items:baseline; gap:10px; margin-bottom:4px; } .ops-errs-n b { font-size:18px; color:#ff9a90; } .ops-errs-n span { font-size:12.5px; color: var(--muted); }
@@ -5834,7 +5838,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.90";
+const EXPECTED_SERVER_BUILD = "2026-10-13.91";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -13239,6 +13243,12 @@ function opsRoomHtml(kind) {
       <div class="ops-foot"><button class="ops-btn" onclick="toggleChatTabSettings()"><i class="fa-solid fa-sliders"></i> 채팅 탭 설정</button></div>
     </div>
 `,
+    backup: `    <div class="ops-card">
+      <h3><i class="fa-solid fa-box-archive"></i> 백업<span class="sub">서버 컴퓨터 backups 폴더에 자동으로 묶어 보관해요</span></h3>
+      <div id="opsBackup" class="ops-bk"><span class="ops-hint">불러오는 중…</span></div>
+      <div class="ops-foot"><button class="ops-btn" onclick="socket.emit('backup_now')"><i class="fa-solid fa-floppy-disk"></i> 지금 백업</button></div>
+    </div>
+`,
     errors: `    <div class="ops-card">
       <h3><i class="fa-solid fa-triangle-exclamation"></i> 최근 오류<span class="sub">지난 24시간 · 서버와 참가자 화면에서 난 오류(서버 컴퓨터 logs 폴더에 날짜별로 남아요)</span></h3>
       <div id="opsErrors" class="ops-errs"><span class="ops-hint">불러오는 중…</span></div>
@@ -13266,7 +13276,7 @@ function opsRoomHtml(kind) {
   // 격자 지도를 쓰는 전투(마스 레이드)만 지도 배경 · 몹 이미지
   const grid = !!document.getElementById('mapBgBtn');
   const keys = kind === 'battle' ? ['room', 'hidden', 'thumb', ...(grid ? ['mapbg'] : []), 'watch', 'chattabs', 'remind', 'scene', 'formula']
-    : OPS_BATTLE_ROOM ? ['point', 'mail', 'chat', 'errors'] : ['room', 'point', 'mail', 'chat', 'scene', 'errors'];
+    : OPS_BATTLE_ROOM ? ['point', 'mail', 'chat', 'backup', 'errors'] : ['room', 'point', 'mail', 'chat', 'scene', 'backup', 'errors'];
   return `<div class="ops-grid">${keys.map(k => C[k]).join('')}</div>`;
 }
 function opsRenderScene() {
@@ -13329,7 +13339,20 @@ socket.on('error_summary', d => {
   el.innerHTML = `<div class="ops-errs-n"><b>${d.count}건</b><span>서버 ${d.server} · 화면 ${d.client}</span></div>`
     + d.recent.map(x => `<div class="ops-err"><span class="k ${x.kind}">${x.kind === 'server' ? '서버' : '화면'}</span><span class="m">${mailEsc(x.message)}</span><span class="t">${t(x.at)}</span><span class="w">${mailEsc(x.where || '')}</span></div>`).join('');
 });
+socket.on('backup_status', d => {
+  const el = document.getElementById('opsBackup'); if (!el || !d) return;
+  const ago = at => { if (!at) return '아직 없음'; const m = Math.round((Date.now() / 1000 - at) / 60); return m < 1 ? '방금' : m < 60 ? `${m}분 전` : m < 1440 ? `${Math.round(m / 60)}시간 전` : `${Math.round(m / 1440)}일 전`; };
+  const mb = n => n >= 1048576 ? `${(n / 1048576).toFixed(1)}MB` : `${Math.max(1, Math.round(n / 1024))}KB`;
+  const stale = !d.last_at || (Date.now() / 1000 - d.last_at) > (d.hours * 2 + 1) * 3600;
+  el.innerHTML = `<div class="r"><span class="k">마지막 백업</span><span class="v ${stale ? 'bad' : ''}">${ago(d.last_at)}${d.last_at ? ` · ${mb(d.last_size)}` : ''}</span></div>
+    <div class="r"><span class="k">보관</span><span class="v">${d.count}개 · ${d.hours}시간마다 · 최근 ${d.keep}개</span></div>
+    <div class="r"><span class="k">다른 곳 복사</span><span class="v ${d.extra_dir ? (d.extra_ok === false ? 'bad' : 'ok') : 'warn'}">${d.extra_dir
+      ? (d.extra_ok === false ? `<i class="fa-solid fa-xmark"></i> 실패 · ${mailEsc(d.extra_err || '폴더를 찾을 수 없어요')}` : `<i class="fa-solid fa-check"></i> ${mailEsc(d.extra_dir)}`)
+      : '설정 안 됨 — 컴퓨터가 고장 나면 백업도 같이 잃어요'}</span></div>
+    ${d.extra_dir ? '' : '<div class="ops-hint" style="margin-top:6px">서버 폴더에 <b>backup_dir.txt</b> 파일을 만들고 첫 줄에 구글 드라이브 · OneDrive 폴더 경로를 적으면 백업마다 그곳에도 복사돼요.</div>'}`;
+});
 function opsRenderRoomInfo() {
+  if (document.getElementById('opsBackup') && !opsRenderRoomInfo._bk) { opsRenderRoomInfo._bk = true; socket.emit('backup_status'); setTimeout(() => { opsRenderRoomInfo._bk = false; }, 30000); }
   if (document.getElementById('opsErrors') && !opsRenderRoomInfo._asked) { opsRenderRoomInfo._asked = true; socket.emit('error_summary'); setTimeout(() => { opsRenderRoomInfo._asked = false; }, 30000); }
   opsRenderThumb(); opsRenderMapBg();
   const hd = document.getElementById('opsHidden'); if (hd) hd.checked = !!(opsLastPublic && opsLastPublic.battle_hidden);

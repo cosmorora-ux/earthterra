@@ -34,6 +34,9 @@ DATA_DIRS = [
 ]
 
 
+LAST = {"extra_ok": None, "extra_err": ""}   # 이번 실행에서 마지막 추가 폴더 복사 결과
+
+
 def _extra_dir():
     try:
         with open(os.path.join(_DIR, "backup_dir.txt"), "r", encoding="utf-8") as f:
@@ -79,6 +82,26 @@ def make_backup():
             ex = sorted(x for x in os.listdir(extra) if x.startswith("earthterra_") and x.endswith(".zip"))
             for x in ex[:-KEEP]:
                 os.remove(os.path.join(extra, x))
+            LAST.update(extra_ok=True, extra_err="")
         except OSError as e:
+            LAST.update(extra_ok=False, extra_err=str(e)[:200])
             print(f"[backup] 추가 폴더 복사 실패: {e}")
     return path
+
+
+def status():
+    """운영진 방 설정 '백업' 카드 : 마지막 백업 시각 · 크기 · 보관 개수 · 다른 곳 복사 상태."""
+    try:
+        zips = sorted(x for x in os.listdir(BACKUP_DIR) if x.startswith("earthterra_") and x.endswith(".zip"))
+    except OSError:
+        zips = []
+    last = zips[-1] if zips else None
+    out = {"count": len(zips), "keep": KEEP, "hours": BACKUP_HOURS, "last_at": None, "last_size": 0,
+           "extra_dir": _extra_dir(), "extra_ok": LAST["extra_ok"], "extra_err": LAST["extra_err"]}
+    if last:
+        p = os.path.join(BACKUP_DIR, last)
+        out["last_at"] = os.path.getmtime(p)
+        out["last_size"] = os.path.getsize(p)
+    if out["extra_dir"] and out["extra_ok"] is None:
+        out["extra_ok"] = os.path.isdir(out["extra_dir"])
+    return out

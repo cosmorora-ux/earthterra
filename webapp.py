@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.90"
+SERVER_BUILD = "2026-10-13.91"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -4218,8 +4218,11 @@ def _backup_loop():
                 pass
             path = backup_mod.make_backup()
             print(f"[backup] 저장했어요: {path}")
+            if backup_mod.LAST.get("extra_ok") is False:
+                errlog.record("server", f"백업 추가 폴더 복사 실패: {backup_mod.LAST.get('extra_err')}", where="backup")
         except Exception as e:
             print(f"[backup] 실패: {e}")
+            errlog.record("server", f"백업 실패: {e}", where="backup", detail=traceback.format_exc())
         socketio.sleep(backup_mod.BACKUP_HOURS * 3600)
 
 
@@ -4697,6 +4700,39 @@ def on_client_error(data=None):
     info = CONNECTIONS.get(request.sid) or {}
     where = f"{info.get('room_id', '?')} · {str(d.get('src') or '')[-80:]}:{d.get('line') or ''}"
     errlog.record("client", str(d.get("message") or "")[:300], where=where, detail=str(d.get("stack") or "")[:2000])
+
+
+_BACKUP_NOW_AT = [0.0]
+
+
+@socketio.on("backup_status")
+def on_backup_status(data=None):
+    if _require_gm_or_guest_gm(request.sid) is None:
+        return
+    emit("backup_status", backup_mod.status())
+
+
+@socketio.on("backup_now")
+def on_backup_now(data=None):
+    """운영진 : 지금 바로 백업(1분에 한 번까지)."""
+    if _require_gm_or_guest_gm(request.sid) is None:
+        return
+    if time.time() - _BACKUP_NOW_AT[0] < 60:
+        emit("action_error", {"message": "방금 백업했어요. 1분 뒤에 다시 해 주세요."})
+        return
+    _BACKUP_NOW_AT[0] = time.time()
+    try:
+        save_runtime()
+        try:
+            loop_mod.shared_book().flush()
+        except Exception:
+            pass
+        backup_mod.make_backup()
+        emit("shop_result", {"message": "백업했어요."})
+    except Exception as e:
+        errlog.record("server", f"백업 실패: {e}", where="backup", detail=traceback.format_exc())
+        emit("action_error", {"message": "백업에 실패했어요. 최근 오류에서 확인해 주세요."})
+    emit("backup_status", backup_mod.status())
 
 
 @socketio.on("error_summary")

@@ -9,6 +9,7 @@
 - PVP 행동 횟수
 - LOOP : 시작 → 사건 → 초기화(기록까지 지움) · 국가 반반
 - 공지 : 고정 공지 5개
+- 백업 : 운영진만 상태 보기 · 지금 백업
 """
 import os
 import sys
@@ -287,6 +288,24 @@ class TestErrorLog(unittest.TestCase):
         self.assertEqual(errlog.summary()["server"], before + 1, "서버 오류가 기록되지 않음")
         self.assertTrue(names(rec, "action_error"), "서버 오류 때 안내가 가지 않음")
         c.close()
+
+
+class TestBackup(unittest.TestCase):
+    def test_backup_gm_only_and_now(self):
+        import backup
+        r = Client()
+        r.join(lounge(), "AA")
+        self.assertFalse(names(r.emit("backup_status"), "backup_status"), "러너에게 백업 상태가 감")
+        before = backup.status()["count"]
+        r.emit("backup_now")
+        self.assertEqual(backup.status()["count"], before, "러너가 백업을 만들 수 있음")
+        r.close()
+        g = Client()
+        g.join(lounge(), "GM", gm_password=PW)
+        got = names(g.emit("backup_now"), "backup_status")
+        self.assertTrue(got and got[-1]["count"] == before + 1, "운영진 '지금 백업'이 zip을 만들지 않음")
+        self.assertTrue(got[-1]["last_size"] > 0)
+        g.close()
 
 
 class TestNotices(unittest.TestCase):
