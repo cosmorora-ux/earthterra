@@ -528,6 +528,7 @@
   .nc-title { gap:10px; }
   .nc-meta { margin-top:6px; font-size:12.5px; }
   .nc-pv { margin-top:8px; color:#8a8a92; font-size:13.5px; line-height:1.65; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:keep-all; max-width:62ch; }
+  @media (max-width:600px) { .nc-pv { -webkit-line-clamp:1; } }   /* 좁은 화면 : 미리보기 한 줄 */
   .notice-card-head .chev { margin-top:4px; }
   .notice-card-body { padding:6px 22px 22px !important; }
   @media (max-width:600px) { .notice-card-head { padding:16px 16px !important; gap:12px !important; } .notice-card-body { padding:4px 16px 18px !important; } .nc-pv { font-size:13px; } }
@@ -540,7 +541,7 @@
   .notice-content h2 { font-size:19px; line-height:1.4; margin:12px 0 6px; letter-spacing:-0.02em; color: var(--text); }
   .notice-content h3 { font-size:17px; line-height:1.45; margin:10px 0 4px; color: var(--text); }
   .notice-content > :first-child { margin-top:0; }
-  .notice-content a { color:#7aa2ff; }
+  .notice-content a { color: var(--point); }
   .notice-content blockquote { margin:6px 0; padding:4px 12px; border-left:3px solid var(--card-border); color: var(--muted); }
   .notice-content hr { border:none; border-top:1px solid var(--card-border); margin:10px 0; }
   .notice-content ul, .notice-content ol { padding-left:22px; margin:6px 0; }
@@ -661,7 +662,7 @@
   #uiDialog { z-index:400; }
   .modal-box.ui-dialog { width:380px; max-width:calc(100vw - 32px); padding:22px 22px 18px; }
   .ui-dialog-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;
-    background:rgba(var(--point-rgb),.14); color:#8fb0ff; font-size:18px; margin-bottom:12px; }
+    background:rgba(var(--point-rgb),.14); color: var(--point); font-size:18px; margin-bottom:12px; }
   .ui-dialog.danger .ui-dialog-icon { background:rgba(255,90,90,.14); color:#ff8a8a; }
   .ui-dialog-icon svg { width:22px; height:22px; display:block; }
   .ui-dialog-title { font-size:17px; font-weight:700; margin-bottom:6px; }
@@ -773,7 +774,7 @@
   .breadcrumb b { color: var(--text); }
   /* ---------- 배경음악 플레이어 (상단 오른쪽) ---------- */
   .bgm-player { display:flex; align-items:center; gap:10px; padding:6px 12px 6px 10px; max-width:420px; min-width:0;
-    background: linear-gradient(135deg, rgba(45,95,245,.10), rgba(255,255,255,.02)); border:1px solid var(--card-border);
+    background: linear-gradient(135deg, rgba(var(--point-rgb),.10), rgba(255,255,255,.02)); border:1px solid var(--card-border);
     border-radius:999px; }
   .bgm-eq { display:flex; align-items:flex-end; gap:2px; width:18px; height:16px; flex:none; }
   .bgm-eq span { flex:1; height:30%; background: var(--muted); border-radius:1px; transition: background .2s; }
@@ -5544,7 +5545,8 @@ function onAvatarDotClick() {
   // 전투 시작 전(등록된 이름으로만 입장)이거나 전투에 없는 이름으로 입장한 경우에도
   // 로그아웃할 수 있도록, 실제로 입장한 상태인지(explicitlyJoined)만 봅니다.
   if (explicitlyJoined) {
-    uiConfirm('지금 캐릭터에서 로그아웃할까요?', {title:'로그아웃', okText:'로그아웃', icon:'fa-power-off'}).then(ok => ok && logout());
+    const who = String(MY_NICKNAME || '').toLowerCase() === 'gm' ? '운영진(GM)' : `'${MY_NICKNAME}'`;
+    uiConfirm(`${who}에서 로그아웃할까요?`, {title:'로그아웃', okText:'로그아웃', icon:'fa-power-off'}).then(ok => ok && logout());
   } else {
     openJoinModal();
   }
@@ -5764,7 +5766,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.87";
+const EXPECTED_SERVER_BUILD = "2026-10-13.88";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -9873,7 +9875,7 @@ function refreshNoticeDot() {
 }
 socket.on('notices', (d) => {
   lastNotices = d.notices || [];
-  if (!openNoticeIds.size && lastNotices.length) openNoticeIds.add(lastNotices[0].id);
+  // 공지는 처음에 모두 닫힌 채로(첫 공지를 자동으로 펼치지 않아요)
   refreshNoticeDot();
   if (document.getElementById('noticeModal').style.display === 'flex') {
     renderNotices();

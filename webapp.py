@@ -43,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.87"
+SERVER_BUILD = "2026-10-13.88"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -312,17 +312,56 @@ def web_manifest():
     return resp
 
 
-_LOGIN_HTML = """<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rooms</title><meta name="robots" content="noindex"><style>
-body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#050505;color:#f2f2f2;font-family:system-ui,"Malgun Gothic",sans-serif}
-form{width:min(340px,calc(100vw - 32px));padding:28px 24px;border-radius:16px;background:#141416;border:1px solid #262629;position:relative}
-form::before{content:"";position:absolute;left:18px;right:18px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(164,141,255,.6),transparent)}
-h1{margin:0 0 6px;font-size:18px}p{margin:0 0 18px;color:#8b8b90;font-size:13px}
-input{width:100%;box-sizing:border-box;height:42px;padding:0 14px;border-radius:12px;border:1px solid #2a2a2e;background:#0c0c0d;color:#fff;font-size:15px}
-button{width:100%;height:42px;margin-top:10px;border:none;border-radius:12px;background:#7650f0;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
-.err{margin:10px 0 0;color:#ff8a80;font-size:13px}</style></head><body>
-<form method="post" action="/login"><h1>운영진 확인</h1><p>방 목록은 운영진만 볼 수 있어요.</p>
-<input type="password" name="password" placeholder="비밀번호" autofocus autocomplete="current-password"><button>들어가기</button>{err}</form></body></html>"""
+_LOGIN_HTML = """<!doctype html><html lang="ko" data-point="{theme}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rooms</title><meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<style>
+/* 방 로그인 화면(#loginGate)과 같은 디자인 */
+@font-face{font-family:"Baunk";font-display:swap;src:url("/static/fonts/Baunk.ttf") format("truetype")}
+:root{--bg:#050505;--text:#f2f2f4;--muted:#8b8b94;--point:#6f93ff;--point-rgb:111,147,255;--accent:#2d5ff5;--on-accent:#fff}
+html[data-point="purple"]{--point:#a48dff;--point-rgb:164,141,255;--accent:#7650f0;--on-accent:#fff}
+html[data-point="yellow"]{--point:#f0c862;--point-rgb:240,200,98;--accent:#e2b23c;--on-accent:#17171a}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;background:var(--bg);color:var(--text);font-family:"Pretendard","42dot Sans",system-ui,"Malgun Gothic",sans-serif;overflow:hidden}
+.bg{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.bg::before{content:"";position:absolute;inset:0;background:radial-gradient(55% 45% at 50% 42%,rgba(var(--point-rgb),.16),transparent 70%),radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px) 0 0/22px 22px;-webkit-mask-image:radial-gradient(70% 60% at 50% 45%,#000 30%,transparent 75%);mask-image:radial-gradient(70% 60% at 50% 45%,#000 30%,transparent 75%)}
+.orbit{position:absolute;left:50%;top:45%;border-radius:50%;border:1px solid rgba(var(--point-rgb),.16);transform:translate(-50%,-50%);animation:spin 60s linear infinite}
+.o1{width:min(560px,130vw);height:min(560px,130vw)}
+.o2{width:min(820px,190vw);height:min(820px,190vw);border-style:dashed;border-color:rgba(255,255,255,.06);animation-duration:120s;animation-direction:reverse}
+.orbit::after{content:"";position:absolute;top:-3px;left:50%;width:6px;height:6px;border-radius:50%;background:var(--point);box-shadow:0 0 12px 2px rgba(var(--point-rgb),.6)}
+.o2::after{background:#fff;opacity:.5;box-shadow:none;width:4px;height:4px;top:-2px}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.wrap{position:relative;width:380px;max-width:100%;display:flex;flex-direction:column;align-items:center;gap:18px}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.42em;color:var(--muted);padding-left:.42em;display:flex;align-items:center;gap:12px}
+.eyebrow::before,.eyebrow::after{content:"";width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25))}
+.eyebrow::after{transform:scaleX(-1)}
+form{position:relative;width:100%;display:flex;flex-direction:column;gap:10px;padding:34px 28px 26px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015)),rgba(16,16,19,.78);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);animation:in .5s cubic-bezier(.2,.9,.25,1) both}
+form::before{content:"";position:absolute;left:24px;right:24px;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--point),transparent);opacity:.9}
+@keyframes in{from{opacity:0;transform:translateY(16px) scale(.985)}}
+.title{font-family:"Baunk","Pretendard",sans-serif;font-size:42px;line-height:1;text-align:center}
+.chip{align-self:center;display:inline-flex;align-items:center;gap:7px;margin:6px 0 18px;padding:5px 12px;border-radius:999px;background:rgba(var(--point-rgb),.10);border:1px solid rgba(var(--point-rgb),.22);font-size:12px;font-weight:600}
+.chip i{color:var(--point);font-size:11px}
+.field{position:relative}
+.field>i{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;transition:color .15s}
+.field:focus-within>i{color:var(--point)}
+input{width:100%;height:50px;padding:0 14px 0 42px;font-size:15px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);color:var(--text);font-family:inherit;transition:border-color .15s,box-shadow .15s}
+input::placeholder{color:rgba(255,255,255,.32)}
+input:focus{outline:none;border-color:rgba(var(--point-rgb),.7);box-shadow:0 0 0 3px rgba(var(--point-rgb),.14)}
+.err{min-height:18px;margin:0;font-size:13px;color:#ff7a7a;text-align:center}
+button{height:50px;border:none;border-radius:12px;background:var(--accent);color:var(--on-accent);font:inherit;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 10px 30px rgba(var(--point-rgb),.25);transition:transform .15s,box-shadow .15s,filter .15s}
+button:hover{transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 14px 34px rgba(var(--point-rgb),.35)}
+.hint{font-size:12px;color:var(--muted);line-height:1.6;text-align:center;margin-top:6px}
+@media (prefers-reduced-motion:reduce){.orbit,form{animation:none}}
+</style></head><body>
+<div class="bg"><span class="orbit o2"></span><span class="orbit o1"></span></div>
+<div class="wrap"><div class="eyebrow">EARTHTERRA</div>
+<form method="post" action="/login"><div class="title">Rooms</div>
+<div class="chip"><i class="fa-solid fa-lock"></i>방 목록은 운영진만 볼 수 있어요</div>
+<div class="field"><i class="fa-solid fa-key"></i><input type="password" name="password" placeholder="운영진 비밀번호" aria-label="운영진 비밀번호" autofocus autocomplete="current-password"></div>
+{err}
+<button>입장<i class="fa-solid fa-arrow-right"></i></button>
+<div class="hint">참가자는 운영진이 보낸 방 링크로 들어가 주세요.</div>
+</form></div></body></html>"""
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -340,7 +379,7 @@ def admin_login():
         else:
             note_fail(ip)
             err = "비밀번호가 올바르지 않아요."
-    html = _LOGIN_HTML.replace("{err}", f'<p class="err">{err}</p>' if err else "")
+    html = _LOGIN_HTML.replace("{err}", f'<p class="err">{err}</p>' if err else '<p class="err"></p>').replace("{theme}", point_theme())
     return html, (429 if "너무" in err else 200), {"Content-Type": "text/html; charset=utf-8"}
 
 
