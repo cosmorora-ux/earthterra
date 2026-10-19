@@ -1746,7 +1746,7 @@
   .mf-sec { display:flex; flex-direction:column; gap:10px; padding:16px; border-radius:16px; border:1px solid var(--line); background: rgba(255,255,255,.02); }
   .mf-h { display:flex; align-items:center; gap:8px; min-height:22px; }
   .mf-h b { font-size:14px; color: var(--text); font-weight:700; }
-  .mf-n { width:20px; height:20px; flex:none; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;
+  .mf-n { width:20px; height:20px; flex:none; border-radius:10px; display:inline-grid; place-items:center; font-size:11px; font-weight:800; line-height:1; font-variant-numeric: tabular-nums; text-align:center; padding-top:1px; box-sizing:border-box;
     background: rgba(var(--point-rgb), .16); color: var(--point); }
   .mf-aside { margin-left:auto; font-size:12.5px; color: var(--muted); white-space:nowrap; }
   .mf-aside b { color: var(--text); font-weight:700; }
@@ -10957,7 +10957,7 @@ function renderMail() {
   document.getElementById('mailFab').style.display = mailTab === 'write' ? 'none' : '';
   const pv = d.preview ? '<div class="mail-preview"><i class="fa-solid fa-eye"></i>미리보기예요. 이 방에서는 편지를 보내거나 받을 수 없어요.</div>' : '';
   if (mailTab === 'write') {
-    body.innerHTML = pv + mailComposeHtml(d);
+    body.innerHTML = mailComposeHtml(d);   // 미리보기 안내는 목록에만(편지 쓰기에서는 중복이라 빼요)
     const sb = document.getElementById('mailSendBtn');
     if (d.preview && sb) sb.remove();   // 미리보기 방 : 보낼 수 없으니 보내기 버튼 자체를 빼요(위 안내로 충분)
     return;
@@ -11051,7 +11051,7 @@ function mailComposeHtml(d) {
         <div class="mail-picked" id="mailPicked">${mailPickedHtml()}</div>
         <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
         : `<div class="mail-rcount"><span>몇 명에게</span>${[1, 2, 3, 4, 5].map(n => `<button class="${mailDraft.randomCount === n ? 'on' : ''}" onclick="mailDraft.randomCount=${n}; renderMail()">${n}명</button>`).join('')}</div>
-          <div class="mail-rand"><i class="fa-solid fa-shuffle"></i><span>등록된 캐릭터 중 서로 다른 ${mailDraft.randomCount}명에게 무작위로 한 통씩 보내요.<br>누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</span></div>`}
+          <div class="mail-rand"><i class="fa-solid fa-shuffle"></i><span>등록된 캐릭터 중 서로 다른 사람에게 무작위로 한 통씩 보내요.<br>누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</span></div>`}
     </section>
     <section class="mf-sec">
       <header class="mf-h"><span class="mf-n">3</span><b>내용</b><span class="mf-aside mail-count" id="mailCount">${mailDraft.text.length} / 2000</span></header>
@@ -11067,8 +11067,9 @@ function mailComposeHtml(d) {
     </div></div>`;
 }
 function mailToAside() {
-  if (mailDraft.mode !== 'pick') return `무작위 ${mailDraft.randomCount}명`;
-  return mailDraft.to.length ? `<b>${mailDraft.to.length}명</b> 골랐어요` : '여러 명 고를 수 있어요';
+  // 직접 고르기 · 랜덤 같은 모양 : '직접 n명' / '무작위 n명'
+  if (mailDraft.mode !== 'pick') return `무작위 <b>${mailDraft.randomCount}명</b>`;
+  return `직접 <b>${mailDraft.to.length}명</b>`;
 }
 function mailNamesHtml(names) {
   const me = mailData && mailData.me;
