@@ -41,3 +41,5 @@ loop_content.json
 secret_key.txt
 backups/
 backup_dir.txt
+# 오류 기록(서버 컴퓨터별)
+logs/

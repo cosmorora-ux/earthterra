@@ -20,7 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def tracked_files():
     try:
-        out = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True, encoding="utf-8")
+        out = subprocess.check_output(["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=ROOT, text=True, encoding="utf-8")
         return [f for f in out.splitlines() if f]
     except Exception:
         # git이 없으면 코드 파일만 직접 골라요

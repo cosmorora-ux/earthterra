@@ -3745,6 +3745,14 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color: var(--muted); font-size:13px; }
   .ops-thumb > i { font-size:26px; opacity:.5; }
   .ops-thumb .tag { position:absolute; left:10px; top:10px; height:22px; display:inline-flex; align-items:center; padding:0 9px; border-radius:10px; background: rgba(12,12,13,.72); color:#cfcfd4; font-size:11.5px; font-weight:700; }
+  .ops-errs { display:flex; flex-direction:column; gap:6px; }
+  .ops-errs-ok { color: var(--muted); font-size:13px; } .ops-errs-ok i { color:#7fe8a4; margin-right:4px; }
+  .ops-errs-n { display:flex; align-items:baseline; gap:10px; margin-bottom:4px; } .ops-errs-n b { font-size:18px; color:#ff9a90; } .ops-errs-n span { font-size:12.5px; color: var(--muted); }
+  .ops-err { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:2px 8px; padding:8px 10px; border-radius:10px; background: rgba(255,255,255,.03); border:1px solid var(--ds-line, var(--line)); font-size:12.5px; }
+  .ops-err .k { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px; background: rgba(255,138,128,.12); color:#ff9a90; align-self:start; }
+  .ops-err .k.client { background: rgba(255,255,255,.06); color:#cfcfd4; }
+  .ops-err .m { color: var(--text); word-break:break-all; } .ops-err .t { color: var(--muted); white-space:nowrap; font-variant-numeric: tabular-nums; }
+  .ops-err .w { grid-column: 2 / -1; color: var(--muted); font-size:11.5px; word-break:break-all; }
   .ops-check { display:flex; align-items:center; gap:10px; font-size:14px; color: var(--text); cursor:pointer; user-select:none; }
   .bt-gm-row input[type=datetime-local] { flex:none; width:220px !important; height:38px !important; padding:0 10px; border-radius:10px; border:1px solid var(--ds-line, rgba(255,255,255,.08)); background: rgba(255,255,255,.05); color: var(--text); color-scheme: dark; }
   .bt-names { display:flex; flex-wrap:wrap; gap:6px; max-height:132px; overflow:auto; }
@@ -5355,6 +5363,16 @@ const BATTLE_TYPE = "{{ battle_type }}";
 const GRID_SIZE = {{ grid_size }};
 
 const socket = io();
+// 화면 오류 기록 : 스크립트 오류가 나면 서버 오류 기록(logs/)에 메시지 · 위치만 보내요(한 화면에서 최대 5건)
+(function () {
+  let sent = 0;
+  const send = (message, src, line, stack) => {
+    if (sent >= 5 || !message) return; sent++;
+    try { socket.emit('client_error', { message: String(message).slice(0, 300), src: String(src || '').slice(-120), line: line || '', stack: String(stack || '').slice(0, 1500) }); } catch (e) {}
+  };
+  window.addEventListener('error', e => { if (e && e.message) send(e.message, e.filename, e.lineno, e.error && e.error.stack); });
+  window.addEventListener('unhandledrejection', e => { const r = e && e.reason; send(r && r.message ? r.message : String(r), '', '', r && r.stack); });
+})();
 // ---------- 연출 순서표 : 컷인 · 피해/회복 숫자 · 라운드 띠가 한꺼번에 터지지 않게 하나씩 차례로 ----------
 // fxSchedule(할 일, 그 연출이 차지하는 시간 ms) : 앞 연출이 끝나면(+ 짧은 쉼) 다음 연출이 시작됩니다.
 // 창이 가려져 있으면(다른 탭) 쌓아 두지 않고 버립니다. 너무 많이 밀리면 오래된 숫자부터 건너뜁니다.
@@ -5816,7 +5834,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.89";
+const EXPECTED_SERVER_BUILD = "2026-10-13.90";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -13221,6 +13239,12 @@ function opsRoomHtml(kind) {
       <div class="ops-foot"><button class="ops-btn" onclick="toggleChatTabSettings()"><i class="fa-solid fa-sliders"></i> 채팅 탭 설정</button></div>
     </div>
 `,
+    errors: `    <div class="ops-card">
+      <h3><i class="fa-solid fa-triangle-exclamation"></i> 최근 오류<span class="sub">지난 24시간 · 서버와 참가자 화면에서 난 오류(서버 컴퓨터 logs 폴더에 날짜별로 남아요)</span></h3>
+      <div id="opsErrors" class="ops-errs"><span class="ops-hint">불러오는 중…</span></div>
+      <div class="ops-foot"><button class="ops-btn" onclick="socket.emit('error_summary')"><i class="fa-solid fa-rotate"></i> 새로고침</button></div>
+    </div>
+`,
     hidden: `    <div class="ops-card">
       <h3><i class="fa-solid fa-eye-slash"></i> 공개<span class="sub">비공개면 룸 목록에 운영진에게만 보이고 아무도 들어올 수 없어요 · 새 전투는 비공개로 만들어져요</span></h3>
       <label class="ops-check"><input type="checkbox" id="opsHidden" onchange="socket.emit('battle_set_hidden', {hidden: this.checked})"> 비공개 (준비 중)</label>
@@ -13242,7 +13266,7 @@ function opsRoomHtml(kind) {
   // 격자 지도를 쓰는 전투(마스 레이드)만 지도 배경 · 몹 이미지
   const grid = !!document.getElementById('mapBgBtn');
   const keys = kind === 'battle' ? ['room', 'hidden', 'thumb', ...(grid ? ['mapbg'] : []), 'watch', 'chattabs', 'remind', 'scene', 'formula']
-    : OPS_BATTLE_ROOM ? ['point', 'mail', 'chat'] : ['room', 'point', 'mail', 'chat', 'scene'];
+    : OPS_BATTLE_ROOM ? ['point', 'mail', 'chat', 'errors'] : ['room', 'point', 'mail', 'chat', 'scene', 'errors'];
   return `<div class="ops-grid">${keys.map(k => C[k]).join('')}</div>`;
 }
 function opsRenderScene() {
@@ -13298,7 +13322,15 @@ function opsRenderMapBg() {
   el.style.backgroundImage = mb.url ? `url('${mb.url}')` : '';
   el.innerHTML = mb.url ? '' : '<i class="fa-regular fa-image"></i><span>배경 없음</span>';
 }
+socket.on('error_summary', d => {
+  const el = document.getElementById('opsErrors'); if (!el || !d) return;
+  if (!d.count) { el.innerHTML = '<div class="ops-errs-ok"><i class="fa-solid fa-circle-check"></i> 지난 24시간 동안 오류가 없어요.</div>'; return; }
+  const t = at => { const x = new Date(at * 1000), p = n => String(n).padStart(2, '0'); return `${p(x.getMonth() + 1)}.${p(x.getDate())} ${p(x.getHours())}:${p(x.getMinutes())}`; };
+  el.innerHTML = `<div class="ops-errs-n"><b>${d.count}건</b><span>서버 ${d.server} · 화면 ${d.client}</span></div>`
+    + d.recent.map(x => `<div class="ops-err"><span class="k ${x.kind}">${x.kind === 'server' ? '서버' : '화면'}</span><span class="m">${mailEsc(x.message)}</span><span class="t">${t(x.at)}</span><span class="w">${mailEsc(x.where || '')}</span></div>`).join('');
+});
 function opsRenderRoomInfo() {
+  if (document.getElementById('opsErrors') && !opsRenderRoomInfo._asked) { opsRenderRoomInfo._asked = true; socket.emit('error_summary'); setTimeout(() => { opsRenderRoomInfo._asked = false; }, 30000); }
   opsRenderThumb(); opsRenderMapBg();
   const hd = document.getElementById('opsHidden'); if (hd) hd.checked = !!(opsLastPublic && opsLastPublic.battle_hidden);
   const ct = document.getElementById('opsChatTabsNow');

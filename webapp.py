@@ -34,6 +34,8 @@ import dorm as dorm_mod
 import world as world_mod
 import loop_game as loop_mod
 import backup as backup_mod
+import errlog
+import traceback
 from battle import Battle, BattleError, cell_label
 from database import CharacterDatabase, shared_db
 from rooms import (
@@ -43,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.89"
+SERVER_BUILD = "2026-10-13.90"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -1557,7 +1559,7 @@ def on_join(data):
 
 
 @socketio.on("disconnect")
-def on_disconnect():
+def on_disconnect(*_reason):   # 새 Flask-SocketIO는 끊긴 이유를 넘겨줘요(받지 않으면 정리가 안 됐어요)
     info = CONNECTIONS.pop(request.sid, None)
     if info is None:
         return
@@ -4621,7 +4623,7 @@ def _ensure_demo_room_once():
 
 
 # ── LOOP 방은 웹에 공개 : 운영진이 아닌 접속은 LOOP에 필요한 소켓 이벤트만 쓸 수 있어요(+ 너무 잦은 요청은 버려요). ──
-PLAY_PUBLIC_EVENTS = {"join", "loop_state", "loop_life", "loop_start", "loop_choose", "loop_solve", "loop_begin", "loop_resume",
+PLAY_PUBLIC_EVENTS = {"join", "client_error", "loop_state", "loop_life", "loop_start", "loop_choose", "loop_solve", "loop_begin", "loop_resume",
                       "loop_next", "loop_death", "loop_finish", "loop_reset", "world_get", "mail_list"}
 _SID_HITS = {}
 
@@ -4657,7 +4659,55 @@ def _install_play_guard():
 _install_play_guard()
 
 
+# ── 오류 기록 : 서버 오류(소켓 · 페이지)와 참가자 화면 오류를 logs/ 에 남기고, 운영진 방 설정에서 최근 오류를 봐요 ──
+@socketio.on_error_default
+def _socket_error(e):
+    ev = ""
+    try:
+        ev = (request.event or {}).get("message", "")
+    except Exception:
+        pass
+    errlog.record("server", f"{type(e).__name__}: {e}", where=f"socket:{ev}", detail=traceback.format_exc())
+    try:
+        emit("action_error", {"message": "처리 중 문제가 생겼어요. 잠시 뒤에 다시 해 주세요."})
+    except Exception:
+        pass
+
+
+@app.errorhandler(500)
+def _http_error(e):
+    orig = getattr(e, "original_exception", None) or e
+    errlog.record("server", f"{type(orig).__name__}: {orig}", where=f"http:{request.path}", detail=traceback.format_exc())
+    return "서버에 문제가 생겼어요. 잠시 뒤에 다시 시도해 주세요.", 500
+
+
+_CLIENT_ERR_HITS = {}
+
+
+@socketio.on("client_error")
+def on_client_error(data=None):
+    """참가자 화면에서 난 스크립트 오류(메시지 · 위치만). 한 접속당 1분에 5건까지만 받아요."""
+    now = time.time()
+    hits = [t for t in _CLIENT_ERR_HITS.get(request.sid, []) if now - t < 60]
+    if len(hits) >= 5:
+        return
+    hits.append(now)
+    _CLIENT_ERR_HITS[request.sid] = hits
+    d = data or {}
+    info = CONNECTIONS.get(request.sid) or {}
+    where = f"{info.get('room_id', '?')} · {str(d.get('src') or '')[-80:]}:{d.get('line') or ''}"
+    errlog.record("client", str(d.get("message") or "")[:300], where=where, detail=str(d.get("stack") or "")[:2000])
+
+
+@socketio.on("error_summary")
+def on_error_summary(data=None):
+    if _require_gm_or_guest_gm(request.sid) is None:
+        return
+    emit("error_summary", errlog.summary())
+
+
 if __name__ == "__main__":
+    errlog.startup()
     load_rooms()
     ensure_lounge()
     load_runtime()

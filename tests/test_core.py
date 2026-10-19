@@ -246,6 +246,49 @@ class TestLoop(unittest.TestCase):
         self.assertEqual(seen, {"arcadia", "nova"}, "초기화 뒤 국가가 한쪽으로 고정됨")
 
 
+class TestDisconnect(unittest.TestCase):
+    def test_disconnect_cleans_up(self):
+        import errlog
+        before = errlog.summary()["server"]
+        c = Client()
+        c.join(lounge(), "AA")
+        sid = next(k for k, v in webapp.CONNECTIONS.items() if v.get("nickname") == "AA")
+        c.close()
+        self.assertNotIn(sid, webapp.CONNECTIONS, "접속을 끊어도 연결 정보가 남음(접속 표시가 꺼지지 않음)")
+        self.assertEqual(errlog.summary()["server"], before, "접속 끊김 때 서버 오류가 남")
+
+
+class TestErrorLog(unittest.TestCase):
+    def test_client_error_recorded_and_gm_only_summary(self):
+        import errlog
+        before = errlog.summary()["count"]
+        r = Client()
+        r.join(lounge(), "AA")
+        r.emit("client_error", {"message": "TypeError: x is undefined", "src": "guest.html", "line": 10})
+        self.assertEqual(errlog.summary()["count"], before + 1, "화면 오류가 기록되지 않음")
+        self.assertFalse(names(r.emit("error_summary"), "error_summary"), "러너에게 오류 요약이 감")
+        r.close()
+        g = Client()
+        g.join(lounge(), "GM", gm_password=PW)
+        got = names(g.emit("error_summary"), "error_summary")
+        self.assertTrue(got and got[-1]["count"] >= 1, "운영진이 오류 요약을 못 받음")
+        g.close()
+
+    def test_server_exception_caught(self):
+        import errlog
+        before = errlog.summary()["server"]
+
+        @webapp.socketio.on("__test_boom")
+        def _boom(data=None):
+            raise RuntimeError("boom")
+        c = Client()
+        c.join(lounge(), "AA")
+        rec = c.emit("__test_boom")
+        self.assertEqual(errlog.summary()["server"], before + 1, "서버 오류가 기록되지 않음")
+        self.assertTrue(names(rec, "action_error"), "서버 오류 때 안내가 가지 않음")
+        c.close()
+
+
 class TestNotices(unittest.TestCase):
     def test_pinned_notices(self):
         import notices
