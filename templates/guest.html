@@ -1674,7 +1674,6 @@
   .mail-empty i { display:block; font-size:28px; margin-bottom:12px; opacity:.5; }
   .mail-empty .btn { margin-top:14px; }
   /* 편지 읽기 */
-  .mail-back { display:inline-flex; align-items:center; gap:6px; background:none; border:none; color: var(--muted); font-size:13px; cursor:pointer; padding:4px 0; margin-bottom:10px; }
   .mail-back:hover { color: var(--text); }
   .mail-letter { position:relative; border-radius:16px; border:1px solid rgba(255,255,255,.08); padding:30px 30px 24px;
     background: linear-gradient(180deg, #19191d 0%, #141417 100%); }
@@ -3666,7 +3665,7 @@
   .bt-back i { font-size:11px; }
   @media (max-width:600px) { .bt-back span { display:none; } .bt-back { padding:0 10px; } }
   /* 좁은 화면(상단 바가 격자일 때) : 방 이름 칸 앞에 겹쳐 두고 이름을 그만큼 밀어요 */
-  @media (max-width:900px) { .topbar.v2 .bt-back { grid-area:room; justify-self:start; align-self:center; width:32px; padding:0; justify-content:center; margin:0; } .topbar.v2 .bt-back span { display:none; } body.has-lobby .topbar.v2 #roomNameLabel { padding-left:40px; } }
+  @media (max-width:900px) { .topbar.v2 .bt-back { grid-area:room; justify-self:start; align-self:center; width:32px; padding:0; justify-content:center; margin:0; } .topbar.v2 .bt-back span { display:none; } body.has-lobby .topbar.v2 #roomNameLabel { padding-left:44px; } }
   .bt-list { display:flex; flex-direction:column; gap:12px; padding-bottom:96px; }
   /* 섹션 제목 : 룸 목록(index)의 .sec-title 그대로 */
   .bt-sec { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color: var(--muted); letter-spacing:.08em; margin:14px 2px 0; }
@@ -4480,12 +4479,22 @@
   .shop-btn.danger, .ops-btn.danger:not(.icon) { background: transparent !important; border:1px solid rgba(255,138,128,.35) !important; color: var(--ds-danger) !important; font-weight:600; }
   .shop-btn.danger:hover, .ops-btn.danger:not(.icon):hover { background: rgba(255,138,128,.08) !important; }
   /* ── 버튼 : 아이콘만 ── */
-  .shop-ico-btn, .dorm-ibtn, .ops-btn.icon, .mail-back, .sb-mute {
+  /* 뒤로가기 버튼 통일 : 36 정사각 · 둥글기 10 · ‹ 아이콘만(글자 없음, 갈 곳은 툴팁) — 전투 방 머리 · 우체통 · 마이룸 */
+  .bt-back, .mail-back, .dorm-back { width:36px !important; height:36px !important; min-width:36px; padding:0 !important; margin:0 !important; flex:none;
+    display:inline-flex !important; align-items:center; justify-content:center; gap:0 !important; border-radius:10px !important; border:none !important;
+    background: var(--ds-ctl, rgba(255,255,255,.06)) !important; color:#d8d8de !important; font-size:14px !important; cursor:pointer; }
+  .bt-back:hover, .mail-back:hover, .dorm-back:hover { background: var(--ds-ctl-hover, rgba(255,255,255,.1)) !important; color:#fff !important; }
+  .bt-back i, .mail-back i, .dorm-back i { font-size:14px !important; }
+  .bt-back span, .mail-back span, .dorm-back span { display:none !important; }
+  .dorm-back { background: rgba(16,16,19,.82) !important; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }   /* 마이룸 그림 위라 어둡게 */
+  .dorm-back:hover { background: rgba(32,32,38,.92) !important; }
+  .topbar .bt-back { margin-right:4px !important; }
+  .shop-ico-btn, .dorm-ibtn, .ops-btn.icon, .sb-mute {
     width: var(--ds-h-sm) !important; height: var(--ds-h-sm) !important; padding:0 !important; flex:none;
     display:inline-flex !important; align-items:center; justify-content:center;
     border:none !important; border-radius: var(--ds-r-ctl) !important; background: transparent !important; color: var(--muted) !important;
     font-size:13px; cursor:pointer; transition: background-color .15s, color .15s; }
-  .shop-ico-btn:hover:not(:disabled), .dorm-ibtn:hover:not(:disabled), .ops-btn.icon:hover:not(:disabled), .mail-back:hover, .sb-mute:hover { background: var(--ds-ctl-hover) !important; color:#fff !important; }
+  .shop-ico-btn:hover:not(:disabled), .dorm-ibtn:hover:not(:disabled), .ops-btn.icon:hover:not(:disabled), .sb-mute:hover { background: var(--ds-ctl-hover) !important; color:#fff !important; }
   .shop-ico-btn.danger:hover, .ops-btn.icon.danger:hover { color: var(--ds-danger) !important; background: rgba(255,138,128,.08) !important; }
   .dorm-ibtn { background: var(--ds-ctl) !important; color: var(--text) !important; }
   /* ── 비활성 ── */
@@ -10942,7 +10951,7 @@ function renderMail() {
   tabsEl.classList.toggle('write-mode', mailTab === 'write');
   document.getElementById('mailBody').classList.toggle('writing', mailTab === 'write');
   tabsEl.innerHTML = mailTab === 'write'
-    ? `<div class="mail-write-head"><button class="mail-back" onclick="setMailTab(mailListTab || 'inbox')" aria-label="목록으로" data-tip="목록으로"><i class="fa-solid fa-arrow-left"></i></button><b>새 편지</b></div>`
+    ? `<div class="mail-write-head"><button class="mail-back" onclick="setMailTab(mailListTab || 'inbox')" aria-label="목록으로" data-tip="목록으로"><i class="fa-solid fa-chevron-left"></i></button><b>새 편지</b></div>`
     : tabs.map(([k, ic, t, n]) => `<button class="shop-tab ${mailTab === k ? 'active' : ''}" onclick="setMailTab('${k}')"><i class="${ic}"></i>${t}${n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('');
   // 편지 쓰기 : 목록 위에 떠 있는 버튼(오른쪽 아래). 쓰는 중이거나 미리보기(보낼 수 없는 방)에서는 숨겨요.
   document.getElementById('mailFab').style.display = mailTab === 'write' ? 'none' : '';
@@ -11005,7 +11014,7 @@ function mailLetterHtml(l, d) {
   const toName = many ? l.to_list.map(mailEsc).join(', ') : l.to ? mailEsc(l.to) : '누군가 (랜덤)';
   const fromName = l.from ? mailEsc(l.from) : '익명';
   const canDelete = mailTab !== 'all' || d.is_gm;
-  return `<button class="mail-back" onclick="mailOpenId=null; renderMail()"><i class="fa-solid fa-chevron-left"></i> 목록으로</button>
+  return `<div class="mail-write-head"><button class="mail-back" onclick="mailOpenId=null; renderMail()" aria-label="목록으로" data-tip="목록으로"><i class="fa-solid fa-chevron-left"></i></button><b>편지</b></div>
     <div class="mail-letter">${mailEraLabel(l) ? `<div class="era">${mailEsc(mailEraLabel(l))}</div>` : ''}<div class="to">To.<b>${toName}</b></div>${l.text ? `<div class="txt">${mailEsc(l.text)}</div>` : ''}${(l.images || []).length ? `<div class="mail-imgs n${Math.min(l.images.length, 4)}">${l.images.map(u => `<a href="${mailEsc(u)}" target="_blank" rel="noopener"><img src="${mailEsc(u)}" alt="" loading="lazy"></a>`).join('')}</div>` : ''}
       <div class="from">From.<b>${fromName}</b></div><div class="date">${mailYearLabel(l) ? `<span class="y">${mailYearLabel(l)}</span>` : ''}<span class="r"><i class="fa-regular fa-clock"></i>${mailRealTime(l.at)} 발송</span></div></div>
     <div class="mail-actions"><span style="display:flex;align-items:center;gap:10px;">
@@ -11386,7 +11395,7 @@ function renderDormRoom(body) {
   const isOwner = dormMe() && dormMe() === r.owner;
   const bubble = r.line ? `<div class="dorm-line-bubble"><b>${mailEsc(r.owner)}</b><span>${mailEsc(r.line)}</span></div>` : '';
   body.innerHTML = `<div class="dorm-room-layout"><div class="dorm-frame-wrap">${dormEdit ? '' : bubble}<div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>
-    <button class="dorm-back" onclick="dormLeaveRoom()" data-tip="${mailEsc(dormP().name)} 목록으로"><i class="fa-solid fa-arrow-left"></i><span>목록</span></button>
+    <button class="dorm-back" onclick="dormLeaveRoom()" aria-label="목록으로" data-tip="${mailEsc(dormP().name)} 목록으로"><i class="fa-solid fa-chevron-left"></i></button>
     <div class="zoom-ctl" id="dormZoom">
       <button onclick="dormZoomBy(1 / 1.25)" data-tip="축소"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
       <span class="z" id="dormZoomLabel">100%</span>
@@ -14140,7 +14149,7 @@ function loopLifeCardHtml(d, l) {
   return loopEndCardHtml({ tag: e.tag || 'RECORD', cls: `${survived || e.kind === 'loop' ? 'loop' : ''} ${e.kind === 'mind' ? 'mind' : ''}`, title: e.title || '',
     text: (e.text || []).map(t => `<p class="${/^["“]/.test(t) ? 'q' : ''}" style="opacity:1;animation:none">${loopEsc(t)}</p>`).join(''),
     meta: `<span class="pl-end-stamp"><i class="fa-solid fa-clock-rotate-left"></i>${l.life_no}번째 운명${l.loop_no ? ` · 루프 ${l.loop_no}` : ''}</span>${at} · ${l.count}개의 사건`,
-    actions: `<button class="pl-btn" onclick="event.stopPropagation(); loopLifePeek = null; renderLoop()"><i class="fa-solid fa-arrow-left"></i>지금으로 돌아가기</button>`, still: true });
+    actions: `<button class="pl-btn" onclick="event.stopPropagation(); loopLifePeek = null; renderLoop()"><i class="fa-solid fa-chevron-left"></i>지금으로 돌아가기</button>`, still: true });
 }
 function loopLivesHtml(d) {
   const lives = d.lives || [];
