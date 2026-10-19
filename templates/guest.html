@@ -534,8 +534,17 @@
   @media (max-width:600px) { .notice-card-head { padding:16px 16px !important; gap:12px !important; } .notice-card-body { padding:4px 16px 18px !important; } .nc-pv { font-size:13px; } }
   .notice-card-head .chev { color: var(--muted); font-size:12px; transition: transform .15s; }
   .notice-card.open .chev { transform: rotate(180deg); }
-  .notice-card-body { display:none; padding:4px 20px 18px; border-top:1px solid var(--panel-border); }
-  .notice-card.open .notice-card-body { display:block; }
+  /* 펼치기 · 접기 애니메이션 : 높이를 갑자기 바꾸지 않고 grid 행 높이로 부드럽게 */
+  .notice-card-body { display:grid !important; grid-template-rows:0fr; padding:0 !important; border-top:none; transition: grid-template-rows .26s cubic-bezier(.2,.8,.2,1); }
+  .notice-card.open .notice-card-body { grid-template-rows:1fr; }
+  .notice-card-body > .nc-inner { min-height:0; overflow:hidden; }
+  .nc-pad { padding:6px 22px 22px; border-top:1px solid var(--panel-border); opacity:0; transition: opacity .2s; }
+  .notice-card.open .nc-pad { opacity:1; }
+  @media (max-width:600px) { .nc-pad { padding:4px 16px 18px; } }
+  .nc-pv-wrap { display:grid; grid-template-rows:1fr; transition: grid-template-rows .26s cubic-bezier(.2,.8,.2,1), opacity .2s; }
+  .nc-pv-wrap { margin-top:8px; }
+  .nc-pv-wrap > .nc-pv { min-height:0; margin-top:0 !important; }
+  .notice-card.open .nc-pv-wrap { grid-template-rows:0fr; opacity:0; margin-top:0; }
   .notice-content { padding-top:14px; font-size:15.5px; line-height:1.8; word-break:keep-all; overflow-wrap:anywhere; color:#e4e4e7; max-width:none; }
   .notice-content h1 { font-size:22px; line-height:1.35; margin:14px 0 8px; letter-spacing:-0.025em; color: var(--text); }
   .notice-content h2 { font-size:19px; line-height:1.4; margin:12px 0 6px; letter-spacing:-0.02em; color: var(--text); }
@@ -1753,7 +1762,8 @@
   .mf-search { position:relative; }
   .mf-search i { position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:12px; color: var(--muted); pointer-events:none; }
   .modal-box.mail-modal .mf-search input { width:100%; padding-left:36px; }
-  .mail-picked:empty { display:none; }
+  /* 고른 사람 줄 : 늘 한 줄 높이로 자리를 잡아 두고(넘치면 옆으로 스크롤), 고를 때마다 아래 목록이 밀리지 않게 */
+  .mail-picked-none { color: var(--muted); font-size:12.5px; opacity:.7; }
   .mail-none { font-size:13px; color: var(--muted); padding:4px 2px; }
   .mf-hint { font-size:12px; color: var(--muted); display:flex; align-items:center; gap:6px; }
   .mf-hint i { font-size:11px; }
@@ -1765,8 +1775,10 @@
   .mail-seg button.on { color:#fff; background: rgba(var(--point-rgb),.16); border-color: rgba(var(--point-rgb),.45); }
   .mail-names { display:flex; flex-wrap:wrap; align-content:flex-start; gap:6px; max-height:148px; overflow-y:auto; padding:10px; border-radius:12px; border:1px solid var(--line); background: rgba(0,0,0,.22); }
   .mail-name { background: rgba(255,255,255,.05); border:1px solid transparent; color:#cfcfd4; border-radius:999px; padding:5px 12px; font-size:13px; cursor:pointer; }
-  .mail-picked { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-  .mail-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 6px 3px 10px; border-radius:999px; background: rgba(var(--point-rgb),.18); color:#dbe4ff; font-size:12.5px; font-weight:600; }
+  .mail-picked { display:flex; flex-wrap:nowrap; align-items:center; gap:6px; height:28px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
+  .mail-picked::-webkit-scrollbar { display:none; }
+  .mail-picked .mail-chip { flex:none; }
+  .mail-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 6px 3px 10px; border-radius:999px; background: rgba(var(--point-rgb),.18); color: var(--point-soft, #dbe4ff); font-size:12.5px; font-weight:600; }
   .mail-chip button { width:18px; height:18px; border:none; border-radius:50%; background:none; color:#aebcff; cursor:pointer; font-size:10px; }
   .mail-chip button:hover { background: rgba(255,255,255,.12); color:#fff; }
   .mail-name i { font-size:10px; }
@@ -4479,6 +4491,11 @@
   .shop-btn.danger, .ops-btn.danger:not(.icon) { background: transparent !important; border:1px solid rgba(255,138,128,.35) !important; color: var(--ds-danger) !important; font-weight:600; }
   .shop-btn.danger:hover, .ops-btn.danger:not(.icon):hover { background: rgba(255,138,128,.08) !important; }
   /* ── 버튼 : 아이콘만 ── */
+  /* 덜컹임 방지 : 고른(켜진) 상태에서 글자 굵기가 바뀌면 글자 폭이 달라져 옆 칸들이 밀려요 → 평소에도 같은 굵기로 두고 색만 바꿔요 */
+  .shop-tab, .seg-toggle button, .news-switch button { font-weight:600 !important; }
+  .mypage-roles button, .mypage.v2 .mypage-roles button, .mypage.v2 .mp-nations button, .wm-node .sb, .sc-owned { font-weight:700 !important; }
+  /* 목록 · 패널이 길이가 바뀌어도 보던 위치가 튀지 않게(브라우저 스크롤 고정) */
+  #mailBody, #noticeList, #shopBody, #opsBody, .world-body, .la-right, .pl-lp-body { overflow-anchor:auto; }
   /* 뒤로가기 버튼 통일 : 36 정사각 · 둥글기 10 · ‹ 아이콘만(글자 없음, 갈 곳은 툴팁) — 전투 방 머리 · 우체통 · 마이룸 */
   .bt-back, .mail-back, .dorm-back { width:36px !important; height:36px !important; min-width:36px; padding:0 !important; margin:0 !important; flex:none;
     display:inline-flex !important; align-items:center; justify-content:center; gap:0 !important; border-radius:10px !important; border:none !important;
@@ -9915,9 +9932,11 @@ function fmtNoticeDate(ts) {
   if (!ts) return '';
   return etStamp(new Date(ts * 1000));
 }
+// 펼치기 · 접기 : 목록을 다시 그리지 않고 그 카드만 부드럽게 열고 닫아요(화면이 덜컹거리지 않게)
 function toggleNotice(id) {
   if (openNoticeIds.has(id)) openNoticeIds.delete(id); else openNoticeIds.add(id);
-  renderNotices();
+  const card = document.querySelector(`.notice-card[data-id="${id}"]`);
+  if (card) card.classList.toggle('open', openNoticeIds.has(id)); else renderNotices();
 }
 function renderNotices() {
   const gm = myControlInfo(lastBattleForPanel).scope === 'all';
@@ -9941,19 +9960,19 @@ function renderNotices() {
     const tmp = document.createElement('div');
     tmp.innerHTML = (n.html || '').replace(/<\/(p|h1|h2|h3|li|div|blockquote)>|<br\s*\/?>/gi, ' $&');
     const preview = (tmp.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120);
-    return `<div class="notice-card ${open ? 'open' : ''} ${n.pinned ? 'pinned' : ''}">
+    return `<div class="notice-card ${open ? 'open' : ''} ${n.pinned ? 'pinned' : ''}" data-id="${n.id}">
       <div class="notice-card-head" onclick="toggleNotice('${n.id}')">
         <div class="nc-main">
           <div class="nc-title">${n.pinned ? '<span class="pin"><i class="fa-solid fa-thumbtack"></i>고정</span>' : ''}<span class="t">${shopEsc(n.title)}</span>${isNew ? '<span class="new"></span>' : ''}</div>
           ${n.pinned ? '' : `<div class="nc-meta">${fmtNoticeRealDate(n.created_at)}</div>`}
-          ${!open && preview ? `<div class="nc-pv">${shopEsc(preview)}</div>` : ''}
+          ${preview ? `<div class="nc-pv-wrap"><div class="nc-pv">${shopEsc(preview)}</div></div>` : ''}
         </div>
         <span class="chev"><i class="fa-solid fa-chevron-down"></i></span>
       </div>
-      <div class="notice-card-body">
+      <div class="notice-card-body"><div class="nc-inner"><div class="nc-pad">
         <div class="notice-content">${n.html || ''}</div>
         ${gm ? `<div class="notice-gm-ops"><button class="shop-ico-btn" onclick="startNoticeEdit('${n.id}')" data-tip="수정"><i class="fa-solid fa-pen"></i></button><button class="shop-ico-btn danger" onclick="deleteNotice('${n.id}')" data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>` : ''}
-      </div>
+      </div></div></div>
     </div>`;
   }).join('');
 }
@@ -10957,7 +10976,9 @@ function renderMail() {
   document.getElementById('mailFab').style.display = mailTab === 'write' ? 'none' : '';
   const pv = d.preview ? '<div class="mail-preview"><i class="fa-solid fa-eye"></i>미리보기예요. 이 방에서는 편지를 보내거나 받을 수 없어요.</div>' : '';
   if (mailTab === 'write') {
+    const keep = body.scrollTop;   // 다시 그려도 보던 위치 그대로(덜컹거리지 않게)
     body.innerHTML = mailComposeHtml(d);   // 미리보기 안내는 목록에만(편지 쓰기에서는 중복이라 빼요)
+    body.scrollTop = keep;
     const sb = document.getElementById('mailSendBtn');
     if (d.preview && sb) sb.remove();   // 미리보기 방 : 보낼 수 없으니 보내기 버튼 자체를 빼요(위 안내로 충분)
     return;
@@ -11076,7 +11097,8 @@ function mailNamesHtml(names) {
   // 맨 앞 : 나에게 보내기(편지가 어떻게 보이는지 확인해 볼 때)
   const self = me && !mailDraft.q.trim() ? `<button class="mail-name self ${mailDraft.to.includes(me) ? 'on' : ''}" onclick="mailToggleTo(${mailEsc(JSON.stringify(me))})">${mailDraft.to.includes(me) ? '<i class="fa-solid fa-check"></i> ' : '<i class="fa-solid fa-user-pen"></i> '}나에게</button>` : '';
   if (!names.length) return self || '<span class="mail-none">찾는 이름이 없어요.</span>';
-  return self + names.map(n => `<button class="mail-name ${mailDraft.to.includes(n) ? 'on' : ''}" onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})">${mailDraft.to.includes(n) ? '<i class="fa-solid fa-check"></i> ' : ''}${mailEsc(n)}</button>`).join('');
+  // 고르면 색만 바뀌어요(체크 아이콘을 끼워 넣으면 칸 폭이 바뀌어 이름들이 밀려요)
+  return self + names.map(n => `<button class="mail-name ${mailDraft.to.includes(n) ? 'on' : ''}" onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})">${mailEsc(n)}</button>`).join('');
 }
 // 직접 고르기는 여러 명을 고를 수 있어요 (한 사람에게 한 통씩 가요)
 function mailToggleTo(n) {
@@ -11085,7 +11107,7 @@ function mailToggleTo(n) {
   mailRefreshNames();
 }
 function mailPickedHtml() {
-  if (!mailDraft.to.length) return '';
+  if (!mailDraft.to.length) return '<span class="mail-picked-none">고른 사람이 여기에 보여요</span>';
   return mailDraft.to.map(n => `<span class="mail-chip">${n === (mailData && mailData.me) ? '나에게' : mailEsc(n)}<button onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})" aria-label="빼기"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
 }
 function mailRefreshNames() {
