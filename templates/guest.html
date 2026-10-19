@@ -2573,6 +2573,15 @@
     .wm-zone .img.empty .ns { width:34%; }
     .wm-zedit { grid-template-columns:minmax(0,1fr); }
   }
+  /* 구역 카드 옆으로 넘기기 : 스크롤 막대 없이(손가락으로 넘겨요) — 마우스 화면(좁은 창)은 옆으로 넘길 수 없으니 한 줄에 하나씩 세로로 */
+  @media (max-width:900px) { .wm-zones { scrollbar-width:none; } .wm-zones::-webkit-scrollbar { display:none; } }
+  @media (max-width:900px) and (hover:hover) and (pointer:fine) {
+    .wm-zones { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); overflow:visible; scroll-snap-type:none; }
+    .wm-zone { flex:none; }
+  }
+  /* 맵 머리 : 장소 이름은 굵게 하지 않고, 좁은 화면에서는 Pangaea만 */
+  .world-topbar #worldTopSeg { font-weight:500; }
+  @media (max-width:600px) { .world-topbar #worldTopSeg, .world-topbar #worldTopSeg + .sep, .world-topbar .world-brand + .sep { display:none !important; } }
   /* 운영진 편집 */
   .wm-edit { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:16px; align-items:start; }
   .wm-edit .ops-card { margin:0; }
