@@ -4513,6 +4513,9 @@
   /* ── 버튼 : 아이콘만 ── */
   /* 덜컹임 방지 : 고른(켜진) 상태에서 글자 굵기가 바뀌면 글자 폭이 달라져 옆 칸들이 밀려요 → 평소에도 같은 굵기로 두고 색만 바꿔요 */
   .shop-tab, .seg-toggle button, .news-switch button { font-weight:600 !important; }
+  body.view-swap *, body.view-swap *::before, body.view-swap *::after { animation:none !important; transition:none !important; }
+  /* 다른 화면에서 바로 넘어온 기록 · 채팅 창 : 열려 있는 동안 등장 애니메이션을 다시 틀지 않아요(뒤 화면이 비쳐 보이지 않게) */
+  body.m-chat-instant .member-col, body.m-chat-instant .member-col .member-panel { animation:none !important; }
   .mypage-roles button, .mypage.v2 .mypage-roles button, .mypage.v2 .mp-nations button, .wm-node .sb, .sc-owned { font-weight:700 !important; }
   /* 목록 · 패널이 길이가 바뀌어도 보던 위치가 튀지 않게(브라우저 스크롤 고정) */
   #mailBody, #noticeList, #shopBody, #opsBody, .world-body, .la-right, .pl-lp-body { overflow-anchor:auto; }
@@ -7781,15 +7784,25 @@ var mobileChatUnread = false;
 function isMobileChatHidden() {
   return window.matchMedia('(max-width:900px)').matches && !document.body.classList.contains('m-chat-open');
 }
+// 화면 바꿈(탭 전환) 한 번 동안 애니메이션 · 전환 효과를 꺼요 : 화면이 중간 단계를 거쳐 보이며 어지럽지 않게
+function viewSwap() {
+  document.body.classList.add('view-swap');
+  clearTimeout(viewSwap._t);
+  viewSwap._t = setTimeout(() => document.body.classList.remove('view-swap'), 260);
+}
 function toggleMobileChat(force) {
   const open = typeof force === 'boolean' ? force : !document.body.classList.contains('m-chat-open');
-  // 지도 · 운영 · LOOP 편집 화면이 덮고 있으면 먼저 닫아요(LOOP 기록 · 전투 채팅이 그 화면 뒤에 가려서 안 열리던 문제)
-  if (open && !IS_LOUNGE) {
+  // 지도 · 운영 · LOOP 편집 화면이 덮고 있으면 닫아요(기록 · 채팅이 그 화면 뒤에 가려서 안 열리던 문제).
+  // 기록을 먼저 열고 같은 순간에 닫아, 중간에 LOOP 화면이 비치지 않게(애니메이션도 이번 한 번은 끔)
+  const covered = open && !IS_LOUNGE && ((typeof worldOpen === 'function' && worldOpen()) || (typeof opsOpen === 'function' && opsOpen()) || document.body.classList.contains('view-loopadmin'));
+  if (covered) { viewSwap(); document.body.classList.add('m-chat-instant'); }
+  if (!open) document.body.classList.remove('m-chat-instant');
+  document.body.classList.toggle('m-chat-open', open);
+  if (covered) {
     if (typeof worldOpen === 'function' && worldOpen()) closeWorldMap(true);
     if (typeof opsOpen === 'function' && opsOpen()) closeOps();
     if (document.body.classList.contains('view-loopadmin') && typeof closeLoopAdmin === 'function') closeLoopAdmin();
   }
-  document.body.classList.toggle('m-chat-open', open);
   if (open) {
     mobileChatUnread = false;
     updateUnreadBadges();
@@ -13325,6 +13338,8 @@ const worldEsc = (t) => mailEsc(t == null ? '' : String(t));
 function worldOpen() { return document.body.classList.contains('view-map'); }
 function worldIsGm() { return !!(worldData && worldData.gm) && myControlInfo(lastBattleForPanel).scope === 'all'; }
 function openWorldMap() {
+  // 기록 · 채팅 창이 열려 있으면 같은 순간에 닫고 지도로(중간 화면 없이)
+  if (document.body.classList.contains('m-chat-open')) { viewSwap(); document.body.classList.add('view-map'); toggleMobileChat(false); }
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
   if (typeof closeOps === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); document.getElementById('sidebarSettingsBtn').classList.remove('active'); }
