@@ -901,6 +901,16 @@ class LoopBook:
         d = C.texts["death"].get(dk) or C.texts["death"]["life"]
         return {"tag": "LOOP" if dk == "loop" else "COLLAPSE" if dk == "mind" else "DEATH", "kind": dk, "title": d["title"], "text": d["text"]}
 
+    def life_detail(self, name, i):
+        """지난 운명 리플레이 : 그 생애의 사건 기록 전체(상황 서술 · 고른 답 · 결과). 열 때만 따로 보내요(평소 화면 데이터는 가볍게)."""
+        with self.lock:
+            e = self.data.get(name)
+            lives = (e or {}).get("lives") or []
+            if not isinstance(i, int) or not (0 <= i < len(lives)):
+                return None
+            l = lives[i]
+            return {"i": i, "life_no": l.get("life_no"), "ended": l.get("ended"), "log": copy.deepcopy(l.get("log") or [])}
+
     def view(self, name):
         with self.lock:
             C = content()

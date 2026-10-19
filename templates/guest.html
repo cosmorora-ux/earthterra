@@ -2263,6 +2263,11 @@
   .pl-res.one { grid-template-columns: minmax(0, 1fr); }   /* 카드 하나일 때는 자리를 꽉 채워요 */
   /* 지난 사건 다시 보기 */
   .pl-lp-restart { margin-left:auto; height:28px; }
+  /* 지난 운명 리플레이 머리 : ‹ 닫기 · 몇 번째 운명 리플레이 · 쪽수 */
+  .pl-replay-h { display:flex; align-items:center; gap:10px; margin:2px 0 12px; }
+  .pl-replay-t { display:inline-flex; align-items:center; gap:7px; font-size:13.5px; font-weight:700; color: var(--text); }
+  .pl-replay-t i { color: var(--point); font-size:12px; }
+  .pl-replay-n { margin-left:auto; font-size:12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
   /* 초기화 : 새로고침처럼 보이지 않게, 위험 동작 색(붉은 테두리 · 글자)으로 */
   .pl-reset { margin-left:auto; flex:none; height:30px; display:inline-flex; align-items:center; gap:6px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,138,128,.35);
     background: rgba(255,138,128,.08); color:#ff9a90; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; transition: background .15s, border-color .15s, color .15s; }
@@ -5799,7 +5804,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.88";
+const EXPECTED_SERVER_BUILD = "2026-10-13.89";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -13762,7 +13767,10 @@ function renderLoop() {
   let main = '', dock = '';
   loopTailMs = 0;
   if (loopLifePeek != null && (d.lives || [])[loopLifePeek]) {
-    page.innerHTML = `<div class="pl-scroll"><div class="pl-wrap">${loopHeadHtml(d)}${loopLifeCardHtml(d, d.lives[loopLifePeek])}</div></div>`;
+    // 지난 운명 리플레이 : 그 생애의 사건을 한 장씩(상황 · 고른 답 · 결과), 마지막 장은 끝 장면
+    const x = loopReplayHtml(d, loopLifePeek);
+    page.innerHTML = `<div class="pl-scroll"><div class="pl-wrap">${loopHeadHtml(d)}${x.main}</div></div>`
+      + (x.dock ? `<div class="pl-dock"><div class="pl-dock-in">${x.dock}</div></div>` : '');
     return;
   }
   if (!r) { const x = loopStartHtml(d); main = x.main; dock = x.dock; }
@@ -13921,7 +13929,7 @@ function loopRetry() {
 function loopRestart() {
   uiConfirm('지금 기록된 인물의 삶을 버리고, 다른 인물로 새로 시작할까요?', { title: '초기화', okText: '초기화', icon: 'fa-eraser', danger: true }).then(ok => {
     if (!ok) return;
-    loopShown.clear(); loopProStep = {}; loopLifePeek = null; loopEndCache = {};
+    loopShown.clear(); loopProStep = {}; loopLifePeek = null; loopEndCache = {}; loopLifeFull = {};
     loopEmit('loop_reset', { force: true });
   });
 }
@@ -14166,9 +14174,36 @@ function loopStartHtml(d) {
 }
 // 지난 생애 : 끝난 생애가 있을 때만 아래에 보여요.
 // 지난 운명을 누르면 그 운명이 끝났을 때의 카드를 다시 보여 줘요(읽기 전용).
-var loopLifePeek = null;
+var loopLifePeek = null, loopLifeStep = 0, loopLifeFull = {};
+// 지난 운명 리플레이 : 기록 전체는 열 때만 서버에서 받아요
+socket.on('loop_life', d => { if (!d || !loopData) return; const l = (loopData.lives || [])[d.i]; if (l && l.life_no === d.life_no) { loopLifeFull[`${d.life_no}|${d.ended}`] = d.log || []; renderLoop(); } });
+function loopReplayClose() { loopLifePeek = null; renderLoop(); renderLoopLog(); }
+function loopReplayGo(step) { loopLifeStep = step; renderLoop(); const sc = document.querySelector('#playPage .pl-scroll'); if (sc) sc.scrollTop = 0; }
+function loopReplayHtml(d, li) {
+  const life = d.lives[li], key = `${life.life_no}|${life.ended}`, log = loopLifeFull[key];
+  const head = (label) => `<div class="pl-replay-h"><button class="bt-back" onclick="event.stopPropagation(); loopReplayClose()" aria-label="리플레이 닫기" data-tip="리플레이 닫기"><i class="fa-solid fa-chevron-left"></i></button>
+      <span class="pl-replay-t"><i class="fa-solid fa-clock-rotate-left"></i>${life.life_no}번째 운명${life.loop_no ? ` · 루프 ${life.loop_no}` : ''} 리플레이</span><span class="pl-replay-n">${label}</span></div>`;
+  if (!log) { socket.emit('loop_life', { i: li }); return { main: head('') + `<div class="pl-box">${emptyHtml('fa-circle-notch fa-spin', '기록을 불러오는 중이에요', '', null, true)}</div>`, dock: '' }; }
+  const n = log.length, step = Math.max(0, Math.min(loopLifeStep, n));
+  const nav = (prevOk, nextLabel, nextFn) => `<div class="pl-actions two peek"><button class="pl-btn" ${prevOk ? '' : 'disabled'} onclick="event.stopPropagation(); loopReplayGo(${step - 1})"><i class="fa-solid fa-chevron-left"></i>이전</button>
+      <button class="pl-btn primary" onclick="event.stopPropagation(); ${nextFn}">${nextLabel}<i class="fa-solid fa-chevron-right"></i></button></div>`;
+  if (step >= n) {   // 마지막 장 : 그 운명이 끝난 장면
+    const card = loopLifeCardHtml(d, life);
+    return { main: head('끝') + card, dock: nav(n > 0, '처음부터', 'loopReplayGo(0)') };
+  }
+  const l = log[step], eraBy = Object.fromEntries((d.eras || []).map(e => [e.id, e])), e = eraBy[l.era] || {};
+  const rr = { talent_name: life.country === 'nova' ? '기술' : '재능' };
+  const story = loopType(l.story || [], null), res = loopType(l.text || [], null);
+  const tw = l.twist && l.twist.text ? `<div class="tw ${l.twist.kind}"><i class="fa-solid ${l.twist.kind === 'purge' ? 'fa-house-crack' : l.twist.kind === 'risk' ? 'fa-bolt' : 'fa-leaf'}"></i><p>${loopEsc(l.twist.text)}</p></div>` : '';
+  const fx = l.solved ? `<div class="pl-deltas">${loopGainHtml(l.gain, rr)}</div>` : loopDeltaHtml(l.delta, l.dmind).replace('</div>', loopGainHtml(l.gain, rr) + '</div>');
+  const main = head(`${step + 1} / ${n}`) + `<div class="pl-box glow pl-ev peek"><div class="pl-ev-meta"><span class="pl-ev-no">EVENT ${String(step + 1).padStart(2, '0')}</span><span>${loopEsc(e.no || '')}. ${loopEsc(e.name || '')}</span></div>
+    <h2 class="pl-ev-title">${loopEsc(l.title)}</h2><div class="pl-story">${story.html || '<p class="q">기록이 흐릿합니다.</p>'}</div>
+    </div><div class="pl-answer"><div class="pl-picked"><span class="k">${l.solved ? `<i class="fa-solid ${l.solved === 'wealth' ? 'fa-coins' : 'fa-lightbulb'}"></i>` : 'ABC'[l.pick] || '·'}</span>${loopEsc(l.choice)}</div>
+    ${res.html || fx || tw ? `<div class="pl-result">${res.html}<div class="pl-res-fx">${fx}</div>${tw}</div>` : ''}</div>`;
+  return { main, dock: nav(step > 0, step + 1 < n ? '다음' : '끝 장면', `loopReplayGo(${step + 1})`) };
+}
 function loopLifePeekGo(i) {
-  loopLifePeek = loopLifePeek === i ? null : i; loopPeek = null; renderLoop();
+  loopLifePeek = loopLifePeek === i ? null : i; loopLifeStep = 0; loopPeek = null; renderLoop();
   if (document.body.classList.contains('m-chat-open') && typeof toggleMobileChat === 'function') toggleMobileChat(false);
   const sc = document.querySelector('#playPage .pl-scroll'); if (sc) sc.scrollTop = 0;
 }
@@ -14178,7 +14213,7 @@ function loopLifeCardHtml(d, l) {
   return loopEndCardHtml({ tag: e.tag || 'RECORD', cls: `${survived || e.kind === 'loop' ? 'loop' : ''} ${e.kind === 'mind' ? 'mind' : ''}`, title: e.title || '',
     text: (e.text || []).map(t => `<p class="${/^["“]/.test(t) ? 'q' : ''}" style="opacity:1;animation:none">${loopEsc(t)}</p>`).join(''),
     meta: `<span class="pl-end-stamp"><i class="fa-solid fa-clock-rotate-left"></i>${l.life_no}번째 운명${l.loop_no ? ` · 루프 ${l.loop_no}` : ''}</span>${at} · ${l.count}개의 사건`,
-    actions: `<button class="pl-btn" onclick="event.stopPropagation(); loopLifePeek = null; renderLoop()"><i class="fa-solid fa-chevron-left"></i>지금으로 돌아가기</button>`, still: true });
+    actions: '', still: true });
 }
 function loopLivesHtml(d) {
   const lives = d.lives || [];

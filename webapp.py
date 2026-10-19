@@ -43,7 +43,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.88"
+SERVER_BUILD = "2026-10-13.89"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -3490,6 +3490,21 @@ def _loop_action(fn, *args):
     _emit_loop_data(request.sid)
 
 
+@socketio.on("loop_life")
+def on_loop_life(data=None):
+    """지난 운명 리플레이용 : 그 생애의 사건 기록 전체(본인 기기 기록만)."""
+    key, me, is_gm, room = _loop_identity(request.sid)
+    if room is None or room.battle_type != "play" or key is None:
+        return
+    try:
+        i = int((data or {}).get("i"))
+    except (TypeError, ValueError):
+        return
+    d = loop_mod.shared_book().life_detail(key, i)
+    if d is not None:
+        emit("loop_life", d)
+
+
 @socketio.on("loop_state")
 def on_loop_state(data=None):
     _emit_loop_data(request.sid)
@@ -4606,7 +4621,7 @@ def _ensure_demo_room_once():
 
 
 # ── LOOP 방은 웹에 공개 : 운영진이 아닌 접속은 LOOP에 필요한 소켓 이벤트만 쓸 수 있어요(+ 너무 잦은 요청은 버려요). ──
-PLAY_PUBLIC_EVENTS = {"join", "loop_state", "loop_start", "loop_choose", "loop_solve", "loop_begin", "loop_resume",
+PLAY_PUBLIC_EVENTS = {"join", "loop_state", "loop_life", "loop_start", "loop_choose", "loop_solve", "loop_begin", "loop_resume",
                       "loop_next", "loop_death", "loop_finish", "loop_reset", "world_get", "mail_list"}
 _SID_HITS = {}
 
