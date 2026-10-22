@@ -312,13 +312,44 @@
   /* ---------- 유저 접속정보 팝업 ---------- */
   .modal-box.userinfo-modal { width:420px; max-width:calc(100vw - 32px); height:min(640px, 82vh); display:flex; flex-direction:column; padding:22px 22px 16px; }
   .ui-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-  .ui-count { color: var(--muted); font-size:13px; }
+  .ui-count { color: var(--muted); font-size:13px; white-space:nowrap; }
+  .ui-head .modal-title { white-space:nowrap; }
+  @media (max-width:900px) { .modal-box.userinfo-modal .ui-close { display:none; } }
   .ui-count b { color: var(--point); }
-  .ui-close { margin-left:auto; background:none; border:none; color: var(--muted); font-size:18px; cursor:pointer; padding:2px 4px; }
+  .ui-close { margin-left:0; background:none; border:none; color: var(--muted); font-size:18px; cursor:pointer; padding:2px 4px; }
   .ui-close:hover { color: var(--text); }
   .ui-tools { display:flex; gap:8px; margin-bottom:10px; }
   .modal-box .ui-tools input { flex:1; min-width:0; font-size:14px; padding:8px 12px; }
   .userinfo-list { overflow-y:auto; flex:1 1 auto; min-height:0; margin:0 -6px; }
+  /* 보기 방식 : 목록 ↔ 썸네일 */
+  .ui-viewsw { margin-left:auto; display:inline-flex; gap:2px; padding:3px; border-radius:10px; background: rgba(255,255,255,.04); border:1px solid var(--line); }
+  .ui-viewsw button { width:30px; height:28px; border:none; border-radius:8px; background:none; color: var(--muted); font-size:13px; cursor:pointer; transition: color .15s ease, background .15s ease; }
+  .ui-viewsw button:hover { color: var(--text); }
+  .ui-viewsw button.on { color: var(--point); background: rgba(var(--point-rgb),.14); }
+  /* 썸네일 보기 : 프로필 사진 카드. 접속 중이면 포인트 테두리 + 빛나는 점, 아니면 사진이 흐리게 */
+  .ui-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap:12px; padding:6px 8px 10px; }
+  .ui-card { position:relative; min-width:0; display:flex; flex-direction:column; border-radius:12px; overflow:hidden; cursor:pointer;
+    background: var(--card, #17171a); border:1px solid var(--line); transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+  .ui-card:hover { border-color: rgba(255,255,255,.18); transform: translateY(-2px); }
+  .ui-card .pic { position:relative; aspect-ratio:1/1; background:#0b0b0d; display:flex; align-items:center; justify-content:center; color:#2c2c32; font-size:34px; }
+  .ui-card .pic img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .ui-card:not(.is-online) .pic img { filter: grayscale(.85) brightness(.6); }
+  .ui-card.is-online { border-color: rgba(var(--point-rgb),.45); box-shadow: 0 0 18px rgba(var(--point-rgb),.12); }
+  .ui-card .ui-dot { position:absolute; left:10px; top:10px; z-index:1; box-shadow: 0 0 0 2px rgba(0,0,0,.55); }
+  .ui-card .ui-state { position:absolute; left:24px; top:5px; z-index:1; font-size:11px; font-weight:600; color: var(--point); padding:1px 4px; border-radius:6px; background: rgba(0,0,0,.45); }
+  .ui-card .ui-doc { position:absolute; right:6px; top:6px; z-index:1; margin:0; background: rgba(0,0,0,.5); }
+  .ui-card .ui-doc.empty { background: rgba(0,0,0,.35); opacity:.5; }
+  .ui-card .ui-doc:hover { background: rgba(0,0,0,.7); }
+  .ui-card .cap { display:flex; align-items:center; gap:6px; padding:9px 10px 10px; min-width:0; }
+  .ui-card .cap .t { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .ui-card .cap b { font-size:14px; font-weight:600; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ui-card:not(.is-online) .cap b { color:#b9b9be; }
+  .ui-card .cap small { font-size:11.5px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ui-card .cap small:empty { display:none; }
+  .ui-card .userinfo-eye { flex:none; }
+  .ui-card.is-hidden { opacity:.5; }
+  .ui-card.is-hidden .cap b { text-decoration: line-through; }
+  @media (max-width:600px) { .ui-grid { grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; padding:6px 4px 10px; } .ui-card .pic { font-size:26px; } .ui-card .cap { padding:7px 8px 8px; } .ui-card .cap b { font-size:13px; } .ui-card .ui-state { display:none; } }
   .userinfo-row { display:flex; align-items:center; gap:12px; padding:7px 10px; border-radius:8px; font-size:15px; }
   .ui-sec { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:14px 8px 4px; padding-bottom:6px; border-bottom:1px solid var(--panel-border); font-size:13px; font-weight:700; color: var(--text); }
   .ui-sec:first-child { margin-top:2px; }
@@ -5085,6 +5116,10 @@
     <div class="ui-head">
       <div class="modal-title page-title" style="margin:0;">User list</div>
       <span class="ui-count" id="userInfoCount"></span>
+      <div class="ui-viewsw" id="userInfoView" role="group" aria-label="보기 방식">
+        <button type="button" data-v="list" onclick="setUserInfoView('list')" aria-label="목록으로 보기" data-tip="목록"><i class="fa-solid fa-list-ul"></i></button>
+        <button type="button" data-v="grid" onclick="setUserInfoView('grid')" aria-label="썸네일로 보기" data-tip="썸네일"><i class="fa-solid fa-table-cells-large"></i></button>
+      </div>
       <button class="ui-close" onclick="closeUserInfoPanel()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="ui-tools">
@@ -8868,6 +8903,7 @@ function renderUserInfoList() {
   const onlineCount = visible.filter(n => onlineSet.has(n)).length;
   document.getElementById('userInfoCount').innerHTML = `<b>${onlineCount}</b> / ${visible.length}명 접속`;
   document.querySelectorAll('#userInfoFilter button').forEach(b => b.classList.toggle('on', b.dataset.v === userInfoFilter));
+  document.querySelectorAll('#userInfoView button').forEach(b => b.classList.toggle('on', b.dataset.v === userInfoView));
   if (!names.length) { listEl.innerHTML = `<div class="hint" style="padding:16px 4px; text-align:center;">${q ? '검색 결과가 없어요.' : '등록된 캐릭터가 없어요.'}</div>`; return; }
   const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   const info = n => (lastRosterMypage || {})[n] || {};
@@ -8902,7 +8938,8 @@ function renderUserInfoList() {
     const on = list.filter(n => onlineSet.has(n)).length;
     const color = userInfoFilter === 'role' && ROLE_ORDER.includes(k) ? ` style="color:${roleColorVar(k)}"`
       : userInfoFilter === 'nation' && nationColor(k) ? ` style="color:${nationColor(k)}"` : '';
-    return `<div class="ui-sec"><span${color}>${esc(k)}</span><em>${on ? `${on} / ` : ''}${list.length}</em></div>` + list.map(name => {
+    const grid = userInfoView === 'grid';
+    return `<div class="ui-sec"><span${color}>${esc(k)}</span><em>${on ? `${on} / ` : ''}${list.length}</em></div>` + (grid ? '<div class="ui-grid">' : '') + list.map(name => {
       const online = onlineSet.has(name);
       const hidden = lastUserInfoHidden.has(name);
       const js = name.replace(/'/g, "\\'");
@@ -8917,10 +8954,28 @@ function renderUserInfoList() {
       const link = doc ? `<a class="ui-doc" ${docLinkAttrs(doc)} onclick="event.stopPropagation()" aria-label="${esc(name)} 프로필 문서" data-tip="프로필 문서"><i class="fa-solid fa-link"></i></a>`
         : isGm ? `<button type="button" class="ui-doc empty" onclick="event.stopPropagation(); openUserDocEdit('${js}')" data-tip="프로필 문서 링크 넣기"><i class="fa-solid fa-link"></i></button>`
         : `<span class="ui-doc empty" data-tip="프로필 문서 없음"><i class="fa-solid fa-link"></i></span>`;
+      if (grid) {
+        // 썸네일 보기 : 사진 · 접속 상태 · 이름 · 포지션/진영 · 문서 링크. 누르면 마이페이지(보기 전용)
+        const d = info(name), av = d.avatar_url;
+        const sub = [d.role, factionTip(factionOf(name))].filter(Boolean).join(' · ');
+        return `<div class="ui-card ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
+          <div class="pic"><i class="fa-solid fa-user"></i>${av ? `<img src="${esc(av)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
+            <span class="ui-dot"></span>${online ? '<span class="ui-state">접속 중</span>' : ''}${link}</div>
+          <div class="cap"><span class="t"><b>${esc(name)}</b><small>${esc(sub)}</small></span>${eye}</div></div>`;
+      }
       return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
         <span class="ui-left" onmouseenter="uiHoverShow(this.parentNode, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()"><span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}</b></span></span>${isGm && online ? deviceBadgesHtml(name) : ''}${link}${eye}</div>`;
-    }).join('');
+    }).join('') + (grid ? '</div>' : '');
   }).join('');
+}
+// 유저 리스트 보기 방식(목록 / 썸네일) : 이 기기에 기억해요
+var userInfoView = (() => { try { return localStorage.getItem('userInfoView') === 'grid' ? 'grid' : 'list'; } catch (e) { return 'list'; } })();
+function setUserInfoView(v) {
+  userInfoView = v === 'grid' ? 'grid' : 'list';
+  try { localStorage.setItem('userInfoView', userInfoView); } catch (e) {}
+  uiHoverHide();
+  const list = document.getElementById('userInfoList'); if (list) list.scrollTop = 0;
+  renderUserInfoList();
 }
 
 let userInfoFilter = 'name';
