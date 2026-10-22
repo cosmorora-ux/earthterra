@@ -1619,7 +1619,6 @@ function renderGrid(battle, all) {
       const tipAttr = c ? `data-tip-html="${shopEsc(gridCellTip(c, x, y, key, telKeys, highlightCells, highlightIsAction))}"`
         : obsO ? `data-tip="${cellLabel(x, y)} · 장애물 · 남은 타격 ${obsO.hits}/${obsO.max}${obsO.draft ? ' (공개하면 놓여요)' : ''}"` : `data-tip="${cellLabel(x, y)}"`;
       let inner = '';
-      if (obsO) inner = `<i class="fa-solid fa-cubes-stacked obst-ic"></i><span class="obst-hp">${obsO.hits}/${obsO.max}</span>`;
       if (c) {
         // BOSS 부위는 칸이 4개라 이름 앞 두 글자만(예: NOVA → NO) 씁니다. 본인이 정한 표기 이름이 있으면 그걸 우선합니다.
         const label = c.raid_display_name || (c.boss_section ? c.name.slice(0, 2) : c.name);

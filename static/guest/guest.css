@@ -4754,9 +4754,5 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .ops-prow .sk.mob { color:#ff8a80; border-color: rgba(255,138,128,.35); }
 /* NPC 마이페이지 : 재화 · 소지품 · 마이룸 칸 없이 */
 .modal-box.mypage.is-npc .mp-tiles, .modal-box.mypage.is-npc #myPageRoomBox { display:none !important; }
-/* 마스 레이드 장애물 칸 */
-.gmap .gcell.obst { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-  background: repeating-linear-gradient(45deg, rgba(150,150,160,.28) 0 6px, rgba(110,110,120,.22) 6px 12px), #2a2a30;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); border-radius:4px; }
-.gmap .gcell.obst .obst-ic { color:#d6d6dc; font-size:14px; }
-.gmap .gcell.obst .obst-hp { font-size:10px; font-weight:700; color:#fff; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.7); }
+/* 마스 레이드 장애물 칸 : 노이즈 무늬만(남은 타격은 칸에 올리면 툴팁으로) */
+.gmap .gcell.obst { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)'/%3E%3C/svg%3E") center / 64px 64px, #2e2e34; border-radius:2px; }
