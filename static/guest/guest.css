@@ -4749,3 +4749,6 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 }
 /* 로그아웃 아이콘은 빨갛게 */
 #sidebarLoginBtn .fa-power-off { color:#ff6b61; }
+/* 운영 캐릭터 설정 : 몹 체크 */
+.ops-check em { font-style:normal; color: var(--muted); font-size:12.5px; margin-left:6px; }
+.ops-prow .sk.mob { color:#ff8a80; border-color: rgba(255,138,128,.35); }

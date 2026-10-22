@@ -556,7 +556,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.94";
+const EXPECTED_SERVER_BUILD = "2026-10-13.95";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -586,12 +586,12 @@ socket.on('public_state', (state) => {
   lastAttackLines = state.attack_lines || [];
   lastPreviewTeams = state.preview_teams || null;
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
-  lastBattleForPanel = state.battle;
+  lastBattleForPanel = fillGmMobHp(state.battle);
   if (state.chat_tabs) chatTabsEnabled = state.chat_tabs;
   if (state.chat_tab_labels) chatTabLabels = state.chat_tab_labels;
   applyChatTabLabels();
   renderChatTabVisibility();
-  renderBattle(state.battle);
+  renderBattle(lastBattleForPanel);
   renderPubLog(state.log, state.log_total);
   lastChatTotal = state.chat_total != null ? state.chat_total : (state.chat || []).length;
   renderChat(state.chat);
@@ -723,13 +723,14 @@ function renderSiteStatusCard(battle) {
     el.innerHTML = `
       <div class="site-head">
         <div class="site-title">${groupLabel}${diceText}</div>
-        <div class="site-hp">${totalCurrent}/${totalMax}</div>
+        <div class="site-hp">${mobs.some(m => m.hp_hidden) ? '???' : `${totalCurrent}/${totalMax}`}</div>
       </div>
       <div class="hpbar-track" style="margin-top:8px;"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '')}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
     `;
     el.classList.toggle('is-defeated', mobs.every(isDefeatedStatus));
     el.style.display = '';
     el.dataset.fx = 'group:' + groupLabel; el.dataset.hp = totalCurrent; el.dataset.max = totalMax;
+    if (mobs.some(m => m.hp_hidden)) el.dataset.hpHidden = '1'; else delete el.dataset.hpHidden;
     runHpFx(el.parentNode || el);
     return;
   }
@@ -750,7 +751,7 @@ function renderSiteStatusCard(battle) {
   el.innerHTML = `
     <div class="site-head">
       <div class="site-title">${displayNameOf(site)}${diceText}${statusTagFor(site)}</div>
-      <div class="site-hp">${site.current_hp}/${site.max_hp}</div>
+      <div class="site-hp">${hpNumText(site)}</div>
     </div>
     <div class="hpbar-track" style="margin-top:8px;"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '')}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
     ${badges.length ? `<div class="cbadges" style="margin-top:8px;">${badges.join('&nbsp;&nbsp;')}</div>` : ''}
@@ -759,6 +760,7 @@ function renderSiteStatusCard(battle) {
   el.classList.toggle('is-defeated', isDefeatedStatus(site));
   el.style.display = '';
   el.dataset.fx = site.name; el.dataset.hp = site.current_hp; el.dataset.max = site.max_hp;
+  if (site.hp_hidden) el.dataset.hpHidden = '1'; else delete el.dataset.hpHidden;
   runHpFx(el.parentNode || el);
 }
 
@@ -884,6 +886,9 @@ function statusTagBase(c) {
   return '';
 }
 
+// 몹(운영진이 정함) : 참가자 화면에는 정확한 체력 대신 비율(100 기준)만 와요 → 숫자는 ???로
+function hpNumText(c) { return c && c.hp_hidden ? '???' : `${c.current_hp}/${c.max_hp}`; }
+function hpHiddenAttr(c) { return c && c.hp_hidden ? ' data-hp-hidden="1"' : ''; }
 function renderCompactCardHtml(c) {
   const isTarget = selectedTargetName === c.name;
   const canSeeStats = lastSeesAll || (lastMyTeam !== null && c.team === lastMyTeam);
@@ -898,13 +903,13 @@ function renderCompactCardHtml(c) {
   if (c.pending_heals) badges.push(makeStatusTag('heal', `회복 +${c.pending_heals}`));
   if (c.interceptors && c.interceptors.length) badges.push(makeStatusTag('proxydef', `대리 방어 ${c.interceptors.join(', ')}`, c.interceptors.length));
   if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`, 1));
-  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">${isTarget ? '<span class="tgt-line" aria-hidden="true"></span>' : ''}
+  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}"${hpHiddenAttr(c)} class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">${isTarget ? '<span class="tgt-line" aria-hidden="true"></span>' : ''}
     <div class="crow">
       <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">${cardShines(c) ? '<span class="turn-shine" aria-hidden="true"></span>' : ''}
         ${canSeeStats ? `<div class="stat-tip">${statsTitle(c)}</div>` : ''}
       </div>
       <div class="cname-sm">${displayNameOf(c)}${statusTagFor(c)}</div>
-      <div class="chp-sm">${c.current_hp}/${c.max_hp}</div>
+      <div class="chp-sm">${hpNumText(c)}</div>
     </div>
     <div class="hpbar-track-sm"><div class="hpbar-fill-sm ${hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '')}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
     <div class="cbadges-sm">${badges.join('&nbsp;&nbsp;')}</div>
@@ -977,7 +982,7 @@ function renderCardHtml(c) {
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
   const badges = charStatusBadges(c);
 
-  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}" class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">${isTarget ? '<span class="tgt-line" aria-hidden="true"></span>' : ''}
+  return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}"${hpHiddenAttr(c)} class="char-card v2 team-${c.teamLabel} ${isTarget ? 'selected-target' : ''} ${isAlly ? 'ally' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">${isTarget ? '<span class="tgt-line" aria-hidden="true"></span>' : ''}
     <div class="row1">
       <div>
         <span class="cname">${displayNameOf(c)}</span>
@@ -995,7 +1000,7 @@ function renderCardHtml(c) {
           <div class="cstatus-tag">${statusTag}</div>
         </div>
         <div class="hpbar-wrap">
-          <div class="hpnum"><b>${c.current_hp}</b><span>/${c.max_hp}</span></div>
+          <div class="hpnum">${c.hp_hidden ? '<b>???</b>' : `<b>${c.current_hp}</b><span>/${c.max_hp}</span>`}</div>
           <div class="hpbar-track"><div class="hpbar-fill ${hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '')}" style="width:${Math.max(0, hpRatio * 100)}%;"></div></div>
         </div>
       </div>
@@ -1293,7 +1298,7 @@ function gridCellTip(c, x, y, key, telKeys, rangeCells, rangeIsAction) {
     const ratio = c.max_hp > 0 ? Math.max(0, Math.min(1, c.current_hp / c.max_hp)) : 0;
     const cls = ratio <= 0.3 ? 'low' : (ratio <= 0.6 ? 'mid' : '');
     h += `<div class="tt-hp"><div class="bar"><i class="${cls}" style="width:${ratio * 100}%"></i></div>`
-      + `<div class="num"><span>HP <b>${c.current_hp}</b> / ${c.max_hp}</span></div></div>`;
+      + `<div class="num"><span>${c.hp_hidden ? 'HP <b>???</b>' : `HP <b>${c.current_hp}</b> / ${c.max_hp}`}</span></div></div>`;
     if (isDefeatedStatus(c) || c.status === 'downed') {
       const st = c.status === 'downed' ? '기절' : statusTagFor(c).replace(/^\s*\*/, '');
       h += `<div class="tt-note bad"><i class="fa-solid fa-skull"></i>${e(st)}</div>`;
@@ -2425,7 +2430,19 @@ function deviceBadgesHtml(name) {
   const list = (lastOnlineDevices || {})[name] || [];
   return list.map(d => `<span class="ui-dev" data-tip="${DEVICE_NAME[d.type] || ''} · ${mailEsc(d.os || '')} · ${mailEsc(d.browser || '')}"><i class="fa-solid ${DEVICE_ICON[d.type] || 'fa-desktop'}"></i><em>${mailEsc(d.os || '')}</em></span>`).join('');
 }  // GM 전용 - 등록된 캐릭터 전체 정보(전투에 없는 캐릭터의 마이페이지용)
+// 운영진 화면 : 운영진 상태(gm_state)의 전투 정보로 몹의 정확한 체력을 채워요(공개 상태보다 조금 늦게 와요)
+var gmFullBattle = null;
+function fillGmMobHp(b) {
+  if (!b || !gmFullBattle || myControlInfo(b).scope !== 'all') return b;
+  const full = {}; [...(gmFullBattle.team_a || []), ...(gmFullBattle.team_b || [])].forEach(c => { full[c.name] = c; });
+  const fix = list => (list || []).map(c => c.hp_hidden && full[c.name] ? { ...c, current_hp: full[c.name].current_hp, max_hp: full[c.name].max_hp, hp_hidden: false } : c);
+  return { ...b, team_a: fix(b.team_a), team_b: fix(b.team_b) };
+}
 socket.on('gm_state', (state) => {
+  gmFullBattle = state.battle || null;
+  if (lastBattleForPanel && [...(lastBattleForPanel.team_a || []), ...(lastBattleForPanel.team_b || [])].some(c => c.hp_hidden)) {
+    lastBattleForPanel = fillGmMobHp(lastBattleForPanel); renderBattle(lastBattleForPanel);
+  }
   lastRosterDetail = state.roster_detail || [];
   lastOnlineDevices = state.online_devices || {};
   if (document.getElementById('userInfoModal') && document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
@@ -3909,7 +3926,7 @@ function renderMyPage() {
   const hasHp = c.max_hp != null;
   document.getElementById('myPageHpCard').style.display = viewOnly && !hasHp ? 'none' : '';
   const hpRatio = c.max_hp > 0 ? c.current_hp / c.max_hp : 0;
-  document.getElementById('myPageMaxHp').textContent = hasHp ? c.max_hp : '-';
+  document.getElementById('myPageMaxHp').textContent = hasHp ? (c.hp_hidden ? '???' : c.max_hp) : '-';
   document.getElementById('myPageHpBar').style.width = Math.max(0, hpRatio * 100) + '%';
   document.getElementById('myPageHpBar').className = hpRatio <= 0.3 ? 'low' : (hpRatio <= 0.6 ? 'mid' : '');
 
@@ -3922,7 +3939,7 @@ function renderMyPage() {
     if (document.activeElement !== hpInput) { hpInput.value = c.current_hp; hpInput.max = c.max_hp; hpInput.min = 0; }
   } else {
     hpView.style.display = ''; hpInput.style.display = 'none';
-    hpView.textContent = c.current_hp;
+    hpView.textContent = c.hp_hidden ? '???' : c.current_hp;
   }
 
   // 표기 이름/색상/스킬 로그는 본인(그 캐릭터로 직접 로그인한 사람)만 수정 가능합니다.

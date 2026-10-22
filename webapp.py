@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.94"
+SERVER_BUILD = "2026-10-13.95"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -753,6 +753,41 @@ def sync_round_timer(room):
         )
 
 
+# 몹 : 운영진이 캐릭터 설정에서 '몹'으로 정한 캐릭터는 참가자 화면에 정확한 체력을 보내지 않아요.
+# 체력 막대가 줄어드는 건 보이도록 100 기준 비율(current_hp / max_hp = ?? / 100)만 보내고, 로그의 체력 숫자도 가려요.
+_HP_ARROW_RE = re.compile(r"\d+\s*(→|->)\s*\d+")
+
+
+def _mob_names(room):
+    return {n for n, d in room.game.db.characters.items() if d.get("mob")}
+
+
+def _is_mob(d, mobs):
+    return bool(mobs) and (d.get("name") in mobs or (d.get("boss_group") or None) in mobs)
+
+
+def _mask_hp(d):
+    cur, mx = d.get("current_hp"), d.get("max_hp")
+    if mx:
+        d["current_hp"] = 0 if (cur or 0) <= 0 else max(1, min(100, round(cur * 100 / mx)))
+        d["max_hp"] = 100
+    d["hp_hidden"] = True
+    return d
+
+
+def _mask_log(entries, mobs):
+    """로그 줄에 몹 이름이 있으면 그 줄의 'a → b' 체력 숫자를 ??로 바꿔요(원본 로그는 그대로 두고 복사본만)."""
+    if not mobs:
+        return list(entries)
+    out = []
+    for e in entries:
+        text = e.get("text") or ""
+        if any(m in text for m in mobs) and _HP_ARROW_RE.search(text):
+            e = dict(e, text=_HP_ARROW_RE.sub(lambda m: f"?? {m.group(1)} ??", text))
+        out.append(e)
+    return out
+
+
 def build_battle_common(battle):
     if battle is None:
         return None
@@ -833,6 +868,16 @@ def build_public_state(room, for_gm=False):
             ) if c],
         }
     pub_log = battle.public_log if battle else []
+    mobs = set() if for_gm else _mob_names(room)
+    if mobs:
+        for side in ("team_a", "team_b"):
+            for d in (battle_payload or {}).get(side) or []:
+                if _is_mob(d, mobs):
+                    _mask_hp(d)
+        for side in ("team_a", "team_b"):
+            for d in (preview_teams or {}).get(side) or []:
+                if _is_mob(d, mobs):
+                    _mask_hp(d)
     payload = {
         "room_id": room.id,
         "room_name": room.name,
@@ -843,7 +888,7 @@ def build_public_state(room, for_gm=False):
         # log_total(누적 총 줄 수)을 같이 보내서, 클라이언트가 "새로 추가된 부분"만 골라
         # 표시할 수 있게 합니다(battle.public_log 자체는 되돌리기/로그 복사 기능이 인덱스를
         # 그대로 쓰므로 서버 메모리에서는 자르지 않습니다).
-        "log": pub_log[-LOG_SEND_CAP:],
+        "log": _mask_log(pub_log[-LOG_SEND_CAP:], mobs),
         "log_total": len(pub_log),
         "chat": [_with_chat_id(e) for e in room.chat_log[-CHAT_SEND_CAP:]],
         "chat_total": len(room.chat_log),  # 더 예전 대화가 있으면 채팅창 맨 위에 '이전 대화 더보기'를 띄웁니다
@@ -856,8 +901,9 @@ def build_public_state(room, for_gm=False):
         # 전투에 참여하지 않은 캐릭터도 로그인하면 마이페이지를 볼/수정할 수 있도록 등록 정보를 함께 보냅니다
         # (스탯은 상대에게 비공개라 빼고 보냅니다).
         "roster_mypage": {
-            name: {k: v for k, v in (build_preview_character(room, name) or {}).items() if k != "stats"}
+            name: _mask_hp(d) if name in mobs else d
             for name in room.game.db.all_names()
+            for d in [{k: v for k, v in (build_preview_character(room, name) or {}).items() if k != "stats"}]
         },
         "faction_period": dorm_mod.shared_dorms().period_meta(dorm_mod.shared_dorms().current)["no"],
         "userinfo_hidden": list(room.userinfo_hidden),
@@ -1137,7 +1183,7 @@ def on_export_log(data):
         # 아군 회의는 팀끼리만 보는 대화라 파일에 넣지 않습니다(room.chat_log에는 원래 없음).
         "chat": [e for e in room.chat_log if e.get("category") != "team"],
         "battles": [
-            {"label": b["label"], "public_log": list(b.get("public_log") or []),
+            {"label": b["label"], "public_log": list(b.get("public_log") or []) if is_gm else _mask_log(b.get("public_log") or [], _mob_names(room)),
              "operator_log": list(b.get("operator_log") or []) if is_gm else [],
              "teams": b.get("teams") or {}}
             for b in battles
@@ -2168,6 +2214,14 @@ sound_effect_volume=existing.get("sound_effect_volume"),
             entry["age"] = age
         else:
             entry.pop("age", None)
+        room.game.db.save()
+    # 몹 : 참가자 화면에 정확한 체력을 숨겨요
+    if "mob" in data:
+        entry = room.game.db.get(name)
+        if data.get("mob"):
+            entry["mob"] = True
+        else:
+            entry.pop("mob", None)
         room.game.db.save()
     if "nation" in data and ((data.get("nation") or "").strip() in NATIONS or not (data.get("nation") or "").strip()):
         entry = room.game.db.get(name)

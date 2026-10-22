@@ -194,6 +194,38 @@ class TestBattleRoom(unittest.TestCase):
         self.assertEqual(aa.actions_per_turn, 1, "진행 중 행동 횟수 변경이 적용되지 않음")
 
 
+class TestMobHp(unittest.TestCase):
+    def test_mob_hp_hidden_from_runners(self):
+        """몹 : 참가자에게는 정확한 체력(카드 · 마이페이지 · 로그)을 보내지 않고, 운영진에게는 그대로."""
+        room = rooms_mod.create_room("pvp", name="점검 몹")
+        room.hidden = False
+        g = Client()
+        g.join(room, "GM", gm_password=PW)
+        e = room.game.db.get("AB")
+        g.emit("update_character", {"name": "AB", "role": e["role"], "stats": e["stats"], "mob": True})
+        self.assertTrue(room.game.db.get("AB").get("mob"), "몹 설정이 저장되지 않음")
+        g.emit("start_battle", {"team_a": ["AA"], "team_b": ["AB"]})
+        b = room.game.battle
+        self.assertIsNotNone(b)
+        ab = b.find_character("AB")
+        ab.current_hp = ab.max_hp - 37
+        b.log_event(f"AB HP {ab.max_hp} → {ab.current_hp}", tag="hp")
+        pub = webapp.build_public_state(room)
+        card = next(c for c in pub["battle"]["team_b"] if c["name"] == "AB")
+        self.assertTrue(card.get("hp_hidden"))
+        self.assertEqual(card["max_hp"], 100, "몹의 실제 최대 체력이 감")
+        self.assertNotEqual(card["current_hp"], ab.current_hp)
+        self.assertFalse(any(str(ab.current_hp) in (l.get("text") or "") for l in pub["log"] if "AB" in (l.get("text") or "")), "로그에 몹 체력 숫자가 남음")
+        self.assertEqual(pub["roster_mypage"]["AB"]["max_hp"], 100, "마이페이지 정보에 몹 체력이 감")
+        aa = next(c for c in pub["battle"]["team_a"] if c["name"] == "AA")
+        self.assertFalse(aa.get("hp_hidden"), "몹이 아닌 캐릭터까지 가려짐")
+        gm = webapp.build_public_state(room, for_gm=True)
+        self.assertEqual(next(c for c in gm["battle"]["team_b"] if c["name"] == "AB")["current_hp"], ab.current_hp, "운영진에게 정확한 체력이 안 감")
+        g.emit("update_character", {"name": "AB", "role": e["role"], "stats": e["stats"], "mob": False})
+        self.assertFalse(room.game.db.get("AB").get("mob"))
+        g.close()
+
+
 class TestEngine(unittest.TestCase):
     def test_multi_action_and_undo(self):
         import config

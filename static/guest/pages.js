@@ -454,7 +454,7 @@ function opsRenderRoster() {
     if (!g.length) return '';
     return `<div class="ops-rgroup"><div class="ops-rgroup-h" style="color:${opsRoleColor(role)}">${mailEsc(role)}<span>${g.length}</span></div>
       ${g.map(c => { const n = JSON.stringify(c.name); return `<div class="ops-prow"><span class="nm">${mailEsc(c.name)}</span>
-        ${c.skill ? `<span class="sk">${mailEsc(c.skill)}</span>` : ''}${FACTION_CHOICES.includes(c.nation) ? `<span class="sk">${mailEsc(c.nation)}</span>` : ''}<span class="sp"></span>
+        ${c.mob ? '<span class="sk mob">몹</span>' : ''}${c.skill ? `<span class="sk">${mailEsc(c.skill)}</span>` : ''}${FACTION_CHOICES.includes(c.nation) ? `<span class="sk">${mailEsc(c.nation)}</span>` : ''}<span class="sp"></span>
         <button class="ops-btn icon" onclick='opsEdit(${n})' data-tip="수정"><i class="fa-solid fa-pen"></i></button>
         <button class="ops-btn icon" onclick='opsDelete(${n})' data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>
         ${opsEditName === c.name ? opsEditHtml(c) : ''}`; }).join('')}</div>`;
@@ -467,6 +467,7 @@ function opsEditHtml(c) {
       <select class="ops-in" id="opsERole" onchange="opsEditRole()">${OPS_ROLES.map(r => `<option ${r === c.role ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
       <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsESkill"><option value="">(없음)</option>${skills.map(k => `<option ${k === c.skill ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
     <div class="ops-field" style="margin-top:10px;"><span class="lb">나이 (1차 · 空歷 514年 기준, 13~16세)</span><input class="ops-in" type="number" id="opsEAge" min="13" max="16" placeholder="비우면 기본 13세" value="${c.age ?? ''}"></div>
+    <label class="ops-check" style="margin-top:12px;"><input type="checkbox" id="opsEMob" ${c.mob ? 'checked' : ''}><span>몹 <em>참가자 화면에 정확한 체력을 숨겨요(막대만 보여요)</em></span></label>
     <div class="ops-field" style="margin-top:10px;"><span class="lb">2차 진영</span><select class="ops-in" id="opsENation"><option value="">(미정)</option>${FACTION_CHOICES.map(n => `<option ${n === c.nation ? 'selected' : ''}>${mailEsc(n)}</option>`).join('')}</select></div>
     <div class="ops-stat-grid">${STAT_KEYS.map(k => `<label>${k}<input class="ops-in" type="number" id="opsEStat_${k}" value="${(c.stats || {})[k] ?? 0}" oninput="opsEditTotal()"></label>`).join('')}</div>
     <div class="ops-start"><span class="ops-hint">합계 <b id="opsETotal" style="color:var(--text)">${STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0)}</b></span>
@@ -484,6 +485,7 @@ function opsEditSave() {
   const stats = {}; STAT_KEYS.forEach(k => { stats[k] = document.getElementById('opsEStat_' + k).value; });
   socket.emit('update_character', { name: opsEditName, role: document.getElementById('opsERole').value, stats,
     skill: document.getElementById('opsESkill').value || null, nation: document.getElementById('opsENation').value,
+    mob: document.getElementById('opsEMob').checked,
     age: document.getElementById('opsEAge').value === '' ? null : document.getElementById('opsEAge').value });
   opsEditName = null;
 }

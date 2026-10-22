@@ -43,7 +43,8 @@ function playHpFx(el, prev, hp) {
   // 흔들림 · 숫자는 연출 순서표(fxSchedule)에서 차례가 오면 함께 나옵니다.
   // 서버가 이미 이 캐릭터에 수치(공격·회복·방어·피해 정산)를 띄웠으면 숫자는 다시 띄우지 않습니다.
   const name = (el.dataset.fx || '').replace(/^group:/, '');
-  if (Date.now() - (fxRecentNumbers[name] || 0) > 2500) {
+  // 몹(체력 비공개)은 비율 값이라 차이를 숫자로 띄우지 않아요(실제 피해 숫자는 서버가 따로 보내요)
+  if (el.dataset.hpHidden !== '1' && Date.now() - (fxRecentNumbers[name] || 0) > 2500) {
     spawnFxNumber(el, delta < 0 ? 'atk' : 'heal', delta, name);
   }
 }
