@@ -3566,7 +3566,7 @@ function renderUserInfoList() {
         // 썸네일 보기 : 사진 · 접속 점 · 이름 · 문서 링크. 누르면 마이페이지(보기 전용)
         const av = info(name).avatar_url;
         return `<div class="ui-card ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
-          <div class="pic"><i class="fa-solid fa-user"></i>${av ? `<img src="${esc(av)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
+          <div class="pic">${av ? `<img src="${esc(av)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
             ${link}</div>
           <div class="cap"><span class="ui-dot"></span><span class="t"><b>${esc(name)}</b></span>${eye}</div></div>`;
       }
