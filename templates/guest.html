@@ -333,13 +333,12 @@
   .ui-card:hover { border-color: rgba(255,255,255,.18); transform: translateY(-2px); }
   .ui-card .pic { position:relative; aspect-ratio:1/1; background:#0b0b0d; display:flex; align-items:center; justify-content:center; color:#2c2c32; font-size:34px; }
   .ui-card .pic img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
-  .ui-card:not(.is-online) .pic img { filter: grayscale(.85) brightness(.6); }
   .ui-card.is-online { border-color: rgba(var(--point-rgb),.45); box-shadow: 0 0 18px rgba(var(--point-rgb),.12); }
-  .ui-card .ui-dot { position:absolute; left:10px; top:10px; z-index:1; box-shadow: 0 0 0 2px rgba(0,0,0,.55); }
+  .ui-card .cap .ui-dot { flex:none; }
   .ui-card .ui-doc { position:absolute; right:6px; top:6px; z-index:1; margin:0; background: rgba(0,0,0,.5); }
   .ui-card .ui-doc.empty { background: rgba(0,0,0,.35); opacity:.5; }
   .ui-card .ui-doc:hover { background: rgba(0,0,0,.7); }
-  .ui-card .cap { display:flex; align-items:center; gap:6px; padding:9px 10px 10px; min-width:0; }
+  .ui-card .cap { display:flex; align-items:center; gap:8px; padding:9px 10px 10px; min-width:0; }
   .ui-card .cap .t { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
   .ui-card .cap b { font-size:14px; font-weight:600; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .ui-card:not(.is-online) .cap b { color:#b9b9be; }
@@ -353,7 +352,7 @@
   .ui-sec em { font-style:normal; font-weight:400; font-size:12px; color: var(--muted); }
   /* 접속 상태 원 : 접속 중이면 포인트 컬러 점이 은은하게 숨 쉬듯 빛나고, 아니면 빈 회색 원 */
   .ui-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; background:#3a3a40; }
-  .userinfo-row.is-online .ui-dot { background: var(--point); border:none; animation: uiGlow 2.6s ease-in-out infinite; }
+  .userinfo-row.is-online .ui-dot, .ui-card.is-online .ui-dot { background: var(--point); border:none; animation: uiGlow 2.6s ease-in-out infinite; }
   @keyframes uiGlow {
     0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--point) 0%, transparent), 0 0 4px 1px color-mix(in srgb, var(--point) 55%, transparent); }
     50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--point) 18%, transparent), 0 0 10px 3px color-mix(in srgb, var(--point) 70%, transparent); }
@@ -8957,8 +8956,8 @@ function renderUserInfoList() {
         const av = info(name).avatar_url;
         return `<div class="ui-card ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
           <div class="pic"><i class="fa-solid fa-user"></i>${av ? `<img src="${esc(av)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
-            <span class="ui-dot"></span>${link}</div>
-          <div class="cap"><span class="t"><b>${esc(name)}</b></span>${eye}</div></div>`;
+            ${link}</div>
+          <div class="cap"><span class="ui-dot"></span><span class="t"><b>${esc(name)}</b></span>${eye}</div></div>`;
       }
       return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
         <span class="ui-left" onmouseenter="uiHoverShow(this.parentNode, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()"><span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}</b></span></span>${isGm && online ? deviceBadgesHtml(name) : ''}${link}${eye}</div>`;
