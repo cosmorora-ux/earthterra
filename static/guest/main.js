@@ -3472,8 +3472,9 @@ function renderUserInfoList() {
       // 누르면 그 캐릭터의 마이페이지(운영진 = 수정 가능, 그 외 = 보기 전용).
       // 왼쪽(점 + 이름)에 마우스를 올리면 프로필 사진 카드가 따라다니고, 오른쪽 링크 아이콘은 그 캐릭터의 프로필 문서로 가요.
       const doc = docUrlOf(name);
-      // 링크가 없으면 흐린 아이콘(운영진은 눌러서 그 캐릭터의 마이페이지 '프로필' 칸에 넣어요)
-      const link = doc ? `<a class="ui-doc" ${docLinkAttrs(doc)} onclick="event.stopPropagation()" aria-label="${esc(name)} 프로필 문서" data-tip="프로필 문서"><i class="fa-solid fa-link"></i></a>`
+      // 링크가 없으면 흐린 아이콘(운영진은 눌러서 그 캐릭터의 마이페이지 '프로필' 칸에 넣어요). NPC는 사이트 안 프로필 창
+      const link = npcProfileOf(name) ? `<button type="button" class="ui-doc" onclick="event.stopPropagation(); openNpcProfile('${js}')" aria-label="${esc(name)} 프로필" data-tip="프로필"><i class="fa-solid fa-link"></i></button>`
+        : doc ? `<a class="ui-doc" ${docLinkAttrs(doc)} onclick="event.stopPropagation()" aria-label="${esc(name)} 프로필 문서" data-tip="프로필 문서"><i class="fa-solid fa-link"></i></a>`
         : isGm ? `<button type="button" class="ui-doc empty" onclick="event.stopPropagation(); openUserDocEdit('${js}')" data-tip="프로필 문서 링크 넣기"><i class="fa-solid fa-link"></i></button>`
         : `<span class="ui-doc empty" data-tip="프로필 문서 없음"><i class="fa-solid fa-link"></i></span>`;
       if (grid) {
@@ -3482,10 +3483,10 @@ function renderUserInfoList() {
         return `<div class="ui-card ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
           <div class="pic"><i class="fa-solid fa-user"></i>${av ? `<img src="${esc(av)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
             ${link}</div>
-          <div class="cap"><span class="ui-dot"></span><span class="t"><b>${esc(name)}</b></span>${eye}</div></div>`;
+          <div class="cap"><span class="ui-dot"></span><span class="t"><b>${esc(name)}</b></span>${npcProfileOf(name) ? '<span class="npc-tag">NPC</span>' : ''}${eye}</div></div>`;
       }
       return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
-        <span class="ui-left" onmouseenter="uiHoverShow(this.parentNode, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()"><span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}</b></span></span>${isGm && online ? deviceBadgesHtml(name) : ''}${link}${eye}</div>`;
+        <span class="ui-left" onmouseenter="uiHoverShow(this.parentNode, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()"><span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}${npcProfileOf(name) ? '<span class="npc-tag">NPC</span>' : ''}</b></span></span>${isGm && online ? deviceBadgesHtml(name) : ''}${link}${eye}</div>`;
     }).join('');
   }).join('') + (grid ? '</div>' : '');
 }
@@ -3519,15 +3520,41 @@ function toggleUserInfoHidden(name) {
 // LOOP 방(웹 공개) 미리보기 : 실제 참가자 정보는 받지 않고, 화면 안에서 만든 예시 캐릭터로 유저 리스트 · 마이페이지를 보여 줘요.
 // [이름, 포지션, 표시 컬러, 나이, 캐치프레이즈, 접속 중, 출신지(장소:구역), 프로필 사진]
 const PLAY_PREVIEW_CHARS = [
-  ['앙투안 얀 다비드', '메딕', '#f0d27a', 13, '', 1, 'arcadia:0', '/static/preview/antoine.png'],
-  ['이네이타 장', '가디언', '#e25a5a', 13, '', 1, 'nova:0', '/static/preview/ineita.png'],
-  ['TEST', '', '', 13, '', 1, '', null],
+  ['앙투안 얀 다비드', '메딕', '#f0d27a', '??', '', 1, 'arcadia:0', '/static/preview/antoine.png'],
+  ['이네이타 장', '가디언', '#e25a5a', '??', '', 1, 'nova:0', '/static/preview/ineita.png'],
+  ['TEST', '스트라이커', '', 13, '', 1, '', null],
 ];
+// NPC 프로필(특별한 캐릭터) : 프로필 칸 · 유저 리스트 링크 아이콘을 누르면 사이트 안의 프로필 창으로 열려요
+const NPC_PROFILES = {
+  '앙투안 얀 다비드': { en: 'Antoine Jan David', head: '#f6efd2', ink: '#2a2516', tags: ['온화', '애정', '상냥', '난류', '이상', '애정'],
+    info: [['소속', '아르카디아 연방'], ['국적', '프랑스'], ['계열', '감각계 레저넌트']],
+    desc: '앙투안 얀 다비드는 아르카디아 연방 소속 교수로, 뛰어난 감각으로 확고한 사조를 가지고 활동하던 예술가이자 감각계 레저넌트다. 온정적인 성격의 그는 모두에게 공정하다.' },
+  '이네이타 장': { en: 'Inneita Chang', head: '#b3121b', ink: '#ffffff', tags: ['이지', '냉철', '무정', '한류', '현실', '냉철'],
+    info: [['소속', '노바 공화국'], ['국적', '대만계 영미권(추정)'], ['계열', '정신계 레저넌트']],
+    desc: '이네이타 장은 노바 공화국 소속 교수로, 뛰어난 지성으로 학계에서 월등한 실적을 내던 학자로서 초빙되었으며 정신계 레저넌트다. 예리한 성격의 그는 모두에게 공정하다.' },
+};
+function npcProfileOf(name) { return playPreviewOn() ? NPC_PROFILES[name] || null : null; }
+// 프로필 창 : 지금 보던 창(유저 리스트 · 마이페이지) 위에 열리고, 이전 버튼으로 닫으면 그 창이 그대로 있어요
+function openNpcProfile(name) {
+  const p = NPC_PROFILES[name]; if (!p) return;
+  const d = (lastRosterMypage || {})[name] || {};
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  document.getElementById('npcProfileBody').innerHTML = `
+    <div class="npc-hero" style="--npc-head:${p.head}; --npc-ink:${p.ink}">
+      <div class="npc-pic">${d.avatar_url ? `<img src="${esc(d.avatar_url)}" alt="">` : '<i class="fa-solid fa-user"></i>'}</div>
+      <div class="npc-names"><span class="npc-tag">NPC</span><b>${esc(name)}</b><em>${esc(p.en)}</em></div>
+    </div>
+    <div class="npc-tags">${p.tags.map(t => `<span>#${esc(t)}</span>`).join('')}</div>
+    <div class="npc-info">${p.info.map(([k, v]) => `<div><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join('')}</div>
+    <p class="npc-desc">${esc(p.desc)}</p>`;
+  document.getElementById('npcProfileModal').style.display = 'flex';
+}
+function closeNpcProfile() { document.getElementById('npcProfileModal').style.display = 'none'; }
 function playPreviewOn() { return BATTLE_TYPE === 'play' && myControlInfo(lastBattleForPanel).scope !== 'all'; }
 function playPreviewFill() {
   lastRoster = PLAY_PREVIEW_CHARS.map(c => c[0]);
   lastRosterMypage = Object.fromEntries(PLAY_PREVIEW_CHARS.map(([name, role, color, age, catchphrase, , hometown, avatar]) =>
-    [name, { name, role, color, age, catchphrase, nation: '', hometown: hometown || '', doc_url: '', inventory: '', points: 0, items: {}, avatar_url: avatar || null }]));
+    [name, { name, role, color, age, catchphrase, nation: '', hometown: hometown || '', doc_url: '', inventory: '', points: 0, items: {}, avatar_url: avatar || null, npc: !!NPC_PROFILES[name] }]));
   lastOnlineCharacters = PLAY_PREVIEW_CHARS.filter(c => c[5]).map(c => c[0]);
   lastUserInfoHidden = new Set();
 }
@@ -3775,6 +3802,7 @@ function renderMyPageAge(c) {
   const el = document.getElementById('myPageAge'); if (!el) return;
   if (!c) { el.innerHTML = ''; return; }
   const cur = ((lastRosterMypage || {})[c.name] || {}).age || 13;
+  if (cur === '??') { el.innerHTML = '<button class="on" disabled style="--nc:var(--point)">??</button>'; return; }   // NPC : 나이 비공개
   if (!canEditMyPage() || !dormIsGm()) { el.innerHTML = `<button class="on" disabled style="--nc:var(--point)">1차 ${cur}세</button>`; return; }
   el.innerHTML = MYPAGE_AGES.map(a => `<button class="${a === cur ? 'on' : ''}" style="--nc:var(--point)" data-tip="1차(空歷 514年) 때 나이" onclick="setMyPageAge(${a})">${a}세</button>`).join('');
 }
@@ -3791,6 +3819,7 @@ function docLinkAttrs(u) { return `href="${String(u).replace(/[&<>"']/g, ch => (
 function renderMyPageDoc(c) {
   const el = document.getElementById('myPageDoc'); if (!el) return;
   if (!c) { el.innerHTML = ''; return; }
+  if (npcProfileOf(c.name)) { el.innerHTML = `<button type="button" class="mp-doc-link" onclick="openNpcProfile(${mailEsc(JSON.stringify(c.name))})"><i class="fa-solid fa-id-badge"></i>프로필</button>`; return; }
   const cur = docUrlOf(c.name);
   if (canEditMyPage() && dormIsGm()) {
     const inp = el.querySelector('input');
@@ -3863,6 +3892,7 @@ function renderMyPage() {
   }
 
   document.getElementById('myPageName').textContent = displayNameOf(c);
+  if (npcProfileOf(c.name)) document.getElementById('myPageName').insertAdjacentHTML('beforeend', '<span class="npc-tag">NPC</span>');
   const portraitEl = document.getElementById('myPagePortrait');
   if (c.avatar_url) {
     portraitEl.style.backgroundImage = `url('${c.avatar_url}')`;
