@@ -2389,11 +2389,10 @@
     .pl-meta > span:not(:last-child)::after { margin:0 8px 0 3px; }
   }
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
-  body.is-lounge #sidebarBattleBtn, body.is-lounge #sidebarUserListBtn, body.is-lounge .m-battle-tools { display:none !important; }
+  body.is-lounge #sidebarBattleBtn, body.is-lounge .m-battle-tools { display:none !important; }
   /* 메뉴는 일반 룸 · 전투 룸이 같아요 : 종 · 배틀 · 마이룸 · 우체통 · 지도 · 마이페이지 (전투 방에서 누르면 일반 룸의 그 화면으로) */
   body.is-play #sidebarDormBtn, body.is-play #sidebarMailBtn, body.is-battle #myPageRoomBox { display:none !important; }
   body.is-play #newsMailRow { display:flex !important; }
-  body.is-battle:not(.is-play) #sidebarUserListBtn, body.is-battle:not(.is-play) #sidebarShopBtn { display:none !important; }
   body.is-battle:not(.is-play) .member-header .m-userlist-btn { display:inline-flex; }
   .mail-preview { display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:11px 14px; border-radius:12px; background: rgba(var(--point-rgb),.08); color: var(--muted); font-size:13px; }
   .mail-preview i { color: var(--point); }
@@ -3577,8 +3576,7 @@
   .news-sheet .notice-dot { position:static; margin-left:2px; box-shadow:none; }
   #newsSheet { align-items:flex-end; }
   @media (max-width:900px) {
-    #sidebarNoticeBtn, #sidebarMailBtn, .sidebar .m-chat-btn, .sidebar #sidebarUserListBtn { display:none !important; }
-    .sidebar .m-news-btn { display:flex; }
+    .sidebar .m-chat-btn { display:none !important; }
     #sidebarLoginBtn { display:none !important; }
     .idc-logout { display:none !important; }
     /* 하단 탭으로 여는 전체 화면 메뉴(마이페이지 · 상점 · 공지 · 우체통 · 유저 리스트) : 모서리 없이 같은 여백 · 같은 폭 · 같은 제목 크기, X 버튼 없음(하단 탭으로 이동) */
@@ -3657,7 +3655,9 @@
     body[data-mtab] .sidebar .sidebar-icon.active { color: var(--muted); }
     body[data-mtab] .sidebar .sidebar-icon.active::before { display:none; }
     body[data-mtab="chat"] .sidebar #sidebarChatBtn, body[data-mtab="my"] .sidebar #sidebarMyPageBtn,
-    body[data-mtab="shop"] .sidebar #sidebarShopBtn, body[data-mtab="news"] .sidebar #sidebarNewsBtn { color: var(--point); }
+    body[data-mtab="shop"] .sidebar #sidebarShopBtn, body[data-mtab="news"] .sidebar #sidebarNewsBtn,
+    body[data-mtab="news"] .sidebar #sbGroupNews > .sb-ghead, body[data-mtab="my"] .sidebar #sbGroupPeople > .sb-ghead,
+    body[data-mtab="users"] .sidebar #sbGroupPeople > .sb-ghead, body[data-mtab="shop"] .sidebar #sbGroupBattle > .sb-ghead { color: var(--point); }
     body[data-mtab="chat"] .sidebar #sidebarChatBtn::before, body[data-mtab="my"] .sidebar #sidebarMyPageBtn::before,
     body[data-mtab="shop"] .sidebar #sidebarShopBtn::before, body[data-mtab="news"] .sidebar #sidebarNewsBtn::before {
       content:""; position:absolute; left:50%; top:-6px; transform:translateX(-50%);
@@ -3792,7 +3792,6 @@
   .bt-fab.on i { transform: rotate(45deg); }
   body.view-battles .bt-fab.gm { display:inline-flex; }
   /* 일반 룸 메뉴 : 종 · 배틀 · 마이룸 · (우체통) · 지도 · 마이페이지. 상점은 배틀 룸 목록 위 버튼으로 들어가요(운영진 포함) */
-  body.is-lounge .sidebar #sidebarShopBtn { display:none !important; }
   @media (max-width:900px) { .bt-fab { right:18px; bottom: calc(100px + env(safe-area-inset-bottom)); } }
   /* 휴대폰 : 마이룸 목록처럼 두 개씩 */
   @media (max-width:600px) {
@@ -4039,18 +4038,80 @@
     /* 켜진 탭 : 위에서 빛이 번지는 알약 + 캡슐 윗변의 빛나는 표시줄 */
     .sidebar .sidebar-icon.active,
     body[data-mtab="chat"] .sidebar #sidebarChatBtn, body[data-mtab="my"] .sidebar #sidebarMyPageBtn,
-    body[data-mtab="shop"] .sidebar #sidebarShopBtn, body[data-mtab="news"] .sidebar #sidebarNewsBtn {
+    body[data-mtab="shop"] .sidebar #sidebarShopBtn, body[data-mtab="news"] .sidebar #sidebarNewsBtn,
+    body[data-mtab="news"] .sidebar #sbGroupNews > .sb-ghead, body[data-mtab="my"] .sidebar #sbGroupPeople > .sb-ghead,
+    body[data-mtab="users"] .sidebar #sbGroupPeople > .sb-ghead, body[data-mtab="shop"] .sidebar #sbGroupBattle > .sb-ghead {
       color:#fff !important; border-color: rgba(var(--point-rgb), .5) !important;
       background: radial-gradient(120% 140% at 50% 0%, rgba(var(--point-rgb), .45) 0%, rgba(var(--point-rgb), .12) 55%, rgba(255,255,255,.02) 100%) !important;
       box-shadow: 0 0 20px rgba(var(--point-rgb), .28), inset 0 1px 0 rgba(255,255,255,.1) !important; }
     .sidebar .sidebar-icon.active::before,
     body[data-mtab="chat"] .sidebar #sidebarChatBtn::before, body[data-mtab="my"] .sidebar #sidebarMyPageBtn::before,
-    body[data-mtab="shop"] .sidebar #sidebarShopBtn::before, body[data-mtab="news"] .sidebar #sidebarNewsBtn::before {
+    body[data-mtab="shop"] .sidebar #sidebarShopBtn::before, body[data-mtab="news"] .sidebar #sidebarNewsBtn::before,
+    body[data-mtab="news"] .sidebar #sbGroupNews > .sb-ghead::before, body[data-mtab="my"] .sidebar #sbGroupPeople > .sb-ghead::before,
+    body[data-mtab="users"] .sidebar #sbGroupPeople > .sb-ghead::before, body[data-mtab="shop"] .sidebar #sbGroupBattle > .sb-ghead::before {
       top:-8px !important; width:18px !important; height:3px !important; border-radius:0 0 3px 3px !important;
       background: var(--point) !important; box-shadow: 0 0 10px 1px rgba(var(--point-rgb), .8); }
     body[data-mtab] .sidebar .sidebar-icon.active { color:#8b8b94 !important; border-color:transparent !important; background:none !important; box-shadow:none !important; }
     .sidebar .notice-dot { top:9px; }
   }
+
+  /* ================================================================
+     메뉴 묶음(아코디언) : 소식(공지 · 우체통) · 전투(전투 · 상점) · 사람(유저 리스트 · 마이페이지)
+     PC · 가로 태블릿 : 묶음 아이콘을 누르면 메뉴가 오른쪽으로 펼쳐져 모든 메뉴 이름이 보이고, 누른 묶음의 하위 메뉴가 열려요.
+       메뉴는 본문 위로 떠서 펼쳐지므로 본문이 밀리지 않아요. 메뉴를 고르거나 바깥을 누르면 다시 접혀요.
+     휴대폰 · 세로 태블릿 : 하단 탭의 묶음을 누르면 탭 위로 하위 메뉴 목록이 떠요.
+     ================================================================ */
+  .sb-label, .sb-caret { display:none; }
+  .sb-sub { display:none; }
+  .sb-group.sb-empty { display:none !important; }
+  @media (min-width:901px) {
+    .sidebar { position:relative; z-index:60; transition: width .22s ease, margin-right .22s ease, box-shadow .22s ease; }
+    .sidebar.sb-open { width:208px !important; margin-right:-144px; overflow-y:auto; overflow-x:hidden; scrollbar-width:none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 24px 60px rgba(0,0,0,.55), 24px 0 60px rgba(0,0,0,.5); }
+    .sidebar.sb-open::-webkit-scrollbar { display:none; }
+    /* 아이콘 자리는 접힘 · 펼침 모두 같아요(왼쪽 기준) : 펼칠 때 폭만 늘어나서 아이콘이 움직이지 않아요 */
+    .sidebar .sidebar-icon { justify-content:flex-start; padding:0 0 0 12px; box-sizing:border-box; transition: width .22s ease, background-color .15s, color .15s; }
+    .sidebar .sidebar-icon > i:first-child { width:20px; flex:none; text-align:center; }
+    .sidebar .notice-dot { left:29px; right:auto; }
+    .sidebar .sb-label { display:block; max-width:0; overflow:hidden; opacity:0; margin-left:0; white-space:nowrap; font-size:14px; font-weight:600;
+      font-family: inherit; transition: opacity .16s ease, max-width .22s ease, margin-left .22s ease; }
+    .sidebar .sb-caret { display:block; margin-left:auto; margin-right:12px; font-size:11px; opacity:0; transition: opacity .16s ease, transform .22s ease; }
+    .sidebar.sb-open .sidebar-icon { width:188px; }
+    .sidebar.sb-open .sb-label { max-width:130px; opacity:1; margin-left:12px; }
+    .sidebar.sb-open .sb-caret { opacity:.6; }
+    .sidebar.sb-open .sb-group.open .sb-caret { transform: rotate(180deg); opacity:.9; }
+    .sb-group { display:flex; flex-direction:column; align-items:flex-start; flex:none; width:44px; transition: width .22s ease; }
+    .sidebar.sb-open .sb-group { width:188px; }
+    .sb-group > .sb-sub { width:100%; }
+    .sb-sub { display:grid; grid-template-rows:0fr; transition: grid-template-rows .22s ease; }
+    .sidebar.sb-open .sb-group.open .sb-sub { grid-template-rows:1fr; }
+    .sb-sub-in { min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:2px; }
+    .sidebar.sb-open .sb-group.open .sb-sub-in { padding:4px 0 2px; }
+    /* 하위 메뉴 : 왼쪽 안내선 아래로 한 칸 들여서, 조금 작은 줄 */
+    .sb-sub-in > .sidebar-icon { height:38px; font-size:14px; margin-left:22px; }
+    .sidebar.sb-open .sb-sub-in > .sidebar-icon { width:166px; }
+    .sb-sub-in { margin-left:0; position:relative; }
+    .sb-sub-in::before { content:""; position:absolute; left:21px; top:6px; bottom:6px; width:1px; background: rgba(255,255,255,.1); }
+    .sb-sub-in > .sidebar-icon .sb-label { font-weight:500; }
+    .sb-sub-in > .sidebar-icon.active::before { display:none; }
+    .sidebar .sb-sub-in > .sidebar-icon.active { color: var(--point) !important; background: rgba(var(--point-rgb),.1) !important; border-color: transparent !important; box-shadow:none !important; }
+    .sb-sub-in > .sidebar-icon .notice-dot { left:26px; top:6px; }
+    /* 접힌 메뉴에서는 하위 메뉴 대신 묶음 아이콘이 켜진 표시를 받아요 */
+    .sidebar:not(.sb-open) .sb-sub-in > .sidebar-icon { width:44px; }
+  }
+  @media (max-width:900px) {
+    .sb-group { display:contents; }
+    .sidebar .m-news-btn { display:none !important; }
+    body.is-lounge .sidebar #sbGroupNews > .sb-ghead, body.is-battle .sidebar #sbGroupNews > .sb-ghead { order:1; }
+    body.is-lounge .sidebar #sbGroupBattle > .sb-ghead, body.is-battle .sidebar #sbGroupBattle > .sb-ghead { order:3; }
+    body.is-lounge .sidebar #sbGroupPeople > .sb-ghead, body.is-battle .sidebar #sbGroupPeople > .sb-ghead { order:6; }
+  }
+  /* 휴대폰 하단 탭 위 하위 메뉴 목록 */
+  #sbSheet { align-items:flex-end; }
+  #sbSheet .news-sheet { bottom:12px; animation: sbSheetIn .18s ease-out; }
+  @keyframes sbSheetIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+  #sbSheet .sb-sheet-title { padding:10px 14px 6px; font-size:12px; color: var(--muted); font-weight:600; }
+  #sbSheet .news-sheet button > i:first-child { color: var(--point); }
 
   /* ================================================================
      고른 항목 = 메뉴 탭과 같은 '빛 알약' (포인트 색 빛이 왼쪽에서 번짐 + 포인트 테두리 + 은은한 빛무리)
@@ -4628,27 +4689,43 @@
 <div id="rotateHint"><i class="fa-solid fa-mobile-screen"></i>휴대폰을 세로로 돌려 주세요<span>이 화면은 세로 모드에서만 볼 수 있어요.</span></div>
 <div class="app-shell">
 <div class="sidebar">
-  <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i></button>
+  <button class="sidebar-icon" id="sidebarFullscreenBtn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i><span class="sb-label">전체 화면</span></button>
   <div class="sidebar-gap" id="sidebarAlign"></div>
-  <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="noticeDot"></span></button>
-  <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="notice-dot" id="mChatDot"></span></button>
-  <button class="sidebar-icon" id="sidebarBattlesBtn" onclick="openBattleHub()" data-tip="전투"><i class="fa-solid fa-shield-halved"></i><span class="notice-dot" id="battlesDot"></span></button>
-  <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="sidebarBattleClick()" data-tip="전투"><i class="fa-solid {% if battle_type == 'play' %}fa-globe{% else %}fa-shield-halved{% endif %}"></i></button>
-  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i></button>
-  <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()" data-tip="우체통"><i class="fa-solid fa-envelope"></i><span class="notice-dot" id="mailDot"></span></button>
-  <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i></button>
-  {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" data-tip="LOOP 편집" style="display:none;"><i class="fa-solid fa-pen-ruler"></i></button>{% endif %}
-  <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i></button>
-  <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps('battle')" data-tip="전투 관리" style="display:none;"><i class="fa-solid fa-sliders"></i></button>
+  <!-- 메뉴 묶음(아코디언) : 묶음 아이콘을 누르면 메뉴가 펼쳐지며 이름과 함께 하위 메뉴가 보여요(휴대폰은 하단 탭 위로 목록) -->
+  <div class="sb-group" id="sbGroupNews">
+    <button class="sidebar-icon sb-ghead" onclick="sbGroupClick(event, 'sbGroupNews')" aria-label="소식"><i class="fa-solid fa-bell"></i><span class="sb-label">소식</span><i class="fa-solid fa-chevron-down sb-caret"></i><span class="notice-dot"></span></button>
+    <div class="sb-sub"><div class="sb-sub-in">
+      <button class="sidebar-icon" id="sidebarNoticeBtn" onclick="openNotices()"><i class="fa-solid fa-bullhorn"></i><span class="sb-label">공지</span><span class="notice-dot" id="noticeDot"></span></button>
+      <button class="sidebar-icon" id="sidebarMailBtn" onclick="openMail()"><i class="fa-solid fa-envelope"></i><span class="sb-label">우체통</span><span class="notice-dot" id="mailDot"></span></button>
+    </div></div>
+  </div>
+  <button class="sidebar-icon m-chat-btn" id="sidebarChatBtn" onclick="toggleMobileChat()"><i class="fa-solid fa-comment-dots"></i><span class="sb-label">채팅</span><span class="notice-dot" id="mChatDot"></span></button>
+  <div class="sb-group" id="sbGroupBattle">
+    <button class="sidebar-icon sb-ghead" onclick="sbGroupClick(event, 'sbGroupBattle')" aria-label="전투"><i class="fa-solid {% if battle_type == 'play' %}fa-globe{% else %}fa-shield-halved{% endif %}"></i><span class="sb-label">{% if battle_type == 'play' %}LOOP{% else %}전투{% endif %}</span><i class="fa-solid fa-chevron-down sb-caret"></i><span class="notice-dot"></span></button>
+    <div class="sb-sub"><div class="sb-sub-in">
+      <button class="sidebar-icon" id="sidebarBattlesBtn" onclick="openBattleHub()"><i class="fa-solid fa-shield-halved"></i><span class="sb-label">전투</span><span class="notice-dot" id="battlesDot"></span></button>
+      <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="sidebarBattleClick()"><i class="fa-solid {% if battle_type == 'play' %}fa-globe{% else %}fa-shield-halved{% endif %}"></i><span class="sb-label">{% if battle_type == 'play' %}LOOP{% else %}전투{% endif %}</span></button>
+      <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" style="display:none;"><i class="fa-solid fa-store"></i><span class="sb-label">상점</span></button>
+    </div></div>
+  </div>
+  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i><span class="sb-label">마이룸</span></button>
+  <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i><span class="sb-label">지도</span></button>
+  {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" data-tip="LOOP 편집" style="display:none;"><i class="fa-solid fa-pen-ruler"></i><span class="sb-label">LOOP 편집</span></button>{% endif %}
+  <div class="sb-group" id="sbGroupPeople">
+    <button class="sidebar-icon sb-ghead" onclick="sbGroupClick(event, 'sbGroupPeople')" aria-label="사람"><i class="fa-solid fa-user"></i><span class="sb-label">사람</span><i class="fa-solid fa-chevron-down sb-caret"></i><span class="notice-dot"></span></button>
+    <div class="sb-sub"><div class="sb-sub-in">
+      <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i><span class="sb-label">유저 리스트</span></button>
+      <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i><span class="sb-label">마이페이지</span></button>
+    </div></div>
+  </div>
+  <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps('battle')" data-tip="전투 관리" style="display:none;"><i class="fa-solid fa-sliders"></i><span class="sb-label">전투 관리</span></button>
   <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsTab()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
-  <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" data-tip="상점" style="display:none;"><i class="fa-solid fa-store"></i></button>
-  <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i></button>
   <div class="sidebar-grow"></div>
-  <button class="sidebar-icon" id="sidebarSettingsBtn" onclick="openOps('general')" data-tip="방 설정" style="display:none;"><i class="fa-solid fa-gear"></i></button>
-  <div class="sb-sound" id="sbSound"><button class="sidebar-icon" id="sidebarSoundBtn" onclick="toggleSoundPop(event)" aria-label="음악 음량"><i class="fa-solid fa-volume-high"></i></button>
+  <button class="sidebar-icon" id="sidebarSettingsBtn" onclick="openOps('general')" data-tip="방 설정" style="display:none;"><i class="fa-solid fa-gear"></i><span class="sb-label">방 설정</span></button>
+  <div class="sb-sound" id="sbSound"><button class="sidebar-icon" id="sidebarSoundBtn" onclick="toggleSoundPop(event)" aria-label="음악 음량"><i class="fa-solid fa-volume-high"></i><span class="sb-label">음악</span></button>
     <div class="sb-sound-pop" id="sbSoundPop" onclick="event.stopPropagation()"><button type="button" class="sb-mute" onclick="toggleMusicMute()" aria-label="음소거" data-tip="음소거"><span class="bgm-eq" id="sbEq"><span></span><span></span><span></span><span></span></span></button>
       <input type="range" class="nice-range" id="sbVolSlider" min="0" max="100" oninput="onVolumeChange(this.value)" aria-label="음악 음량"><span class="sb-vol-num" id="sbVolNum"></span></div></div>
-  <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i></button>
+  <button class="sidebar-icon" id="sidebarLoginBtn" onclick="onAvatarDotClick()"><i class="fa-solid fa-right-to-bracket"></i><span class="sb-label">로그인</span></button>
 </div>
 <div class="content-area">
 <div class="shell">
@@ -4867,6 +4944,9 @@
     <button onclick="document.getElementById('newsSheet').style.display='none'; openNotices()"><i class="fa-solid fa-bullhorn"></i><span>공지사항</span><span class="notice-dot" id="newsNoticeDot"></span><i class="fa-solid fa-chevron-right go"></i></button>
     <button id="newsMailRow" onclick="document.getElementById('newsSheet').style.display='none'; openMail()"><i class="fa-solid fa-envelope"></i><span>우체통</span><span class="notice-dot" id="newsMailDot"></span><i class="fa-solid fa-chevron-right go"></i></button>
   </div>
+</div>
+<div id="sbSheet" class="modal-overlay" onclick="if(event.target===this) sbSheetClose()">
+  <div class="news-sheet" id="sbSheetBody"></div>
 </div>
 <div id="dormModal" class="dorm-page">
   <div class="modal-box dorm-modal">
@@ -5758,6 +5838,8 @@ function updateAvatarDots(battle) {
   // 좌측 패널 입장/로그아웃 버튼 : 로그인 전에는 들어가기(→]), 로그인 후에는 나가기([→) 아이콘
   const loginIcon = document.querySelector('#sidebarLoginBtn i');
   if (loginIcon) loginIcon.className = explicitlyJoined ? 'fa-solid fa-power-off' : 'fa-solid fa-right-to-bracket';
+  const loginLabel = document.querySelector('#sidebarLoginBtn .sb-label');
+  if (loginLabel) loginLabel.textContent = explicitlyJoined ? '로그아웃' : '로그인';
   // 로그인(캐릭터 또는 GM)하지 않았으면 마이페이지 아이콘을 아예 숨깁니다.
   const myBtn = document.getElementById('sidebarMyPageBtn');
   const loggedIn = explicitlyJoined && (myLoggedInName() || myControlInfo(lastBattleForPanel).scope === 'all');
@@ -5782,19 +5864,94 @@ function syncMobileTab() {
   else if (open('myPageModal')) t = 'my';
   else if (open('shopModal')) t = 'shop';
   else if (open('noticeModal') || open('mailModal') || open('newsSheet')) t = 'news';
+  else if (open('userInfoModal')) t = 'users';
   if (t) document.body.dataset.mtab = t; else delete document.body.dataset.mtab;
 }
 {
   const mo = new MutationObserver(syncMobileTab);
-  ['myPageModal', 'shopModal', 'noticeModal', 'mailModal', 'newsSheet'].forEach(id => {
+  ['myPageModal', 'shopModal', 'noticeModal', 'mailModal', 'newsSheet', 'userInfoModal'].forEach(id => {
     const m = document.getElementById(id); if (m) mo.observe(m, { attributes:true, attributeFilter:['style'] });
   });
   mo.observe(document.body, { attributes:true, attributeFilter:['class'] });
 }
 
+// 메뉴 묶음(아코디언) : 소식 · 전투 · 사람. 하위 메뉴는 원래 버튼 그대로라(보이기 규칙 · 알림 점 · 켜진 표시) 묶음 머리가 그 상태를 따라가요.
+const SB_MOBILE = () => window.matchMedia('(max-width:900px)').matches;
+function sbKids(g) { return [...g.querySelectorAll('.sb-sub-in > .sidebar-icon')].filter(b => getComputedStyle(b).display !== 'none'); }
+function sbClose() {
+  const sb = document.querySelector('.sidebar'); if (!sb || !sb.classList.contains('sb-open')) return;
+  sb.classList.remove('sb-open');
+  document.querySelectorAll('.sb-group.open').forEach(g => g.classList.remove('open'));
+}
+function sbGroupClick(e, gid) {
+  e.stopPropagation();
+  const g = document.getElementById(gid), kids = sbKids(g);
+  if (!kids.length) return;
+  if (kids.length === 1) { sbClose(); kids[0].click(); return; }   // 하위 메뉴가 하나뿐이면 바로 그 메뉴로
+  if (SB_MOBILE()) { sbSheetOpen(g, kids); return; }
+  const sb = document.querySelector('.sidebar');
+  if (sb.classList.contains('sb-open') && g.classList.contains('open')) { g.classList.remove('open'); return; }
+  document.querySelectorAll('.sb-group.open').forEach(x => x.classList.remove('open'));
+  g.classList.add('open'); sb.classList.add('sb-open');
+}
+function sbSheetOpen(g, kids) {
+  const head = g.querySelector('.sb-ghead .sb-label');
+  const body = document.getElementById('sbSheetBody');
+  body.innerHTML = '<div class="sb-sheet-title"></div>';
+  body.firstChild.textContent = head ? head.textContent : '';
+  kids.forEach(k => {
+    const b = document.createElement('button');
+    const ic = k.querySelector('i'), lb = k.querySelector('.sb-label'), dot = k.querySelector('.notice-dot');
+    b.innerHTML = `<i></i><span></span><span class="notice-dot ${dot && dot.classList.contains('on') ? 'on' : ''}"></span><i class="fa-solid fa-chevron-right go"></i>`;
+    b.firstChild.className = ic ? ic.className : '';
+    b.children[1].textContent = lb ? lb.textContent : '';
+    b.onclick = () => { sbSheetClose(); k.click(); };
+    body.appendChild(b);
+  });
+  document.getElementById('sbSheet').style.display = 'flex';
+}
+function sbSheetClose() { document.getElementById('sbSheet').style.display = 'none'; }
+function sbSync() {
+  document.querySelectorAll('.sb-group').forEach(g => {
+    const kids = sbKids(g), head = g.querySelector('.sb-ghead');
+    if (g.classList.contains('sb-empty') !== !kids.length) g.classList.toggle('sb-empty', !kids.length);
+    const act = kids.some(k => k.classList.contains('active'));
+    if (head.classList.contains('active') !== act) head.classList.toggle('active', act);
+    const dotOn = kids.some(k => { const d = k.querySelector('.notice-dot'); return d && d.classList.contains('on'); });
+    const hd = head.querySelector('.notice-dot');
+    if (hd.classList.contains('on') !== dotOn) hd.classList.toggle('on', dotOn);
+    // 하위 메뉴가 하나뿐이면 묶음 머리가 그 메뉴의 아이콘 · 이름을 그대로 써요
+    if (!head.dataset.icon) { head.dataset.icon = head.querySelector('i').className; head.dataset.label = head.querySelector('.sb-label').textContent; }
+    const one = kids.length === 1 ? kids[0] : null;
+    const ic = one ? one.querySelector('i').className : head.dataset.icon;
+    const lb = one ? one.querySelector('.sb-label').textContent : head.dataset.label;
+    const hi = head.querySelector('i'), hl = head.querySelector('.sb-label');
+    if (hi.className !== ic) hi.className = ic;
+    if (hl.textContent !== lb) hl.textContent = lb;
+    if (head.getAttribute('aria-label') !== lb) head.setAttribute('aria-label', lb);
+    if (head.classList.contains('single') !== !!one) head.classList.toggle('single', !!one);
+  });
+}
+{
+  const sb = document.querySelector('.sidebar');
+  let raf = 0;
+  const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; sbSync(); }); };
+  new MutationObserver(later).observe(sb, { subtree:true, attributes:true, attributeFilter:['class', 'style'] });
+  new MutationObserver(later).observe(document.body, { attributes:true, attributeFilter:['class'] });
+  window.addEventListener('resize', () => { later(); if (SB_MOBILE()) sbClose(); else sbSheetClose(); });
+  sbSync();
+  // 펼친 메뉴 : 메뉴를 고르면(소리 버튼 빼고) · 바깥을 누르면 · Esc로 접혀요
+  sb.addEventListener('click', e => {
+    const b = e.target.closest('.sidebar-icon');
+    if (b && !b.classList.contains('sb-ghead') && b.id !== 'sidebarSoundBtn') sbClose();
+  });
+  document.addEventListener('click', e => { if (!sb.contains(e.target)) sbClose(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') sbClose(); });
+}
+
 // 세로 태블릿·휴대폰 : 하단 탭을 누르면 열려 있던 창 · 채팅을 닫고 그 탭으로 이동합니다.
 document.querySelector('.sidebar').addEventListener('click', (e) => {
-  if (!window.matchMedia('(max-width:900px)').matches || !e.target.closest('.sidebar-icon')) return;
+  if (!window.matchMedia('(max-width:900px)').matches || !e.target.closest('.sidebar-icon') || e.target.closest('.sb-ghead')) return;
   if (typeof noticeEditing !== 'undefined' && noticeEditing && document.getElementById('noticeModal').style.display === 'flex') {
     e.stopPropagation(); closeNotices(); return;
   }
@@ -9409,7 +9566,7 @@ function refreshVolumeUi() {
   if (sbs) { sbs.value = musicVolume; paintRange(sbs); }
   const sbn = document.getElementById('sbVolNum'); if (sbn) sbn.textContent = musicVolume;
   const sbIcon = musicVolume === 0 ? 'fa-volume-xmark' : (musicVolume < 40 ? 'fa-volume-low' : 'fa-volume-high');
-  ['sidebarSoundBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.innerHTML = `<i class="fa-solid ${sbIcon}"></i>`; });
+  ['sidebarSoundBtn'].forEach(id => { const b = document.getElementById(id); const i = b && b.querySelector('i'); if (i) i.className = `fa-solid ${sbIcon}`; });
   try { updateMusicStatusText(); } catch (e) {}   // 팝업 막대도 바로 맞춰요
   const num = document.getElementById('musicVolumeNum');
   if (num) num.textContent = musicVolume;
@@ -12738,11 +12895,12 @@ if (!IS_LOUNGE && BATTLE_TYPE !== 'play') document.addEventListener('DOMContentL
   on('sidebarDormBtn', () => goLounge('dorm'));
   on('sidebarMapBtn', () => goLounge('map'));
   on('sidebarMailBtn', () => goLounge('mail'));
+  on('sidebarShopBtn', () => goLounge('shop'));
   on('newsMailRow', () => goLounge('mail'));
 });
-if (IS_LOUNGE && ['map', 'mail'].includes(new URLSearchParams(location.search).get('view'))) {
+if (IS_LOUNGE && ['map', 'mail', 'shop'].includes(new URLSearchParams(location.search).get('view'))) {
   const v = new URLSearchParams(location.search).get('view');
-  const tryV = () => { if (document.getElementById('dormModal') && typeof openWorldMap === 'function') { if (v === 'map') openWorldMap(); else openMail(); } else setTimeout(tryV, 100); };
+  const tryV = () => { if (document.getElementById('dormModal') && typeof openWorldMap === 'function') { if (v === 'map') openWorldMap(); else if (v === 'shop') openShop(); else openMail(); } else setTimeout(tryV, 100); };
   setTimeout(tryV, 500);
 }
 // 전투 방에서 '룸 목록'으로 돌아오면(?view=battles) 바로 룸 목록 화면을 열어요
@@ -12864,8 +13022,8 @@ function syncOpsBtn() {
   btn.style.display = gm && OPS_BATTLE_ROOM ? '' : 'none';   // 전투 관리는 전투 방에서만
   const gb = document.getElementById('sidebarSettingsBtn'); if (gb) gb.style.display = gm ? '' : 'none';   // 방 설정(톱니바퀴)
   if (!gm && opsOpen()) closeOps();
-  // 소지품(상점) 탭은 운영진만 : 참가자는 마이페이지 소지품 · 전투 룸 목록의 상점 아이콘으로 들어가요
-  const sb = document.getElementById('sidebarShopBtn'); if (sb) sb.style.display = gm ? '' : 'none';
+  // 상점 : 메뉴의 '전투' 묶음 안에 모두에게 보여요(LOOP 방은 운영진만)
+  const sb = document.getElementById('sidebarShopBtn'); if (sb) sb.style.display = (gm || BATTLE_TYPE !== 'play') ? '' : 'none';   // 상점 : 모두(LOOP 방은 운영진만)
   const lb = document.getElementById('sidebarLoopEditBtn');
   if (lb) { lb.style.display = gm ? '' : 'none'; if (!gm && typeof closeLoopAdmin === 'function') closeLoopAdmin(); }
 }
