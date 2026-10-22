@@ -820,17 +820,6 @@
 </div>
 </div>
 
-<!-- NPC 프로필 창 : 유저 리스트 · 마이페이지 위에 열리고, 이전 버튼으로 돌아가요 -->
-<div id="npcProfileModal" class="modal-overlay" onclick="if(event.target===this) closeNpcProfile()">
-  <div class="modal-box panel npc-modal">
-    <div class="idc-head">
-      <button class="bt-back idc-back" onclick="closeNpcProfile()" aria-label="이전으로" data-tip="이전으로"><i class="fa-solid fa-chevron-left"></i></button>
-      <div class="idc-title">Profile</div>
-      <button class="idc-close" onclick="closeNpcProfile()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div id="npcProfileBody"></div>
-  </div>
-</div>
 <script>
 // 서버가 채워 주는 방 정보(나머지 화면 코드는 static/guest/ 의 파일들이에요)
 const ROOM_ID = {{ room_id|tojson }};

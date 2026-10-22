@@ -539,14 +539,14 @@ var UI_INFO_SVG = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" x
 <path d="M6.3 4.74348V8.79948H5.54V4.74348H6.3ZM5.5 3.06348H6.34V3.91148H5.5V3.06348Z" fill="white"/>
 </svg>`;
 // 알림 토스트(공통) : 모든 안내 · 오류 메시지가 같은 모양으로 화면 아래 가운데에 잠깐 떠요. kind : 'info' | 'error'
-function uiToast(msg, kind) {
+function uiToast(msg, kind, ms) {
   const el = document.getElementById('shopToast'); if (!el || !msg) return;
   el.className = kind === 'error' ? 'err' : '';
   el.innerHTML = `<span class="t-ic">${UI_INFO_SVG}</span><span class="t-msg"></span>`;
   el.querySelector('.t-msg').textContent = msg;
   void el.offsetWidth; el.classList.add('show');
   clearTimeout(uiToast._t);
-  uiToast._t = setTimeout(() => el.classList.remove('show'), kind === 'error' ? 4500 : 2600);
+  uiToast._t = setTimeout(() => el.classList.remove('show'), ms || (kind === 'error' ? 4500 : 2600));
 }
 function showError(msg) { uiToast(msg, 'error'); }
 
@@ -3483,7 +3483,7 @@ function renderUserInfoList() {
         return `<div class="ui-card ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
           <div class="pic"><i class="fa-solid fa-user"></i>${av ? `<img src="${esc(av)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
             ${link}</div>
-          <div class="cap"><span class="ui-dot"></span><span class="t"><b>${esc(name)}</b></span>${npcProfileOf(name) ? '<span class="npc-tag">NPC</span>' : ''}${eye}</div></div>`;
+          <div class="cap"><span class="ui-dot"></span><span class="t"><b>${esc(name)}</b></span>${eye}</div></div>`;
       }
       return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
         <span class="ui-left" onmouseenter="uiHoverShow(this.parentNode, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()"><span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}${npcProfileOf(name) ? '<span class="npc-tag">NPC</span>' : ''}</b></span></span>${isGm && online ? deviceBadgesHtml(name) : ''}${link}${eye}</div>`;
@@ -3524,32 +3524,13 @@ const PLAY_PREVIEW_CHARS = [
   ['이네이타 장', '가디언', '#e25a5a', '??', '', 1, 'nova:0', '/static/preview/ineita.png'],
   ['TEST', '스트라이커', '', 13, '', 1, '', null],
 ];
-// NPC 프로필(특별한 캐릭터) : 프로필 칸 · 유저 리스트 링크 아이콘을 누르면 사이트 안의 프로필 창으로 열려요
+// NPC 프로필(특별한 캐릭터) : 프로필 칸 · 유저 리스트 링크 아이콘을 누르면 소개 한 줄이 알림으로 떠요
 const NPC_PROFILES = {
-  '앙투안 얀 다비드': { en: 'Antoine Jan David', head: '#f6efd2', ink: '#2a2516', tags: ['온화', '애정', '상냥', '난류', '이상', '애정'],
-    info: [['소속', '아르카디아 연방'], ['국적', '프랑스'], ['계열', '감각계 레저넌트']],
-    desc: '앙투안 얀 다비드는 아르카디아 연방 소속 교수로, 뛰어난 감각으로 확고한 사조를 가지고 활동하던 예술가이자 감각계 레저넌트다. 온정적인 성격의 그는 모두에게 공정하다.' },
-  '이네이타 장': { en: 'Inneita Chang', head: '#b3121b', ink: '#ffffff', tags: ['이지', '냉철', '무정', '한류', '현실', '냉철'],
-    info: [['소속', '노바 공화국'], ['국적', '대만계 영미권(추정)'], ['계열', '정신계 레저넌트']],
-    desc: '이네이타 장은 노바 공화국 소속 교수로, 뛰어난 지성으로 학계에서 월등한 실적을 내던 학자로서 초빙되었으며 정신계 레저넌트다. 예리한 성격의 그는 모두에게 공정하다.' },
+  '앙투안 얀 다비드': '앙투안 얀 다비드는 아르카디아 연방 소속 교수로, 뛰어난 감각으로 확고한 사조를 가지고 활동하던 예술가이자 감각계 레저넌트다. 온정적인 성격의 그는 모두에게 공정하다.',
+  '이네이타 장': '이네이타 장은 노바 공화국 소속 교수로, 뛰어난 지성으로 학계에서 월등한 실적을 내던 학자로서 초빙되었으며 정신계 레저넌트다. 예리한 성격의 그는 모두에게 공정하다.',
 };
 function npcProfileOf(name) { return playPreviewOn() ? NPC_PROFILES[name] || null : null; }
-// 프로필 창 : 지금 보던 창(유저 리스트 · 마이페이지) 위에 열리고, 이전 버튼으로 닫으면 그 창이 그대로 있어요
-function openNpcProfile(name) {
-  const p = NPC_PROFILES[name]; if (!p) return;
-  const d = (lastRosterMypage || {})[name] || {};
-  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  document.getElementById('npcProfileBody').innerHTML = `
-    <div class="npc-hero" style="--npc-head:${p.head}; --npc-ink:${p.ink}">
-      <div class="npc-pic">${d.avatar_url ? `<img src="${esc(d.avatar_url)}" alt="">` : '<i class="fa-solid fa-user"></i>'}</div>
-      <div class="npc-names"><span class="npc-tag">NPC</span><b>${esc(name)}</b><em>${esc(p.en)}</em></div>
-    </div>
-    <div class="npc-tags">${p.tags.map(t => `<span>#${esc(t)}</span>`).join('')}</div>
-    <div class="npc-info">${p.info.map(([k, v]) => `<div><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`).join('')}</div>
-    <p class="npc-desc">${esc(p.desc)}</p>`;
-  document.getElementById('npcProfileModal').style.display = 'flex';
-}
-function closeNpcProfile() { document.getElementById('npcProfileModal').style.display = 'none'; }
+function openNpcProfile(name) { const t = NPC_PROFILES[name]; if (t) uiToast(t, null, 7000); }
 function playPreviewOn() { return BATTLE_TYPE === 'play' && myControlInfo(lastBattleForPanel).scope !== 'all'; }
 function playPreviewFill() {
   lastRoster = PLAY_PREVIEW_CHARS.map(c => c[0]);
