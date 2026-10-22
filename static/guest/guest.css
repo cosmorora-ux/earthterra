@@ -1869,6 +1869,7 @@
   .modal-box.mypage.v2 { width:1040px; padding:26px 30px 30px; }
   .mypage.v2 .idc-head { align-items:center; margin-bottom:18px; }
   .idc-head .idc-back { margin-right:12px !important; }
+  .idc-head .idc-back[hidden] { display:none !important; }
   .idc-head .idc-back + .idc-title { margin-right:auto; }
   .mypage.v2 .mp-card { background: rgba(255,255,255,.025); border:1px solid var(--line); border-radius:16px; padding:16px 18px; min-width:0; }
   .mypage.v2 .mp-k { font-size:12.5px; color: var(--muted); font-weight:500; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }

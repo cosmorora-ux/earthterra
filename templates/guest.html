@@ -454,7 +454,7 @@
       <div class="seg-toggle" id="userInfoFilter">
         <button data-v="name" class="on" onclick="setUserInfoFilter('name')">이름순<i class="ui-sort-ic"></i></button>
         <button data-v="role" onclick="setUserInfoFilter('role')">포지션순<i class="ui-sort-ic"></i></button>
-        <button data-v="nation" onclick="setUserInfoFilter('nation')">진영순<i class="ui-sort-ic"></i></button>
+        <button data-v="nation" onclick="setUserInfoFilter('nation')">국가순<i class="ui-sort-ic"></i></button>
       </div>
     </div>
     <div class="mail-preview" id="userInfoPreviewNote" style="display:none;"><i class="fa-solid fa-eye"></i>미리보기예요. 실제 참가자가 아닌 예시 캐릭터예요.</div>
@@ -465,7 +465,7 @@
 <div id="myPageModal" class="modal-overlay">
   <div class="modal-box mypage panel v2">
     <div class="idc-head">
-      <button class="bt-back idc-back" id="myPageBack" style="display:none" onclick="myPageGoBack()" aria-label="유저 리스트로" data-tip="유저 리스트로"><i class="fa-solid fa-chevron-left"></i></button>
+      <button class="bt-back idc-back" id="myPageBack" hidden onclick="myPageGoBack()" aria-label="유저 리스트로" data-tip="유저 리스트로"><i class="fa-solid fa-chevron-left"></i></button>
       <div class="idc-title">ID card</div>
       <button class="idc-logout" onclick="closeMyPage(); onAvatarDotClick()"><i class="fa-solid fa-power-off"></i> 로그아웃</button>
       <button class="idc-close" onclick="closeMyPage()"><i class="fa-solid fa-xmark"></i></button>

@@ -347,6 +347,7 @@ function myLoggedInName() {
   if (!explicitlyJoined) return null;
   const n = (MY_NICKNAME || '').trim();
   if (!n || n === '익명' || n.toLowerCase() === 'gm') return null;
+  if (BATTLE_TYPE === 'play' && n.toUpperCase() === 'TEST') return null;   // LOOP 방 미리보기의 TEST는 보기 전용 예시
   return lastRoster.includes(n) ? n : null;
 }
 function canEditMyPage() {
@@ -3427,19 +3428,21 @@ function renderUserInfoList() {
   // 포지션순 : 누를 때마다 맨 위 포지션이 스트라이커 → 가디언 → 메딕으로 돌아가요
   const ROLE_BASE = ['스트라이커', '가디언', '메딕'];
   const ROLE_ORDER = ROLE_BASE.map((_, i) => ROLE_BASE[(i + userInfoRoleRot) % ROLE_BASE.length]);
+  // 국가순 : 출신지(맵의 장소)로 아르카디아 연방 · 노바 공화국을 나눠요
+  const countryOf = (n) => { const c = UI_COUNTRIES.find(x => (info(n).hometown || '').split(':')[0] === x[0]); return c ? c[1] : ''; };
   const keyOf = (n) => userInfoFilter === 'role' ? (info(n).role || '기타')
-    : userInfoFilter === 'nation' ? (factionOf(n) || '진영 미정') : initialOf(n);
+    : userInfoFilter === 'nation' ? (countryOf(n) || '국가 미정') : initialOf(n);
   const groups = {};
   names.forEach(n => { (groups[keyOf(n)] = groups[keyOf(n)] || []).push(n); });
   const keys = Object.keys(groups).sort((a, b) => {
     if (userInfoFilter === 'role') return (ROLE_ORDER.indexOf(a) + 1 || 99) - (ROLE_ORDER.indexOf(b) + 1 || 99);
     if (userInfoFilter === 'nation') {
-      // 진영순 : 누를 때마다 맨 위 진영이 차례로 돌아가요(진영 미정은 늘 맨 끝)
-      const F0 = FACTIONS.map(f => f[0]), NO = F0.map((_, i) => F0[(i + userInfoNationRot) % F0.length]);
+      // 국가순 : 누를 때마다 맨 위 국가가 차례로 돌아가요(국가 미정은 늘 맨 끝)
+      const F0 = UI_COUNTRIES.map(f => f[1]), NO = F0.map((_, i) => F0[(i + userInfoNationRot) % F0.length]);
       const ia = NO.indexOf(a), ib = NO.indexOf(b);
       if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     }
-    const last = userInfoFilter === 'nation' ? '진영 미정' : '#';
+    const last = userInfoFilter === 'nation' ? '국가 미정' : '#';
     if (a === last) return 1; if (b === last) return -1;
     return a.localeCompare(b, 'ko');
   });
@@ -3456,7 +3459,7 @@ function renderUserInfoList() {
     const list = groups[k].sort(byOnlineThenName);
     const on = list.filter(n => onlineSet.has(n)).length;
     const color = userInfoFilter === 'role' && ROLE_ORDER.includes(k) ? ` style="color:${roleColorVar(k)}"`
-      : userInfoFilter === 'nation' && nationColor(k) ? ` style="color:${nationColor(k)}"` : '';
+      : userInfoFilter === 'nation' && UI_COUNTRIES.find(x => x[1] === k) ? ` style="color:${UI_COUNTRIES.find(x => x[1] === k)[2]}"` : '';
     // 썸네일 보기 : 묶음 제목 · 칸 나눔 없이 같은 순서로 빈틈없이 이어 채워요
     return (grid ? '' : `<div class="ui-sec"><span${color}>${esc(k)}</span><em>${on ? `${on} / ` : ''}${list.length}</em></div>`) + list.map(name => {
       const online = onlineSet.has(name);
@@ -3496,12 +3499,14 @@ function setUserInfoView(v) {
   renderUserInfoList();
 }
 
+// 유저 리스트 국가순 : [맵 장소 id, 국가 이름, 색]
+const UI_COUNTRIES = [['arcadia', '아르카디아 연방', '#e9c05b'], ['nova', '노바 공화국', '#6aa5ff']];
 let userInfoFilter = 'name', userInfoDesc = false, userInfoRoleRot = 0, userInfoNationRot = 0;
 // 같은 정렬 탭을 다시 누르면 : 이름순 = 역순 전환, 포지션순 · 진영순 = 맨 위 항목 돌림
 function setUserInfoFilter(v) {
   if (v === userInfoFilter) {
     if (v === 'role') userInfoRoleRot = (userInfoRoleRot + 1) % 3;
-    else if (v === 'nation') userInfoNationRot = (userInfoNationRot + 1) % FACTIONS.length;
+    else if (v === 'nation') userInfoNationRot = (userInfoNationRot + 1) % UI_COUNTRIES.length;
     else userInfoDesc = !userInfoDesc;
   } else { userInfoFilter = v; userInfoDesc = false; userInfoRoleRot = 0; userInfoNationRot = 0; }
   const l = document.getElementById('userInfoList'); if (l) l.scrollTop = 0;
@@ -3516,10 +3521,7 @@ function toggleUserInfoHidden(name) {
 const PLAY_PREVIEW_CHARS = [
   ['앙투안 얀 다비드', '메딕', '#f0d27a', 13, '', 1, 'arcadia:0', '/static/preview/antoine.png'],
   ['이네이타 장', '가디언', '#e25a5a', 13, '', 1, 'nova:0', '/static/preview/ineita.png'],
-  ['아린', '스트라이커', '#ff8a65', 14, '끝까지 간다', 1], ['벨', '가디언', '#7fb3ff', 13, '뒤는 내가 맡을게', 1], ['카이', '메딕', '#9be7a3', 15, '다친 데 없지?', 0],
-  ['다온', '스트라이커', '#f6c560', 13, '', 0], ['루카', '가디언', '#c59bff', 16, '약속은 지켜', 1], ['미르', '메딕', '#ffb3d1', 14, '', 0],
-  ['세라', '스트라이커', '#80deea', 15, '한 번 더!', 0], ['유진', '가디언', '#ffd180', 13, '', 1], ['이안', '메딕', '#b0bec5', 14, '천천히, 정확하게', 0],
-  ['하람', '스트라이커', '#ff9e80', 16, '', 0], ['노아', '가디언', '#a5d6a7', 13, '오늘도 무사히', 0], ['시온', '메딕', '#ce93d8', 15, '', 1],
+  ['TEST', '', '', 13, '', 1, '', null],
 ];
 function playPreviewOn() { return BATTLE_TYPE === 'play' && myControlInfo(lastBattleForPanel).scope !== 'all'; }
 function playPreviewFill() {
@@ -3544,7 +3546,7 @@ function openUserDocEdit(name) {
 }
 // 유저 리스트에서 연 마이페이지 : 왼쪽 위 '이전' 버튼으로 유저 리스트(보던 자리 그대로)로 돌아가요
 var myPageFromList = false, userInfoScroll = 0;
-function setMyPageBack(on) { myPageFromList = on; const b = document.getElementById('myPageBack'); if (b) b.style.display = on ? '' : 'none'; }
+function setMyPageBack(on) { myPageFromList = on; const b = document.getElementById('myPageBack'); if (b) b.hidden = !on; }
 function openUserFromList(name) {
   uiHoverHide();
   const l = document.getElementById('userInfoList'); userInfoScroll = l ? l.scrollTop : 0;
@@ -3649,8 +3651,8 @@ function myPageTargetChar() {
 }
 
 function openMyPage() {
-  // LOOP 방 : 내 마이페이지 대신 예시 캐릭터의 마이페이지를 보기 전용으로 보여 줘요
-  if (playPreviewOn()) { playPreviewFill(); openMyPageFor(PLAY_PREVIEW_CHARS[0][0]); setMyPageBack(false); return; }
+  // LOOP 방 : 내(TEST) 마이페이지를 예시로, 보기 전용으로 보여 줘요
+  if (playPreviewOn()) { playPreviewFill(); openMyPageFor('TEST'); setMyPageBack(false); return; }
   setMyPageBack(false);
   myPageViewName = null;
   skillLogTypeLocal = null;
@@ -3931,6 +3933,7 @@ function myRoleTickets(name) {
 }
 function renderMyPageRoles(c, canEdit) {
   const box = document.getElementById('myPageRoles');
+  if (myPageIsView() && !c.role) { box.innerHTML = '<span class="none" style="font-size:13px;color:var(--muted)">없음</span>'; return; }
   box.innerHTML = (myPageIsView() ? [c.role] : MYPAGE_ROLES).map(r => `<button class="${r === c.role ? 'on' : ''}" style="--role-color:${roleColorVar(r)}"
     ${canEdit ? '' : 'disabled'} onclick="onRoleClick('${r}')">${r}</button>`).join('');
 }
