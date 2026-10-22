@@ -116,6 +116,17 @@ function drawAttackLines() {
     line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
     line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
     line.setAttribute('class', 'atk-line');
+    // 붉은 선도 양 끝으로 갈수록 투명하게 풀어져요(출발 쪽은 더 길게)
+    const bg = document.createElementNS(NS, 'linearGradient');
+    bg.setAttribute('id', 'atkBase' + i); bg.setAttribute('gradientUnits', 'userSpaceOnUse');
+    bg.setAttribute('x1', from.x); bg.setAttribute('y1', from.y); bg.setAttribute('x2', to.x); bg.setAttribute('y2', to.y);
+    [[0, 0], [.25, .7], [.85, .7], [1, .15]].forEach(([o, a]) => {
+      const st = document.createElementNS(NS, 'stop');
+      st.setAttribute('offset', o); st.setAttribute('stop-color', '#ff6f6f'); st.setAttribute('stop-opacity', a);
+      bg.appendChild(st);
+    });
+    defs.appendChild(bg);
+    line.setAttribute('stroke', `url(#atkBase${i})`);
     svg.appendChild(line);
     // 선 방향을 따라 움직이는 그라데이션 : 투명 → 밝은 살구빛 → 투명 창이 선 위를 미끄러져요
     const dx = to.x - from.x, dy = to.y - from.y, wx = dx * .4, wy = dy * .4, id = 'atkShine' + i;
