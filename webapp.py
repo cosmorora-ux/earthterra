@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.93"
+SERVER_BUILD = "2026-10-13.94"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -87,7 +87,16 @@ if PRACTICE:
 
 @app.context_processor
 def _inject_practice():
-    return {"practice_mode": PRACTICE}
+    return {"practice_mode": PRACTICE, "asset": asset_url}
+
+
+def asset_url(path):
+    """static 파일 주소 + 고친 시각(?v=) : 파일을 고치면 주소가 바뀌어서 브라우저가 옛 파일을 쓰지 않아요."""
+    try:
+        v = int(os.path.getmtime(os.path.join(app.static_folder, path)))
+    except OSError:
+        v = 0
+    return url_for("static", filename=path, v=v)
 
 
 app.config["SESSION_COOKIE_HTTPONLY"] = True

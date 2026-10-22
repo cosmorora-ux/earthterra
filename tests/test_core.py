@@ -338,6 +338,22 @@ class TestPractice(unittest.TestCase):
         self.assertNotIn('class="practice-tag"', html, "실제 서버에 연습 서버 표시가 붙음")
 
 
+class TestGuestPage(unittest.TestCase):
+    def test_page_links_split_files(self):
+        """참가자 화면 : 스타일 · 스크립트를 static/guest/ 파일로 나눠 불러와요(서버 값은 페이지 안 짧은 설정에만)."""
+        import re
+        r = lounge()
+        html = webapp.app.test_client().get(f"/room/{r.id}?key={r.guest_key}").get_data(as_text=True)
+        files = re.findall(r'/static/(guest/[\w.-]+)\?v=\d+', html)
+        for need in ("guest/guest.css", "guest/main.js", "guest/pages.js"):
+            self.assertIn(need, files, f"{need}을 불러오지 않음")
+        self.assertIn(f'const ROOM_ID = "{r.id}"', html)
+        for f in set(files):
+            body = open(os.path.join("static", f), encoding="utf-8").read()
+            self.assertNotIn("{{", body, f"{f}에 서버 템플릿 값이 남아 있음")
+            self.assertNotIn("{%", body, f"{f}에 서버 템플릿 문법이 남아 있음")
+
+
 class TestNotices(unittest.TestCase):
     def test_pinned_notices(self):
         import notices
