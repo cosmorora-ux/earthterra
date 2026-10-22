@@ -636,7 +636,7 @@ function popSkillMark(name, delayMs) {
 function statsTitle(c) {
   const parts = STAT_KEYS.map(k => `${k} ${c.stats[k]}`);
   parts.push(`총합 ${c.stat_total}`);
-  return parts.join('   ');
+  return parts.join(' · ');
 }
 
 // ------------------------------------------------------------------
@@ -905,9 +905,7 @@ function renderCompactCardHtml(c) {
   if (c.commanded_by) badges.push(makeStatusTag('command', `지휘 ${c.commanded_by}`, 1));
   return `<div data-fx="${c.name}" data-hp="${c.current_hp}" data-max="${c.max_hp}"${hpHiddenAttr(c)} class="compact-card ${isTarget ? 'selected-target' : ''} ${isDefeatedStatus(c) ? 'is-defeated' : ''} ${isTurnPending(c) ? 'turn-pending' : ''}" onclick="onCardClick('${c.name}')">${isTarget ? '<span class="tgt-line" aria-hidden="true"></span>' : ''}
     <div class="crow">
-      <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};">${cardShines(c) ? '<span class="turn-shine" aria-hidden="true"></span>' : ''}
-        ${canSeeStats ? `<div class="stat-tip">${statsTitle(c)}</div>` : ''}
-      </div>
+      <div class="cavatar-sm" style="background:${c.color || '#4a4a4e'};"${canSeeStats ? ` data-tip="${shopEsc(statsTitle(c))}"` : ''}>${cardShines(c) ? '<span class="turn-shine" aria-hidden="true"></span>' : ''}</div>
       <div class="cname-sm">${displayNameOf(c)}${statusTagFor(c)}</div>
       <div class="chp-sm">${hpNumText(c)}</div>
     </div>
@@ -940,7 +938,7 @@ function displayNameOf(c) {
   return `${base} [${c.boss_section}]`;
 }
 
-// 카드 우상단의 "스탯 보기" 아이콘 - 마우스를 올리면 stat-tip 툴팁이 뜹니다. 카드마다 이 SVG가
+// 카드 우상단의 "스탯 보기" 아이콘 - 마우스를 올리면 화면 위에 떠 있는 툴팁(floatTip)으로 스탯이 떠요(카드 목록 밖으로 잘리지 않게). 카드마다 이 SVG가
 // 반복되므로, id가 겹치면 안 되는 clipPath(원래 안에 들어있던)는 빼고 넣었습니다(패스 자체가
 // viewBox 안에 다 들어와서 클리핑 없이도 모양은 동일합니다).
 const CARD_INFO_ICON_SVG = UI_INFO_SVG;
@@ -988,9 +986,7 @@ function renderCardHtml(c) {
         <span class="cname">${displayNameOf(c)}</span>
         <span class="crole" style="color:${roleColorVar(c.role)}">${c.role}${(c.skill && BATTLE_TYPE === 'mass_raid') ? ' 【' + c.skill + '】' : ''}</span>
       </div>
-      ${canSeeStats ? `<div class="card-info-icon">${CARD_INFO_ICON_SVG}
-        <div class="stat-tip">${statsTitle(c)}</div>
-      </div>` : ''}
+      ${canSeeStats ? `<div class="card-info-icon" data-tip="${shopEsc(statsTitle(c))}">${CARD_INFO_ICON_SVG}</div>` : ''}
     </div>
     <div class="portrait-row">
       <div class="portrait" style="${c.avatar_url ? `background-image:url('${c.avatar_url}');` : ''}">${cardShines(c) ? '<span class="turn-shine" aria-hidden="true"></span>' : ''}</div>
