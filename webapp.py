@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.97"
+SERVER_BUILD = "2026-10-13.98"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -1129,7 +1129,7 @@ def skill_cutin_payload(entry):
     if not entry:
         return None
     common = {"catchphrase": entry.get("catchphrase") or "",
-              "motion": entry.get("cutin_motion") if entry.get("cutin_motion") in CUTIN_MOTIONS else "slash"}
+              "motion": "slash"}   # 컷인 등장 모션은 고르지 않고 모두 기본 연출로
     if entry.get("skill_log_type") == "image":
         return dict(common, type="image", image=entry["skill_log_image"]) if entry.get("skill_log_image") else None
     title, body = entry.get("skill_log_title") or "", entry.get("skill_log_text") or ""
@@ -1942,8 +1942,6 @@ def on_set_my_skill_log(data):
             entry["catchphrase"] = phrase
         else:
             entry.pop("catchphrase", None)
-    if data.get("cutin_motion") in CUTIN_MOTIONS:
-        entry["cutin_motion"] = data["cutin_motion"]
     # 2차 진영 : 본인도 고를 수 있어요(使徒 / Void / 미정)
     if "nation" in data:
         nation = (data.get("nation") or "").strip()

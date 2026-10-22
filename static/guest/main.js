@@ -556,7 +556,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.97";
+const EXPECTED_SERVER_BUILD = "2026-10-13.98";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -4073,21 +4073,13 @@ function myPageSkillData(c) {
     body: d.skill_log_text != null ? d.skill_log_text : (c.skill_log_text || ''),
     image: d.skill_log_image || null,
     catchphrase: d.catchphrase || '',
-    motion: d.cutin_motion || 'slash',
+    motion: 'slash',
   };
 }
-const CUTIN_MOTIONS = [['slash', '슬래시'], ['impact', '임팩트'], ['rise', '라이즈'], ['glitch', '글리치'], ['fade', '페이드'], ['burst', '집중선'], ['shutter', '셔터']];
 function saveCatchphrase() {
   if (!canEditMyPage()) return;
   socket.emit('set_my_skill_log', { name: myPageEditName(), catchphrase: document.getElementById('myPageCatchphrase').value.trim() });
 }
-function setCutinMotion(m) {
-  if (!canEditMyPage()) return;
-  cutinMotionLocal = m;
-  socket.emit('set_my_skill_log', { name: myPageEditName(), cutin_motion: m });
-  renderMyPage();
-}
-let cutinMotionLocal = null;
 function renderMyPageSkillLog(c, canEdit) {
   const fx = myPageSkillData(c);
   document.querySelectorAll('#myPageSkillLogType button').forEach(b => {
@@ -4111,9 +4103,6 @@ function renderMyPageSkillLog(c, canEdit) {
   const cp = document.getElementById('myPageCatchphrase');
   cp.disabled = !canEdit;
   if (document.activeElement !== cp) cp.value = fx.catchphrase;
-  const motion = cutinMotionLocal || fx.motion;
-  document.getElementById('myPageCutinMotion').innerHTML = CUTIN_MOTIONS.map(([k, t]) =>
-    `<button class="${k === motion ? 'on' : ''}" ${canEdit ? '' : 'disabled'} onclick="setCutinMotion('${k}')">${t}</button>`).join('');
 }
 function setSkillLogType(type) {
   if (!canEditMyPage()) return;
@@ -4157,7 +4146,6 @@ function previewSkillCutin() {
     fx.body = document.getElementById('myPageSkillLogText').innerHTML;
   }
   fx.catchphrase = document.getElementById('myPageCatchphrase').value.trim();
-  fx.motion = cutinMotionLocal || fx.motion;
   if (fx.type === 'image' ? !fx.image : !(fx.catchphrase || fx.title || fx.body.replace(/<[^>]*>/g, '').trim())) {
     showError(fx.type === 'image' ? '먼저 이미지를 올려 주세요.' : '먼저 캐치프레이즈나 스킬명을 써 주세요.');
     return;
@@ -4169,7 +4157,7 @@ function showSkillCutin(fx) {
   const el = document.getElementById('skillCutin');
   const band = document.getElementById('skillCutinBand');
   const esc = t => String(t || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  const motion = CUTIN_MOTIONS.some(m => m[0] === fx.motion) ? fx.motion : 'slash';
+  const motion = 'slash';   // 컷인 등장 모션은 고르지 않고 모두 기본 연출로
   // 이름 + 캐치프레이즈(공통), 그 아래 글(스킬명 · 본문) 또는 이미지
   // 이름 : 글자 뒤로 윤곽선 잔상 두 겹이 퍼지는 레이어드 타이포 (data-t를 ::before/::after가 그대로 씁니다)
   const head = `<div class="ci-name" data-t="${esc(fx.actor)}"><span>${esc(fx.actor)}</span></div>`
