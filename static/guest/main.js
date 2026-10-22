@@ -1521,7 +1521,7 @@ function renderGrid(battle, all) {
   const phase = ms => `-${((nowMs % ms) / 1000).toFixed(3)}s`;
   // 칸 간격(칸 + 격자선 1px). 줄무늬는 가로 10px마다 반복하므로, 칸 위치만큼 밀면 옆 칸과 이어집니다.
   const pitch = cellPx + 1;
-  let html = `<table class="gmap" style="--tel-phase:${phase(2400)}; --shine-phase:${phase(3200)}; --tgt-phase:${phase(1800)};">`;
+  let html = `<table class="gmap" style="--tel-phase:${phase(2400)}; --shine-phase:${phase(3200)}; --tgt-phase:${phase(1800)}; --obs-phase:${phase(9000)};">`;
   for (let y = 0; y < gridHeight; y++) {
     html += '<tr>';
     for (let x = 0; x < gridWidth; x++) {
