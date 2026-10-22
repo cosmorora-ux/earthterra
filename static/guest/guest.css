@@ -110,14 +110,9 @@
                        70% { opacity:1; transform:translate(-50%, -26px) scale(1); } 100% { opacity:0; transform:translate(-50%, -40px); } }
 
   .atk-lines { position:absolute; left:0; top:0; pointer-events:none; z-index:6; overflow:visible; }
-  /* 공격선 : 붉은 선분 하나 위로 밝은 빛줄기가 공격자 → 피격자 쪽으로 샥 지나가요 */
-  .atk-line { stroke:#ff4d4d; stroke-width:2.5; stroke-linecap:round; opacity:.75;
-              filter: drop-shadow(0 0 3px rgba(255,60,60,.7)); }
-  .atk-shine { stroke-linecap:round; fill:none; stroke-dasharray:24 200; animation: atkShine 1.6s cubic-bezier(.5,0,.3,1) infinite; }
-  .atk-shine.glow { stroke:#ff8a8a; stroke-width:6; opacity:.55; filter: blur(2px); }
-  .atk-shine.core { stroke:#fff3f0; stroke-width:2; stroke-dasharray:14 210; animation-name: atkShineCore; }
-  @keyframes atkShine { 0% { stroke-dashoffset:24; } 55%, 100% { stroke-dashoffset:-100; } }
-  @keyframes atkShineCore { 0% { stroke-dashoffset:19; } 55%, 100% { stroke-dashoffset:-105; } }
+  /* 공격선 : 붉은 선분 하나 위로 부드러운 빛이 공격자 → 피격자 쪽으로 샥 지나가요 */
+  .atk-line { stroke:#ff5a5a; stroke-width:2.5; stroke-linecap:round; opacity:.7; }
+  .atk-shine { stroke-width:3; stroke-linecap:round; fill:none; }
   @keyframes fxFadeIn { from { opacity:0; } }
   .fx-round { position:fixed; left:0; right:0; top:42%; z-index:9400; pointer-events:none; display:flex; flex-direction:column; align-items:center;
               padding:18px 0; background:linear-gradient(90deg, transparent, rgba(10,10,12,.82) 25%, rgba(10,10,12,.82) 75%, transparent);

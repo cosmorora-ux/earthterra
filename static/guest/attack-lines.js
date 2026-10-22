@@ -99,7 +99,10 @@ function drawAttackLines() {
   svg.setAttribute('height', frame.scrollHeight);
   // 2x2 보스는 네 부위 이름 중 대상에 가장 가까운 글자에서 출발해 대상 이름 글자에서 끝납니다(가운데서 나오지 않게).
   // 선 끝은 글자 상자의 가장자리(서로를 향한 쪽)에 맞춰, 이름을 가리지 않고 글자에서 바로 이어져 보이게 합니다.
-  lastAttackLines.forEach(l => {
+  atkShines = [];
+  const defs = document.createElementNS(NS, 'defs');
+  svg.appendChild(defs);
+  lastAttackLines.forEach((l, i) => {
     const B = gridNameBox(frame, l.to);
     if (!B) return;
     const all = lastAllForCards || [];
@@ -114,13 +117,38 @@ function drawAttackLines() {
     line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
     line.setAttribute('class', 'atk-line');
     svg.appendChild(line);
-    ['glow', 'core'].forEach(k => {
-      const sh = line.cloneNode();
-      sh.setAttribute('class', 'atk-shine ' + k);
-      sh.setAttribute('pathLength', '100');
-      svg.appendChild(sh);
+    // 선 방향을 따라 움직이는 그라데이션 : 투명 → 밝은 살구빛 → 투명 창이 선 위를 미끄러져요
+    const dx = to.x - from.x, dy = to.y - from.y, wx = dx * .4, wy = dy * .4, id = 'atkShine' + i;
+    const g = document.createElementNS(NS, 'linearGradient');
+    g.setAttribute('id', id); g.setAttribute('gradientUnits', 'userSpaceOnUse');
+    g.setAttribute('x1', from.x - wx); g.setAttribute('y1', from.y - wy);
+    g.setAttribute('x2', from.x); g.setAttribute('y2', from.y);
+    [[0, 0], [.5, .9], [1, 0]].forEach(([o, a]) => {
+      const st = document.createElementNS(NS, 'stop');
+      st.setAttribute('offset', o); st.setAttribute('stop-color', '#ffe6df'); st.setAttribute('stop-opacity', a);
+      g.appendChild(st);
     });
+    atkShines.push({ g, x: from.x, y: from.y, dx, dy, wx, wy });
+    defs.appendChild(g);
+    const sh = line.cloneNode();
+    sh.setAttribute('class', 'atk-shine');
+    sh.setAttribute('stroke', `url(#${id})`);
+    svg.appendChild(sh);
   });
   frame.appendChild(svg);
+  if (atkShines.length && !atkShineRaf) atkShineRaf = requestAnimationFrame(atkShineTick);
+}
+// 빛 창 위치를 프레임마다 옮겨요 : 1.6초 중 앞 55%에 걸쳐 부드럽게 가속 · 감속하며 지나가고 나머지는 쉬어요.
+let atkShines = [], atkShineRaf = 0;
+function atkShineTick(now) {
+  atkShines = atkShines.filter(s => s.g.isConnected);
+  if (!atkShines.length) { atkShineRaf = 0; return; }
+  const p = (now % 1600) / 1600 / .55, k = p >= 1 ? 1 : (p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2);
+  atkShines.forEach(s => {
+    const ox = (s.dx + s.wx) * k, oy = (s.dy + s.wy) * k;
+    s.g.setAttribute('x1', s.x - s.wx + ox); s.g.setAttribute('y1', s.y - s.wy + oy);
+    s.g.setAttribute('x2', s.x + ox); s.g.setAttribute('y2', s.y + oy);
+  });
+  atkShineRaf = requestAnimationFrame(atkShineTick);
 }
 window.addEventListener('resize', () => setTimeout(drawAttackLines, 50));
