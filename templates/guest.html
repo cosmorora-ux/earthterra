@@ -355,8 +355,11 @@
   .userinfo-eye:hover { color: var(--text); }
   .ui-left { flex:1; min-width:0; display:flex; align-items:center; gap:12px; align-self:stretch; }
   .ui-doc { flex:none; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; margin:-4px 0; border-radius:10px;
-    color: var(--muted); font-size:13px; text-decoration:none; transition: color .15s ease, background .15s ease; }
+    color: var(--point); font-size:13px; text-decoration:none; transition: color .15s ease, background .15s ease; }
   .ui-doc:hover { color: var(--point); background: rgba(var(--point-rgb),.12); }
+  .ui-doc.empty { color: var(--muted); opacity:.35; background:none; border:none; padding:0; cursor:default; }
+  button.ui-doc.empty { cursor:pointer; }
+  button.ui-doc.empty:hover { opacity:1; color: var(--text); background: rgba(255,255,255,.06); }
   .mp-doc { min-width:0; flex:1; display:flex; align-items:center; gap:6px; }
   .mp-doc .none { font-size:13px; color: var(--muted); }
   .mp-doc-link { display:inline-flex; align-items:center; gap:8px; height:30px; padding:0 12px; border-radius:10px; border:1px solid var(--line);
@@ -8910,7 +8913,10 @@ function renderUserInfoList() {
       // 누르면 그 캐릭터의 마이페이지(운영진 = 수정 가능, 그 외 = 보기 전용).
       // 왼쪽(점 + 이름)에 마우스를 올리면 프로필 사진 카드가 따라다니고, 오른쪽 링크 아이콘은 그 캐릭터의 프로필 문서로 가요.
       const doc = docUrlOf(name);
-      const link = doc ? `<a class="ui-doc" ${docLinkAttrs(doc)} onclick="event.stopPropagation()" aria-label="${esc(name)} 프로필 문서" data-tip="프로필 문서"><i class="fa-solid fa-link"></i></a>` : '';
+      // 링크가 없으면 흐린 아이콘(운영진은 눌러서 그 캐릭터의 마이페이지 '프로필' 칸에 넣어요)
+      const link = doc ? `<a class="ui-doc" ${docLinkAttrs(doc)} onclick="event.stopPropagation()" aria-label="${esc(name)} 프로필 문서" data-tip="프로필 문서"><i class="fa-solid fa-link"></i></a>`
+        : isGm ? `<button type="button" class="ui-doc empty" onclick="event.stopPropagation(); openUserDocEdit('${js}')" data-tip="프로필 문서 링크 넣기"><i class="fa-solid fa-link"></i></button>`
+        : `<span class="ui-doc empty" data-tip="프로필 문서 없음"><i class="fa-solid fa-link"></i></span>`;
       return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
         <span class="ui-left" onmouseenter="uiHoverShow(this.parentNode, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()"><span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}</b></span></span>${isGm && online ? deviceBadgesHtml(name) : ''}${link}${eye}</div>`;
     }).join('');
@@ -8931,6 +8937,10 @@ function toggleUserInfoPanel() {
 function closeUserInfoPanel() {
   document.getElementById('userInfoModal').style.display = 'none';
   uiHoverHide();
+}
+function openUserDocEdit(name) {
+  openUserFromList(name);
+  setTimeout(() => { const i = document.querySelector('#myPageDoc input'); if (i) { i.scrollIntoView({ block:'center' }); i.focus(); } }, 120);
 }
 function openUserFromList(name) {
   uiHoverHide();
