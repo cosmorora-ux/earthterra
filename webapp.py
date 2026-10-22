@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.98"
+SERVER_BUILD = "2026-10-13.99"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -926,7 +926,8 @@ def build_public_state(room, for_gm=False):
         "track_bg": room.track_bg,
         "scene": getattr(room, "scene", None),
         "shop": shop_mod.shared_shop().public_payload(),
-        "telegraph_cells": room.telegraph_cells,
+        # 전조는 공개한 그 라운드에만 보여요(지난 라운드 칸이 남아 보이면 실제로는 안 터지는 칸이라 헷갈려요)
+        "telegraph_cells": room.telegraph_cells if (room.game.battle is not None and room.telegraph_round_no == room.game.battle.round_no) else [],
         "preview_teams": preview_teams,
         "server_now": time.time(),
         "server_build": SERVER_BUILD,

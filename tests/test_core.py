@@ -227,6 +227,21 @@ class TestMobHp(unittest.TestCase):
         g.close()
 
 
+class TestTelegraph(unittest.TestCase):
+    def test_old_round_telegraph_hidden(self):
+        """전조 : 공개한 라운드에만 보이고, 라운드가 넘어가면(실제로 안 터지는 칸이라) 사라져요."""
+        room = rooms_mod.create_room("pvp", name="점검 전조")
+        g = Client()
+        g.join(room, "GM", gm_password=PW)
+        g.emit("start_battle", {"team_a": ["AA"], "team_b": ["AB"]})
+        b = room.game.battle
+        room.telegraph_cells, room.telegraph_round_no = [[1, 1]], b.round_no
+        self.assertEqual(webapp.build_public_state(room)["telegraph_cells"], [[1, 1]])
+        b.round_no += 1
+        self.assertEqual(webapp.build_public_state(room)["telegraph_cells"], [], "지난 라운드 전조가 남아 보임")
+        g.close()
+
+
 class TestEngine(unittest.TestCase):
     def test_multi_action_and_undo(self):
         import config

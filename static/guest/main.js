@@ -565,7 +565,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.98";
+const EXPECTED_SERVER_BUILD = "2026-10-13.99";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -1520,7 +1520,7 @@ function renderGrid(battle, all) {
 
   // 전조 구역 : 운영진이 고르는 중이면 고른 칸, 아니면 공개된 칸
   const telSelecting = typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all';
-  const telKeys = telSelecting ? new Set([...telegraphSelectedCells, ...telegraphRevealedCells]) : telegraphRevealedCells;
+  const telKeys = telSelecting ? telegraphSelectedCells : telegraphRevealedCells;
   const obsKeys = gridObstacleKeys();
   const TEL_EDGE = 'rgba(255,176,32,.38)';
   // 옅은 사선 줄무늬(한 줄 간격 7.07px = 가로 10px)가 천천히 흘러가도록 CSS(td.tel)에서 움직입니다.
@@ -3046,6 +3046,8 @@ function toggleTelegraphMode() {
   telegraphMode = !telegraphMode;
   if (!telegraphMode) { telegraphSelectedCells.clear(); telegraphObstacleCells.clear(); }
   else {
+    // 지금 공개된 전조를 고른 칸으로 그대로 불러와요 : 보이는 칸 = 공개하면 나가는 칸
+    telegraphSelectedCells = new Set(telegraphRevealedCells);
     telegraphObstacleCells = new Set(((lastBattleForPanel && lastBattleForPanel.obstacles) || []).map(o => `${o.x},${o.y}`));
     selectedGridChar = null; selectedGridTargetName = null; disarmGridCommand();
   }
