@@ -336,7 +336,6 @@
   .ui-card:not(.is-online) .pic img { filter: grayscale(.85) brightness(.6); }
   .ui-card.is-online { border-color: rgba(var(--point-rgb),.45); box-shadow: 0 0 18px rgba(var(--point-rgb),.12); }
   .ui-card .ui-dot { position:absolute; left:10px; top:10px; z-index:1; box-shadow: 0 0 0 2px rgba(0,0,0,.55); }
-  .ui-card .ui-state { position:absolute; left:24px; top:5px; z-index:1; font-size:11px; font-weight:600; color: var(--point); padding:1px 4px; border-radius:6px; background: rgba(0,0,0,.45); }
   .ui-card .ui-doc { position:absolute; right:6px; top:6px; z-index:1; margin:0; background: rgba(0,0,0,.5); }
   .ui-card .ui-doc.empty { background: rgba(0,0,0,.35); opacity:.5; }
   .ui-card .ui-doc:hover { background: rgba(0,0,0,.7); }
@@ -344,12 +343,10 @@
   .ui-card .cap .t { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
   .ui-card .cap b { font-size:14px; font-weight:600; color: var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .ui-card:not(.is-online) .cap b { color:#b9b9be; }
-  .ui-card .cap small { font-size:11.5px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ui-card .cap small:empty { display:none; }
   .ui-card .userinfo-eye { flex:none; }
   .ui-card.is-hidden { opacity:.5; }
   .ui-card.is-hidden .cap b { text-decoration: line-through; }
-  @media (max-width:600px) { .ui-grid { grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; padding:6px 4px 10px; } .ui-card .pic { font-size:26px; } .ui-card .cap { padding:7px 8px 8px; } .ui-card .cap b { font-size:13px; } .ui-card .ui-state { display:none; } }
+  @media (max-width:600px) { .ui-grid { grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; padding:6px 4px 10px; } .ui-card .pic { font-size:26px; } .ui-card .cap { padding:7px 8px 8px; } .ui-card .cap b { font-size:13px; } }
   .userinfo-row { display:flex; align-items:center; gap:12px; padding:7px 10px; border-radius:8px; font-size:15px; }
   .ui-sec { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:14px 8px 4px; padding-bottom:6px; border-bottom:1px solid var(--panel-border); font-size:13px; font-weight:700; color: var(--text); }
   .ui-sec:first-child { margin-top:2px; }
@@ -8933,13 +8930,14 @@ function renderUserInfoList() {
   });
   // 섹션 안은 접속 여부와 관계없이 가나다순(접속 중인 사람은 초록 점으로만 표시)
   const byOnlineThenName = (a, b) => a.localeCompare(b, 'ko', { numeric: true });
-  listEl.innerHTML = keys.map(k => {
+  const grid = userInfoView === 'grid';
+  listEl.innerHTML = (grid ? '<div class="ui-grid">' : '') + keys.map(k => {
     const list = groups[k].sort(byOnlineThenName);
     const on = list.filter(n => onlineSet.has(n)).length;
     const color = userInfoFilter === 'role' && ROLE_ORDER.includes(k) ? ` style="color:${roleColorVar(k)}"`
       : userInfoFilter === 'nation' && nationColor(k) ? ` style="color:${nationColor(k)}"` : '';
-    const grid = userInfoView === 'grid';
-    return `<div class="ui-sec"><span${color}>${esc(k)}</span><em>${on ? `${on} / ` : ''}${list.length}</em></div>` + (grid ? '<div class="ui-grid">' : '') + list.map(name => {
+    // 썸네일 보기 : 묶음 제목 · 칸 나눔 없이 같은 순서로 빈틈없이 이어 채워요
+    return (grid ? '' : `<div class="ui-sec"><span${color}>${esc(k)}</span><em>${on ? `${on} / ` : ''}${list.length}</em></div>`) + list.map(name => {
       const online = onlineSet.has(name);
       const hidden = lastUserInfoHidden.has(name);
       const js = name.replace(/'/g, "\\'");
@@ -8955,18 +8953,17 @@ function renderUserInfoList() {
         : isGm ? `<button type="button" class="ui-doc empty" onclick="event.stopPropagation(); openUserDocEdit('${js}')" data-tip="프로필 문서 링크 넣기"><i class="fa-solid fa-link"></i></button>`
         : `<span class="ui-doc empty" data-tip="프로필 문서 없음"><i class="fa-solid fa-link"></i></span>`;
       if (grid) {
-        // 썸네일 보기 : 사진 · 접속 상태 · 이름 · 포지션/진영 · 문서 링크. 누르면 마이페이지(보기 전용)
-        const d = info(name), av = d.avatar_url;
-        const sub = [d.role, factionTip(factionOf(name))].filter(Boolean).join(' · ');
+        // 썸네일 보기 : 사진 · 접속 점 · 이름 · 문서 링크. 누르면 마이페이지(보기 전용)
+        const av = info(name).avatar_url;
         return `<div class="ui-card ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
           <div class="pic"><i class="fa-solid fa-user"></i>${av ? `<img src="${esc(av)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
-            <span class="ui-dot"></span>${online ? '<span class="ui-state">접속 중</span>' : ''}${link}</div>
-          <div class="cap"><span class="t"><b>${esc(name)}</b><small>${esc(sub)}</small></span>${eye}</div></div>`;
+            <span class="ui-dot"></span>${link}</div>
+          <div class="cap"><span class="t"><b>${esc(name)}</b></span>${eye}</div></div>`;
       }
       return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
         <span class="ui-left" onmouseenter="uiHoverShow(this.parentNode, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()"><span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}</b></span></span>${isGm && online ? deviceBadgesHtml(name) : ''}${link}${eye}</div>`;
-    }).join('') + (grid ? '</div>' : '');
-  }).join('');
+    }).join('');
+  }).join('') + (grid ? '</div>' : '');
 }
 // 유저 리스트 보기 방식(목록 / 썸네일) : 이 기기에 기억해요
 var userInfoView = (() => { try { return localStorage.getItem('userInfoView') === 'grid' ? 'grid' : 'list'; } catch (e) { return 'list'; } })();
