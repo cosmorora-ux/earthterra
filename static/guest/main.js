@@ -363,6 +363,10 @@ function myPageEditName() {
 function onMyColorChange(hex) {
   const mypageOpen = document.getElementById('myPageModal').style.display === 'flex';
   socket.emit('set_my_color', { color: hex, name: mypageOpen ? myPageEditName() : undefined });
+  if (mypageOpen) {   // 서버 응답 전에 바로 : 색 점 · 프로필 상단 빛줄
+    document.getElementById('myPageColorDot').style.background = hex;
+    const hero = document.querySelector('#myPageModal .mp-hero'); if (hero) hero.style.setProperty('--mp-c', hex);
+  }
 }
 
 function myCharacterColor(battle) {
@@ -3530,7 +3534,14 @@ const NPC_PROFILES = {
   '이네이타 장': '이네이타 장은 노바 공화국 소속 교수로, 뛰어난 지성으로 학계에서 월등한 실적을 내던 학자로서 초빙되었으며 정신계 레저넌트다. 예리한 성격의 그는 모두에게 공정하다.',
 };
 function npcProfileOf(name) { return playPreviewOn() ? NPC_PROFILES[name] || null : null; }
-function openNpcProfile(name) { const t = NPC_PROFILES[name]; if (t) uiToast(t, null, 7000); }
+// 지도 구역 카드와 같은 알림(이름 + 소개)으로 띄워요
+function openNpcProfile(name) {
+  const t = NPC_PROFILES[name], el = document.getElementById('wmToast'); if (!t || !el) return;
+  el.innerHTML = '<div class="l1"><b></b></div><div class="l2"></div>';
+  el.querySelector('b').textContent = name; el.querySelector('.l2').textContent = t;
+  el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  clearTimeout(openNpcProfile._t); openNpcProfile._t = setTimeout(() => el.classList.remove('on'), 6500);
+}
 function playPreviewOn() { return BATTLE_TYPE === 'play' && myControlInfo(lastBattleForPanel).scope !== 'all'; }
 function playPreviewFill() {
   lastRoster = PLAY_PREVIEW_CHARS.map(c => c[0]);
@@ -3883,6 +3894,8 @@ function renderMyPage() {
     document.getElementById('myPagePortraitIcon').style.display = '';
   }
   document.getElementById('myPageColorDot').style.background = c.color || '#fff';
+  // 프로필 상단 빛줄 : 표시 컬러로(방명록 · 기록창처럼 캐릭터 색에 맞춰요)
+  const hero = document.querySelector('#myPageModal .mp-hero'); if (hero) hero.style.setProperty('--mp-c', c.color || 'var(--point)');
   const raidInput = document.getElementById('myPageRaidNameInput');
   raidInput.disabled = !canEdit;
   if (document.activeElement !== raidInput) raidInput.value = c.raid_display_name || '';
