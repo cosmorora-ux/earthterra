@@ -76,6 +76,7 @@
       <button class="sidebar-icon" id="sidebarBattlesBtn" onclick="openBattleHub()"><i class="fa-solid fa-shield-halved"></i><span class="sb-label">전투</span><span class="notice-dot" id="battlesDot"></span></button>
       <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="sidebarBattleClick()"><i class="fa-solid {% if battle_type == 'play' %}fa-globe{% else %}fa-shield-halved{% endif %}"></i><span class="sb-label">{% if battle_type == 'play' %}LOOP{% else %}전투{% endif %}</span></button>
       <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" style="display:none;"><i class="fa-solid fa-store"></i><span class="sb-label">상점</span></button>
+      {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" style="display:none;"><i class="fa-solid fa-pen-ruler"></i><span class="sb-label">LOOP 편집</span></button>{% endif %}
     </div></div>
   </div>
   <div class="sb-group" id="sbGroupDorm">
@@ -87,7 +88,6 @@
     </div></div>
   </div>
   <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i><span class="sb-label">지도</span></button>
-  {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" data-tip="LOOP 편집" style="display:none;"><i class="fa-solid fa-pen-ruler"></i><span class="sb-label">LOOP 편집</span></button>{% endif %}
   <div class="sb-group" id="sbGroupPeople">
     <button class="sidebar-icon sb-ghead" onclick="sbGroupClick(event, 'sbGroupPeople')" aria-label="유저"><i class="fa-solid fa-user"></i><span class="sb-label">유저</span><i class="fa-solid fa-chevron-down sb-caret"></i><span class="notice-dot"></span></button>
     <div class="sb-sub"><div class="sb-sub-in">
@@ -147,10 +147,9 @@
 </div>
 <div id="noticeModal" class="modal-overlay" onclick="if(event.target===this) closeNotices()">
   <div class="modal-box notice-modal panel">
+    <button class="mail-fab notice-fab" id="noticeNewBtn" onclick="startNoticeEdit(null)" style="display:none;" aria-label="새 공지" data-tip="새 공지"><i class="fa-solid fa-pen"></i></button>
     <div class="notice-head">
       <div class="modal-title page-title" id="noticeModalTitle">Notice</div>
-      <div class="news-switch"><button class="on" onclick="switchNews('notice')">공지<span class="notice-dot nsw-notice-dot"></span></button><button class="" onclick="switchNews('mail')">우체통<span class="notice-dot nsw-mail-dot"></span></button></div>
-      <button class="shop-btn" id="noticeNewBtn" onclick="startNoticeEdit(null)" style="display:none;"><i class="fa-solid fa-pen"></i> 새 공지</button>
       <button class="shop-close" onclick="closeNotices()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="notice-links">
@@ -387,7 +386,6 @@
   <div class="modal-box mail-modal panel">
     <div class="shop-head">
       <div class="modal-title page-title">Mail</div><span class="mail-me" id="mailMe"></span>
-      <div class="news-switch"><button class="" onclick="switchNews('notice')">공지<span class="notice-dot nsw-notice-dot"></span></button><button class="on" onclick="switchNews('mail')">우체통<span class="notice-dot nsw-mail-dot"></span></button></div>
       <button class="shop-close" onclick="closeMail()" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="shop-tabs" id="mailTabs"></div>

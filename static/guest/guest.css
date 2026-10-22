@@ -4766,3 +4766,9 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .gmap .gcell.obst > .gsel { z-index:1; }
 @keyframes obstWaveA { from { transform: translate(-50px, -30px); } to { transform: translate(50px, 30px); } }
 @keyframes obstWaveB { from { transform: translate(40px, -45px); } to { transform: translate(-40px, 45px); } }
+/* 공지 : 새 공지는 우체통 편지 쓰기처럼 오른쪽 아래 동그란 버튼 */
+.modal-box.notice-modal { position:relative; }
+.modal-box.notice-modal > .notice-fab { position:absolute; right:26px; bottom:26px; width:56px; height:56px; margin:0; padding:0; z-index:3; display:inline-flex; align-items:center; justify-content:center;
+  border-radius:50%; border:none; background: var(--point); color:#fff; font:inherit; cursor:pointer;
+  box-shadow: 0 10px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06) inset; transition: transform .15s, filter .15s; }
+@media (max-width:900px) { .modal-box.notice-modal > .notice-fab { right:18px; bottom: calc(18px + env(safe-area-inset-bottom)); } }

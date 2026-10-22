@@ -4940,7 +4940,7 @@ function renderNotices() {
   editor.style.display = noticeEditing ? 'flex' : 'none';
   if (noticeEditing) return;
   if (!lastNotices.length) {
-    list.innerHTML = emptyHtml('fa-bullhorn', '아직 공지사항이 없어요', gm ? '위의 "새 공지"로 첫 공지를 써 보세요.' : '새 공지가 올라오면 여기에 보여요.');
+    list.innerHTML = emptyHtml('fa-bullhorn', '아직 공지사항이 없어요', gm ? '오른쪽 아래 버튼으로 첫 공지를 써 보세요.' : '새 공지가 올라오면 여기에 보여요.');
     return;
   }
   const seen = noticeSeenAt();
