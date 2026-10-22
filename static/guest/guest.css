@@ -4155,7 +4155,8 @@
     body.is-lounge .sidebar #sbGroupPeople > .sb-ghead, body.is-battle .sidebar #sbGroupPeople > .sb-ghead { order:6; }
   }
   /* 휴대폰 하단 탭 위 하위 메뉴 목록 */
-  #sbSheet { align-items:flex-end; }
+  /* 하단 탭 위 목록 : 전체 화면 창(마이페이지 · 공지 등)이 열려 있어도 그 위에 떠요(하단 탭 바 150보다는 아래) */
+  #sbSheet { align-items:flex-end; z-index:140; }
   #sbSheet .news-sheet { bottom:12px; animation: sbSheetIn .18s ease-out; }
   @keyframes sbSheetIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
   #sbSheet .news-sheet button > i:first-child { color: var(--point); }
