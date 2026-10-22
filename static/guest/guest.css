@@ -2435,7 +2435,7 @@
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
   body.is-lounge #sidebarBattleBtn, body.is-lounge .m-battle-tools { display:none !important; }
   /* 메뉴는 일반 룸 · 전투 룸이 같아요 : 종 · 배틀 · 마이룸 · 우체통 · 지도 · 마이페이지 (전투 방에서 누르면 일반 룸의 그 화면으로) */
-  body.is-play #sidebarDormBtn, body.is-play #sidebarMyDormBtn, body.is-play #sidebarDormManageBtn, body.logged-out #sidebarMyDormBtn, body.is-play #sidebarMailBtn, body.is-battle #myPageRoomBox { display:none !important; }
+  body.is-play #sidebarDormBtn, body.is-play #sidebarMyDormBtn, body.is-play #sidebarDormManageBtn, body.logged-out #sidebarMyDormBtn, body.is-battle #myPageRoomBox { display:none !important; }
   body.is-play #newsMailRow { display:flex !important; }
   body.is-battle:not(.is-play) .member-header .m-userlist-btn { display:inline-flex; }
   .mail-preview { display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:11px 14px; border-radius:12px; background: rgba(var(--point-rgb),.08); color: var(--muted); font-size:13px; }
@@ -4733,3 +4733,5 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .mypage.v2 .mp-hero { position:relative; }
 .mp-hero-line { position:absolute; left:24px; right:24px; top:0; height:1px; pointer-events:none; z-index:2;
   background: linear-gradient(90deg, transparent, var(--mp-c, var(--point)), transparent); opacity:.95; }
+/* 메뉴 묶음 : 하위 메뉴가 하나뿐이면 펼침 꺾쇠 없이 바로 가는 메뉴로 */
+.sidebar .sb-ghead.single .sb-caret { display:none; }
