@@ -251,6 +251,57 @@ class TestEngine(unittest.TestCase):
         self.assertFalse(bt.can_advance_turn(), "행동이 남았는데 턴이 넘어갈 수 있음")
 
 
+class TestObstacle(unittest.TestCase):
+    def _battle(self):
+        """지금 차례인 팀의 캐릭터(가디언 : 크리티컬 없음)를 공격자로, (2,2)에 둬요."""
+        import config
+        from models import Character
+        from battle import Battle
+        st = {k: 5 for k in config.STAT_KEYS}
+        A = [Character("X1", "가디언", dict(st))]
+        B = [Character("Y1", "가디언", dict(st))]
+        bt = Battle(A, B, grid_width=10, grid_height=10)
+        key = bt._team_key(bt.current_turn_team)
+        me = next(c for c in A + B if c.team == key)
+        other = next(c for c in A + B if c is not me)
+        me.grid_pos, other.grid_pos = (2, 2), (8, 8)
+        for c in A + B:
+            c.can_move = True
+        return bt, me
+
+    def test_block_move_and_break(self):
+        bt, me = self._battle()
+        bt.set_obstacles([(3, 2)], 3)
+        self.assertIsNotNone(bt.obstacle_blocks_move(2, 2, 4, 2), "장애물 너머 십자 이동이 막히지 않음")
+        self.assertIsNotNone(bt.obstacle_blocks_move(2, 2, 3, 2), "장애물 칸으로 이동이 막히지 않음")
+        self.assertIsNone(bt.obstacle_blocks_move(2, 2, 2, 4), "막히지 않은 방향까지 막힘")
+        hits = []
+        for _ in range(3):
+            me.has_acted = False
+            bt.perform_attack_obstacle(me.name, 3, 2)
+            hits.append((bt.get_obstacles().get((3, 2)) or {}).get("hits"))
+        self.assertEqual(hits, [2, 1, None], "타격 횟수대로 줄다가 부서지지 않음")
+        self.assertIsNone(bt.obstacle_blocks_move(2, 2, 4, 2), "부서진 뒤에도 막힘")
+        bt.undo_last()
+        self.assertEqual(bt.get_obstacles().get((3, 2), {}).get("hits"), 1, "되돌리기로 장애물이 돌아오지 않음")
+
+    def test_crit_breaks_at_once(self):
+        bt, me = self._battle()
+        bt.set_obstacles([(3, 2)], 4)
+        orig = bt.attack_skill.roll
+        bt.attack_skill.roll = lambda a, overrides=None: dict(orig(a, overrides=overrides), is_crit=True)
+        me.has_acted = False
+        bt.perform_attack_obstacle(me.name, 3, 2)
+        self.assertNotIn((3, 2), bt.get_obstacles(), "크리티컬인데 바로 부서지지 않음")
+
+    def test_out_of_range(self):
+        from battle import BattleError
+        bt, me = self._battle()
+        bt.set_obstacles([(7, 2)], 2)
+        with self.assertRaises(BattleError):
+            bt.perform_attack_obstacle(me.name, 7, 2)
+
+
 class TestLoop(unittest.TestCase):
     def test_start_play_reset(self):
         book = loop_game.LoopBook(path=os.path.join(os.getcwd(), "loop_runs_test.json"))

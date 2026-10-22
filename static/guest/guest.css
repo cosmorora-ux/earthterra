@@ -4754,3 +4754,9 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .ops-prow .sk.mob { color:#ff8a80; border-color: rgba(255,138,128,.35); }
 /* NPC 마이페이지 : 재화 · 소지품 · 마이룸 칸 없이 */
 .modal-box.mypage.is-npc .mp-tiles, .modal-box.mypage.is-npc #myPageRoomBox { display:none !important; }
+/* 마스 레이드 장애물 칸 */
+.gmap .gcell.obst { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  background: repeating-linear-gradient(45deg, rgba(150,150,160,.28) 0 6px, rgba(110,110,120,.22) 6px 12px), #2a2a30;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); border-radius:4px; }
+.gmap .gcell.obst .obst-ic { color:#d6d6dc; font-size:14px; }
+.gmap .gcell.obst .obst-hp { font-size:10px; font-weight:700; color:#fff; line-height:1; text-shadow:0 1px 2px rgba(0,0,0,.7); }

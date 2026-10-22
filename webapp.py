@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.96"
+SERVER_BUILD = "2026-10-13.97"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -811,6 +811,9 @@ def build_battle_common(battle):
         "grid_height": battle.grid_height,
         "team_a": [build_character_public(c) for c in battle.team_a],
         "team_b": [build_character_public(c) for c in battle.team_b],
+        # 마스 레이드 장애물 : 칸 · 남은 타격 / 부서지는 데 필요한 타격
+        "obstacles": [{"x": k[0], "y": k[1], "hits": o.get("hits", 1), "max": o.get("max", 1)}
+                      for k, o in sorted(battle.get_obstacles().items())],
     }
 
 
@@ -897,6 +900,7 @@ def build_public_state(room, for_gm=False):
         "battle_thumb": getattr(room, "thumb", None),
         "battle_hidden": bool(getattr(room, "hidden", False)),
         "action_counts": getattr(room, "action_counts", None) or {},
+        "obstacle_hits": _obstacle_hits(room),
         "chat_tab_labels": room.chat_tab_labels,
         "roster": room.game.db.all_names_by_position(),
         # 전투에 참여하지 않은 캐릭터도 로그인하면 마이페이지를 볼/수정할 수 있도록 등록 정보를 함께 보냅니다
@@ -1510,6 +1514,7 @@ def resolve_control(room, info):
 
 ACTOR_FIELD = {
     "attack": "attacker",
+    "attack_obstacle": "attacker",
     "self_defend": "name",
     "defend": "tanker",
     "guard": "tanker",
@@ -2609,7 +2614,47 @@ def on_telegraph_reveal(data):
     room.telegraph_round_no = battle.round_no
     text = f"전조 공개 : {len(cells)}칸에 곧 재해가 발생합니다." if cells else "전조 공개 : 이번 라운드는 재해 구역이 없습니다."
     battle.log_event(text, tag="system")
+    # 장애물(오른쪽 클릭으로 고른 칸) : 보낸 목록대로 바꿔요. 새 칸은 이 방의 '장애물 타격 횟수'로 시작해요.
+    if "obstacles" in data and room.battle_type == "mass_raid":
+        before = set(battle.get_obstacles())
+        pts = []
+        for cell in data.get("obstacles") or []:
+            try:
+                pts.append((int(cell[0]), int(cell[1])))
+            except (TypeError, ValueError, IndexError):
+                continue
+        after = battle.set_obstacles(pts, _obstacle_hits(room))
+        added, removed = len(set(after) - before), len(before - set(after))
+        if added or removed:
+            battle.log_event(f"장애물 {len(after)}칸 (새로 {added} · 없앰 {removed}) · {_obstacle_hits(room)}번 맞으면 부서져요", tag="system")
     post_system_chat(room, text, nickname="전조")
+    broadcast_state(room)
+
+
+OBSTACLE_HITS_RANGE = (1, 9)
+
+
+def _obstacle_hits(room):
+    try:
+        v = int(getattr(room, "obstacle_hits", 3) or 3)
+    except (TypeError, ValueError):
+        v = 3
+    return max(OBSTACLE_HITS_RANGE[0], min(OBSTACLE_HITS_RANGE[1], v))
+
+
+@socketio.on("set_obstacle_hits")
+def on_set_obstacle_hits(data):
+    """운영진 : 이 방(마스 레이드)의 장애물이 몇 번 맞아야 부서지는지(1~9). 새로 놓는 장애물부터 적용돼요."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        emit("action_error", {"message": "권한이 없습니다."})
+        return
+    try:
+        v = int((data or {}).get("hits"))
+    except (TypeError, ValueError):
+        return
+    room.obstacle_hits = max(OBSTACLE_HITS_RANGE[0], min(OBSTACLE_HITS_RANGE[1], v))
+    save_rooms()
     broadcast_state(room)
 
 
@@ -2686,6 +2731,7 @@ def on_stop_music(data):
 
 ACTION_HANDLERS = {
     "attack": lambda battle, p: battle.perform_attack(p["attacker"], p["target"]),
+    "attack_obstacle": lambda battle, p: battle.perform_attack_obstacle(p["attacker"], int(p["x"]), int(p["y"])),
     "self_defend": lambda battle, p: battle.perform_self_defend(p["name"]),
     # 방어 : 본인 지정이면 직접 방어, 아군 지정이면 대리 방어 (모든 직군)
     "defend": lambda battle, p: battle.perform_proxy_defend(p["tanker"], p.get("target") or p["tanker"]),
@@ -2867,7 +2913,7 @@ def _maybe_relocate_boss(battle, actor_char):
     occupied = {
         tuple(c.grid_pos) for c in battle.team_a + battle.team_b
         if c.boss_group != actor_char.boss_group and c.is_alive and c.grid_pos
-    }
+    } | set(battle.get_obstacles())   # 장애물 칸으로는 옮겨 가지 않아요
     center = ((battle.grid_width - 1) / 2, (battle.grid_height - 1) / 2)
     anchor = _find_empty_2x2_anchor(battle.grid_width, battle.grid_height, occupied, near=center)
     if anchor is None or anchor == current_anchor:

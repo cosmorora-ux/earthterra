@@ -623,6 +623,12 @@ function opsRoomHtml(kind) {
       <label class="ops-check"><input type="checkbox" id="opsHidden" onchange="socket.emit('battle_set_hidden', {hidden: this.checked})"> 비공개 (준비 중)</label>
     </div>
 `,
+    obstacle: `    <div class="ops-card">
+      <h3><i class="fa-solid fa-cubes-stacked"></i> 장애물<span class="sub">전조 선택에서 오른쪽 클릭으로 놓아요 · 몇 번 맞으면 부서지는지(크리티컬이면 한 번에)</span></h3>
+      <div class="ops-seg" id="opsObsHits"></div>
+      <div class="ops-hint" style="margin-top:8px;">장애물 칸과 그 너머 십자 줄로는 이동할 수 없어요. 바꾼 횟수는 새로 놓는 장애물부터 적용돼요.</div>
+    </div>
+`,
     watch: `    <div class="ops-card">
       <h3><i class="fa-solid fa-eye"></i> 관전<span class="sub">룸 목록에는 모든 전투가 보이고, 들어올 수 있는 건 이 전투의 참여자(팀 편성)예요</span></h3>
       <label class="ops-check"><input type="checkbox" id="opsWatchOk" onchange="socket.emit('set_chat_tabs', {tabs: {spectator: this.checked}})"> 관전자도 들어올 수 있게(전투 관전 탭)</label>
@@ -638,9 +644,14 @@ function opsRoomHtml(kind) {
   // 전투 방 : 방 이름 · 링크 · 배경은 전투 설정으로, 일반 방 설정에는 사이트 공통 설정만
   // 격자 지도를 쓰는 전투(마스 레이드)만 지도 배경 · 몹 이미지
   const grid = !!document.getElementById('mapBgBtn');
-  const keys = kind === 'battle' ? ['room', 'hidden', 'thumb', ...(grid ? ['mapbg'] : []), 'watch', 'chattabs', 'remind', 'scene', 'formula']
+  const keys = kind === 'battle' ? ['room', 'hidden', 'thumb', ...(grid ? ['mapbg'] : []), ...(BATTLE_TYPE === 'mass_raid' ? ['obstacle'] : []), 'watch', 'chattabs', 'remind', 'scene', 'formula']
     : OPS_BATTLE_ROOM ? ['point', 'mail', 'chat', 'backup', 'errors'] : ['room', 'point', 'mail', 'chat', 'scene', 'backup', 'errors'];
   return `<div class="ops-grid">${keys.map(k => C[k]).join('')}</div>`;
+}
+function opsRenderObsHits() {
+  const el = document.getElementById('opsObsHits'); if (!el) return;
+  const cur = (opsLastPublic && opsLastPublic.obstacle_hits) || 3;
+  el.innerHTML = [1, 2, 3, 4, 5, 6].map(n => `<button class="${n === cur ? 'on' : ''}" onclick="socket.emit('set_obstacle_hits', {hits:${n}})">${n}회</button>`).join('');
 }
 function opsRenderScene() {
   const el = document.getElementById('opsScene'); if (!el) return;
@@ -722,7 +733,7 @@ function opsRenderRoomInfo() {
   const ct = document.getElementById('opsChatTabsNow');
   if (ct) ct.textContent = `${chatTabLabels.spectator} ${chatTabsEnabled.spectator ? '켜짐' : '꺼짐'} · ${chatTabLabels.team} ${chatTabsEnabled.team ? '켜짐' : '꺼짐'}`;
   const w = document.getElementById('opsWatchOk'); if (w) w.checked = !!((opsLastPublic && opsLastPublic.chat_tabs) || {}).spectator;
-  opsRenderSwatches(); opsRenderScene(); opsRenderMailEras(); opsRenderRemind(); opsRenderChatLimit();
+  opsRenderSwatches(); opsRenderObsHits(); opsRenderScene(); opsRenderMailEras(); opsRenderRemind(); opsRenderChatLimit();
   const n = document.getElementById('opsRoomName');
   if (n && document.activeElement !== n) n.value = (opsLastPublic && opsLastPublic.room_name) || ROOM_ID;
   const l = document.getElementById('opsGuestLink');

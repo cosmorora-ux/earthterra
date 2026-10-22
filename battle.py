@@ -380,6 +380,7 @@ class Battle:
             "pub_len": len(self.public_log),
             "turn_op_start": self.turn_op_start,
             "turn_pub_start": self.turn_pub_start,
+            "obstacles": copy.deepcopy(self.get_obstacles()),
         }
 
     def _push_history(self):
@@ -452,6 +453,10 @@ class Battle:
 
         del self.operator_log[snap["op_len"]:]
         del self.public_log[snap["pub_len"]:]
+        # 장애물 : 그때의 남은 타격(부서진 것도 되살림). 그 뒤에 운영진이 새로 놓은 장애물은 그대로 둬요.
+        obs = self.get_obstacles()
+        for key, o in (snap.get("obstacles") or {}).items():
+            obs[key] = dict(o)
 
     # ------------------------------------------------------------------
     # 공격 판정/정산 공용 로직
@@ -725,11 +730,98 @@ class Battle:
         )
         if occupied:
             raise BattleError("이미 다른 캐릭터가 있는 칸입니다.")
+        blocked = self.obstacle_blocks_move(cur_x, cur_y, x, y)
+        if blocked:
+            raise BattleError(blocked)
 
         self._push_history()
         actor.grid_pos = (x, y)
         actor.moved_this_round = True
         self._log(f"{actor.name} 이동 {cell_label(cur_x, cur_y)} → {cell_label(x, y)}", tag="action")
+
+    # ------------------------------------------------------------------
+    # 마스 레이드 장애물 : 운영진이 전조 선택에서 오른쪽 클릭으로 놓는 칸. 정해진 횟수만큼 맞으면
+    # 부서지고(크리티컬이면 한 번에), 서 있는 동안은 그 칸과 그 너머 십자 줄로는 이동할 수 없어요.
+    # ------------------------------------------------------------------
+    def get_obstacles(self) -> dict:
+        if getattr(self, "obstacles", None) is None:
+            self.obstacles = {}
+        return self.obstacles
+
+    def set_obstacles(self, cells, hits: int):
+        """운영진이 고른 장애물 칸으로 바꿔요. 이미 있던 칸은 남은 타격을 그대로, 새 칸은 hits로."""
+        old = self.get_obstacles()
+        occupied = {tuple(c.grid_pos) for c in self.team_a + self.team_b if c.is_alive and c.grid_pos}
+        new = {}
+        for x, y in cells:
+            key = (int(x), int(y))
+            if self.grid_width is None or not (0 <= key[0] < self.grid_width and 0 <= key[1] < self.grid_height):
+                continue
+            if key in occupied and key not in old:
+                continue
+            new[key] = dict(old[key]) if key in old else {"hits": hits, "max": hits}
+        self.obstacles = new
+        return new
+
+    def obstacle_blocks_move(self, x0: int, y0: int, x: int, y: int):
+        """이동이 장애물에 막히면 안내 문장, 아니면 None. 십자 이동은 지나가는 칸도 봐요."""
+        obs = self.get_obstacles()
+        if not obs:
+            return None
+        if (x, y) in obs:
+            return "장애물이 있는 칸으로는 이동할 수 없습니다."
+        if x == x0 or y == y0:
+            dx = (x > x0) - (x < x0)
+            dy = (y > y0) - (y < y0)
+            cx, cy = x0 + dx, y0 + dy
+            while (cx, cy) != (x, y):
+                if (cx, cy) in obs:
+                    return "장애물에 막혀 그 칸까지 갈 수 없습니다."
+                cx, cy = cx + dx, cy + dy
+        return None
+
+    def perform_attack_obstacle(self, attacker_name: str, x: int, y: int):
+        attacker = self.find_character(attacker_name)
+        if attacker is None:
+            raise BattleError("대상이 존재하지 않습니다.")
+        self._check_actor_turn(attacker)
+        ok, reason = self.attack_skill.can_use(attacker)
+        if not ok:
+            raise BattleError(reason)
+        key = (int(x), int(y))
+        obs = self.get_obstacles()
+        if key not in obs:
+            raise BattleError("그 칸에는 장애물이 없습니다.")
+        self._check_command_lock(attacker)
+        if self._forced_for(self.team_label_of(attacker)) is not None:
+            raise BattleError("유도 효과가 적용 중이라 장애물을 공격할 수 없습니다.")
+        if attacker.grid_pos is not None:
+            ax, ay = attacker.grid_pos
+            ddx, ddy = key[0] - ax, key[1] - ay
+            in_range = (ddx == 0 and abs(ddy) <= 3) or (ddy == 0 and abs(ddx) <= 3) or (abs(ddx) <= 1 and abs(ddy) <= 1)
+            if not in_range:
+                raise BattleError("사거리 밖의 장애물입니다.")
+
+        self._push_history()
+        self._resolve_pending_attacks(attacker)
+        atk = self.attack_skill.roll(attacker, overrides=self.formula_overrides)
+        attacker.has_acted = True
+        label = f"장애물 {cell_label(*key)}"
+        self._log(f"{attacker.name} 공격 → {label}", tag="action")
+        o = obs[key]
+        if atk["is_crit"]:
+            self._log_public_only("크리티컬!", tag="crit")
+            o["hits"] = 0
+        else:
+            o["hits"] = max(0, int(o.get("hits", 1)) - 1)
+        if o["hits"] <= 0:
+            del obs[key]
+            self._log(f"{label} 파괴!", tag="system")
+        else:
+            self._log(f"{label} 남은 타격 {o['hits']}/{o.get('max', o['hits'])}", tag="system")
+        self._maybe_trigger_leech(attacker)
+        self._consume_command(attacker, set())
+        return atk
 
     # ------------------------------------------------------------------
     # 행동 : 배치 (메딕 전용) - 지정 아군 1인과 본인의 위치(칸)를 교환합니다. 정식 행동이므로

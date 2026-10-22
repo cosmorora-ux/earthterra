@@ -556,7 +556,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.96";
+const EXPECTED_SERVER_BUILD = "2026-10-13.97";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -586,6 +586,7 @@ socket.on('public_state', (state) => {
   lastAttackLines = state.attack_lines || [];
   lastPreviewTeams = state.preview_teams || null;
   telegraphRevealedCells = new Set((state.telegraph_cells || []).map(([x, y]) => `${x},${y}`));
+  lastPublicObstacleHits = state.obstacle_hits || 3;
   lastBattleForPanel = fillGmMobHp(state.battle);
   if (state.chat_tabs) chatTabsEnabled = state.chat_tabs;
   if (state.chat_tab_labels) chatTabLabels = state.chat_tab_labels;
@@ -1282,6 +1283,7 @@ let selectedGridTargetName = null;  // 범위 내에서 클릭해 지정한 대�
 const GRID_CELL_PX = 36;
 // GM이 '전조 출력'으로 공개한 격자 칸. 곧 그 칸에 무조건 피해가 발생한다는 시각적 경고입니다.
 let telegraphRevealedCells = new Set();
+var lastPublicObstacleHits = 3;   // 이 방의 장애물 타격 횟수(운영진 전투 설정)
 
 // 격자 칸 툴팁 : 이름 · 포지션 · 팀 / 체력 · 위치 / 이번 라운드 상태 / 걸린 효과 / 전조 · 범위
 function gridCellTip(c, x, y, key, telKeys, rangeCells, rangeIsAction) {
@@ -1347,7 +1349,33 @@ function computeHighlightCells(character, showActionRange) {
     return crossPlusNeighbors(px, py, 3, true);
   }
   const agi = (character.stats && character.stats['민첩']) || 0;
-  return crossPlusNeighbors(px, py, character.move_range || 0, agi > 0);
+  const cells = crossPlusNeighbors(px, py, character.move_range || 0, agi > 0);
+  // 장애물 : 그 칸과, 십자 줄에서 장애물 너머 칸으로는 이동할 수 없어요(서버 Battle.obstacle_blocks_move와 같은 규칙)
+  const obs = gridObstacleKeys();
+  if (obs.size) {
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+      let blocked = false;
+      for (let d = 1; d <= (character.move_range || 0); d++) {
+        const k = `${px + dx * d},${py + dy * d}`;
+        if (blocked) { if (!(Math.abs(dx * d) <= 1 && Math.abs(dy * d) <= 1 && agi > 0)) cells.delete(k); continue; }
+        if (obs.has(k)) { blocked = true; cells.delete(k); }
+      }
+    });
+    obs.forEach(k => cells.delete(k));
+  }
+  return cells;
+}
+// 지금 지도의 장애물 칸("x,y") : 운영진이 전조를 고르는 중이면 고르는 중인 장애물
+function gridObstacleKeys() {
+  if (typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(lastBattleForPanel).scope === 'all') return new Set(telegraphObstacleCells);
+  return new Set(((lastBattleForPanel && lastBattleForPanel.obstacles) || []).map(o => `${o.x},${o.y}`));
+}
+function gridObstacleAt(x, y) { return ((lastBattleForPanel && lastBattleForPanel.obstacles) || []).find(o => o.x === x && o.y === y) || null; }
+// 장애물 공격 : 행동 사거리 안의 장애물을 누르면 확인 후 공격(크리티컬이면 한 번에 부서져요)
+function onGridObstacleClick(actorName, x, y) {
+  const o = gridObstacleAt(x, y); if (!o) return;
+  uiConfirm(`${actorName}(이)가 장애물 ${cellLabel(x, y)}을(를) 공격할까요?\n남은 타격 ${o.hits}/${o.max} · 크리티컬이면 한 번에 부서져요.`, { title: '장애물 공격', okText: '공격' })
+    .then(ok => { if (ok) { selectedGridChar = null; selectedGridTargetName = null; disarmGridCommand(); doAction('attack_obstacle', { attacker: actorName, x, y }); } });
 }
 
 // 서버 Battle.enemy_zone_cells와 같은 계산 : 차지한 칸(BOSS는 살아 있는 부위 전부)마다 십자 3칸 + 주변 8칸
@@ -1484,6 +1512,7 @@ function renderGrid(battle, all) {
   // 전조 구역 : 운영진이 고르는 중이면 고른 칸, 아니면 공개된 칸
   const telSelecting = typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all';
   const telKeys = telSelecting ? new Set([...telegraphSelectedCells, ...telegraphRevealedCells]) : telegraphRevealedCells;
+  const obsKeys = gridObstacleKeys();
   const TEL_EDGE = 'rgba(255,176,32,.38)';
   // 옅은 사선 줄무늬(한 줄 간격 7.07px = 가로 10px)가 천천히 흘러가도록 CSS(td.tel)에서 움직입니다.
   const TEL_STRIPES = 'repeating-linear-gradient(135deg, rgba(255,176,32,.08) 0 2.5px, rgba(255,176,32,0) 2.5px 7.0711px)';
@@ -1532,6 +1561,14 @@ function renderGrid(battle, all) {
         const hurt = !!c.pending_attacks;
         const buff = !!(c.shield_hp || c.defense_count || c.polarize_active || c.has_leech_buff || c.pending_heals || (c.interceptors && c.interceptors.length));
         cornerMarks = (hurt ? '<i class="gmk hurt"></i>' : '') + (buff ? '<i class="gmk buff"></i>' : '');
+      } else if (obsKeys.has(key)) {
+        // 장애물 : 행동 사거리 안이면 눌러서 공격
+        cellCls = 'obst';
+        const o = gridObstacleAt(x, y);
+        if (o && selChar && highlightIsAction && highlightCells.has(key) && selChar.teamLabel === 'A' && !selChar.has_acted) {
+          cursor = 'pointer';
+          onclick = `onclick="onGridObstacleClick('${selChar.name}',${x},${y})"`;
+        }
       } else if (highlightCells.has(key) && !highlightIsAction) {
         cursor = 'pointer';
         onclick = `onclick="onGridMoveClick(${x},${y})"`;
@@ -1545,7 +1582,8 @@ function renderGrid(battle, all) {
         // 적을 골랐으면(운영진이 BOSS를 옮기는 중이 아니면) 적의 공격 범위를 적 색으로 그립니다.
         const showZone = enemyZone.size && (!highlightCells.size || highlightIsAction);
         const visCells = showZone ? enemyZone : highlightCells;
-        const rngCol = showZone ? ENEMY_ZONE_COLOR : highlightCells.size ? (highlightIsAction ? (isMedicSel ? ROLE_MOVE_COLOR['메딕'] : ACTION_RANGE_COLOR) : (ROLE_MOVE_COLOR[selChar && selChar.role] || '#4ad0ff')) : null;
+        // 이동 범위는 흰색, 행동(사거리)은 직군 색
+        const rngCol = showZone ? ENEMY_ZONE_COLOR : highlightCells.size ? (highlightIsAction ? (ROLE_MOVE_COLOR[selChar && selChar.role] || ACTION_RANGE_COLOR) : ACTION_RANGE_COLOR) : null;
         // 대상을 골랐으면 내 칸의 포인트 테두리는 대상으로 옮겨 갑니다(대상 칸이 반짝임).
         const selfKey = selChar && selChar.grid_pos && !gridTargetChar ? `${selChar.grid_pos[0]},${selChar.grid_pos[1]}` : null;
         const edge = (dx, dy) => {
@@ -1577,8 +1615,11 @@ function renderGrid(battle, all) {
       }
       const glow = '';
       // 빈 칸은 칸 번호만 짧게, 캐릭터 칸은 정리된 툴팁(HTML)
-      const tipAttr = c ? `data-tip-html="${shopEsc(gridCellTip(c, x, y, key, telKeys, highlightCells, highlightIsAction))}"` : `data-tip="${cellLabel(x, y)}"`;
+      const obsO = !c && obsKeys.has(key) ? (gridObstacleAt(x, y) || { hits: (lastPublicObstacleHits || 3), max: (lastPublicObstacleHits || 3), draft: true }) : null;
+      const tipAttr = c ? `data-tip-html="${shopEsc(gridCellTip(c, x, y, key, telKeys, highlightCells, highlightIsAction))}"`
+        : obsO ? `data-tip="${cellLabel(x, y)} · 장애물 · 남은 타격 ${obsO.hits}/${obsO.max}${obsO.draft ? ' (공개하면 놓여요)' : ''}"` : `data-tip="${cellLabel(x, y)}"`;
       let inner = '';
+      if (obsO) inner = `<i class="fa-solid fa-cubes-stacked obst-ic"></i><span class="obst-hp">${obsO.hits}/${obsO.max}</span>`;
       if (c) {
         // BOSS 부위는 칸이 4개라 이름 앞 두 글자만(예: NOVA → NO) 씁니다. 본인이 정한 표기 이름이 있으면 그걸 우선합니다.
         const label = c.raid_display_name || (c.boss_section ? c.name.slice(0, 2) : c.name);
@@ -1626,7 +1667,9 @@ function renderGridNotice(battle, guide) {
   const parts = [];
   // 운영진 전조 선택 중 : 다른 안내 대신 선택 방법과 고른 칸 수만
   if (typeof telegraphMode !== 'undefined' && telegraphMode && myControlInfo(battle).scope === 'all') {
-    el.textContent = `전조 선택 중 · 고른 칸 ${telegraphSelectedCells.size}개 — 칸을 눌러 선택합니다. Shift+클릭은 가로 한 줄, Shift+우클릭은 세로 한 줄을 한꺼번에 선택합니다.`;
+    el.textContent = BATTLE_TYPE === 'mass_raid'
+      ? `전조 선택 중 · 피해 장판 ${telegraphSelectedCells.size}칸 · 장애물 ${telegraphObstacleCells.size}칸 — 왼쪽 클릭은 피해 장판, 오른쪽 클릭은 장애물. Shift+클릭은 가로 한 줄, Shift+우클릭은 세로 한 줄.`
+      : `전조 선택 중 · 고른 칸 ${telegraphSelectedCells.size}개 — 칸을 눌러 선택합니다. Shift+클릭은 가로 한 줄, Shift+우클릭은 세로 한 줄을 한꺼번에 선택합니다.`;
     return;
   }
   if (BATTLE_TYPE === 'siege' && lastSiteDice && lastSiteDice.value != null && !lastSiteDice.stale) {
@@ -2987,11 +3030,15 @@ function renderSiteDiceStatusGm(siteDice) {
 
 let telegraphMode = false;               // GM이 칸을 고르는 중인지
 let telegraphSelectedCells = new Set();  // GM이 고른 칸 (아직 미공개, "x,y")
+let telegraphObstacleCells = new Set();  // 마스 레이드 : 오른쪽 클릭으로 고른 장애물 칸("x,y") - 공개하면 이대로 바뀌어요
 
 function toggleTelegraphMode() {
   telegraphMode = !telegraphMode;
-  if (!telegraphMode) telegraphSelectedCells.clear();
-  else { selectedGridChar = null; selectedGridTargetName = null; disarmGridCommand(); }
+  if (!telegraphMode) { telegraphSelectedCells.clear(); telegraphObstacleCells.clear(); }
+  else {
+    telegraphObstacleCells = new Set(((lastBattleForPanel && lastBattleForPanel.obstacles) || []).map(o => `${o.x},${o.y}`));
+    selectedGridChar = null; selectedGridTargetName = null; disarmGridCommand();
+  }
   renderTelegraphControls();
   renderGrid(lastBattleForPanel, lastAllForCards);
 }
@@ -3034,21 +3081,26 @@ function onTelegraphCellClick(x, y, evt) {
 }
 
 function onTelegraphCellRightClick(x, y, evt) {
-  // Shift+오른쪽 클릭 : 세로 한 줄 전체를 일괄 선택/해제
+  // Shift+오른쪽 클릭 : 세로 한 줄 전체를 일괄 선택/해제 / 오른쪽 클릭 : 장애물 놓기 · 치우기(마스 레이드)
   if (evt) evt.preventDefault();
   if (evt && evt.shiftKey) {
     toggleTelegraphColumn(x);
-    renderTelegraphControls();
-    renderGrid(lastBattleForPanel, lastAllForCards);
-  }
+  } else if (BATTLE_TYPE === 'mass_raid') {
+    const key = `${x},${y}`;
+    if (telegraphObstacleCells.has(key)) telegraphObstacleCells.delete(key); else telegraphObstacleCells.add(key);
+  } else return false;
+  renderTelegraphControls();
+  renderGrid(lastBattleForPanel, lastAllForCards);
   return false;
 }
 
 function revealTelegraph() {
   const cells = [...telegraphSelectedCells].map(k => k.split(',').map(Number));
-  socket.emit('telegraph_reveal', { cells });
+  const payload = { cells };
+  if (BATTLE_TYPE === 'mass_raid') payload.obstacles = [...telegraphObstacleCells].map(k => k.split(',').map(Number));
+  socket.emit('telegraph_reveal', payload);
   telegraphMode = false;
-  telegraphSelectedCells.clear();
+  telegraphSelectedCells.clear(); telegraphObstacleCells.clear();
   renderTelegraphControls();
 }
 
