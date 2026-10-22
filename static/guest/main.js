@@ -1521,7 +1521,7 @@ function renderGrid(battle, all) {
   const phase = ms => `-${((nowMs % ms) / 1000).toFixed(3)}s`;
   // 칸 간격(칸 + 격자선 1px). 줄무늬는 가로 10px마다 반복하므로, 칸 위치만큼 밀면 옆 칸과 이어집니다.
   const pitch = cellPx + 1;
-  let html = `<table class="gmap" style="--tel-phase:${phase(2400)}; --shine-phase:${phase(3200)}; --tgt-phase:${phase(1800)}; --obs-phase:${phase(9000)};">`;
+  let html = `<table class="gmap" style="--tel-phase:${phase(2400)}; --shine-phase:${phase(3200)}; --tgt-phase:${phase(1800)}; --obs-phase:${phase(14000)}; --obs-phase-b:${phase(22000)};">`;
   for (let y = 0; y < gridHeight; y++) {
     html += '<tr>';
     for (let x = 0; x < gridWidth; x++) {
@@ -1564,6 +1564,8 @@ function renderGrid(battle, all) {
       } else if (obsKeys.has(key)) {
         // 장애물 : 행동 사거리 안이면 눌러서 공격
         cellCls = 'obst';
+        // 장애물마다 무늬의 다른 부분이 보이게(이웃 칸이 똑같아 보이지 않게)
+        cellStyle = `--ox:${-((x * 37) % 120)}px; --oy:${-((y * 53) % 120)}px;`;
         const o = gridObstacleAt(x, y);
         if (o && selChar && highlightIsAction && highlightCells.has(key) && selChar.teamLabel === 'A' && !selChar.has_acted) {
           cursor = 'pointer';
