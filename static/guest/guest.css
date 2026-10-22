@@ -4706,3 +4706,12 @@
   .ovs-thumb.on { opacity:1; pointer-events:auto; }
   .ovs-thumb:hover, .ovs-thumb.drag { background: rgba(255,255,255,.42); }
   .ovs-thumb.v:hover, .ovs-thumb.v.drag { width:8px; } .ovs-thumb.h:hover, .ovs-thumb.h.drag { height:8px; }
+
+/* 공지 목록 : 이미 창 안이라 공지마다 상자로 가두지 않고, 줄 사이 옅은 선만 있는 목록으로 */
+.notice-card { border:none !important; border-radius:0 !important; background:none !important; box-shadow:none !important; margin:0 !important; }
+.notice-card + .notice-card { border-top:1px solid var(--line) !important; }
+.notice-card-head { padding:20px 2px !important; }
+.notice-card-head:hover .t { color:#fff; }
+.notice-card-head .t { transition: color .15s; }
+.nc-pad { padding:0 2px 24px; border-top:none; }
+@media (max-width:600px) { .notice-card-head { padding:16px 0 !important; } .nc-pad { padding:0 0 20px; } }
