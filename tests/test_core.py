@@ -308,6 +308,28 @@ class TestBackup(unittest.TestCase):
         g.close()
 
 
+class TestDocLink(unittest.TestCase):
+    def test_doc_url_gm_only_and_https(self):
+        db = lounge().game.db
+        g = Client()
+        g.join(lounge(), "GM", gm_password=PW)
+        g.emit("set_my_skill_log", {"name": "AB", "doc_url": "https://docs.google.com/document/d/abc"})
+        self.assertEqual(db.get("AB").get("doc_url"), "https://docs.google.com/document/d/abc", "운영진이 문서 링크를 못 넣음")
+        rec = g.emit("set_my_skill_log", {"name": "AB", "doc_url": "javascript:alert(1)"})
+        self.assertTrue(names(rec, "action_error"), "https가 아닌 주소가 거절되지 않음")
+        self.assertEqual(db.get("AB").get("doc_url"), "https://docs.google.com/document/d/abc")
+        g.close()
+        r = Client()
+        r.join(lounge(), "AB")
+        r.emit("set_my_skill_log", {"name": "AB", "doc_url": "https://evil.example"})
+        self.assertEqual(db.get("AB").get("doc_url"), "https://docs.google.com/document/d/abc", "참가자가 문서 링크를 바꿈")
+        r.close()
+        # 다른 정보를 고쳐도 링크가 남아요
+        e = db.get("AB")
+        db.add_or_update("AB", e["role"], e["stats"], color="#ffffff")
+        self.assertEqual(db.get("AB").get("doc_url"), "https://docs.google.com/document/d/abc", "다른 정보 수정 때 링크가 지워짐")
+
+
 class TestPractice(unittest.TestCase):
     def test_real_server_has_no_practice_tag(self):
         self.assertFalse(webapp.PRACTICE, "실제 서버가 연습 서버로 켜짐")

@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.92"
+SERVER_BUILD = "2026-10-13.93"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -704,6 +704,7 @@ def build_preview_character(room, name):
         "items": dict(data.get("items") or {}),
         "nation": data.get("nation") or "",
         "hometown": data.get("hometown") or "",
+        "doc_url": data.get("doc_url") or "",
         "age": mailbox_mod.age_of(data),
     }
 
@@ -1835,6 +1836,9 @@ def on_set_my_sound_effect_volume(data):
     broadcast_state(room)
 
 
+DOC_URL_MAX = 500
+
+
 @socketio.on("set_my_skill_log")
 def on_set_my_skill_log(data):
     """참가자가 자신의 스킬 이펙트(스킬을 쓸 때 화면 중앙에 뜨는 컷인)를 지정합니다(마이페이지).
@@ -1891,6 +1895,16 @@ def on_set_my_skill_log(data):
         age = mailbox_mod.clean_age(data.get("age"))
         if age is not None:
             entry["age"] = age
+    # 프로필 문서 링크(구글 문서 등) : 운영진만 정해요. https 주소만 받아요.
+    if "doc_url" in data and _require_gm_or_guest_gm(request.sid) is not None:
+        url = (data.get("doc_url") or "").strip()
+        if not url:
+            entry.pop("doc_url", None)
+        elif len(url) <= DOC_URL_MAX and re.fullmatch(r"https://[^\s<>\"']+", url):
+            entry["doc_url"] = url
+        else:
+            emit("action_error", {"message": "https://로 시작하는 문서 주소를 넣어 주세요."})
+            return
     # 출신지 : 맵의 '장소id:구역번호(0~3)' (맵 구역 카드를 누르면 '00의 출신지.'로 나옵니다)
     if "hometown" in data:
         home = (data.get("hometown") or "").strip()
