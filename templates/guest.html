@@ -491,7 +491,7 @@
         <div class="mp-tagrow"><span class="mp-k">프로필</span><div class="mp-doc" id="myPageDoc"></div></div>
         <div class="mp-tagrow"><span class="mp-k">마스 표기</span><input type="text" id="myPageRaidNameInput" class="idc-inline mp-raid" maxlength="3" placeholder="-" autocomplete="off" name="raid-short-name"
             onchange="commitRaidName()" onkeydown="if(event.key==='Enter') this.blur()"></div>
-        <div class="mp-tagrow"><span class="mp-k">표시 컬러</span><span class="idc-color" id="myPageColorBtn" onclick="if(canEditMyPage()) document.getElementById('myColorInput').click()">
+        <div class="mp-tagrow"><span class="mp-k">표시 컬러</span><span class="idc-color" id="myPageColorBtn" onclick="openMyColorPicker(this)">
             <span class="idc-color-dot" id="myPageColorDot"></span></span></div>
       </div>
     </div>

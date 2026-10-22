@@ -360,6 +360,15 @@ function myPageEditName() {
   return c ? c.name : undefined;
 }
 
+// 색 피커가 화면 구석에서 열리지 않게, 숨긴 입력칸을 누른 점 바로 위로 옮긴 뒤 열어요
+function openMyColorPicker(btn) {
+  if (!canEditMyPage()) return;
+  const input = document.getElementById('myColorInput');
+  const r = btn.getBoundingClientRect();
+  input.style.left = r.left + 'px';
+  input.style.top = r.bottom + 'px';
+  input.click();
+}
 function onMyColorChange(hex) {
   const mypageOpen = document.getElementById('myPageModal').style.display === 'flex';
   socket.emit('set_my_color', { color: hex, name: mypageOpen ? myPageEditName() : undefined });
