@@ -2437,7 +2437,7 @@
   /* 방 종류별 메뉴 : 일반 룸 = 기숙사 · 우체통 · 상점 (전투 · 유저 리스트 없음) / 전투 룸 = 전투 · 유저 리스트 (기숙사 · 우체통 없음) */
   body.is-lounge #sidebarBattleBtn, body.is-lounge .m-battle-tools { display:none !important; }
   /* 메뉴는 일반 룸 · 전투 룸이 같아요 : 종 · 배틀 · 마이룸 · 우체통 · 지도 · 마이페이지 (전투 방에서 누르면 일반 룸의 그 화면으로) */
-  body.is-play #sidebarDormBtn, body.is-play #sidebarMailBtn, body.is-battle #myPageRoomBox { display:none !important; }
+  body.is-play #sidebarDormBtn, body.is-play #sidebarMyDormBtn, body.is-play #sidebarDormManageBtn, body.logged-out #sidebarMyDormBtn, body.is-play #sidebarMailBtn, body.is-battle #myPageRoomBox { display:none !important; }
   body.is-play #newsMailRow { display:flex !important; }
   body.is-battle:not(.is-play) .member-header .m-userlist-btn { display:inline-flex; }
   .mail-preview { display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:11px 14px; border-radius:12px; background: rgba(var(--point-rgb),.08); color: var(--muted); font-size:13px; }
@@ -4150,6 +4150,7 @@
     .sidebar .m-news-btn { display:none !important; }
     body.is-lounge .sidebar #sbGroupNews > .sb-ghead, body.is-battle .sidebar #sbGroupNews > .sb-ghead { order:1; }
     body.is-lounge .sidebar #sbGroupBattle > .sb-ghead, body.is-battle .sidebar #sbGroupBattle > .sb-ghead { order:3; }
+    body.is-lounge .sidebar #sbGroupDorm > .sb-ghead, body.is-battle .sidebar #sbGroupDorm > .sb-ghead { order:4; }
     body.is-lounge .sidebar #sbGroupPeople > .sb-ghead, body.is-battle .sidebar #sbGroupPeople > .sb-ghead { order:6; }
   }
   /* 휴대폰 하단 탭 위 하위 메뉴 목록 */
@@ -4754,7 +4755,14 @@
       <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" style="display:none;"><i class="fa-solid fa-store"></i><span class="sb-label">상점</span></button>
     </div></div>
   </div>
-  <button class="sidebar-icon" id="sidebarDormBtn" onclick="closeWorldMap(true); closeOps(); openDorm()" data-tip="마이룸"><i class="fa-solid fa-house"></i><span class="sb-label">마이룸</span></button>
+  <div class="sb-group" id="sbGroupDorm">
+    <button class="sidebar-icon sb-ghead" onclick="sbGroupClick(event, 'sbGroupDorm')" aria-label="마이룸"><i class="fa-solid fa-house"></i><span class="sb-label">마이룸</span><i class="fa-solid fa-chevron-down sb-caret"></i><span class="notice-dot"></span></button>
+    <div class="sb-sub"><div class="sb-sub-in">
+      <button class="sidebar-icon" id="sidebarDormBtn" onclick="openDormView('halls')"><i class="fa-solid fa-building"></i><span class="sb-label" id="sidebarDormLabel">전체 관</span></button>
+      <button class="sidebar-icon" id="sidebarMyDormBtn" onclick="openDormView('mine')"><i class="fa-solid fa-door-open"></i><span class="sb-label">내 방</span></button>
+      <button class="sidebar-icon" id="sidebarDormManageBtn" onclick="openDormView('manage')" style="display:none;"><i class="fa-solid fa-sliders"></i><span class="sb-label">마이룸 관리</span></button>
+    </div></div>
+  </div>
   <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i><span class="sb-label">지도</span></button>
   {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" data-tip="LOOP 편집" style="display:none;"><i class="fa-solid fa-pen-ruler"></i><span class="sb-label">LOOP 편집</span></button>{% endif %}
   <div class="sb-group" id="sbGroupPeople">
@@ -11511,8 +11519,38 @@ function setMainView(dorm) {
   if (typeof closeBattleHub === 'function') closeBattleHub();
   document.body.classList.toggle('view-dorm', dorm);
   document.getElementById('sidebarDormBtn').classList.toggle('active', dorm);
+  if (!dorm) ['sidebarMyDormBtn', 'sidebarDormManageBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.classList.remove('active'); });
   document.getElementById('sidebarBattleBtn').classList.toggle('active', !dorm && !document.body.classList.contains('view-ops'));
   if (!dorm && typeof drawAttackLines === 'function') setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 30);
+}
+// 메뉴 마이룸 묶음 : 전체 관 · 내 방 · (운영진) 마이룸 관리
+function openDormView(v) {
+  if (!IS_LOUNGE) { goLounge(v === 'mine' ? 'mydorm' : v === 'manage' ? 'dormmanage' : 'dorm'); return; }
+  closeWorldMap(true); closeOps();
+  const go = () => {
+    if (v === 'mine') {
+      const me = dormMe();
+      if (!me) { uiToast('로그인한 뒤에 볼 수 있어요.'); return; }
+      if (dormData && !dormHallOf(me)) { uiToast('아직 방이 배정되지 않았어요.'); if (dormView === 'room') setDormView('halls'); return; }
+      openDormRoom(me);
+    } else if (v === 'manage') { if (dormIsGm()) setDormView('manage'); }
+    else if (dormView !== 'halls') setDormView('halls');
+  };
+  if (dormEdit && !(v === 'mine' && dormRoom && dormRoom.owner === dormMe())) {
+    uiConfirm('저장하지 않은 꾸미기가 있어요. 나갈까요?', { title: '방 나가기', okText: '나가기' }).then(ok => { if (ok) { dormEdit = null; openDorm(); go(); } });
+    return;
+  }
+  openDorm(); go();
+}
+// 지금 보는 마이룸 화면에 맞춰 메뉴의 켜진 표시를 옮겨요
+function syncDormMenu() {
+  const on = document.body.classList.contains('view-dorm');
+  const mine = on && dormView === 'room' && dormRoom && !dormRoom.past && !dormRoom.isDefault && dormRoom.owner === dormMe();
+  const manage = on && (dormView === 'manage' || (dormView === 'room' && dormRoom && dormRoom.isDefault));
+  const set = (id, v) => { const b = document.getElementById(id); if (b && b.classList.contains('active') !== v) b.classList.toggle('active', v); };
+  set('sidebarDormBtn', on && !mine && !manage); set('sidebarMyDormBtn', !!mine); set('sidebarDormManageBtn', !!manage);
+  const P = dormData && dormP();
+  const lb = document.getElementById('sidebarDormLabel'); if (lb && P && P.unit) lb.textContent = '전체 ' + P.unit;
 }
 function openDorm() {
   document.getElementById('dormModal').style.display = 'flex';
@@ -11693,8 +11731,9 @@ function renderDormTop() {
     if (mine) right = `<button class="dorm-tbtn primary" onclick="openDormRoom(${mailEsc(JSON.stringify(me))})" data-tip="내 방"><i class="fa-solid fa-door-open"></i><span class="t">내 방</span></button>`;
   }
   // 방 안에서는 출처 버튼 없이 꾸미기(취소 · 저장) 버튼만 둡니다. 출처는 목록 화면에서 볼 수 있어요.
-  const tools = (dormView === 'room' ? '' : `<button class="dorm-tbtn icon" onclick="openDormCredits()" data-tip="도트 자료 출처"><i class="fa-solid fa-circle-info"></i></button>`)
-    + (dormIsGm() && dormView !== 'room' ? `<button class="dorm-tbtn icon ${dormView === 'manage' ? 'on' : ''}" onclick="setDormView(dormView === 'manage' ? 'halls' : 'manage')" data-tip="마이룸 관리"><i class="fa-solid fa-sliders"></i></button>` : '');
+  // 마이룸 관리는 메뉴(마이룸 묶음)에서 열어요.
+  const tools = dormView === 'room' ? '' : `<button class="dorm-tbtn icon" onclick="openDormCredits()" data-tip="도트 자료 출처"><i class="fa-solid fa-circle-info"></i></button>`;
+  syncDormMenu();
   el.innerHTML = segs.join('') + `<div class="spacer"></div><div class="dorm-tools-r">${right}${tools}</div>`;
 }
 
@@ -13002,15 +13041,21 @@ function sidebarBattleClick() {
 }
 if (!IS_LOUNGE && BATTLE_TYPE !== 'play') document.addEventListener('DOMContentLoaded', () => {
   const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
-  on('sidebarDormBtn', () => goLounge('dorm'));
   on('sidebarMapBtn', () => goLounge('map'));
   on('sidebarMailBtn', () => goLounge('mail'));
   on('sidebarShopBtn', () => goLounge('shop'));
   on('newsMailRow', () => goLounge('mail'));
 });
-if (IS_LOUNGE && ['map', 'mail', 'shop'].includes(new URLSearchParams(location.search).get('view'))) {
+if (IS_LOUNGE && ['map', 'mail', 'shop', 'mydorm', 'dormmanage'].includes(new URLSearchParams(location.search).get('view'))) {
   const v = new URLSearchParams(location.search).get('view');
-  const tryV = () => { if (document.getElementById('dormModal') && typeof openWorldMap === 'function') { if (v === 'map') openWorldMap(); else if (v === 'shop') openShop(); else openMail(); } else setTimeout(tryV, 100); };
+  const t0 = Date.now();
+  const tryV = () => {
+    if (!(document.getElementById('dormModal') && typeof openWorldMap === 'function')) { setTimeout(tryV, 100); return; }
+    if (v === 'map') openWorldMap(); else if (v === 'shop') openShop(); else if (v === 'mail') openMail();
+    // 내 방 · 관리는 로그인 · 마이룸 정보가 온 뒤에 열어요
+    else if (dormData && (v === 'mydorm' ? dormMe() : dormIsGm())) openDormView(v === 'mydorm' ? 'mine' : 'manage');
+    else if (Date.now() - t0 < 10000) setTimeout(tryV, 200);
+  };
   setTimeout(tryV, 500);
 }
 // 전투 방에서 '룸 목록'으로 돌아오면(?view=battles) 바로 룸 목록 화면을 열어요
@@ -13134,6 +13179,8 @@ function syncOpsBtn() {
   if (!gm && opsOpen()) closeOps();
   // 상점 : 메뉴의 '전투' 묶음 안에 모두에게 보여요(LOOP 방은 운영진만)
   const sb = document.getElementById('sidebarShopBtn'); if (sb) sb.style.display = (gm || BATTLE_TYPE !== 'play') ? '' : 'none';   // 상점 : 모두(LOOP 방은 운영진만)
+  const dm = document.getElementById('sidebarDormManageBtn'); if (dm) dm.style.display = gm ? '' : 'none';   // 마이룸 관리 : 운영진만
+  const myd = document.getElementById('sidebarMyDormBtn'); if (myd) myd.style.display = myLoggedInName() ? '' : 'none';   // 내 방 : 캐릭터로 로그인했을 때만
   const lb = document.getElementById('sidebarLoopEditBtn');
   if (lb) { lb.style.display = gm ? '' : 'none'; if (!gm && typeof closeLoopAdmin === 'function') closeLoopAdmin(); }
 }
