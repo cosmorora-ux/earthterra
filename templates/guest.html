@@ -3732,7 +3732,8 @@
     body[data-mtab="chat"] .sidebar #sidebarChatBtn, body[data-mtab="my"] .sidebar #sidebarMyPageBtn,
     body[data-mtab="shop"] .sidebar #sidebarShopBtn, body[data-mtab="news"] .sidebar #sidebarNewsBtn,
     body[data-mtab="news"] .sidebar #sbGroupNews > .sb-ghead, body[data-mtab="my"] .sidebar #sbGroupPeople > .sb-ghead,
-    body[data-mtab="users"] .sidebar #sbGroupPeople > .sb-ghead, body[data-mtab="shop"] .sidebar #sbGroupBattle > .sb-ghead { color: var(--point); }
+    body[data-mtab="users"] .sidebar #sbGroupPeople > .sb-ghead, body[data-mtab="shop"] .sidebar #sbGroupBattle > .sb-ghead,
+    body[data-mtab="sheet"] .sidebar .sb-ghead.sheet-on { color: var(--point); }
     body[data-mtab="chat"] .sidebar #sidebarChatBtn::before, body[data-mtab="my"] .sidebar #sidebarMyPageBtn::before,
     body[data-mtab="shop"] .sidebar #sidebarShopBtn::before, body[data-mtab="news"] .sidebar #sidebarNewsBtn::before {
       content:""; position:absolute; left:50%; top:-6px; transform:translateX(-50%);
@@ -4115,7 +4116,8 @@
     body[data-mtab="chat"] .sidebar #sidebarChatBtn, body[data-mtab="my"] .sidebar #sidebarMyPageBtn,
     body[data-mtab="shop"] .sidebar #sidebarShopBtn, body[data-mtab="news"] .sidebar #sidebarNewsBtn,
     body[data-mtab="news"] .sidebar #sbGroupNews > .sb-ghead, body[data-mtab="my"] .sidebar #sbGroupPeople > .sb-ghead,
-    body[data-mtab="users"] .sidebar #sbGroupPeople > .sb-ghead, body[data-mtab="shop"] .sidebar #sbGroupBattle > .sb-ghead {
+    body[data-mtab="users"] .sidebar #sbGroupPeople > .sb-ghead, body[data-mtab="shop"] .sidebar #sbGroupBattle > .sb-ghead,
+    body[data-mtab="sheet"] .sidebar .sb-ghead.sheet-on {
       color:#fff !important; border-color: rgba(var(--point-rgb), .5) !important;
       background: radial-gradient(120% 140% at 50% 0%, rgba(var(--point-rgb), .45) 0%, rgba(var(--point-rgb), .12) 55%, rgba(255,255,255,.02) 100%) !important;
       box-shadow: 0 0 20px rgba(var(--point-rgb), .28), inset 0 1px 0 rgba(255,255,255,.1) !important; }
@@ -4123,7 +4125,8 @@
     body[data-mtab="chat"] .sidebar #sidebarChatBtn::before, body[data-mtab="my"] .sidebar #sidebarMyPageBtn::before,
     body[data-mtab="shop"] .sidebar #sidebarShopBtn::before, body[data-mtab="news"] .sidebar #sidebarNewsBtn::before,
     body[data-mtab="news"] .sidebar #sbGroupNews > .sb-ghead::before, body[data-mtab="my"] .sidebar #sbGroupPeople > .sb-ghead::before,
-    body[data-mtab="users"] .sidebar #sbGroupPeople > .sb-ghead::before, body[data-mtab="shop"] .sidebar #sbGroupBattle > .sb-ghead::before {
+    body[data-mtab="users"] .sidebar #sbGroupPeople > .sb-ghead::before, body[data-mtab="shop"] .sidebar #sbGroupBattle > .sb-ghead::before,
+    body[data-mtab="sheet"] .sidebar .sb-ghead.sheet-on::before {
       top:-8px !important; width:18px !important; height:3px !important; border-radius:0 0 3px 3px !important;
       background: var(--point) !important; box-shadow: 0 0 10px 1px rgba(var(--point-rgb), .8); }
     body[data-mtab] .sidebar .sidebar-icon.active { color:#8b8b94 !important; border-color:transparent !important; background:none !important; box-shadow:none !important; }
@@ -5942,7 +5945,8 @@ socket.on('connect', () => {
 function syncMobileTab() {
   const open = id => { const m = document.getElementById(id); return !!m && m.style.display === 'flex'; };
   let t = '';
-  if (document.body.classList.contains('m-chat-open')) t = 'chat';
+  if (open('sbSheet')) t = 'sheet';   // 하단 탭 위 목록이 떠 있으면 그 묶음 탭이 켜져 보여요
+  else if (document.body.classList.contains('m-chat-open')) t = 'chat';
   else if (open('myPageModal')) t = 'my';
   else if (open('shopModal')) t = 'shop';
   else if (open('noticeModal') || open('mailModal') || open('newsSheet')) t = 'news';
@@ -5951,7 +5955,7 @@ function syncMobileTab() {
 }
 {
   const mo = new MutationObserver(syncMobileTab);
-  ['myPageModal', 'shopModal', 'noticeModal', 'mailModal', 'newsSheet', 'userInfoModal'].forEach(id => {
+  ['myPageModal', 'shopModal', 'noticeModal', 'mailModal', 'newsSheet', 'userInfoModal', 'sbSheet'].forEach(id => {
     const m = document.getElementById(id); if (m) mo.observe(m, { attributes:true, attributeFilter:['style'] });
   });
   mo.observe(document.body, { attributes:true, attributeFilter:['class'] });
@@ -5990,9 +5994,14 @@ function sbSheetOpen(g, kids) {
     b.onclick = () => { sbSheetClose(); k.click(); };
     body.appendChild(b);
   });
+  document.querySelectorAll('.sb-ghead.sheet-on').forEach(h => h.classList.remove('sheet-on'));
+  g.querySelector('.sb-ghead').classList.add('sheet-on');
   document.getElementById('sbSheet').style.display = 'flex';
 }
-function sbSheetClose() { document.getElementById('sbSheet').style.display = 'none'; }
+function sbSheetClose() {
+  document.getElementById('sbSheet').style.display = 'none';
+  document.querySelectorAll('.sb-ghead.sheet-on').forEach(h => h.classList.remove('sheet-on'));
+}
 function sbSync() {
   document.querySelectorAll('.sb-group').forEach(g => {
     const kids = sbKids(g), head = g.querySelector('.sb-ghead');
