@@ -464,6 +464,17 @@ function sbSheetOpen(g, kids) {
     b.onclick = () => { sbSheetClose(); k.click(); };
     body.appendChild(b);
   });
+  // 휴대폰 · 태블릿에는 음악 버튼이 없어서, 유저 묶음 목록 맨 아래에서 음악 크기를 조절해요
+  if (g.id === 'sbGroupPeople') {
+    const row = document.createElement('div');
+    row.className = 'sb-sheet-music';
+    row.innerHTML = '<button type="button" class="mute" aria-label="음소거"><i class="fa-solid fa-volume-high"></i></button><span>음악</span><input type="range" class="nice-range" min="0" max="100" aria-label="음악 크기"><em></em>';
+    const r = row.querySelector('input'), ic = row.querySelector('.mute i'), num = row.querySelector('em');
+    const sync = () => { r.value = musicVolume; paintRange(r); num.textContent = musicVolume; ic.className = 'fa-solid ' + (musicVolume === 0 ? 'fa-volume-xmark' : musicVolume < 40 ? 'fa-volume-low' : 'fa-volume-high'); };
+    r.oninput = () => { onVolumeChange(r.value); sync(); };
+    row.querySelector('.mute').onclick = () => { toggleMusicMute(); sync(); };
+    body.appendChild(row); sync();
+  }
   document.querySelectorAll('.sb-ghead.sheet-on').forEach(h => h.classList.remove('sheet-on'));
   g.querySelector('.sb-ghead').classList.add('sheet-on');
   document.getElementById('sbSheet').style.display = 'flex';
