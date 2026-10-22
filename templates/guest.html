@@ -315,6 +315,21 @@
   .ui-count { color: var(--muted); font-size:13px; white-space:nowrap; }
   .ui-head .modal-title { white-space:nowrap; }
   @media (max-width:900px) { .modal-box.userinfo-modal .ui-close { display:none; } }
+  /* 휴대폰 : 검색은 한 줄 전체, 정렬 탭은 그 아래 같은 폭으로 / 머리 줄은 접속 수가 줄어들어 보기 버튼이 잘리지 않게 */
+  @media (max-width:600px) {
+    .modal-box.userinfo-modal .ui-head { min-width:0; }
+    .modal-box.userinfo-modal .ui-count { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+    .modal-box.userinfo-modal .ui-viewsw { flex:none; }
+  }
+  @media (max-width:400px) {
+    .modal-box.userinfo-modal .ui-count-w { display:none; }
+    .modal-box.userinfo-modal .ui-head .modal-title.page-title { font-size:24px; }
+    .modal-box.userinfo-modal .ui-head { gap:8px; }
+    .modal-box.userinfo-modal .ui-tools { flex-wrap:wrap; }
+    .modal-box.userinfo-modal .ui-tools input { flex:1 1 100%; }
+    .modal-box.userinfo-modal #userInfoFilter { width:100%; }
+    .modal-box.userinfo-modal #userInfoFilter button { flex:1 1 0; justify-content:center; }
+  }
   .ui-count b { color: var(--point); }
   .ui-close { margin-left:0; background:none; border:none; color: var(--muted); font-size:18px; cursor:pointer; padding:2px 4px; }
   .ui-close:hover { color: var(--text); }
@@ -322,6 +337,9 @@
   .modal-box .ui-tools input { flex:1; min-width:0; font-size:14px; padding:8px 12px; }
   .userinfo-list { overflow-y:auto; flex:1 1 auto; min-height:0; margin:0 -6px; }
   /* 보기 방식 : 목록 ↔ 썸네일 */
+  #userInfoFilter button { display:inline-flex; align-items:center; gap:5px; }
+  #userInfoFilter button i.ui-sort-ic { display:inline-block; font-size:10px; width:10px; visibility:hidden; opacity:.8; }
+  #userInfoFilter button i.ui-sort-ic.on { visibility:visible; color: var(--point); }
   .ui-viewsw { margin-left:auto; display:inline-flex; gap:2px; padding:3px; border-radius:10px; background: rgba(255,255,255,.04); border:1px solid var(--line); }
   .ui-viewsw button { width:30px; height:28px; border:none; border-radius:8px; background:none; color: var(--muted); font-size:13px; cursor:pointer; transition: color .15s ease, background .15s ease; }
   .ui-viewsw button:hover { color: var(--text); }
@@ -5138,9 +5156,9 @@
     <div class="ui-tools">
       <input id="userInfoSearch" placeholder="이름 검색" autocomplete="off" oninput="renderUserInfoList()">
       <div class="seg-toggle" id="userInfoFilter">
-        <button data-v="name" class="on" onclick="setUserInfoFilter('name')">이름순</button>
-        <button data-v="role" onclick="setUserInfoFilter('role')">포지션순</button>
-        <button data-v="nation" onclick="setUserInfoFilter('nation')">진영순</button>
+        <button data-v="name" class="on" onclick="setUserInfoFilter('name')">이름순<i class="ui-sort-ic"></i></button>
+        <button data-v="role" onclick="setUserInfoFilter('role')">포지션순<i class="ui-sort-ic"></i></button>
+        <button data-v="nation" onclick="setUserInfoFilter('nation')">진영순<i class="ui-sort-ic"></i></button>
       </div>
     </div>
     <div class="userinfo-list" id="userInfoList"></div>
@@ -8908,8 +8926,13 @@ function renderUserInfoList() {
   const q = ((document.getElementById('userInfoSearch') || {}).value || '').trim().toLowerCase();
   const names = visible.filter(n => !q || n.toLowerCase().includes(q));
   const onlineCount = visible.filter(n => onlineSet.has(n)).length;
-  document.getElementById('userInfoCount').innerHTML = `<b>${onlineCount}</b> / ${visible.length}명 접속`;
-  document.querySelectorAll('#userInfoFilter button').forEach(b => b.classList.toggle('on', b.dataset.v === userInfoFilter));
+  document.getElementById('userInfoCount').innerHTML = `<b>${onlineCount}</b> / ${visible.length}<span class="ui-count-w">명 접속</span>`;
+  document.querySelectorAll('#userInfoFilter button').forEach(b => {
+    const on = b.dataset.v === userInfoFilter;
+    b.classList.toggle('on', on);
+    const ic = b.querySelector('.ui-sort-ic');
+    if (ic) ic.className = 'ui-sort-ic fa-solid ' + (b.dataset.v === 'role' ? 'fa-arrows-rotate' : (on && userInfoDesc ? 'fa-arrow-up-long' : 'fa-arrow-down-long')) + (on ? ' on' : '');
+  });
   document.querySelectorAll('#userInfoView button').forEach(b => b.classList.toggle('on', b.dataset.v === userInfoView));
   if (!names.length) { listEl.innerHTML = `<div class="hint" style="padding:16px 4px; text-align:center;">${q ? '검색 결과가 없어요.' : '등록된 캐릭터가 없어요.'}</div>`; return; }
   const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -8923,7 +8946,9 @@ function renderUserInfoList() {
     if (/[a-z]/i.test(ch)) return ch.toUpperCase();
     return '#';
   };
-  const ROLE_ORDER = ['가디언', '스트라이커', '메딕'];
+  // 포지션순 : 누를 때마다 맨 위 포지션이 스트라이커 → 가디언 → 메딕으로 돌아가요
+  const ROLE_BASE = ['스트라이커', '가디언', '메딕'];
+  const ROLE_ORDER = ROLE_BASE.map((_, i) => ROLE_BASE[(i + userInfoRoleRot) % ROLE_BASE.length]);
   const keyOf = (n) => userInfoFilter === 'role' ? (info(n).role || '기타')
     : userInfoFilter === 'nation' ? (factionOf(n) || '진영 미정') : initialOf(n);
   const groups = {};
@@ -8938,8 +8963,14 @@ function renderUserInfoList() {
     if (a === last) return 1; if (b === last) return -1;
     return a.localeCompare(b, 'ko');
   });
+  // 이름순 · 진영순을 한 번 더 누르면 역순(# · 진영 미정은 늘 맨 끝). 묶음 안 이름도 거꾸로
+  const desc = userInfoFilter !== 'role' && userInfoDesc;
+  if (desc) {
+    const tail = keys.filter(k => k === '#' || k === '진영 미정');
+    keys.splice(0, keys.length, ...keys.filter(k => !tail.includes(k)).reverse(), ...tail);
+  }
   // 섹션 안은 접속 여부와 관계없이 가나다순(접속 중인 사람은 초록 점으로만 표시)
-  const byOnlineThenName = (a, b) => a.localeCompare(b, 'ko', { numeric: true });
+  const byOnlineThenName = (a, b) => (desc ? -1 : 1) * a.localeCompare(b, 'ko', { numeric: true });
   const grid = userInfoView === 'grid';
   listEl.innerHTML = (grid ? '<div class="ui-grid">' : '') + keys.map(k => {
     const list = groups[k].sort(byOnlineThenName);
@@ -8985,8 +9016,14 @@ function setUserInfoView(v) {
   renderUserInfoList();
 }
 
-let userInfoFilter = 'name';
-function setUserInfoFilter(v) { userInfoFilter = v; renderUserInfoList(); }
+let userInfoFilter = 'name', userInfoDesc = false, userInfoRoleRot = 0;
+// 같은 정렬 탭을 다시 누르면 : 이름순 · 진영순 = 역순 전환, 포지션순 = 맨 위 포지션 돌림
+function setUserInfoFilter(v) {
+  if (v === userInfoFilter) { if (v === 'role') userInfoRoleRot = (userInfoRoleRot + 1) % 3; else userInfoDesc = !userInfoDesc; }
+  else { userInfoFilter = v; userInfoDesc = false; userInfoRoleRot = 0; }
+  const l = document.getElementById('userInfoList'); if (l) l.scrollTop = 0;
+  renderUserInfoList();
+}
 function toggleUserInfoHidden(name) {
   socket.emit('set_userinfo_hidden', { name, hidden: !lastUserInfoHidden.has(name) });
 }
