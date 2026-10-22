@@ -393,7 +393,7 @@ function updateAvatarDots(battle) {
   // 로그인(캐릭터 또는 GM)하지 않았으면 마이페이지 아이콘을 아예 숨깁니다.
   const myBtn = document.getElementById('sidebarMyPageBtn');
   const loggedIn = explicitlyJoined && (myLoggedInName() || myControlInfo(lastBattleForPanel).scope === 'all');
-  if (myBtn) myBtn.style.display = loggedIn ? '' : 'none';
+  if (myBtn) myBtn.style.display = loggedIn || (BATTLE_TYPE === 'play' && explicitlyJoined) ? '' : 'none';   // LOOP 방 : 마이페이지 미리보기
   // 로그인하지 않았으면 채팅창과 우체통도 숨깁니다(전투 화면은 그대로 구경할 수 있어요).
   document.body.classList.toggle('logged-out', !loggedIn);
   if (!loggedIn) {
@@ -577,6 +577,7 @@ socket.on('public_state', (state) => {
   applyScene();
   lastBossImages = state.boss_images || {};
   lastOnlineCharacters = state.online_characters || [];
+  if (playPreviewOn()) playPreviewFill();   // LOOP 방 : 예시 캐릭터로
   if (document.getElementById('userInfoModal').style.display === 'flex') renderUserInfoList();
   lastSiteDice = state.site_dice || null;
   lastAttackLines = state.attack_lines || [];
@@ -3394,6 +3395,7 @@ function renderUserInfoList() {
   }
   // GM은 전원을 보고 이름 옆 눈 아이콘으로 숨김을 켜고 끕니다. GM이 아닌 사람에게는 숨긴 이름이 아예 안 보입니다.
   const isGm = myControlInfo(lastBattleForPanel).scope === 'all';
+  const pvNote = document.getElementById('userInfoPreviewNote'); if (pvNote) pvNote.style.display = playPreviewOn() ? '' : 'none';
   const gmHint = document.getElementById('userInfoGmHint');
   if (gmHint) gmHint.style.display = isGm ? '' : 'none';
   // 가나다순(한국어 정렬, 숫자는 크기순 - 예: NOVA 2구역 < NOVA 10구역)
@@ -3509,8 +3511,23 @@ function toggleUserInfoHidden(name) {
   socket.emit('set_userinfo_hidden', { name, hidden: !lastUserInfoHidden.has(name) });
 }
 
+// LOOP 방(웹 공개) 미리보기 : 실제 참가자 정보는 받지 않고, 화면 안에서 만든 예시 캐릭터로 유저 리스트 · 마이페이지를 보여 줘요.
+const PLAY_PREVIEW_CHARS = [
+  ['아린', '스트라이커', '#ff8a65', 14, '끝까지 간다', 1], ['벨', '가디언', '#7fb3ff', 13, '뒤는 내가 맡을게', 1], ['카이', '메딕', '#9be7a3', 15, '다친 데 없지?', 0],
+  ['다온', '스트라이커', '#f6c560', 13, '', 0], ['루카', '가디언', '#c59bff', 16, '약속은 지켜', 1], ['미르', '메딕', '#ffb3d1', 14, '', 0],
+  ['세라', '스트라이커', '#80deea', 15, '한 번 더!', 0], ['유진', '가디언', '#ffd180', 13, '', 1], ['이안', '메딕', '#b0bec5', 14, '천천히, 정확하게', 0],
+  ['하람', '스트라이커', '#ff9e80', 16, '', 0], ['노아', '가디언', '#a5d6a7', 13, '오늘도 무사히', 0], ['시온', '메딕', '#ce93d8', 15, '', 1],
+];
+function playPreviewOn() { return BATTLE_TYPE === 'play' && myControlInfo(lastBattleForPanel).scope !== 'all'; }
+function playPreviewFill() {
+  lastRoster = PLAY_PREVIEW_CHARS.map(c => c[0]);
+  lastRosterMypage = Object.fromEntries(PLAY_PREVIEW_CHARS.map(([name, role, color, age, catchphrase]) =>
+    [name, { name, role, color, age, catchphrase, nation: '', hometown: '', doc_url: '', inventory: '', points: 0, items: {}, avatar_url: null }]));
+  lastOnlineCharacters = PLAY_PREVIEW_CHARS.filter(c => c[5]).map(c => c[0]);
+  lastUserInfoHidden = new Set();
+}
 function toggleUserInfoPanel() {
-  if (BATTLE_TYPE === 'play') return;   // LOOP 방 : 유저 리스트 없이
+  if (playPreviewOn()) playPreviewFill();
   renderUserInfoList();
   document.getElementById('userInfoModal').style.display = 'flex';
 }
@@ -3629,6 +3646,8 @@ function myPageTargetChar() {
 }
 
 function openMyPage() {
+  // LOOP 방 : 내 마이페이지 대신 예시 캐릭터의 마이페이지를 보기 전용으로 보여 줘요
+  if (playPreviewOn()) { playPreviewFill(); openMyPageFor(PLAY_PREVIEW_CHARS[0][0]); return; }
   setMyPageBack(false);
   myPageViewName = null;
   skillLogTypeLocal = null;
@@ -3805,6 +3824,7 @@ function renderMyPage() {
   const isSelf = !!myLoggedInName();
   const viewOnly = myPageIsView();
   document.querySelector('#myPageModal .modal-box.mypage').classList.toggle('is-view', viewOnly);
+  const pvNote = document.getElementById('myPagePreviewNote'); if (pvNote) pvNote.style.display = playPreviewOn() ? '' : 'none';
   // GM은 남의 마이페이지도 전부 수정할 수 있습니다. 러너는 남의 마이페이지를 보기만 합니다.
   const canEdit = (isSelf || isGm) && !viewOnly;
   const c = myPageTargetChar();

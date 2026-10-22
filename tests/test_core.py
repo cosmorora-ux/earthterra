@@ -113,6 +113,22 @@ class TestNoLeak(unittest.TestCase):
             self.assertFalse(st.get("operator_log"), "러너 상태에 운영진 로그가 들어 있음")
             self.assertNotIn("formulas", st, "러너 상태에 수식이 들어 있음")
         c.close()
+        # 상태는 잠깐 뒤에 묶어서 보내므로, 보내는 내용 자체도 직접 확인해요
+        st = webapp.build_public_state(lounge())
+        self.assertFalse(st.get("operator_log"), "러너 상태에 운영진 로그가 들어 있음")
+        self.assertNotIn("formulas", st, "러너 상태에 수식이 들어 있음")
+
+
+class TestPlayNoLeak(unittest.TestCase):
+    def test_loop_room_sends_no_real_roster(self):
+        """LOOP 방(웹 공개) : 유저 리스트 · 마이페이지는 화면 속 예시로만, 실제 명단 · 프로필은 보내지 않아요."""
+        play = next((r for r in rooms_mod.ROOMS.values() if r.battle_type == "play"), None) or rooms_mod.create_room("play", name="점검 LOOP")
+        st = webapp.build_public_state(play)   # 참가자(운영진 아님)에게 보내는 상태
+        self.assertEqual(st.get("roster"), [], "LOOP 방에 실제 명단이 감")
+        self.assertEqual(st.get("roster_mypage"), {}, "LOOP 방에 실제 마이페이지 정보가 감")
+        self.assertEqual(st.get("roster_profiles"), {}, "LOOP 방에 실제 프로필이 감")
+        self.assertEqual(st.get("online_characters"), [], "LOOP 방에 접속 명단이 감")
+        self.assertTrue(webapp.build_public_state(play, for_gm=True).get("roster"), "점검이 비어 있음(운영진 상태에도 명단이 없음)")
 
 
 class TestBattleRoom(unittest.TestCase):

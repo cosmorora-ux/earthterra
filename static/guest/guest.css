@@ -1885,7 +1885,7 @@
   #myPageModal .mypage.v2 input.mp-catch { margin:0 0 0 -8px; width:calc(100% + 8px); max-width:480px; height:28px; padding:0 8px; background:none; font-size:13.5px; color:#c9c9cf; }
   #myPageModal .mypage.v2 input.mp-catch:hover:not(:disabled), #myPageModal .mypage.v2 input.mp-catch:placeholder-shown:not(:disabled) { background: rgba(255,255,255,.05); }
   #myPageModal .mypage.v2 input.mp-catch:focus { background: rgba(255,255,255,.08); }
-  #myPageModal .mypage.v2 input.mp-catch:disabled { padding-left:8px; }
+  #myPageModal .mypage.v2 input.mp-catch:disabled { padding-left:8px; background:none !important; border-color:transparent !important; color:#c9c9cf !important; cursor:default; }
   .mypage.v2 .mp-line { display:flex; align-items:center; gap:8px; margin:0 0 0 -8px; max-width:480px; height:28px; padding:0 8px; border-radius:10px; background:none; min-width:0; }
   .mypage.v2 .mp-line:hover { background: rgba(255,255,255,.05); }
   .mypage.v2 .mp-line i { color: var(--muted); font-size:10px; flex:none; }
@@ -2442,7 +2442,7 @@
   .mail-preview i { color: var(--point); }
   /* PLAY 룸(LOOP)에는 맵을 달아 둡니다(챕터 없음 · 학교 잠김) */
   body.is-play.is-battle .sidebar #sidebarMapBtn { display:flex !important; }
-  body.is-play #sidebarUserListBtn, body.is-play .m-battle-tools, body.is-play .m-userlist-btn { display:none !important; }
+  body.is-play .m-battle-tools, body.is-play .m-userlist-btn { display:none !important; }
 
   /* ================================================================
      맵 (일반 룸) : 장소가 선 위에 놓인 세계 지도 + 고른 장소 설명 + 스토리 챕터 해금 트랙
