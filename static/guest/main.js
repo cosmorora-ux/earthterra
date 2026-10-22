@@ -451,10 +451,8 @@ function sbGroupClick(e, gid) {
   g.classList.add('open'); sb.classList.add('sb-open');
 }
 function sbSheetOpen(g, kids) {
-  const head = g.querySelector('.sb-ghead .sb-label');
   const body = document.getElementById('sbSheetBody');
-  body.innerHTML = '<div class="sb-sheet-title"></div>';
-  body.firstChild.textContent = head ? head.textContent : '';
+  body.innerHTML = '';
   kids.forEach(k => {
     const b = document.createElement('button');
     const ic = k.querySelector('i'), lb = k.querySelector('.sb-label'), dot = k.querySelector('.notice-dot');
@@ -2538,6 +2536,8 @@ function toggleMobileChat(force) {
   // 지도 · 운영 · LOOP 편집 화면이 덮고 있으면 닫아요(기록 · 채팅이 그 화면 뒤에 가려서 안 열리던 문제).
   // 기록을 먼저 열고 같은 순간에 닫아, 중간에 LOOP 화면이 비치지 않게(애니메이션도 이번 한 번은 끔)
   const covered = open && !IS_LOUNGE && ((typeof worldOpen === 'function' && worldOpen()) || (typeof opsOpen === 'function' && opsOpen()) || document.body.classList.contains('view-loopadmin'));
+  // LOOP 첫 소개 글이 떠오르는 중이면 바로 끝내요(소개 동안은 기록판이 숨어 있어서, 기록 대신 LOOP 화면이 남아 보이던 문제)
+  if (open && typeof loopIntroSettle === 'function' && document.body.classList.contains('pl-intro-on')) loopIntroSettle();
   if (covered) { viewSwap(); document.body.classList.add('m-chat-instant'); }
   if (!open) document.body.classList.remove('m-chat-instant');
   document.body.classList.toggle('m-chat-open', open);

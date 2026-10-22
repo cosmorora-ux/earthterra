@@ -4158,7 +4158,6 @@
   #sbSheet { align-items:flex-end; }
   #sbSheet .news-sheet { bottom:12px; animation: sbSheetIn .18s ease-out; }
   @keyframes sbSheetIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
-  #sbSheet .sb-sheet-title { padding:10px 14px 6px; font-size:12px; color: var(--muted); font-weight:600; }
   #sbSheet .news-sheet button > i:first-child { color: var(--point); }
 
   /* ================================================================
@@ -4638,6 +4637,8 @@
   body.view-swap *, body.view-swap *::before, body.view-swap *::after { animation:none !important; transition:none !important; }
   /* 다른 화면에서 바로 넘어온 기록 · 채팅 창 : 열려 있는 동안 등장 애니메이션을 다시 틀지 않아요(뒤 화면이 비쳐 보이지 않게) */
   body.m-chat-instant .member-col, body.m-chat-instant .member-col .member-panel { animation:none !important; }
+  /* 탭 전환 효과(view-swap)가 풀리는 순간 뒤 화면의 등장 애니메이션이 새로 시작해 기록판 뒤로 비치던 문제 : 기록이 열려 있는 동안은 뒤 화면도 멈춰 둬요 */
+  body.m-chat-instant .shell > *, body.m-chat-instant #playPage, body.m-chat-instant #playPage * { animation:none !important; }
   .mypage-roles button, .mypage.v2 .mypage-roles button, .mypage.v2 .mp-nations button, .wm-node .sb, .sc-owned { font-weight:700 !important; }
   /* 목록 · 패널이 길이가 바뀌어도 보던 위치가 튀지 않게(브라우저 스크롤 고정) */
   #mailBody, #noticeList, #shopBody, #opsBody, .world-body, .la-right, .pl-lp-body { overflow-anchor:auto; }
