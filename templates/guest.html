@@ -1880,6 +1880,8 @@
   :root { --fac-resonans:#7fd6c8; --fac-apostle:#e9c05b; --fac-void:#9a8cff; }
   .modal-box.mypage.v2 { width:1040px; padding:26px 30px 30px; }
   .mypage.v2 .idc-head { align-items:center; margin-bottom:18px; }
+  .idc-head .idc-back { margin-right:12px !important; }
+  .idc-head .idc-back + .idc-title { margin-right:auto; }
   .mypage.v2 .mp-card { background: rgba(255,255,255,.025); border:1px solid var(--line); border-radius:16px; padding:16px 18px; min-width:0; }
   .mypage.v2 .mp-k { font-size:12.5px; color: var(--muted); font-weight:500; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
   .mypage.v2 .mp-card-h { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; margin-bottom:14px; }
@@ -1998,6 +2000,7 @@
     .mypage.v2 .mp-tagrow { justify-content:space-between; }
     .mp-doc { justify-content:flex-end; }
     .mypage.v2 .mp-tagrow .mp-k { width:auto; }
+    #myPageModal .mypage.v2 input.mp-raid:disabled { text-align:right; padding-right:0; }
     .mypage.v2 .mypage-roles, .mypage.v2 .mp-nations { flex-wrap:nowrap; justify-content:flex-end; gap:5px; min-width:0; }
     .mypage.v2 .mypage-roles button, .mypage.v2 .mp-nations button { height:28px; padding:0 10px; font-size:12.5px; white-space:nowrap; flex:none; }
     /* 휴대폰 · 태블릿 스킬 로그 : 항목 이름은 위, 입력은 아래 전체 폭 / 등장 모션은 5칸 고른 버튼 / 컷인 설정과 스킬 내용 사이 구분선 */
@@ -5147,6 +5150,7 @@
 <div id="myPageModal" class="modal-overlay">
   <div class="modal-box mypage panel v2">
     <div class="idc-head">
+      <button class="bt-back idc-back" id="myPageBack" style="display:none" onclick="myPageGoBack()" aria-label="유저 리스트로" data-tip="유저 리스트로"><i class="fa-solid fa-chevron-left"></i></button>
       <div class="idc-title">ID card</div>
       <button class="idc-logout" onclick="closeMyPage(); onAvatarDotClick()"><i class="fa-solid fa-power-off"></i> 로그아웃</button>
       <button class="idc-close" onclick="closeMyPage()"><i class="fa-solid fa-xmark"></i></button>
@@ -9000,10 +9004,20 @@ function openUserDocEdit(name) {
   openUserFromList(name);
   setTimeout(() => { const i = document.querySelector('#myPageDoc input'); if (i) { i.scrollIntoView({ block:'center' }); i.focus(); } }, 120);
 }
+// 유저 리스트에서 연 마이페이지 : 왼쪽 위 '이전' 버튼으로 유저 리스트(보던 자리 그대로)로 돌아가요
+var myPageFromList = false, userInfoScroll = 0;
+function setMyPageBack(on) { myPageFromList = on; const b = document.getElementById('myPageBack'); if (b) b.style.display = on ? '' : 'none'; }
 function openUserFromList(name) {
   uiHoverHide();
+  const l = document.getElementById('userInfoList'); userInfoScroll = l ? l.scrollTop : 0;
   closeUserInfoPanel();
   openMyPageFor(name);
+  setMyPageBack(true);
+}
+function myPageGoBack() {
+  closeMyPage();
+  toggleUserInfoPanel();
+  const l = document.getElementById('userInfoList'); if (l) l.scrollTop = userInfoScroll;
 }
 // 유저 리스트 호버 카드 : 프로필 사진(없으면 검은 블럭)이 커서를 부드럽게 따라옵니다. 마우스가 있는 기기에서만.
 const uiHover = { el: null, x: 0, y: 0, tx: 0, ty: 0, raf: 0, on: false };
@@ -9097,6 +9111,7 @@ function myPageTargetChar() {
 }
 
 function openMyPage() {
+  setMyPageBack(false);
   myPageViewName = null;
   skillLogTypeLocal = null;
   document.getElementById('myPageModal').style.display = 'flex';
@@ -9107,6 +9122,7 @@ function openMyPage() {
 
 function closeMyPage() {
   if (typeof closeHomeMenu === 'function') closeHomeMenu();
+  setMyPageBack(false);
   myPageViewName = null;
   document.getElementById('myPageModal').style.display = 'none';
 }
