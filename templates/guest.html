@@ -1885,19 +1885,34 @@
   .mypage.v2 .mp-card-h { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; margin-bottom:14px; }
   .mypage.v2 .mp-card-h > i { color: var(--muted); font-size:13px; }
   /* 프로필 */
-  .mypage.v2 .mp-hero { display:grid; grid-template-columns:112px minmax(0,1fr) auto; gap:22px; align-items:center; margin-bottom:14px; padding:18px 20px; }
-  .mypage.v2 .mypage-portrait { width:112px; height:112px; border-radius:12px; }
-  .mypage.v2 .mp-line { display:flex; align-items:center; gap:8px; margin:-6px 0 12px; height:32px; padding:0 12px; border-radius:10px; background: rgba(255,255,255,.035); min-width:0; }
-  .mypage.v2 .mp-line i { color: var(--muted); font-size:11px; flex:none; }
+  .mypage.v2 .mp-hero { display:flex; flex-direction:column; gap:16px; margin-bottom:14px; padding:20px 22px 8px; }
+  .mypage.v2 .mp-id { display:grid; grid-template-columns:88px minmax(0,1fr); gap:18px; align-items:center; }
+  .mypage.v2 .mypage-portrait { width:88px; height:88px; border-radius:12px; }
+  .mypage.v2 .mp-id-text { min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .mypage.v2 .mypage-name { font-size:24px; font-weight:800; margin:0 0 4px; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* 캐치프레이즈 · 한마디 : 상자 없이 글줄처럼. 고칠 수 있으면 올렸을 때만 옅은 면 */
+  #myPageModal .mypage.v2 input.mp-catch { margin:0 0 0 -8px; width:calc(100% + 8px); max-width:480px; height:28px; padding:0 8px; background:none; font-size:13.5px; color:#c9c9cf; }
+  #myPageModal .mypage.v2 input.mp-catch:hover:not(:disabled), #myPageModal .mypage.v2 input.mp-catch:placeholder-shown:not(:disabled) { background: rgba(255,255,255,.05); }
+  #myPageModal .mypage.v2 input.mp-catch:focus { background: rgba(255,255,255,.08); }
+  #myPageModal .mypage.v2 input.mp-catch:disabled { padding-left:8px; }
+  .mypage.v2 .mp-line { display:flex; align-items:center; gap:8px; margin:0 0 0 -8px; max-width:480px; height:28px; padding:0 8px; border-radius:10px; background:none; min-width:0; }
+  .mypage.v2 .mp-line:hover { background: rgba(255,255,255,.05); }
+  .mypage.v2 .mp-line i { color: var(--muted); font-size:10px; flex:none; }
+  .mypage.v2 .mp-line .ed { opacity:0; transition: opacity .15s ease; }
+  .mypage.v2 .mp-line:hover .ed, .mypage.v2 .mp-line:focus-within .ed { opacity:1; }
   .mypage.v2 .mp-line .t { font-size:13px; color: var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .mypage.v2 .mp-line input { flex:1; min-width:0; height:100%; border:none !important; background:transparent !important; box-shadow:none !important; border-radius:0; color: var(--text); font: inherit; font-size:13px; outline:none; padding:0; }
   .mypage.v2 .mp-line input::placeholder { color: var(--muted); }
   .mypage.v2 .mp-line:focus-within { background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px rgba(var(--point-rgb), .45); }
   .mypage.v2 .mp-line:focus-within .ed { color: var(--point); }
-  .mypage.v2 .mypage-name { font-size:26px; font-weight:800; margin:0 0 12px; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .mypage.v2 .mp-tags { display:flex; flex-direction:column; gap:8px; }
-  .mypage.v2 .mp-tagrow { display:flex; align-items:center; gap:12px; }
-  .mypage.v2 .mp-tagrow .mp-k { width:40px; }
+  /* 항목 목록 : 두 줄로 나란히, 모든 줄이 같은 높이 · 같은 이름 칸 · 줄마다 옅은 구분선 */
+  .mypage.v2 .mp-spec { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:32px; }
+  .mypage.v2 .mp-tagrow { display:flex; align-items:center; gap:12px; min-height:46px; padding:6px 0; border-top:1px solid var(--line); box-sizing:border-box; min-width:0; }
+  .mypage.v2 .mp-tagrow .mp-k { width:64px; flex:none; font-size:13px; color: var(--muted); font-weight:500; }
+  .mypage.v2 .mp-tagrow > :not(.mp-k) { min-width:0; }
+  #myPageModal .mypage.v2 input.mp-raid { width:64px; height:30px; padding:0 8px; border-radius:10px; border:1px solid var(--line); background: rgba(255,255,255,.03); font-size:14px; text-align:center; }
+  #myPageModal .mypage.v2 input.mp-raid:disabled { border-color:transparent !important; background:none !important; color: var(--text) !important; text-align:left; padding-left:0; }
+  .mypage.v2 .idc-color-dot { width:22px; height:22px; }
   .mypage.v2 .mypage-roles, .mypage.v2 .mp-nations { display:flex; flex-wrap:wrap; gap:6px; margin-left:0; }
   .mypage.v2 .mypage-roles button, .mypage.v2 .mp-nations button { height:28px; padding:0 12px; border-radius:999px; border:1px solid var(--line); background:none;
     color: var(--muted); font-size:13px; font-weight:600; opacity:1; cursor:pointer; }
@@ -1909,8 +1924,6 @@
   .mypage.v2 .mypage-roles button:disabled, .mypage.v2 .mp-nations button:disabled { cursor:default; }
   .mypage.v2 .mypage-roles button:not(.on):hover:not(:disabled), .mypage.v2 .mp-nations button:not(.on):hover:not(:disabled) { color: var(--text); }
   .mypage.v2 .mp-nations .none { font-size:13px; color: var(--muted); }
-  .mypage.v2 .mp-hero-side { min-width:190px; align-self:stretch; display:flex; flex-direction:column; justify-content:center; gap:4px; padding-left:20px; border-left:1px solid var(--line); }
-  .mypage.v2 .idc-kv { font-size:14px; padding:4px 0; }
   /* 본문 두 열 */
   .mypage.v2 .mypage-cols { gap:14px; }
   .mypage.v2 .mypage-col { display:flex; flex-direction:column; gap:14px; }
@@ -1974,24 +1987,17 @@
   @media (max-width:900px) {
     .modal-box.mypage.v2 .mp-hero { max-width:520px; }
     .modal-box.mypage.v2 { padding:calc(18px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
-    .mypage.v2 .mp-hero { grid-template-columns:84px minmax(0,1fr); gap:16px; padding:16px; }
-    .mypage.v2 .mypage-portrait { width:84px; height:84px; }
-    .mypage.v2 .mypage-name { font-size:22px; margin-bottom:10px; }
-    .mypage.v2 .mp-hero-side { grid-column:1 / -1; border-left:none; padding-left:0; border-top:1px solid var(--line); padding-top:10px; }
     .mypage.v2 .mypage-col + .mypage-col { padding-top:14px; }
     /* 휴대폰 · 태블릿 프로필 : 위에 사진 + 이름 한 줄, 아래는 '항목 이름 ··· 값' 줄 목록으로 단순하게 */
-    .mypage.v2 .mp-hero { display:grid; grid-template-columns:64px minmax(0,1fr); gap:0 14px; align-items:center; padding:16px 16px 4px; }
+    .mypage.v2 .mp-hero { gap:12px; padding:16px 16px 4px; }
+    .mypage.v2 .mp-id { grid-template-columns:64px minmax(0,1fr); gap:14px; }
     .mypage.v2 .mypage-portrait { width:64px; height:64px; border-radius:12px; }
-    .mypage.v2 .mp-hero-main { display:contents; }
-    .mypage.v2 .mypage-name { margin:0; font-size:22px; }
-    .mypage.v2 .mp-line { grid-column:1 / -1; margin:14px 0 4px; }
-    .mypage.v2 .mp-tags, .mypage.v2 .mp-hero-side { grid-column:1 / -1; display:flex; flex-direction:column; gap:0; min-width:0;
-      border:none; padding:0; margin:0; }
-    .mypage.v2 .mp-tags { margin-top:14px; }
-    .mypage.v2 .mp-tagrow, .mypage.v2 .mp-hero-side .idc-kv { display:flex; align-items:center; justify-content:space-between; gap:12px;
-      min-height:46px; padding:6px 0; border-top:1px solid var(--line); box-sizing:border-box; }
+    .mypage.v2 .mypage-name { font-size:22px; margin:0 0 2px; }
+    /* 휴대폰 · 태블릿 항목 : 한 줄씩, 이름은 왼쪽 · 값은 오른쪽 */
+    .mypage.v2 .mp-spec { grid-template-columns:minmax(0,1fr); }
+    .mypage.v2 .mp-tagrow { justify-content:space-between; }
     .mp-doc { justify-content:flex-end; }
-    .mypage.v2 .mp-tagrow .mp-k, .mypage.v2 .mp-hero-side .mypage-label { width:auto; flex:none; font-size:13px; color: var(--muted); font-weight:500; }
+    .mypage.v2 .mp-tagrow .mp-k { width:auto; }
     .mypage.v2 .mypage-roles, .mypage.v2 .mp-nations { flex-wrap:nowrap; justify-content:flex-end; gap:5px; min-width:0; }
     .mypage.v2 .mypage-roles button, .mypage.v2 .mp-nations button { height:28px; padding:0 10px; font-size:12.5px; white-space:nowrap; flex:none; }
     /* 휴대폰 · 태블릿 스킬 로그 : 항목 이름은 위, 입력은 아래 전체 폭 / 등장 모션은 5칸 고른 버튼 / 컷인 설정과 스킬 내용 사이 구분선 */
@@ -4670,14 +4676,14 @@
   input:disabled, textarea:disabled, select:disabled { opacity:1 !important; color:#5c5c64 !important; background-color: rgba(255,255,255,.025) !important; border-color: rgba(255,255,255,.05) !important; cursor:not-allowed; }
   input[type="checkbox"]:disabled, input[type="radio"]:disabled { accent-color:#4a4a52; }
   /* ── 입력 칸 : 한 줄 · 여러 줄 ── */
-  input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):not(.idc-inline):not(.nice-range),
+  input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):not(#myPageLineInput):not(.idc-inline):not(.nice-range),
   textarea:not(.rich) {
     border-radius: var(--ds-r-ctl) !important; border:1px solid var(--ds-line) !important; background-color: var(--ds-ctl) !important;
     color: var(--text); font-family:inherit; transition: border-color .15s, background-color .15s; }
   textarea:not(.rich) { border-radius: var(--ds-r-box) !important; }
-  input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):not(.idc-inline):hover:not(:focus):not(:disabled),
+  input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):not(#myPageLineInput):not(.idc-inline):hover:not(:focus):not(:disabled),
   textarea:not(.rich):hover:not(:focus):not(:disabled) { border-color: var(--ds-line-strong) !important; }
-  input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):focus,
+  input:is([type="text"], [type="number"], [type="search"], [type="password"], [type="url"], [type="email"], :not([type])):not(.mp-catch):not(#myPageLineInput):focus,
   textarea:not(.rich):focus { outline:none !important; border-color: rgba(var(--point-rgb),.6) !important; background-color: rgba(255,255,255,.06) !important; box-shadow:none !important; }
   input::placeholder, textarea::placeholder, [contenteditable][data-placeholder]:empty::before { color: var(--ds-placeholder) !important; opacity:1; }
   /* 리치 편집기 · 스킬 로그 칸 등 묶음 상자도 같은 선 · 모서리 */
@@ -5146,35 +5152,28 @@
       <button class="idc-close" onclick="closeMyPage()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- 프로필 : 초상화 · 이름 · 마이룸 한마디 · 포지션 · 진영 · 출신지 / 오른쪽에 표기 설정 -->
+    <!-- 프로필 : 위 = 사진 + 이름 · 캐치프레이즈 · 마이룸 한마디 / 아래 = 항목 줄 목록(같은 모양) -->
     <div class="mp-card mp-hero">
-      <div class="mypage-portrait" id="myPagePortrait" data-tip="프로필 이미지 (정사각형 png/webp/gif)" onclick="if(canEditMyPage()) document.getElementById('myAvatarFileInput').click()">
-        <span class="mypage-portrait-icon" id="myPagePortraitIcon"><i class="fa-solid fa-user"></i></span>
-      </div>
-      <div class="mp-hero-main">
-        <div class="mypage-name" id="myPageName">-</div>
-        <input type="text" id="myPageCatchphrase" class="mp-catch" maxlength="60" placeholder="캐치프레이즈 · 컷인에 이름과 함께 나오는 한 줄" autocomplete="off" onchange="saveCatchphrase()" onkeydown="if(event.key==='Enter') this.blur()">
-        <div class="mp-line" id="myPageLine"></div>
-        <div class="mp-tags">
-          <div class="mp-tagrow"><span class="mp-k">포지션</span><div class="mypage-roles" id="myPageRoles"></div></div>
-          <div class="mp-tagrow"><span class="mp-k">진영</span><div class="mp-nations" id="myPageNation"></div></div>
-          <div class="mp-tagrow"><span class="mp-k">출신지</span><div class="mp-home" id="myPageHome"></div></div>
-          <div class="mp-tagrow"><span class="mp-k">나이</span><div class="mp-nations mp-ages" id="myPageAge"></div></div>
-          <div class="mp-tagrow"><span class="mp-k">프로필</span><div class="mp-doc" id="myPageDoc"></div></div>
+      <div class="mp-id">
+        <div class="mypage-portrait" id="myPagePortrait" data-tip="프로필 이미지 (정사각형 png/webp/gif)" onclick="if(canEditMyPage()) document.getElementById('myAvatarFileInput').click()">
+          <span class="mypage-portrait-icon" id="myPagePortraitIcon"><i class="fa-solid fa-user"></i></span>
+        </div>
+        <div class="mp-id-text">
+          <div class="mypage-name" id="myPageName">-</div>
+          <input type="text" id="myPageCatchphrase" class="mp-catch" maxlength="60" placeholder="캐치프레이즈 · 컷인에 이름과 함께 나오는 한 줄" autocomplete="off" onchange="saveCatchphrase()" onkeydown="if(event.key==='Enter') this.blur()">
+          <div class="mp-line" id="myPageLine"></div>
         </div>
       </div>
-      <div class="mp-hero-side">
-        <div class="idc-kv">
-          <span class="mypage-label">마스 표기</span>
-          <input type="text" id="myPageRaidNameInput" class="idc-inline" maxlength="3" placeholder="-" autocomplete="off" name="raid-short-name"
-            onchange="commitRaidName()" onkeydown="if(event.key==='Enter') this.blur()">
-        </div>
-        <div class="idc-kv">
-          <span class="mypage-label">표시 컬러</span>
-          <span class="idc-color" id="myPageColorBtn" onclick="if(canEditMyPage()) document.getElementById('myColorInput').click()">
-            <span class="idc-color-dot" id="myPageColorDot"></span>
-          </span>
-        </div>
+      <div class="mp-spec">
+        <div class="mp-tagrow"><span class="mp-k">포지션</span><div class="mypage-roles" id="myPageRoles"></div></div>
+        <div class="mp-tagrow"><span class="mp-k">진영</span><div class="mp-nations" id="myPageNation"></div></div>
+        <div class="mp-tagrow"><span class="mp-k">출신지</span><div class="mp-home" id="myPageHome"></div></div>
+        <div class="mp-tagrow"><span class="mp-k">나이</span><div class="mp-nations mp-ages" id="myPageAge"></div></div>
+        <div class="mp-tagrow"><span class="mp-k">프로필</span><div class="mp-doc" id="myPageDoc"></div></div>
+        <div class="mp-tagrow"><span class="mp-k">마스 표기</span><input type="text" id="myPageRaidNameInput" class="idc-inline mp-raid" maxlength="3" placeholder="-" autocomplete="off" name="raid-short-name"
+            onchange="commitRaidName()" onkeydown="if(event.key==='Enter') this.blur()"></div>
+        <div class="mp-tagrow"><span class="mp-k">표시 컬러</span><span class="idc-color" id="myPageColorBtn" onclick="if(canEditMyPage()) document.getElementById('myColorInput').click()">
+            <span class="idc-color-dot" id="myPageColorDot"></span></span></div>
       </div>
     </div>
     <input type="file" id="myAvatarFileInput" accept="image/png,image/webp,image/gif" style="display:none;" onchange="onMyAvatarFileChosen(event)">
