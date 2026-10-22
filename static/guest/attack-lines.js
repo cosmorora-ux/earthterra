@@ -1,6 +1,6 @@
 // ==================================================================
-// 격자 지도 공격선 : 보스·거점이 공격하면 공격자 → 피격자로 빨간 점선을 긋고,
-// 점선이 공격 방향으로 흐르다가 사라집니다.
+// 격자 지도 공격선 : 보스·거점이 공격하면 공격자 → 피격자로 빨간 선분을 긋고,
+// 그 위로 밝은 빛줄기가 공격 방향으로 샥 지나갑니다.
 // ==================================================================
 // ---------- 휴대폰 격자 지도 확대 · 축소 · 맞춤 (+ 두 손가락 확대) ----------
 let gridZoom = 1;
@@ -114,6 +114,12 @@ function drawAttackLines() {
     line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
     line.setAttribute('class', 'atk-line');
     svg.appendChild(line);
+    ['glow', 'core'].forEach(k => {
+      const sh = line.cloneNode();
+      sh.setAttribute('class', 'atk-shine ' + k);
+      sh.setAttribute('pathLength', '100');
+      svg.appendChild(sh);
+    });
   });
   frame.appendChild(svg);
 }
