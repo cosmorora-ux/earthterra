@@ -556,7 +556,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.95";
+const EXPECTED_SERVER_BUILD = "2026-10-13.96";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -3407,7 +3407,11 @@ const SWIPE_TABS = [
 function renderUserInfoList() {
   const listEl = document.getElementById('userInfoList');
   const onlineSet = new Set(lastOnlineCharacters);
-  if (!lastRoster.length) {
+  // 선생님 NPC(앙투안 · 이네이타)는 모든 방의 유저 리스트에 함께 보여요(LOOP 방은 미리보기 목록에 이미 있어요).
+  // 몹으로 정한 캐릭터는 유저 리스트에서 빼요.
+  const npcs = playPreviewOn() ? [] : SITE_NPC_NAMES.filter(n => !lastRoster.includes(n));
+  const roster = [...lastRoster.filter(n => !((lastRosterMypage || {})[n] || {}).mob), ...npcs];
+  if (!roster.length) {
     listEl.innerHTML = '<div class="hint" style="padding:8px 2px;">등록된 캐릭터가 없습니다.</div>';
     return;
   }
@@ -3418,7 +3422,7 @@ function renderUserInfoList() {
   if (gmHint) gmHint.style.display = isGm ? '' : 'none';
   // 가나다순(한국어 정렬, 숫자는 크기순 - 예: NOVA 2구역 < NOVA 10구역)
   // 탭(이름순/포지션순/진영순)마다 섹션 제목으로 나누고, 섹션 안에서는 가나다순
-  const visible = isGm ? lastRoster : lastRoster.filter(n => !lastUserInfoHidden.has(n));
+  const visible = isGm ? roster : roster.filter(n => !lastUserInfoHidden.has(n));
   const q = ((document.getElementById('userInfoSearch') || {}).value || '').trim().toLowerCase();
   const names = visible.filter(n => !q || n.toLowerCase().includes(q));
   const onlineCount = visible.filter(n => onlineSet.has(n)).length;
@@ -3432,7 +3436,7 @@ function renderUserInfoList() {
   document.querySelectorAll('#userInfoView button').forEach(b => b.classList.toggle('on', b.dataset.v === userInfoView));
   if (!names.length) { listEl.innerHTML = `<div class="hint" style="padding:16px 4px; text-align:center;">${q ? '검색 결과가 없어요.' : '등록된 캐릭터가 없어요.'}</div>`; return; }
   const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  const info = n => (lastRosterMypage || {})[n] || {};
+  const info = n => (lastRosterMypage || {})[n] || npcEntry(n) || {};
   const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
   const BASE = { 'ㄲ': 'ㄱ', 'ㄸ': 'ㄷ', 'ㅃ': 'ㅂ', 'ㅆ': 'ㅅ', 'ㅉ': 'ㅈ' };
   const initialOf = (n) => {
@@ -3482,7 +3486,7 @@ function renderUserInfoList() {
       const online = onlineSet.has(name);
       const hidden = lastUserInfoHidden.has(name);
       const js = name.replace(/'/g, "\\'");
-      const eye = isGm
+      const eye = isGm && !npcEntry(name)
         ? `<button class="userinfo-eye" onclick="event.stopPropagation(); toggleUserInfoHidden('${js}')">`
           + `<i class="fa-solid ${hidden ? 'fa-eye-slash' : 'fa-eye'}"></i></button>`
         : '';
@@ -3546,7 +3550,17 @@ const NPC_PROFILES = {
   '앙투안 얀 다비드': '앙투안 얀 다비드는 아르카디아 연방 소속 교수로, 뛰어난 감각으로 확고한 사조를 가지고 활동하던 예술가이자 감각계 레저넌트다. 온정적인 성격의 그는 모두에게 공정하다.',
   '이네이타 장': '이네이타 장은 노바 공화국 소속 교수로, 뛰어난 지성으로 학계에서 월등한 실적을 내던 학자로서 초빙되었으며 정신계 레저넌트다. 예리한 성격의 그는 모두에게 공정하다.',
 };
-function npcProfileOf(name) { return playPreviewOn() ? NPC_PROFILES[name] || null : null; }
+function npcProfileOf(name) { return NPC_PROFILES[name] || null; }
+// 마이페이지 칸들이 읽는 등록 정보 : 실제 캐릭터는 받은 정보, NPC는 미리 정한 값
+function myPageInfoOf(name) { return (lastRosterMypage || {})[name] || npcEntry(name) || {}; }
+const SITE_NPC_NAMES = Object.keys(NPC_PROFILES);
+// NPC 마이페이지 정보(보기 전용) : 미리보기 목록의 값을 그대로 써요
+function npcEntry(name) {
+  if (!NPC_PROFILES[name]) return null;
+  const row = PLAY_PREVIEW_CHARS.find(c => c[0] === name); if (!row) return null;
+  const [, role, color, age, catchphrase, , hometown, avatar] = row;
+  return { name, role, color, age, catchphrase, nation: '', hometown: hometown || '', doc_url: '', inventory: '', points: 0, items: {}, avatar_url: avatar || null, npc: true };
+}
 // 지도 구역 카드와 같은 알림(이름 + 소개)으로 띄워요
 function openNpcProfile(name) {
   const t = NPC_PROFILES[name], el = document.getElementById('wmToast'); if (!t || !el) return;
@@ -3604,7 +3618,7 @@ function uiHoverEl() {
 }
 function uiHoverShow(row, e) {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  const name = row.dataset.name, d = (lastRosterMypage || {})[name] || {};
+  const name = row.dataset.name, d = (lastRosterMypage || {})[name] || npcEntry(name) || {};
   const el = uiHoverEl(), pic = el.querySelector('.pic');
   const fresh = !uiHover.on;
   pic.style.backgroundImage = 'none';
@@ -3650,7 +3664,7 @@ function uiHoverTick() {
 // 유저 리스트에서 눌러 연 캐릭터 이름(없으면 평소처럼 본인/선택된 행동자 기준)
 let myPageViewName = null;
 // 남의 마이페이지를 보기만 하는 중(운영진이 아닐 때) : 수정은 막고, 진영 · 스킬 로그 · 효과음은 감춥니다.
-function myPageIsView() { return !!myPageViewName && myControlInfo(lastBattleForPanel).scope !== 'all' && myPageViewName !== myLoggedInName(); }
+function myPageIsView() { return !!myPageViewName && ((myControlInfo(lastBattleForPanel).scope !== 'all' && myPageViewName !== myLoggedInName()) || !!npcEntry(myPageViewName)); }
 
 function openMyPageFor(name) {
   // 운영진은 누구의 마이페이지든 수정할 수 있고, 그 외에는 남의 마이페이지를 보기만 합니다(본인이면 평소 마이페이지).
@@ -3668,7 +3682,7 @@ function myPageTargetChar() {
     const live = lastAllForCards.find(c => c.name === myPageViewName);
     if (live) return live;
     // 전투에 없는 캐릭터는 등록 정보만 보여줍니다(체력은 전투 중에만 있음).
-    const d = lastRosterDetail.find(r => r.name === myPageViewName) || (lastRosterMypage || {})[myPageViewName];
+    const d = lastRosterDetail.find(r => r.name === myPageViewName) || (lastRosterMypage || {})[myPageViewName] || npcEntry(myPageViewName);
     return d ? { ...d, name: myPageViewName, current_hp: null, max_hp: null } : null;
   }
   const battle = lastBattleForPanel;
@@ -3758,7 +3772,7 @@ function renderMyPageHome(c) {
   const el = document.getElementById('myPageHome'); if (!el) return;
   if (!c) { el.innerHTML = ''; return; }
   if (!worldData) socket.emit('world_get');
-  const cur = ((lastRosterMypage || {})[c.name] || {}).hometown || '';
+  const cur = myPageInfoOf(c.name).hometown || '';
   if (!canEditMyPage()) { el.innerHTML = cur ? `<span class="v">${worldEsc(myPageHomeLabel(cur))}</span>` : '<span class="none">없음</span>'; return; }
   // 기본 select는 목록(그룹 제목 등)을 꾸밀 수 없어서, 사이트 디자인에 맞춘 드롭다운을 직접 띄웁니다.
   el.innerHTML = `<button type="button" class="mp-home-btn ${homeMenu.open ? 'open' : ''}" onclick="toggleHomeMenu(this)">
@@ -3773,7 +3787,7 @@ function closeHomeMenu() {
 function toggleHomeMenu(btn) {
   if (homeMenu.open) { closeHomeMenu(); return; }
   const c = myPageTargetChar(); if (!c || !canEditMyPage()) return;
-  const cur = ((lastRosterMypage || {})[c.name] || {}).hometown || '';
+  const cur = myPageInfoOf(c.name).hometown || '';
   const places = ((worldData && worldData.places) || []).filter(p => !p.locked && (p.zones || []).length);
   const opt = (v, label, sub) => `<button type="button" class="hm-opt ${v === cur ? 'on' : ''}" onclick="pickHome(${worldEsc(JSON.stringify(v))})">
       <span class="t">${label}${sub ? `<em>${sub}</em>` : ''}</span>${v === cur ? '<i class="fa-solid fa-check"></i>' : ''}</button>`;
@@ -3806,7 +3820,7 @@ const MYPAGE_AGES = [13, 14, 15, 16];
 function renderMyPageAge(c) {
   const el = document.getElementById('myPageAge'); if (!el) return;
   if (!c) { el.innerHTML = ''; return; }
-  const cur = ((lastRosterMypage || {})[c.name] || {}).age || 13;
+  const cur = myPageInfoOf(c.name).age || 13;
   if (cur === '??') { el.innerHTML = '<button class="on" disabled style="--nc:var(--point)">??</button>'; return; }   // NPC : 나이 비공개
   if (!canEditMyPage() || !dormIsGm()) { el.innerHTML = `<button class="on" disabled style="--nc:var(--point)">1차 ${cur}세</button>`; return; }
   el.innerHTML = MYPAGE_AGES.map(a => `<button class="${a === cur ? 'on' : ''}" style="--nc:var(--point)" data-tip="1차(空歷 514年) 때 나이" onclick="setMyPageAge(${a})">${a}세</button>`).join('');
@@ -3863,6 +3877,7 @@ function renderMyPage() {
   const isSelf = !!myLoggedInName();
   const viewOnly = myPageIsView();
   document.querySelector('#myPageModal .modal-box.mypage').classList.toggle('is-view', viewOnly);
+  document.querySelector('#myPageModal .modal-box.mypage').classList.toggle('is-npc', !!(myPageViewName && npcEntry(myPageViewName)));   // NPC : 재화 · 소지품 · 마이룸 없이
   const pvNote = document.getElementById('myPagePreviewNote'); if (pvNote) pvNote.style.display = playPreviewOn() ? '' : 'none';
   // GM은 남의 마이페이지도 전부 수정할 수 있습니다. 러너는 남의 마이페이지를 보기만 합니다.
   const canEdit = (isSelf || isGm) && !viewOnly;

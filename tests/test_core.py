@@ -217,6 +217,7 @@ class TestMobHp(unittest.TestCase):
         self.assertNotEqual(card["current_hp"], ab.current_hp)
         self.assertFalse(any(str(ab.current_hp) in (l.get("text") or "") for l in pub["log"] if "AB" in (l.get("text") or "")), "로그에 몹 체력 숫자가 남음")
         self.assertEqual(pub["roster_mypage"]["AB"]["max_hp"], 100, "마이페이지 정보에 몹 체력이 감")
+        self.assertTrue(pub["roster_mypage"]["AB"].get("mob"), "유저 리스트에서 뺄 몹 표시가 없음")
         aa = next(c for c in pub["battle"]["team_a"] if c["name"] == "AA")
         self.assertFalse(aa.get("hp_hidden"), "몹이 아닌 캐릭터까지 가려짐")
         gm = webapp.build_public_state(room, for_gm=True)

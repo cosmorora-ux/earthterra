@@ -4752,3 +4752,5 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 /* 운영 캐릭터 설정 : 몹 체크 */
 .ops-check em { font-style:normal; color: var(--muted); font-size:12.5px; margin-left:6px; }
 .ops-prow .sk.mob { color:#ff8a80; border-color: rgba(255,138,128,.35); }
+/* NPC 마이페이지 : 재화 · 소지품 · 마이룸 칸 없이 */
+.modal-box.mypage.is-npc .mp-tiles, .modal-box.mypage.is-npc #myPageRoomBox { display:none !important; }
