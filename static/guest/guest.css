@@ -2610,7 +2610,6 @@
   .wm-zed { padding:12px; border-radius:12px; border:1px solid var(--line); background: rgba(255,255,255,.02); min-width:0; }
   .wm-zno { font-weight:800; font-size:13px; flex:none; }
   .wm-zed .pv { width:38px; height:38px; border-radius:8px; background:#0d0d10 center/cover no-repeat; border:1px solid var(--line); flex:none; }
-  @media (max-width:1180px) { .wm-zones { grid-template-columns:repeat(2, minmax(0,1fr)); } }
   @media (max-width:900px) {
     .wm-zones { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; padding:0 16px 18px; gap:12px; }
     .wm-zone { flex:0 0 min(240px, 74%); scroll-snap-align:start; padding:14px 14px 16px; border-radius:16px; }
@@ -2619,19 +2618,17 @@
     .wm-zone .img.empty .ns { width:34%; }
     .wm-zedit { grid-template-columns:minmax(0,1fr); }
   }
-  /* 구역 카드 옆으로 넘기기 : 스크롤 막대 없이(손가락으로 넘겨요) — 마우스 화면(좁은 창)은 옆으로 넘길 수 없으니 한 줄에 하나씩 세로로 */
+  /* 구역 카드 옆으로 넘기기 : 스크롤 막대 없이. 마우스 화면은 휠 · 끌기로 넘겨요(pages.js bindWorldFx) */
   @media (max-width:900px) { .wm-zones { scrollbar-width:none; } .wm-zones::-webkit-scrollbar { display:none; } }
-  @media (max-width:900px) and (hover:hover) and (pointer:fine) {
-    .wm-zones { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); overflow:visible; scroll-snap-type:none; }
-    .wm-zone { flex:none; }
-  }
-  /* 넓은 태블릿(가로 901~1366px, 터치 화면)도 휴대폰처럼 구역 카드를 옆으로 넘겨요 — 크기는 조금 더 크게 */
-  @media (min-width:901px) and (max-width:1366px) and (hover:none) and (pointer:coarse) {
+  /* 가로 901~1366px(태블릿 · 좁은 PC 창)도 옆으로 넘겨요 — 크기는 조금 더 크게 */
+  @media (min-width:901px) and (max-width:1366px) {
     .wm-zones { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scroll-padding:0 22px; gap:14px; scrollbar-width:none; }
     .wm-zones::-webkit-scrollbar { display:none; }
     .wm-zone { flex:0 0 280px; scroll-snap-align:start; }
     .wm-zone .img { aspect-ratio:4 / 3; }
   }
+  .wm-zones.dragging { scroll-snap-type:none; cursor:grabbing; user-select:none; }
+  .wm-zones.dragging .wm-zone { pointer-events:none; }
   /* 맵 머리 : 장소 이름은 굵게 하지 않고, 좁은 화면에서는 Pangaea만 */
   .world-topbar #worldTopSeg { font-weight:500; }
   @media (max-width:600px) { .world-topbar #worldTopSeg, .world-topbar #worldTopSeg + .sep, .world-topbar .world-brand + .sep { display:none !important; } }

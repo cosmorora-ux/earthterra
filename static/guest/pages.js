@@ -879,6 +879,42 @@ function bindWorldFx() {
     }
   });
   body.addEventListener('pointerleave', () => body.querySelectorAll('.wm-zone.tilt').forEach(c => c.classList.remove('tilt')));
+  // 구역 카드 줄(옆으로 넘기는 화면) : 마우스 휠을 옆으로 바꿔 주고, 마우스로 끌어서도 넘겨요
+  const canSide = (z) => z && z.scrollWidth > z.clientWidth + 2;
+  body.addEventListener('wheel', (e) => {
+    const z = e.target.closest('.wm-zones');
+    if (!canSide(z) || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+    const max = z.scrollWidth - z.clientWidth;
+    if ((e.deltaY < 0 && z.scrollLeft <= 0) || (e.deltaY > 0 && z.scrollLeft >= max - 1)) return;   // 끝에 닿으면 페이지가 내려가요
+    e.preventDefault();
+    // 카드가 한 장씩 맞물려 있어서(scroll-snap) 휠 한 번에 카드 한 장씩 넘겨요
+    const now = Date.now(); if (now - (z._wheelAt || 0) < 280) return; z._wheelAt = now;
+    const card = z.querySelector('.wm-zone'), step = card ? card.offsetWidth + 14 : z.clientWidth * .8;
+    z.scrollBy({ left: Math.sign(e.deltaY) * step, behavior: 'smooth' });
+  }, { passive: false });
+  let drag = null;
+  body.addEventListener('pointerdown', (e) => {
+    const z = e.target.closest('.wm-zones');
+    if (e.pointerType !== 'mouse' || e.button !== 0 || !canSide(z)) return;
+    drag = { z, x: e.clientX, left: z.scrollLeft, moved: false };
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (!drag.moved && Math.abs(dx) > 5) { drag.moved = true; drag.z.classList.add('dragging'); }
+    if (drag.moved) drag.z.scrollLeft = drag.left - dx;
+  });
+  window.addEventListener('pointerup', () => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (d.moved) {
+      d.z.classList.remove('dragging');
+      // 끌고 난 뒤의 클릭(구역 안내)은 한 번 무시해요
+      const eat = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      d.z.addEventListener('click', eat, { capture: true, once: true });
+      setTimeout(() => d.z.removeEventListener('click', eat, { capture: true }), 0);
+    }
+  });
 }
 // 키보드 ← → 로 장소 넘기기
 document.addEventListener('keydown', (e) => {
