@@ -17,13 +17,14 @@ import threading
 import uuid
 
 from world_zones import ZONE_DEFAULTS
-from world_story import DEFAULT_GRAPH
+from world_story import DEFAULT_GRAPH, STORY_VERSION, OLD_STORY_IDS
 
 WORLD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "world.json")
 MAX_PLACES, MAX_CHAPTERS, MAX_INFO = 40, 60, 8
 # 챕터 노드 그림(챕터 화면 위쪽) : 카드(글 · 그림)와 카드끼리 잇는 선
 MAX_NODES, MAX_EDGES, GRAPH_SPAN = 80, 160, 4000
 NODE_KINDS = ("text", "image")
+NODE_ACCENTS = ("point", "violet", "blue", "green", "pink", "red", "amber", "gray")
 SIDES = ("l", "r", "t", "b")
 ZONES = 4  # 장소마다 1~4구역 카드
 
@@ -116,6 +117,7 @@ def clean_graph(data, n_chapters):
                       "title": _s(nd.get("title"), 40), "text": _text(nd.get("text"), 600), "image": _img_ok(nd.get("image")),
                       "x": round(_num(nd.get("x"), 0, GRAPH_SPAN, 40)), "y": round(_num(nd.get("y"), 0, GRAPH_SPAN, 40)),
                       "w": round(_num(nd.get("w"), 140, 520, 260)),
+                      "accent": nd.get("accent") if nd.get("accent") in NODE_ACCENTS else "point",
                       "chapter": int(_num(nd.get("chapter"), 0, n_chapters, 0))})
     edges, seen = [], set()
     for e in ((data or {}).get("edges") or [])[:MAX_EDGES]:
@@ -178,11 +180,14 @@ class World:
         self.chapters = d.get("chapters", [])
         self.unlocked = int(d.get("unlocked") or 0)
         self.graph = clean_graph(d.get("graph"), len(self.chapters))
-        self.story_seeded = bool(d.get("story_seeded"))
-        if not self.story_seeded:   # 처음 한 번 : 노드 그림이 비어 있으면 기본 스토리로 채워요(이미 만든 노드는 그대로)
-            if not self.graph["nodes"]:
+        seeded = d.get("story_seeded")
+        self.story_seeded = int(seeded) if seeded else 0   # 예전 True = 1판
+        if self.story_seeded < STORY_VERSION:
+            # 노드 그림이 비었거나 손대지 않은 예전 기본 스토리면 새 기본 스토리로(운영진이 만든 노드는 그대로)
+            ids = {n["id"] for n in self.graph["nodes"]}
+            if not ids or (self.story_seeded and ids == OLD_STORY_IDS):
                 self.graph = clean_graph(DEFAULT_GRAPH, len(self.chapters))
-            self.story_seeded = True
+            self.story_seeded = STORY_VERSION
             migrated = True
         if migrated and os.path.exists(self.path):
             self.save()
@@ -244,7 +249,7 @@ class World:
         places = [p if p.get("chapter", 0) <= n else {"id": p["id"], "locked": True, "chapter": p.get("chapter", 0)}
                   for p in self.places]
         # 아직 공개 전인 노드는 자리만(내용은 보내지 않아요)
-        nodes = [nd if nd.get("chapter", 0) <= n else {"id": nd["id"], "kind": "text", "x": nd["x"], "y": nd["y"], "w": nd["w"], "locked": True}
+        nodes = [nd if nd.get("chapter", 0) <= n else {"id": nd["id"], "kind": "text", "x": nd["x"], "y": nd["y"], "w": nd["w"], "accent": nd.get("accent"), "locked": True}
                  for nd in self.graph["nodes"]]
         return {"chapters": chapters, "places": places, "unlocked": n, "gm": False,
                 "graph": {"nodes": nodes, "edges": self.graph["edges"]}}

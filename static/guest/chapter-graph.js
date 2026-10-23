@@ -1,6 +1,6 @@
 // ==================================================================
 // 챕터 노드 그림 : 챕터 화면 위쪽에 카드(글 · 그림)와 카드끼리 잇는 선을 그립니다.
-// - 보기 : 카드를 끌어서 가지고 놀 수 있고, 손을 놓으면 용수철처럼 튕기며 제자리로 돌아가요.
+// - 보기 : 카드를 살짝 끌어 볼 수 있고(멀리 가지 않아요), 손을 놓으면 부드럽게 제자리로 돌아가요.
 // - 운영진 편집 : 카드를 끌어 자리 옮기기 · 카드 가장자리 점을 끌어 다른 카드에 놓아 선 잇기 ·
 //   선을 눌러 지우기 · 카드를 눌러 내용(위 이름 · 옆 표시 · 제목 · 글 · 그림 · 너비 · 공개 챕터) 고치기.
 // 공개 전 챕터에 묶인 카드는 서버가 내용을 보내지 않아요(자리만 ???로).
@@ -9,6 +9,11 @@ const cg = { edit: false, draft: null, sel: null, off: {}, raf: 0, s: 1, z: null
 const CG_MIN_W = 900, CG_MIN_H = 380, CG_PAD = 60, CG_SNAP = 10;
 const CG_MIN_SCALE = .62;   // 좁은 화면 : 이보다 작게 줄이지 않고 옆으로 밀어서 봐요
 const CG_DIR = { l: [-1, 0], r: [1, 0], t: [0, -1], b: [0, 1] };
+// 카드 색(머리 점 · 은은한 빛 · 나가는 선) : 운영진이 카드마다 골라요
+const CG_ACCENTS = [['point', '포인트', 'var(--point)'], ['violet', '보라', '#8b6cff'], ['blue', '파랑', '#3b8cff'], ['green', '초록', '#3ecf6e'],
+  ['pink', '분홍', '#e05bd0'], ['red', '빨강', '#ef4b5f'], ['amber', '노랑', '#e9c05b'], ['gray', '회색', '#9a9aa2']];
+const cgAc = (n) => (CG_ACCENTS.find(a => a[0] === (n && n.accent)) || CG_ACCENTS[0])[2];
+const CG_PULL = 56;   // 보기에서 카드를 끌 수 있는 거리(이보다 멀리는 점점 덜 따라와요)
 // 선은 카드 아래, 선 끝 점은 카드 위에 그려요
 const CG_LAYERS = (g) => '<svg class="cg-svg"></svg>' + g.nodes.map(cgNodeHtml).join('') + '<svg class="cg-dots"></svg>';
 
@@ -41,15 +46,15 @@ function worldGraphHtml() {
 }
 
 function cgNodeHtml(n) {
-  const lb = n.label || n.tag ? `<div class="cg-lb">${n.label ? `<b>${worldEsc(n.label)}</b>` : ''}${n.tag ? `<span>${worldEsc(n.tag)}</span>` : ''}</div>` : '';
-  let box;
-  if (n.locked) box = '<div class="cg-lock"><i class="fa-solid fa-lock"></i>???</div>';
-  else if (n.kind === 'image') box = `<div class="cg-img"${n.image ? ` style="background-image:url('${worldEsc(n.image)}')"` : ''}>${n.image ? '' : '<i class="fa-regular fa-image"></i>'}</div>`;
-  else box = `${n.title ? `<div class="cg-tt">${worldEsc(n.title)}</div>` : ''}${n.text || cg.edit || !n.title ? `<div class="cg-tx">${worldEsc(n.text || '') || (cg.edit ? '<em>글을 넣어 주세요</em>' : '')}</div>` : ''}`;
+  const hd = n.label || n.tag || n.locked ? `<div class="cg-hd"><i class="pip"></i>${n.label ? `<b>${worldEsc(n.label)}</b>` : ''}${n.tag ? `<span>${worldEsc(n.tag)}</span>` : ''}</div>` : '';
+  let inner;
+  if (n.locked) inner = '<div class="cg-lock"><i class="fa-solid fa-lock"></i>???</div>';
+  else if (n.kind === 'image') inner = `<div class="cg-img"${n.image ? ` style="background-image:url('${worldEsc(n.image)}')"` : ''}>${n.image ? '' : '<i class="fa-regular fa-image"></i>'}</div>`;
+  else inner = `${n.title ? `<div class="cg-tt">${worldEsc(n.title)}</div>` : ''}${n.text || cg.edit || !n.title ? `<div class="cg-tx">${worldEsc(n.text || '') || (cg.edit ? '<em>글을 넣어 주세요</em>' : '')}</div>` : ''}`;
   const ports = cg.edit ? ['l', 'r', 't', 'b'].map(s => `<span class="cg-port p-${s}" data-s="${s}"></span>`).join('') : '';
   const gate = cg.edit && n.chapter ? `<span class="cg-gate">Ch. ${n.chapter}</span>` : '';
-  return `<div class="cg-node k-${n.locked ? 'lock' : n.kind}${cg.sel === n.id ? ' sel' : ''}" data-id="${n.id}" style="left:${n.x}px; top:${n.y}px; width:${n.w}px;">
-    ${lb}<div class="cg-box">${box}${ports}${gate}</div></div>`;
+  return `<div class="cg-node k-${n.locked ? 'lock' : n.kind}${cg.sel === n.id ? ' sel' : ''}" data-id="${n.id}" style="left:${n.x}px; top:${n.y}px; width:${n.w}px; --ac:${cgAc(n)};">
+    <div class="cg-box">${hd}<div class="cg-in">${inner}</div>${ports}${gate}</div></div>`;
 }
 
 // 그리기 : 카드를 놓고 크기를 잰 뒤, 무대 크기 · 배율을 맞추고 선을 그려요
@@ -112,26 +117,44 @@ function cgPort(id, side, t) {
   if (side === 't') return { x: r.x + r.w * t, y: r.y };
   return { x: r.x + r.w * t, y: r.y + r.h };
 }
+// 선 : 카드 면에서 곧게 나와 직각으로 꺾이는 길(모서리는 둥글게)
 function cgPath(p1, s1, p2, s2) {
-  const d = Math.max(40, Math.hypot(p2.x - p1.x, p2.y - p1.y) * .45);
-  const [ax, ay] = CG_DIR[s1], [bx, by] = s2 ? CG_DIR[s2] : [0, 0];
-  return `M${p1.x},${p1.y} C${p1.x + ax * d},${p1.y + ay * d} ${p2.x + bx * d},${p2.y + by * d} ${p2.x},${p2.y}`;
+  const O = 22, n1 = CG_DIR[s1], n2 = s2 ? CG_DIR[s2] : null;
+  const a = { x: p1.x + n1[0] * O, y: p1.y + n1[1] * O }, b = n2 ? { x: p2.x + n2[0] * O, y: p2.y + n2[1] * O } : p2;
+  const h1 = !!n1[0], h2 = n2 ? !!n2[0] : h1;
+  const pts = [p1, a];
+  if (h1 && h2) { const mx = (a.x + b.x) / 2; pts.push({ x: mx, y: a.y }, { x: mx, y: b.y }); }
+  else if (!h1 && !h2) { const my = (a.y + b.y) / 2; pts.push({ x: a.x, y: my }, { x: b.x, y: my }); }
+  else if (h1) pts.push({ x: b.x, y: a.y });
+  else pts.push({ x: a.x, y: b.y });
+  pts.push(b); if (n2) pts.push(p2);
+  // 겹친 점 · 한 줄 위의 점 정리
+  const q = pts.filter((p, i) => !i || Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y) > .5);
+  const r = q.filter((p, i) => i === 0 || i === q.length - 1 || Math.abs((p.x - q[i - 1].x) * (q[i + 1].y - p.y) - (p.y - q[i - 1].y) * (q[i + 1].x - p.x)) > .5);
+  let d = `M${r[0].x},${r[0].y}`;
+  for (let i = 1; i < r.length - 1; i++) {
+    const A = r[i - 1], P = r[i], B = r[i + 1];
+    const l1 = Math.hypot(P.x - A.x, P.y - A.y), l2 = Math.hypot(B.x - P.x, B.y - P.y), rad = Math.min(12, l1 / 2, l2 / 2);
+    d += ` L${P.x - (P.x - A.x) / l1 * rad},${P.y - (P.y - A.y) / l1 * rad} Q${P.x},${P.y} ${P.x + (B.x - P.x) / l2 * rad},${P.y + (B.y - P.y) / l2 * rad}`;
+  }
+  const z = r[r.length - 1];
+  return d + ` L${z.x},${z.y}`;
 }
 function cgDraw() {
   const svg = document.querySelector('#cgStage .cg-svg'), dots = document.querySelector('#cgStage .cg-dots'); if (!svg || !dots) return;
   const g = cgGraph();
   let h = '', o = '';
-  const dot = (p) => `<circle class="cg-dot" cx="${p.x}" cy="${p.y}" r="6"/>`;
+  const dot = (p) => `<circle class="cg-dot" cx="${p.x}" cy="${p.y}" r="4"/>`;
   g.edges.forEach((e, i) => {
     const p1 = cgPort(e.a, e.as, e.at), p2 = cgPort(e.b, e.bs, e.bt); if (!p1 || !p2) return;
     const d = cgPath(p1, e.as, p2, e.bs);
-    h += `<path class="cg-line" d="${d}"/>`;
+    h += `<path class="cg-line" style="--ac:${cgAc(cgNode(e.a))}" d="${d}"/>`;
     if (cg.edit) h += `<path class="cg-hit" data-i="${i}" d="${d}"/>`;
     o += dot(p1) + dot(p2);
   });
   if (cg.drag && cg.drag.type === 'link' && cg.drag.to) {
     const p1 = cgPort(cg.drag.a, cg.drag.as, .5);
-    if (p1) { h += `<path class="cg-line temp" d="${cgPath(p1, cg.drag.as, cg.drag.to, null)}"/>`; o += dot(p1); }
+    if (p1) { h += `<path class="cg-line temp" style="--ac:${cgAc(cgNode(cg.drag.a))}" d="${cgPath(p1, cg.drag.as, cg.drag.to, null)}"/>`; o += dot(p1); }
   }
   svg.innerHTML = h; dots.innerHTML = o;
 }
@@ -158,7 +181,7 @@ function cgBind() {
     const id = node.dataset.id, p = cgPt(e);
     if (cg.edit && port) cg.drag = { type: 'link', a: id, as: port.dataset.s, to: p };
     else if (cg.edit) { const n = cgNode(id); cg.drag = { type: 'move', id, p, x0: n.x, y0: n.y, moved: false }; }
-    else { const o = cg.off[id] || (cg.off[id] = { x: 0, y: 0, vx: 0, vy: 0, r: 0 }); cg.drag = { type: 'play', id, p, x0: o.x, y0: o.y, last: p, t: performance.now() }; node.classList.add('held'); }
+    else { const o = cg.off[id] || (cg.off[id] = { x: 0, y: 0, vx: 0, vy: 0, r: 0 }); cg.drag = { type: 'play', id, p, last: p, t: performance.now() }; o.vx = o.vy = 0; node.classList.add('held'); }
     try { st.setPointerCapture(e.pointerId); } catch (err) {}
   });
   st.addEventListener('pointermove', (e) => {
@@ -174,11 +197,13 @@ function cgBind() {
       const el = st.querySelector(`.cg-node[data-id="${d.id}"]`); el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
       cgDraw(); return;
     }
-    // 보기 : 끌린 만큼 따라오며, 움직이는 방향으로 살짝 기울어요
+    // 보기 : 살짝만 따라와요(멀리 끌수록 덜 따라오는 고무줄), 기울기도 아주 조금
     const o = cg.off[d.id], now = performance.now(), dt = Math.max(1, now - d.t) / 1000;
-    o.vx = (p.x - d.last.x) / dt; o.vy = (p.y - d.last.y) / dt;
-    o.x = d.x0 + p.x - d.p.x; o.y = d.y0 + p.y - d.p.y;
-    o.r = Math.max(-8, Math.min(8, o.vx * .006));
+    const rub = (v) => CG_PULL * Math.tanh(v * .6 / CG_PULL);
+    const nx = rub(p.x - d.p.x), ny = rub(p.y - d.p.y);
+    o.vx = (nx - o.x) / dt; o.vy = (ny - o.y) / dt;
+    o.x = nx; o.y = ny;
+    o.r = Math.max(-1.5, Math.min(1.5, o.vx * .002));
     d.last = p; d.t = now;
     cgApplyOff(d.id); cgDraw();
   });
@@ -243,11 +268,11 @@ function cgBindPan() {
   const end = (e) => { if (e.touches.length < 2) pinch = null; };
   wrap.addEventListener('touchend', end); wrap.addEventListener('touchcancel', end);
 }
-// 손을 놓으면 용수철처럼 제자리로 : 살짝 지나쳤다가 돌아오는 텐션
+// 손을 놓으면 부드럽게 제자리로(거의 튀지 않게)
 function cgSpring() {
   if (cg.raf) return;
   let prev = performance.now();
-  const K = 170, C = 11;
+  const K = 210, C = 25;   // 거의 튀지 않고 부드럽게 돌아와요
   const step = (now) => {
     const dt = Math.min(.032, (now - prev) / 1000); prev = now;
     let busy = false;
@@ -256,7 +281,7 @@ function cgSpring() {
       const o = cg.off[id];
       o.vx += (-K * o.x - C * o.vx) * dt; o.vy += (-K * o.y - C * o.vy) * dt;
       o.x += o.vx * dt; o.y += o.vy * dt;
-      o.r = Math.max(-8, Math.min(8, o.vx * .006));
+      o.r = Math.max(-1.5, Math.min(1.5, o.vx * .002));
       if (Math.abs(o.x) < .3 && Math.abs(o.y) < .3 && Math.abs(o.vx) < 4 && Math.abs(o.vy) < 4) { delete cg.off[id]; cgApplyOff(id); return; }
       busy = true; cgApplyOff(id);
     });
@@ -286,7 +311,7 @@ function cgSave() {
 }
 function cgAdd(kind) {
   const ns = cg.draft.nodes, k = ns.length;
-  const n = { id: Math.random().toString(16).slice(2, 10), kind, label: kind === 'image' ? 'IMAGE' : '', tag: '', title: '', text: '',
+  const n = { id: Math.random().toString(16).slice(2, 10), kind, label: kind === 'image' ? 'Image' : '', tag: '', title: '', text: '',
     image: null, x: 40 + (k % 6) * 40, y: 40 + (k % 6) * 30, w: kind === 'image' ? 240 : 280, chapter: 0 };
   ns.push(n); cg.sel = n.id; cgMount();
 }
@@ -335,8 +360,9 @@ function cgForm() {
   const chOpts = `<option value="0"${!n.chapter ? ' selected' : ''}>처음부터</option>` + chs.map((c, i) => `<option value="${i + 1}"${n.chapter === i + 1 ? ' selected' : ''}>Chapter ${i + 1} · ${worldEsc(c.title || '')}</option>`).join('');
   box.innerHTML = `<div class="cg-fgrid">
     <div class="ops-field"><span class="lb">종류</span><select class="ops-in" onchange="cgSet('kind', this.value)"><option value="text"${n.kind === 'text' ? ' selected' : ''}>글</option><option value="image"${n.kind === 'image' ? ' selected' : ''}>그림</option></select></div>
-    <div class="ops-field"><span class="lb">위 이름</span><input class="ops-in" id="cgfLabel" maxlength="30" value="${worldEsc(n.label)}" oninput="cgSet('label', this.value)"></div>
-    <div class="ops-field"><span class="lb">옆 표시</span><input class="ops-in" id="cgfTag" maxlength="30" value="${worldEsc(n.tag)}" oninput="cgSet('tag', this.value)"></div>
+    <div class="ops-field"><span class="lb">이름</span><input class="ops-in" id="cgfLabel" maxlength="30" value="${worldEsc(n.label)}" oninput="cgSet('label', this.value)"></div>
+    <div class="ops-field"><span class="lb">오른쪽 표시</span><input class="ops-in" id="cgfTag" maxlength="30" value="${worldEsc(n.tag)}" oninput="cgSet('tag', this.value)"></div>
+    <div class="ops-field"><span class="lb">색</span><select class="ops-in" onchange="cgSet('accent', this.value)">${CG_ACCENTS.map(a => `<option value="${a[0]}"${(n.accent || 'point') === a[0] ? ' selected' : ''}>${a[1]}</option>`).join('')}</select></div>
     <div class="ops-field"><span class="lb">공개</span><select class="ops-in" onchange="cgSet('chapter', +this.value)">${chOpts}</select></div>
     ${n.kind === 'text' ? `<div class="ops-field"><span class="lb">제목</span><input class="ops-in" id="cgfTitle" maxlength="40" value="${worldEsc(n.title)}" oninput="cgSet('title', this.value)"></div>
       <div class="ops-field wide"><span class="lb">글</span><textarea class="ops-in" id="cgfText" maxlength="600" oninput="cgSet('text', this.value)">${worldEsc(n.text)}</textarea></div>`

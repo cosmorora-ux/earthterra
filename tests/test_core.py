@@ -274,6 +274,13 @@ class TestChapterGraph(unittest.TestCase):
         self.assertEqual([n["id"] for n in w2.graph["nodes"]], ["mine"], "이미 만든 노드를 덮어씀")
         w2.set_graph({"nodes": [], "edges": []})
         self.assertEqual(world_mod.World(path=p).graph["nodes"], [], "비운 뒤 다시 켜면 기본 스토리가 또 채워짐")
+        # 손대지 않은 1판 기본 스토리는 새 판으로, 고친 그림은 그대로
+        p3 = os.path.join(d, "c.json")
+        with open(p3, "w", encoding="utf-8") as f:
+            json.dump({"chapters": [], "places": [], "unlocked": 0, "story_seeded": True,
+                       "graph": {"nodes": [{"id": i, "kind": "text", "text": "x"} for i in world_story.OLD_STORY_IDS], "edges": []}}, f)
+        self.assertEqual(len(world_mod.World(path=p3).graph["nodes"]), len(world_story.DEFAULT_GRAPH["nodes"]), "예전 기본 스토리가 새 판으로 안 바뀜")
+        self.assertTrue(all(n.get("accent") for n in world_mod.World(path=p3).graph["nodes"]))
 
 
 class TestEngine(unittest.TestCase):

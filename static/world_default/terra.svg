@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs>
+<radialGradient id="bg" cx="50%" cy="60%" r="80%"><stop offset="0" stop-color="#14161f"/><stop offset="1" stop-color="#050507"/></radialGradient>
+<radialGradient id="p1" cx="35%" cy="35%" r="70%"><stop offset="0" stop-color="#9fb8ff"/><stop offset=".6" stop-color="#34508f"/><stop offset="1" stop-color="#0d1530"/></radialGradient>
+<radialGradient id="p2" cx="65%" cy="35%" r="70%"><stop offset="0" stop-color="#ffd98a"/><stop offset=".6" stop-color="#8f6a2c"/><stop offset="1" stop-color="#2a1d08"/></radialGradient>
+<linearGradient id="seam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+<rect width="400" height="300" fill="url(#bg)"/>
+<clipPath id="l"><rect x="0" y="0" width="200" height="300"/></clipPath><clipPath id="r"><rect x="200" y="0" width="200" height="300"/></clipPath>
+<circle cx="200" cy="158" r="92" fill="url(#p1)" clip-path="url(#l)"/>
+<circle cx="200" cy="142" r="92" fill="url(#p2)" clip-path="url(#r)"/>
+<rect x="198.5" y="30" width="3" height="240" fill="url(#seam)"/>
+<ellipse cx="200" cy="150" rx="150" ry="22" fill="none" stroke="#d9d4f2" stroke-width=".8" opacity=".3" transform="rotate(-8 200 150)"/>
+<g fill="#fff" opacity=".6"><circle cx="50" cy="50" r="1.1"/><circle cx="350" cy="60" r="1"/><circle cx="330" cy="250" r="1.2"/><circle cx="60" cy="240" r="1"/><circle cx="120" cy="30" r=".8"/><circle cx="280" cy="280" r=".8"/></g>
+</svg>
