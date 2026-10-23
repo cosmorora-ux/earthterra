@@ -4932,5 +4932,9 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .cg-stage.lod .k-text .cg-in, .cg-stage.lod .k-timeline .cg-in, .cg-stage.lod .k-lock .cg-in { display:none; }
 .cg-stage.lod .cg-node.open { z-index:1; }
 .cg-stage.lod .cg-line { stroke-width: calc(1.6px * var(--inv, 1)); }
-.cg-stage.lod-in .cg-in, .cg-stage.lod-in .cg-hd { animation: cgLodIn .4s ease both; }
+/* 간단한 모양에서 돌아올 때 : 이름(간단한 모양)은 위에 겹쳐 사라지고, 머리 · 내용은 살며시 */
+.cg-stage.lod-out .cg-lod { display:flex; position:absolute; left:0; right:0; top:0; z-index:2; padding: calc(8px * var(--inv, 1)) calc(10px * var(--inv, 1)); pointer-events:none; animation: cgLodFade .3s ease forwards; }
+.cg-stage.lod-out .cg-lod b { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:#ededf0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cg-stage.lod-out .cg-hd, .cg-stage.lod-out .cg-in { animation: cgLodIn .38s ease .08s both; }
 @keyframes cgLodIn { from { opacity:0; } }
+@keyframes cgLodFade { to { opacity:0; } }

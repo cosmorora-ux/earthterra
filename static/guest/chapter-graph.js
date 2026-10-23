@@ -118,14 +118,10 @@ function cgLayout() {
   // 멀리서 보기 : 이 배율보다 작으면 카드를 이름만 있는 간단한 모양으로(글자는 화면에서 읽을 만한 크기로 키워요)
   const lodOn = cg.s < CG_LOD_S;
   if (!cg.zooming && st.classList.contains('lod') !== lodOn) {
-    st.classList.toggle('lod', lodOn);
-    // 간단한 모양 → 원래 모양 : 내용이 갑자기 튀어나오지 않게 살며시
-    if (!lodOn) { st.classList.remove('lod-in'); void st.offsetWidth; st.classList.add('lod-in'); clearTimeout(cg.lodT); cg.lodT = setTimeout(() => st.classList.remove('lod-in'), 450); }
+    if (lodOn) st.classList.add('lod'); else cgLodExit(st);
   }
   st.style.setProperty('--inv', Math.min(2.4, 1 / cg.s).toFixed(3));
   st.style.transform = `scale(${cg.s})`;
-  // 배율이 바뀐 뒤 한 번 더 그려 글자를 새 배율에 맞춰 또렷하게(브라우저가 예전 배율 그림을 늘려 쓰지 않게)
-  clearTimeout(cg.crisp); cg.crisp = setTimeout(() => { st.style.transform = `scale(${cg.s}) translateZ(0)`; requestAnimationFrame(() => { st.style.transform = `scale(${cg.s})`; }); }, 160);
   const sz = document.getElementById('cgSizer');
   sz.style.width = Math.ceil(W * cg.s) + 'px'; sz.style.height = Math.ceil(H * cg.s) + 'px';
   // 작게 줄였을 때는 창 가운데에
@@ -146,6 +142,22 @@ function cgZoomApply(z, cx, cy) {
   wrap.scrollLeft = px * cg.s - cx + pl + ml; wrap.scrollTop = py * cg.s - cy + mt;
 }
 // 카드 쪽으로 부드럽게 다가가기 : 배율과 위치를 함께 천천히 바꿔 그 카드가 창 가운데에 오게(끝날 때 내용이 살며시 나타나요)
+// 간단한 모양 → 원래 모양 : 카드 높이가 부드럽게 늘어나고, 이름은 겹쳐 사라지며 내용이 살며시(깜빡임 없이)
+function cgLodExit(st) {
+  const boxes = [...st.querySelectorAll('.cg-node .cg-box')], h0 = boxes.map(b => b.offsetHeight);
+  st.classList.remove('lod'); st.classList.add('lod-out');
+  const h1 = boxes.map(b => b.offsetHeight);
+  boxes.forEach((b, i) => { b.style.height = h0[i] + 'px'; b.style.overflow = 'hidden'; });
+  void st.offsetWidth;
+  boxes.forEach((b, i) => { b.style.transition = 'height .42s cubic-bezier(.3,.7,.2,1)'; b.style.height = h1[i] + 'px'; });
+  const t0 = performance.now();
+  const tick = (now) => {
+    cgDraw();
+    if (now - t0 < 460) requestAnimationFrame(tick);
+    else { boxes.forEach(b => { b.style.height = ''; b.style.overflow = ''; b.style.transition = ''; }); st.classList.remove('lod-out'); cgLayout(); cgDraw(); }
+  };
+  requestAnimationFrame(tick);
+}
 function cgFlyTo(id, z) {
   const wrap = document.getElementById('cgWrap'), sz = document.getElementById('cgSizer'), r = cgBoxRect(id); if (!wrap || !r) return;
   const pl = parseFloat(getComputedStyle(wrap).paddingLeft) || 0, ml = () => parseFloat(sz.style.marginLeft) || 0, mt = () => parseFloat(sz.style.marginTop) || 0;
