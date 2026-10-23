@@ -281,6 +281,19 @@ class TestChapterGraph(unittest.TestCase):
                        "graph": {"nodes": [{"id": i, "kind": "text", "text": "x"} for i in world_story.OLD_STORY_IDS[0]], "edges": []}}, f)
         self.assertEqual(len(world_mod.World(path=p3).graph["nodes"]), len(world_story.DEFAULT_GRAPH["nodes"]), "예전 기본 스토리가 새 판으로 안 바뀜")
         self.assertTrue(all(n.get("accent") for n in world_mod.World(path=p3).graph["nodes"]))
+        # 손대지 않은 3판(임시 그림) → 이번 판, 3판에서 글을 고쳤으면 그대로
+        v3 = json.loads(json.dumps(world_story.DEFAULT_GRAPH))
+        for nd in v3["nodes"]:
+            nd["image"] = world_story.V3_IMAGES.get(nd["id"], nd.get("image"))
+        for edited, want_img in ((False, None), (True, "/static/world_default/nexus.svg")):
+            g3 = json.loads(json.dumps(v3))
+            if edited:
+                g3["nodes"][1]["text"] = "고친 글"
+            p4 = os.path.join(d, f"v3{edited}.json")
+            with open(p4, "w", encoding="utf-8") as f:
+                json.dump({"chapters": [], "places": [], "unlocked": 0, "story_seeded": 3, "graph": g3}, f)
+            got = {n["id"]: n for n in world_mod.World(path=p4).graph["nodes"]}
+            self.assertEqual(got["i_nexus"]["image"], want_img, "3판 처리 잘못(고친 그림을 덮었거나, 손대지 않은 것을 안 바꿈)")
 
 
 class TestEngine(unittest.TestCase):

@@ -114,6 +114,8 @@ function cgLayout() {
   const zl = document.getElementById('cgZoomLabel'); if (zl) zl.textContent = Math.round(cg.s * 100) + '%';
   st.style.width = W + 'px'; st.style.height = H + 'px';
   st.style.transform = `scale(${cg.s})`;
+  // 배율이 바뀐 뒤 한 번 더 그려 글자를 새 배율에 맞춰 또렷하게(브라우저가 예전 배율 그림을 늘려 쓰지 않게)
+  clearTimeout(cg.crisp); cg.crisp = setTimeout(() => { st.style.transform = `scale(${cg.s}) translateZ(0)`; requestAnimationFrame(() => { st.style.transform = `scale(${cg.s})`; }); }, 160);
   const sz = document.getElementById('cgSizer');
   sz.style.width = Math.ceil(W * cg.s) + 'px'; sz.style.height = Math.ceil(H * cg.s) + 'px';
   // 작게 줄였을 때는 창 가운데에

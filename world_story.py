@@ -7,13 +7,16 @@ world.json에 노드 그림이 아직 없을 때 한 번만 채워 넣어요. �
 """
 
 # 고칠 때마다 올려요 : 운영진이 손대지 않은 예전 기본 스토리는 새 것으로 바뀌어요
-STORY_VERSION = 3
-# 예전 판들의 카드 id 구성 : 이 구성 그대로면 손대지 않은 것으로 보고 새 판으로 바꿔요
+STORY_VERSION = 4
+# 예전 판들의 카드 id 구성(1 · 2판) : 이 구성 그대로면 손대지 않은 것으로 보고 새 판으로 바꿔요
 OLD_STORY_IDS = [
-    {"s1", "s2", "s3", "s4", "t1", "t2", "t3", "t4", "m1", "m2", "w1", "w2", "w3", "w4", "w5", "w6", "w7", "w8"},
-    {'w6', 'm1', 'w3', 's3', 'i_terra', 'w8', 's4', 'i_fracture', 's2', 'w7', 't2', 'i_nexus', 'i_arcadia', 'm2', 'w1', 's1', 't1', 't4', 'w5', 'w4', 'w2', 'i_loop', 'i_nova', 't3'},
+    {'t1', 't4', 'w1', 'w5', 'm1', 's1', 't3', 's2', 'w8', 's3', 'w4', 't2', 'w2', 'w3', 'w7', 'w6', 's4', 'm2'},
+    {'t1', 't4', 'w1', 'w5', 'm1', 's1', 't3', 's2', 'w8', 's3', 'i_arcadia', 'w4', 's4', 'i_loop', 'i_nexus', 't2', 'w2', 'w3', 'w7', 'i_nova', 'w6', 'i_terra', 'i_fracture', 'm2'},
 ]
+# 3판 = 이번 판 + 아래 임시 그림. 내용이 3판과 똑같으면(손대지 않았으면) 이번 판으로 바꿔요
+V3_IMAGES = {'i_nexus': '/static/world_default/nexus.svg', 'i_arcadia': '/static/world_default/arcadia.svg', 'i_nova': '/static/world_default/nova.svg', 'i_fracture': '/static/world_default/fracture.svg', 'i_loop': '/static/world_default/loop.svg', 'i_terra': '/static/world_default/terra.svg'}
 
+# 그림 카드는 비워 둬요 : 운영진이 노드 편집에서 카드를 눌러 '그림 올리기'로 넣어요
 DEFAULT_GRAPH = {
  "nodes": [
   {
@@ -23,7 +26,7 @@ DEFAULT_GRAPH = {
    "tag": "",
    "title": "",
    "text": "",
-   "image": "/static/world_default/nexus.svg",
+   "image": None,
    "w": 340,
    "chapter": 0,
    "accent": "violet",
@@ -100,7 +103,7 @@ DEFAULT_GRAPH = {
    "tag": "",
    "title": "",
    "text": "",
-   "image": "/static/world_default/arcadia.svg",
+   "image": None,
    "w": 220,
    "chapter": 0,
    "accent": "amber",
@@ -115,7 +118,7 @@ DEFAULT_GRAPH = {
    "tag": "",
    "title": "",
    "text": "",
-   "image": "/static/world_default/nova.svg",
+   "image": None,
    "w": 220,
    "chapter": 0,
    "accent": "blue",
@@ -145,7 +148,7 @@ DEFAULT_GRAPH = {
    "tag": "",
    "title": "",
    "text": "",
-   "image": "/static/world_default/fracture.svg",
+   "image": None,
    "w": 340,
    "chapter": 0,
    "accent": "blue",
@@ -253,7 +256,7 @@ DEFAULT_GRAPH = {
    "tag": "",
    "title": "",
    "text": "",
-   "image": "/static/world_default/loop.svg",
+   "image": None,
    "w": 340,
    "chapter": 0,
    "accent": "amber",
@@ -268,7 +271,7 @@ DEFAULT_GRAPH = {
    "tag": "",
    "title": "",
    "text": "",
-   "image": "/static/world_default/terra.svg",
+   "image": None,
    "w": 340,
    "chapter": 0,
    "accent": "violet",

@@ -17,7 +17,7 @@ import threading
 import uuid
 
 from world_zones import ZONE_DEFAULTS
-from world_story import DEFAULT_GRAPH, STORY_VERSION, OLD_STORY_IDS
+from world_story import DEFAULT_GRAPH, STORY_VERSION, OLD_STORY_IDS, V3_IMAGES
 
 WORLD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "world.json")
 MAX_PLACES, MAX_CHAPTERS, MAX_INFO = 40, 60, 8
@@ -191,7 +191,11 @@ class World:
         if self.story_seeded < STORY_VERSION:
             # 노드 그림이 비었거나 손대지 않은 예전 기본 스토리면 새 기본 스토리로(운영진이 만든 노드는 그대로)
             ids = {n["id"] for n in self.graph["nodes"]}
-            if not ids or (self.story_seeded and ids in OLD_STORY_IDS):
+            v3 = json.loads(json.dumps(DEFAULT_GRAPH))
+            for nd in v3["nodes"]:
+                nd["image"] = V3_IMAGES.get(nd["id"], nd.get("image"))
+            untouched_v3 = self.story_seeded == 3 and self.graph == clean_graph(v3, len(self.chapters))
+            if not ids or (self.story_seeded and ids in OLD_STORY_IDS) or untouched_v3:
                 self.graph = clean_graph(DEFAULT_GRAPH, len(self.chapters))
             self.story_seeded = STORY_VERSION
             migrated = True
