@@ -29,7 +29,8 @@ function worldGraphHtml() {
        <button class="dorm-tbtn" onclick="cgCancel()"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
        <button class="dorm-tbtn primary" onclick="cgSave()"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`
     : `<button class="dorm-tbtn" onclick="cgStartEdit()"><i class="fa-solid fa-diagram-project"></i><span class="t">노드 편집</span></button>`;
-  return `<div class="wm-card cg-card${cg.edit ? ' editing' : ''}"><div class="wm-h"><span class="en">Story</span><span class="sp"></span><span class="cg-tools">${tools}</span></div>
+  // 제목은 위 머리(Pangaea ▶ 챕터) 하나만 : 여기엔 운영진 버튼 줄만(버튼이 없으면 줄도 없어요)
+  return `<div class="wm-card cg-card${cg.edit ? ' editing' : ''}">${tools ? `<div class="wm-h cg-h"><span class="sp"></span><span class="cg-tools">${tools}</span></div>` : ''}
     <div class="cg-view${cg.edit ? ' editing' : ''}"><div class="cg-canvas">
       <div class="cg-wrap" id="cgWrap"><div class="cg-sizer" id="cgSizer"><div class="cg-stage" id="cgStage"></div></div>
         <div class="cg-empty">${cg.edit ? '아래 도구에서 카드를 더해 보세요.' : '노드 편집에서 카드를 추가해 주세요.'}</div></div>
@@ -112,7 +113,7 @@ function cgLayout() {
   // 창 높이 : 화면의 70%까지, 그리고 아래 챕터 서랍 막대에 가리지 않게
   let room = Math.round(window.innerHeight * .7);
   const dr = document.getElementById('cgDrawer');
-  if (dr && !dr.hidden) room = Math.min(room, Math.max(260, dr.getBoundingClientRect().top - wrap.getBoundingClientRect().top - 16));
+  if (dr && !dr.hidden) room = Math.min(room, Math.max(160, dr.getBoundingClientRect().top - wrap.getBoundingClientRect().top - 16));
   const viewH = cg.viewH || (cg.viewH = Math.max(cg.edit ? 480 : 120, Math.min(Math.ceil(H * autoS), room)));
   wrap.style.height = viewH + 'px';
   const insp = document.getElementById('cgForm'); if (insp) insp.style.setProperty('--cg-h', viewH + 'px');

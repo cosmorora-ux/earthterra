@@ -4993,3 +4993,6 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
   .topbar.v2:not(.main-topbar) .dorm-tools-r { margin-left:auto; display:flex; align-items:center; gap:6px; }
   .topbar.v2:not(.main-topbar) .dorm-tbtn { height:36px; min-width:36px; }
 }
+/* 노드 그림 확대 · 축소 버튼 : 휴대폰에서는 위 오른쪽(아래 챕터 막대와 겹치지 않게) */
+@media (max-width:900px) { .cg-view .cg-zoom { position:absolute !important; top:10px; bottom:auto !important; right:10px; } }
+.cg-card > .cg-h { padding-top:14px; }
