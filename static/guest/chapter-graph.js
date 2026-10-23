@@ -117,7 +117,11 @@ function cgLayout() {
   st.style.width = W + 'px'; st.style.height = H + 'px';
   // 멀리서 보기 : 이 배율보다 작으면 카드를 이름만 있는 간단한 모양으로(글자는 화면에서 읽을 만한 크기로 키워요)
   const lodOn = cg.s < CG_LOD_S;
-  if (st.classList.contains('lod') !== lodOn) { st.classList.toggle('lod', lodOn); }
+  if (!cg.zooming && st.classList.contains('lod') !== lodOn) {
+    st.classList.toggle('lod', lodOn);
+    // 간단한 모양 → 원래 모양 : 내용이 갑자기 튀어나오지 않게 살며시
+    if (!lodOn) { st.classList.remove('lod-in'); void st.offsetWidth; st.classList.add('lod-in'); clearTimeout(cg.lodT); cg.lodT = setTimeout(() => st.classList.remove('lod-in'), 450); }
+  }
   st.style.setProperty('--inv', Math.min(2.4, 1 / cg.s).toFixed(3));
   st.style.transform = `scale(${cg.s})`;
   // 배율이 바뀐 뒤 한 번 더 그려 글자를 새 배율에 맞춰 또렷하게(브라우저가 예전 배율 그림을 늘려 쓰지 않게)
@@ -140,6 +144,27 @@ function cgZoomApply(z, cx, cy) {
   cg.z = z; cgLayout(); cgDraw();
   [ml, mt] = m();
   wrap.scrollLeft = px * cg.s - cx + pl + ml; wrap.scrollTop = py * cg.s - cy + mt;
+}
+// 카드 쪽으로 부드럽게 다가가기 : 배율과 위치를 함께 천천히 바꿔 그 카드가 창 가운데에 오게(끝날 때 내용이 살며시 나타나요)
+function cgFlyTo(id, z) {
+  const wrap = document.getElementById('cgWrap'), sz = document.getElementById('cgSizer'), r = cgBoxRect(id); if (!wrap || !r) return;
+  const pl = parseFloat(getComputedStyle(wrap).paddingLeft) || 0, ml = () => parseFloat(sz.style.marginLeft) || 0, mt = () => parseFloat(sz.style.marginTop) || 0;
+  const s0 = cg.s, s1 = z, P = { x: r.x + r.w / 2, y: r.y + Math.min(r.h / 2, 120) };
+  const a0 = { x: P.x * s0 + ml() + pl - wrap.scrollLeft, y: P.y * s0 + mt() - wrap.scrollTop };   // 지금 그 카드가 창 안 어디에 있는지
+  const a1 = { x: wrap.clientWidth / 2, y: Math.min(wrap.clientHeight / 2, 160) };
+  const ease = (t) => 1 - Math.pow(1 - t, 3), t0 = performance.now(), dur = 520;
+  cg.zooming = true;
+  const step = (now) => {
+    const t = Math.min(1, (now - t0) / dur), k = ease(t);
+    cg.z = s0 + (s1 - s0) * k;
+    if (t === 1) { cg.zooming = false; cg.z = s1; }
+    cgLayout(); cgDraw();
+    wrap.scrollLeft = P.x * cg.s + ml() + pl - (a0.x + (a1.x - a0.x) * k);
+    wrap.scrollTop = P.y * cg.s + mt() - (a0.y + (a1.y - a0.y) * k);
+    if (t < 1) requestAnimationFrame(step);
+    else { cgLayout(); cgDraw(); wrap.scrollLeft = P.x * cg.s + ml() + pl - a1.x; wrap.scrollTop = P.y * cg.s + mt() - a1.y; }
+  };
+  requestAnimationFrame(step);
 }
 const cgClampZ = (z) => Math.max(.25, Math.min(2.5, Math.round(z * 100) / 100));
 function cgZoomBy(k, cx, cy) { cgZoomApply(cgClampZ(cg.s * k), cx, cy); }
@@ -264,7 +289,7 @@ function cgBind() {
     cgSpring();
     if (d.far < 5) {
       // 멀리서 보기에서 카드를 누르면 그 카드 쪽으로 크게(원래 크기), 아니면 펼치기 · 접기
-      if (cg.s < CG_LOD_S) { const w = document.getElementById('cgWrap').getBoundingClientRect(); cgZoomApply(1, e.clientX - w.left, e.clientY - w.top); }
+      if (cg.s < CG_LOD_S) cgFlyTo(d.id, 1);
       else cgToggle(d.id);
     }
   };

@@ -4932,3 +4932,5 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .cg-stage.lod .k-text .cg-in, .cg-stage.lod .k-timeline .cg-in, .cg-stage.lod .k-lock .cg-in { display:none; }
 .cg-stage.lod .cg-node.open { z-index:1; }
 .cg-stage.lod .cg-line { stroke-width: calc(1.6px * var(--inv, 1)); }
+.cg-stage.lod-in .cg-in, .cg-stage.lod-in .cg-hd { animation: cgLodIn .4s ease both; }
+@keyframes cgLodIn { from { opacity:0; } }
