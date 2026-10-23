@@ -149,22 +149,18 @@ function cgPort(id, side, t) {
   if (side === 't') return { x: r.x + r.w * t, y: r.y };
   return { x: r.x + r.w * t, y: r.y + r.h };
 }
-// 선 : 한쪽으로만 활처럼 휘는 곡선(S자 없이). 출발 면 바깥쪽으로 먼저 나가는 쪽으로 휘어요
-function cgPath(p1, s1, p2) {
-  const dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy) || 1;
-  const k = Math.min(.28, 60 / len + .12) * len;   // 휘는 정도 : 짧은 선은 조금 더, 긴 선은 은은하게
-  const nx = -dy / len, ny = dx / len, mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
-  const [ox, oy] = CG_DIR[s1];
-  const c1 = { x: mx + nx * k, y: my + ny * k }, c2 = { x: mx - nx * k, y: my - ny * k };
-  const out = (c) => (c.x - p1.x) * ox + (c.y - p1.y) * oy;
-  const c = out(c1) >= out(c2) ? c1 : c2;
-  return `M${p1.x},${p1.y} Q${c.x},${c.y} ${p2.x},${p2.y}`;
+// 선 : 레퍼런스처럼 카드 면에서 곧게 나와 부드럽게 이어지는 곡선(끝은 면과 수직)
+function cgPath(p1, s1, p2, s2) {
+  const [ax, ay] = CG_DIR[s1], [bx, by] = s2 ? CG_DIR[s2] : [-ax, -ay];
+  const span = (dx, dy, hz) => Math.max(36, Math.abs(hz ? dx : dy) * .5);
+  const d1 = span(p2.x - p1.x, p2.y - p1.y, !!ax), d2 = span(p2.x - p1.x, p2.y - p1.y, !!bx);
+  return `M${p1.x},${p1.y} C${p1.x + ax * d1},${p1.y + ay * d1} ${p2.x + bx * d2},${p2.y + by * d2} ${p2.x},${p2.y}`;
 }
 function cgDraw() {
   const svg = document.querySelector('#cgStage .cg-svg'), dots = document.querySelector('#cgStage .cg-dots'); if (!svg || !dots) return;
   const g = cgGraph();
   let h = '', o = '';
-  const dot = (p) => `<circle class="cg-dot" cx="${p.x}" cy="${p.y}" r="4"/>`;
+  const dot = (p) => `<circle class="cg-dot" cx="${p.x}" cy="${p.y}" r="6.5"/>`;
   g.edges.forEach((e, i) => {
     const p1 = cgPort(e.a, e.as, e.at), p2 = cgPort(e.b, e.bs, e.bt); if (!p1 || !p2) return;
     const d = cgPath(p1, e.as, p2, e.bs), sel = cg.edit && cg.selEdge === i;
