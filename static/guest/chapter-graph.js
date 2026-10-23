@@ -149,13 +149,17 @@ function cgPort(id, side, t) {
   if (side === 't') return { x: r.x + r.w * t, y: r.y };
   return { x: r.x + r.w * t, y: r.y + r.h };
 }
-// 선 : 카드 면에서 부드럽게 휘어 나가는 곡선
-function cgPath(p1, s1, p2, s2) {
-  const d = Math.max(40, Math.hypot(p2.x - p1.x, p2.y - p1.y) * .45);
-  const [ax, ay] = CG_DIR[s1], [bx, by] = s2 ? CG_DIR[s2] : [0, 0];
-  return `M${p1.x},${p1.y} C${p1.x + ax * d},${p1.y + ay * d} ${p2.x + bx * d},${p2.y + by * d} ${p2.x},${p2.y}`;
+// 선 : 한쪽으로만 활처럼 휘는 곡선(S자 없이). 출발 면 바깥쪽으로 먼저 나가는 쪽으로 휘어요
+function cgPath(p1, s1, p2) {
+  const dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy) || 1;
+  const k = Math.min(.28, 60 / len + .12) * len;   // 휘는 정도 : 짧은 선은 조금 더, 긴 선은 은은하게
+  const nx = -dy / len, ny = dx / len, mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+  const [ox, oy] = CG_DIR[s1];
+  const c1 = { x: mx + nx * k, y: my + ny * k }, c2 = { x: mx - nx * k, y: my - ny * k };
+  const out = (c) => (c.x - p1.x) * ox + (c.y - p1.y) * oy;
+  const c = out(c1) >= out(c2) ? c1 : c2;
+  return `M${p1.x},${p1.y} Q${c.x},${c.y} ${p2.x},${p2.y}`;
 }
-
 function cgDraw() {
   const svg = document.querySelector('#cgStage .cg-svg'), dots = document.querySelector('#cgStage .cg-dots'); if (!svg || !dots) return;
   const g = cgGraph();
