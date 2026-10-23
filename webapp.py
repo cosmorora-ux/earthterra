@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.100"
+SERVER_BUILD = "2026-10-13.101"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -3941,6 +3941,17 @@ def on_world_save(data):
         return
     world_mod.shared_world().set_all(data or {})
     emit("world_result", {"ok": True, "message": "맵이 저장되었습니다."})
+    _world_broadcast()
+
+
+@socketio.on("world_graph_save")
+def on_world_graph_save(data):
+    """운영진 : 챕터 화면 위 노드 그림(카드 위치 · 선 · 내용) 저장."""
+    if _require_gm_or_guest_gm(request.sid) is None:
+        emit("action_error", {"message": "운영진만 편집할 수 있습니다."})
+        return
+    world_mod.shared_world().set_graph(data or {})
+    emit("world_result", {"ok": True, "message": "노드를 저장했어요."})
     _world_broadcast()
 
 

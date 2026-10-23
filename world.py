@@ -20,6 +20,10 @@ from world_zones import ZONE_DEFAULTS
 
 WORLD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "world.json")
 MAX_PLACES, MAX_CHAPTERS, MAX_INFO = 40, 60, 8
+# 챕터 노드 그림(챕터 화면 위쪽) : 카드(글 · 그림)와 카드끼리 잇는 선
+MAX_NODES, MAX_EDGES, GRAPH_SPAN = 80, 160, 4000
+NODE_KINDS = ("text", "image")
+SIDES = ("l", "r", "t", "b")
 ZONES = 4  # 장소마다 1~4구역 카드
 
 
@@ -89,6 +93,42 @@ DEFAULT_WORLD = {
 }
 
 
+def _num(v, lo, hi, default):
+    try:
+        return max(lo, min(hi, float(v)))
+    except (TypeError, ValueError):
+        return default
+
+
+def clean_graph(data, n_chapters):
+    """노드 그림 정리 : 노드(종류 · 글 · 그림 · 위치 · 너비 · 공개 챕터)와 선(노드 id · 면 · 면 위 위치)."""
+    nodes, ids = [], set()
+    for nd in ((data or {}).get("nodes") or [])[:MAX_NODES]:
+        if not isinstance(nd, dict):
+            continue
+        nid = _s(nd.get("id"), 16) or uuid.uuid4().hex[:8]
+        if nid in ids:
+            continue
+        ids.add(nid)
+        kind = nd.get("kind") if nd.get("kind") in NODE_KINDS else "text"
+        nodes.append({"id": nid, "kind": kind, "label": _s(nd.get("label"), 30), "tag": _s(nd.get("tag"), 30),
+                      "title": _s(nd.get("title"), 40), "text": _text(nd.get("text"), 600), "image": _img_ok(nd.get("image")),
+                      "x": round(_num(nd.get("x"), 0, GRAPH_SPAN, 40)), "y": round(_num(nd.get("y"), 0, GRAPH_SPAN, 40)),
+                      "w": round(_num(nd.get("w"), 140, 520, 260)),
+                      "chapter": int(_num(nd.get("chapter"), 0, n_chapters, 0))})
+    edges, seen = [], set()
+    for e in ((data or {}).get("edges") or [])[:MAX_EDGES]:
+        if not isinstance(e, dict) or e.get("a") not in ids or e.get("b") not in ids or e.get("a") == e.get("b"):
+            continue
+        ed = {"a": e["a"], "as": e.get("as") if e.get("as") in SIDES else "r", "at": round(_num(e.get("at"), 0, 1, .5), 3),
+              "b": e["b"], "bs": e.get("bs") if e.get("bs") in SIDES else "l", "bt": round(_num(e.get("bt"), 0, 1, .5), 3)}
+        key = (ed["a"], ed["as"], ed["at"], ed["b"], ed["bs"], ed["bt"])
+        if key not in seen:
+            seen.add(key)
+            edges.append(ed)
+    return {"nodes": nodes, "edges": edges}
+
+
 def _s(v, n):
     return " ".join(str(v or "").split())[:n]
 
@@ -102,6 +142,7 @@ class World:
         self.path = path
         self.lock = threading.Lock()
         self.places, self.chapters, self.unlocked = [], [], 0
+        self.graph = {"nodes": [], "edges": []}
         self.load()
 
     def load(self):
@@ -134,11 +175,13 @@ class World:
                     migrated = True
         self.chapters = d.get("chapters", [])
         self.unlocked = int(d.get("unlocked") or 0)
+        self.graph = clean_graph(d.get("graph"), len(self.chapters))
         if migrated and os.path.exists(self.path):
             self.save()
 
     def save(self):
-        safeio.write_json(self.path, {"places": self.places, "chapters": self.chapters, "unlocked": self.unlocked}, indent=1)
+        safeio.write_json(self.path, {"places": self.places, "chapters": self.chapters, "unlocked": self.unlocked,
+                                        "graph": self.graph}, indent=1)
 
     # ---- 운영진 : 통째로 저장 ----
     def set_all(self, data):
@@ -172,17 +215,27 @@ class World:
             unlocked = self.unlocked
         with self.lock:
             self.chapters, self.places, self.unlocked = chapters, places, unlocked
+            self.graph = clean_graph(self.graph, len(chapters))   # 챕터 수가 줄면 노드 공개 시점도 맞춰요
+            self.save()
+
+    def set_graph(self, data):
+        with self.lock:
+            self.graph = clean_graph(data, len(self.chapters))
             self.save()
 
     # ---- 화면에 보낼 내용 (러너에게는 잠긴 것을 가림) ----
     def payload(self, is_gm=False):
         n = self.unlocked
         if is_gm:
-            return {"chapters": self.chapters, "places": self.places, "unlocked": n, "gm": True}
+            return {"chapters": self.chapters, "places": self.places, "unlocked": n, "gm": True, "graph": self.graph}
         chapters = [c if i < n else {"id": c["id"], "locked": True} for i, c in enumerate(self.chapters)]
         places = [p if p.get("chapter", 0) <= n else {"id": p["id"], "locked": True, "chapter": p.get("chapter", 0)}
                   for p in self.places]
-        return {"chapters": chapters, "places": places, "unlocked": n, "gm": False}
+        # 아직 공개 전인 노드는 자리만(내용은 보내지 않아요)
+        nodes = [nd if nd.get("chapter", 0) <= n else {"id": nd["id"], "kind": "text", "x": nd["x"], "y": nd["y"], "w": nd["w"], "locked": True}
+                 for nd in self.graph["nodes"]]
+        return {"chapters": chapters, "places": places, "unlocked": n, "gm": False,
+                "graph": {"nodes": nodes, "edges": self.graph["edges"]}}
 
     def payload_play(self):
         """PLAY 룸(LOOP)용 맵 : 챕터는 보이지 않고, 학교는 잠겨 있어요. 편집도 없습니다(운영진 포함)."""

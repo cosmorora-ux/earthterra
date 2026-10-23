@@ -794,6 +794,7 @@ function closeWorldMap(silent) {
   document.getElementById('sidebarMapBtn').classList.remove('active');
   document.getElementById('sidebarChapterBtn').classList.remove('active');
   worldEditMode = false; worldDraft = null;
+  if (typeof cg !== 'undefined') { cg.edit = false; cg.draft = null; cg.sel = null; }
   if (!silent && IS_LOUNGE) openDorm();
   if (!IS_LOUNGE) document.getElementById('sidebarBattleBtn').classList.add('active');
 }
@@ -806,7 +807,7 @@ socket.on('world_data', (d) => {
 socket.on('world_result', (d) => showShopToast(d.message));
 socket.on('joined', () => { if (worldOpen()) socket.emit('world_get'); });
 socket.on('world_image_result', (d) => {
-  if (!d.ok || !worldDraft) return;
+  if (!d.ok || !worldDraft || String(d.for || '').startsWith('node:')) return;
   const [pid, zi] = String(d.for || '').split(':z');
   const p = worldDraft.places.find(x => x.id === pid); if (!p) return;
   if (zi != null && zi !== '') { (p.zones = p.zones || [])[+zi] = Object.assign(p.zones[+zi] || {}, { image: d.url }); }
@@ -826,7 +827,8 @@ function renderWorld() {
   if (worldEditMode) { document.getElementById('worldTopSeg').textContent = '편집'; body.innerHTML = worldEditHtml(); return; }
   if (worldView === 'chapter') {
     document.getElementById('worldTopSeg').textContent = '챕터';
-    body.innerHTML = worldChaptersHtml() || emptyHtml('fa-book-open', '아직 챕터가 없어요', gm ? '편집에서 챕터를 추가해 주세요.' : '');
+    body.innerHTML = worldGraphHtml() + (worldChaptersHtml() || emptyHtml('fa-book-open', '아직 챕터가 없어요', gm ? '편집에서 챕터를 추가해 주세요.' : ''));
+    cgMount();
     const tr = body.querySelector('.wm-track');
     if (tr && !worldTrackShown) { const f = tr.style.getPropertyValue('--fill'); tr.style.setProperty('--fill', 0); requestAnimationFrame(() => requestAnimationFrame(() => tr.style.setProperty('--fill', f))); worldTrackShown = true; }
     return;

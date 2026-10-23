@@ -14,6 +14,7 @@
 import os
 import sys
 import unittest
+import tempfile
 
 sys.path.insert(0, os.getcwd())
 assert os.environ.get("EARTHTERRA_TEST") == "1", "tests/run_tests.py로 실행해 주세요(실제 데이터 보호)."
@@ -240,6 +241,25 @@ class TestTelegraph(unittest.TestCase):
         b.round_no += 1
         self.assertEqual(webapp.build_public_state(room)["telegraph_cells"], [], "지난 라운드 전조가 남아 보임")
         g.close()
+
+
+class TestChapterGraph(unittest.TestCase):
+    def test_graph_clean_and_lock(self):
+        """챕터 노드 : 저장 때 정리되고, 공개 전 챕터의 카드 내용은 러너에게 가지 않아요."""
+        import world as world_mod
+        w = world_mod.World(path=os.path.join(tempfile.mkdtemp(), "w.json"))
+        w.set_graph({"nodes": [{"id": "a", "kind": "text", "title": "공개", "text": "보임", "x": 10, "y": 20, "w": 260},
+                               {"id": "b", "kind": "image", "image": "http://evil/x.png", "x": 400, "y": 50, "chapter": 3, "label": "비밀"},
+                               {"id": "a", "kind": "text"}],
+                     "edges": [{"a": "a", "as": "r", "at": .5, "b": "b", "bs": "l", "bt": .3}, {"a": "a", "b": "zz"}]})
+        g = w.payload(True)["graph"]
+        self.assertEqual([n["id"] for n in g["nodes"]], ["a", "b"], "같은 id 노드가 겹쳐 들어감")
+        self.assertIsNone(g["nodes"][1]["image"], "바깥 주소 그림이 저장됨")
+        self.assertEqual(len(g["edges"]), 1, "없는 노드로 가는 선이 남음")
+        pub = w.payload(False)["graph"]["nodes"]
+        self.assertEqual(pub[0]["text"], "보임")
+        self.assertTrue(pub[1].get("locked") and "label" not in pub[1], "공개 전 카드 내용이 러너에게 감")
+        self.assertEqual(w.payload_play()["chapters"], [])
 
 
 class TestEngine(unittest.TestCase):
