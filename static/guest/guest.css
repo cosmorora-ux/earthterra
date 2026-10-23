@@ -4798,10 +4798,12 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
    챕터 노드 그림(chapter-graph.js) : 카드 · 선 · 선 끝 점. 보기에선 끌면 따라오고 놓으면 튕기며 제자리로
    ================================================================ */
 .cg-card .cg-tools { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
-.cg-wrap { position:relative; overflow-x:auto; overflow-y:hidden; margin:14px 20px 20px; scrollbar-width:none; }
+.cg-view { position:relative; margin:14px 20px 20px; }
+.cg-wrap { position:relative; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; min-height:120px; }
+.cg-view .cg-zoom { right:8px; bottom:8px; }
 .cg-wrap::-webkit-scrollbar { display:none; }
 .cg-sizer { position:relative; overflow:hidden; }
-@media (max-width:600px) { .cg-wrap { margin:10px 0 14px; padding:0 14px; } }
+@media (max-width:600px) { .cg-view { margin:10px 0 14px; } .cg-wrap { padding:0 14px; } .cg-view .cg-zoom { right:14px; } }
 .cg-stage { position:absolute; left:0; top:0; transform-origin:0 0; }
 .cg-svg, .cg-dots { position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
 .cg-svg { z-index:0; } .cg-dots { z-index:3; }

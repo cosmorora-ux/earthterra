@@ -5,7 +5,7 @@
 //   선을 눌러 지우기 · 카드를 눌러 내용(위 이름 · 옆 표시 · 제목 · 글 · 그림 · 너비 · 공개 챕터) 고치기.
 // 공개 전 챕터에 묶인 카드는 서버가 내용을 보내지 않아요(자리만 ???로).
 // ==================================================================
-const cg = { edit: false, draft: null, sel: null, off: {}, raf: 0, s: 1, drag: null };
+const cg = { edit: false, draft: null, sel: null, off: {}, raf: 0, s: 1, z: null, drag: null };   // z : 사용자가 고른 배율(null = 화면에 맞춰 자동, 'fit' = 전체 보기)
 const CG_MIN_W = 900, CG_MIN_H = 380, CG_PAD = 60, CG_SNAP = 10;
 const CG_MIN_SCALE = .62;   // 좁은 화면 : 이보다 작게 줄이지 않고 옆으로 밀어서 봐요
 const CG_DIR = { l: [-1, 0], r: [1, 0], t: [0, -1], b: [0, 1] };
@@ -21,13 +21,21 @@ function worldGraphHtml() {
   const tools = !gm ? '' : cg.edit
     ? `<button class="dorm-tbtn" onclick="cgAdd('text')"><i class="fa-solid fa-plus"></i><span class="t">글 카드</span></button>
        <button class="dorm-tbtn" onclick="cgAdd('image')"><i class="fa-solid fa-plus"></i><span class="t">그림 카드</span></button>
+       <button class="dorm-tbtn" onclick="cgCopy()" data-tip="고른 카드 복사 (Ctrl+D)"><i class="fa-regular fa-copy"></i><span class="t">복사</span></button>
        <button class="dorm-tbtn" onclick="cgCancel()"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
        <button class="dorm-tbtn primary" onclick="cgSave()"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`
     : `<button class="dorm-tbtn" onclick="cgStartEdit()"><i class="fa-solid fa-diagram-project"></i><span class="t">노드 편집</span></button>`;
   const hint = cg.edit ? '<span class="sub">카드를 끌어 옮기고, 가장자리 점을 다른 카드로 끌어 선을 이어요. 선을 누르면 지워져요.</span>' : '';
   return `<div class="wm-card cg-card${cg.edit ? ' editing' : ''}"><div class="wm-h"><span class="en">Story</span>${hint}<span class="sp"></span><span class="cg-tools">${tools}</span></div>
-    <div class="cg-wrap" id="cgWrap"><div class="cg-sizer" id="cgSizer"><div class="cg-stage" id="cgStage"></div></div>
+    <div class="cg-view"><div class="cg-wrap" id="cgWrap"><div class="cg-sizer" id="cgSizer"><div class="cg-stage" id="cgStage"></div></div>
       <div class="cg-empty">노드 편집에서 카드를 추가해 주세요.</div></div>
+      <div class="zoom-ctl cg-zoom">
+        <button type="button" onclick="cgZoomBy(1 / 1.25)" data-tip="축소"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+        <span class="z" id="cgZoomLabel">100%</span>
+        <button type="button" onclick="cgZoomBy(1.25)" data-tip="확대"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+        <button type="button" class="fit" onclick="cgZoomSet('fit')" data-tip="전체가 보이게 맞춤"><i class="fa-solid fa-expand"></i></button>
+        <button type="button" onclick="cgZoomSet(null)" data-tip="원래 크기로"><i class="fa-solid fa-rotate-left"></i></button>
+      </div></div>
     ${cg.edit ? '<div class="cg-form" id="cgForm"></div>' : ''}</div>`;
 }
 
@@ -59,13 +67,24 @@ function cgLayout() {
     W = Math.max(W, el.offsetLeft + el.offsetWidth + CG_PAD);
     H = Math.max(H, el.offsetTop + el.offsetHeight + CG_PAD);
   });
-  cg.s = Math.max(CG_MIN_SCALE, Math.min(1, wrap.clientWidth / W));
+  const cs = getComputedStyle(wrap), avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  cg.s = cg.z === 'fit' ? Math.min(1.5, avail / W) : typeof cg.z === 'number' ? cg.z : Math.max(CG_MIN_SCALE, Math.min(1, avail / W));
+  const zl = document.getElementById('cgZoomLabel'); if (zl) zl.textContent = Math.round(cg.s * 100) + '%';
   st.style.width = W + 'px'; st.style.height = H + 'px';
   st.style.transform = `scale(${cg.s})`;
   const sz = document.getElementById('cgSizer');
   sz.style.width = Math.ceil(W * cg.s) + 'px'; sz.style.height = Math.ceil(H * cg.s) + 'px';
   st.querySelectorAll('svg').forEach(svg => { svg.setAttribute('width', W); svg.setAttribute('height', H); });
 }
+// 확대 · 축소 · 전체 맞춤 · 원래 크기 : 보고 있던 가운데가 그대로 가운데에 오게 스크롤을 맞춰요
+function cgZoomApply(z) {
+  const wrap = document.getElementById('cgWrap'); if (!wrap) return;
+  const cx = (wrap.scrollLeft + wrap.clientWidth / 2) / cg.s;
+  cg.z = z; cgLayout(); cgDraw();
+  wrap.scrollLeft = cx * cg.s - wrap.clientWidth / 2;
+}
+function cgZoomBy(k) { cgZoomApply(Math.max(.25, Math.min(2.5, Math.round(cg.s * k * 100) / 100))); }
+function cgZoomSet(z) { cgZoomApply(z); }
 // 카드 상자(위 이름 빼고)의 무대 좌표 사각형 : 끌고 있는 만큼(off)도 더해요
 function cgBoxRect(id) {
   const el = document.querySelector(`#cgStage .cg-node[data-id="${id}"]`); if (!el) return null;
@@ -222,6 +241,18 @@ function cgSet(key, v) {
   if (key === 'kind') cgForm();
   else if (keep) { const el = document.getElementById(keep); if (el) el.focus(); }
 }
+// 고른 카드 복사 : 내용 그대로 옆 아래에 하나 더(선은 복사하지 않아요)
+function cgCopy() {
+  const n = cg.edit && cg.sel && cgNode(cg.sel);
+  if (!n) { if (typeof uiToast === 'function') uiToast('복사할 카드를 먼저 눌러 고르세요.'); return; }
+  const c = Object.assign(JSON.parse(JSON.stringify(n)), { id: Math.random().toString(16).slice(2, 10), x: n.x + 30, y: n.y + 30 });
+  cg.draft.nodes.push(c); cg.sel = c.id; cgMount();
+}
+document.addEventListener('keydown', (e) => {
+  if (!cg.edit || /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); cgCopy(); }
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && cg.sel) { e.preventDefault(); cgDel(); }
+});
 function cgDel() {
   cg.draft.nodes = cg.draft.nodes.filter(n => n.id !== cg.sel);
   cg.draft.edges = cg.draft.edges.filter(e => e.a !== cg.sel && e.b !== cg.sel);
@@ -252,6 +283,6 @@ function cgForm() {
       <div class="ops-field wide"><span class="lb">글</span><textarea class="ops-in" id="cgfText" maxlength="600" oninput="cgSet('text', this.value)">${worldEsc(n.text)}</textarea></div>`
     : `<div class="ops-field"><span class="lb">그림</span><label class="ops-btn"><i class="fa-solid fa-image"></i> 그림 올리기<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="cgPickImage(this)"></label></div>`}
     <div class="ops-field"><span class="lb">너비 ${n.w}px</span><input type="range" id="cgfW" min="140" max="520" step="10" value="${n.w}" oninput="this.previousElementSibling.textContent='너비 '+this.value+'px'; cgSet('w', +this.value)"></div>
-    </div><div class="ops-foot"><button class="ops-btn danger" onclick="cgDel()"><i class="fa-solid fa-trash-can"></i> 이 카드 지우기</button></div>`;
+    </div><div class="ops-foot"><button class="ops-btn" onclick="cgCopy()"><i class="fa-regular fa-copy"></i> 복사</button><button class="ops-btn danger" onclick="cgDel()"><i class="fa-solid fa-trash-can"></i> 이 카드 지우기</button></div>`;
 }
 window.addEventListener('resize', () => { if (document.getElementById('cgStage')) { cgLayout(); cgDraw(); } });
