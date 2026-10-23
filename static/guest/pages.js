@@ -48,7 +48,7 @@ function openBattleHub() {
   closeWorldMap(true);
   if (typeof opsOpen === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); document.getElementById('sidebarSettingsBtn').classList.remove('active'); }
   document.body.classList.add('view-battles');
-  ['sidebarBattleBtn', 'sidebarDormBtn', 'sidebarMapBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.classList.remove('active'); });
+  ['sidebarBattleBtn', 'sidebarDormBtn', 'sidebarMapBtn', 'sidebarChapterBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.classList.remove('active'); });
   document.getElementById('sidebarBattlesBtn').classList.add('active');
   socket.emit('battle_list'); renderBattleHub();
   clearInterval(battleHubT); battleHubT = setInterval(() => { if (battleHubOpen()) renderBattleHub(true); else clearInterval(battleHubT); }, 30000);
@@ -86,16 +86,17 @@ function sidebarBattleClick() {
 if (!IS_LOUNGE && BATTLE_TYPE !== 'play') document.addEventListener('DOMContentLoaded', () => {
   const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
   on('sidebarMapBtn', () => goLounge('map'));
+  on('sidebarChapterBtn', () => goLounge('chapter'));
   on('sidebarMailBtn', () => goLounge('mail'));
   on('sidebarShopBtn', () => goLounge('shop'));
   on('newsMailRow', () => goLounge('mail'));
 });
-if (IS_LOUNGE && ['map', 'mail', 'shop', 'mydorm', 'dormmanage'].includes(new URLSearchParams(location.search).get('view'))) {
+if (IS_LOUNGE && ['map', 'chapter', 'mail', 'shop', 'mydorm', 'dormmanage'].includes(new URLSearchParams(location.search).get('view'))) {
   const v = new URLSearchParams(location.search).get('view');
   const t0 = Date.now();
   const tryV = () => {
     if (!(document.getElementById('dormModal') && typeof openWorldMap === 'function')) { setTimeout(tryV, 100); return; }
-    if (v === 'map') openWorldMap(); else if (v === 'shop') openShop(); else if (v === 'mail') openMail();
+    if (v === 'map' || v === 'chapter') openWorldMap(v); else if (v === 'shop') openShop(); else if (v === 'mail') openMail();
     // 내 방 · 관리는 로그인 · 마이룸 정보가 온 뒤에 열어요
     else if (dormData && (v === 'mydorm' ? dormMe() : dormIsGm())) openDormView(v === 'mydorm' ? 'mine' : 'manage');
     else if (Date.now() - t0 < 10000) setTimeout(tryV, 200);
@@ -763,14 +764,16 @@ socket.on('gm_state', (state) => {
 });
 
 // ==================================================================
-// 맵 (일반 룸) : 장소 지도 + 챕터 해금 트랙. 운영진은 '편집'으로 장소·챕터를 고치고 해금 챕터를 정합니다.
+// 맵 (일반 룸) : 장소 지도(월드맵)와 챕터 해금 트랙(챕터)을 지도 메뉴에서 따로 엽니다. 운영진은 '편집'으로 장소·챕터를 고치고 해금 챕터를 정합니다.
 // 잠긴 장소·챕터 내용은 서버가 러너에게 보내지 않습니다(??? 로만 보임).
 // ==================================================================
-let worldData = null, worldSel = null, worldEditMode = false, worldDraft = null, worldEditIdx = 0;
+let worldData = null, worldSel = null, worldView = 'map', worldEditMode = false, worldDraft = null, worldEditIdx = 0;
 const worldEsc = (t) => mailEsc(t == null ? '' : String(t));
 function worldOpen() { return document.body.classList.contains('view-map'); }
 function worldIsGm() { return !!(worldData && worldData.gm) && myControlInfo(lastBattleForPanel).scope === 'all'; }
-function openWorldMap() {
+// 지도 메뉴 : 월드맵(장소 · 구역)과 챕터(해금 트랙)를 따로 열어요
+function openWorldMap(view) {
+  worldView = view === 'chapter' ? 'chapter' : 'map';
   // 기록 · 채팅 창이 열려 있으면 같은 순간에 닫고 지도로(중간 화면 없이)
   if (document.body.classList.contains('m-chat-open')) { viewSwap(); document.body.classList.add('view-map'); toggleMobileChat(false); }
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
@@ -780,7 +783,8 @@ function openWorldMap() {
   document.body.classList.add('view-map');
   if (typeof closeLoopAdmin === 'function' && document.body.classList.contains('view-loopadmin')) closeLoopAdmin();
   ['sidebarBattleBtn', 'sidebarDormBtn'].forEach(id => document.getElementById(id).classList.remove('active'));
-  document.getElementById('sidebarMapBtn').classList.add('active');
+  document.getElementById('sidebarMapBtn').classList.toggle('active', worldView === 'map');
+  document.getElementById('sidebarChapterBtn').classList.toggle('active', worldView === 'chapter');
   socket.emit('world_get');
   renderWorld();
 }
@@ -788,6 +792,7 @@ function closeWorldMap(silent) {
   if (!worldOpen()) return;
   document.body.classList.remove('view-map');
   document.getElementById('sidebarMapBtn').classList.remove('active');
+  document.getElementById('sidebarChapterBtn').classList.remove('active');
   worldEditMode = false; worldDraft = null;
   if (!silent && IS_LOUNGE) openDorm();
   if (!IS_LOUNGE) document.getElementById('sidebarBattleBtn').classList.add('active');
@@ -819,18 +824,22 @@ function renderWorld() {
     : `<button class="dorm-tbtn" onclick="startWorldEdit()" data-tip="맵 편집"><i class="fa-solid fa-pen-ruler"></i><span class="t">편집</span></button>`;
   if (!worldData) { body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '맵을 불러오는 중입니다'); return; }
   if (worldEditMode) { document.getElementById('worldTopSeg').textContent = '편집'; body.innerHTML = worldEditHtml(); return; }
+  if (worldView === 'chapter') {
+    document.getElementById('worldTopSeg').textContent = '챕터';
+    body.innerHTML = worldChaptersHtml() || emptyHtml('fa-book-open', '아직 챕터가 없어요', gm ? '편집에서 챕터를 추가해 주세요.' : '');
+    const tr = body.querySelector('.wm-track');
+    if (tr && !worldTrackShown) { const f = tr.style.getPropertyValue('--fill'); tr.style.setProperty('--fill', 0); requestAnimationFrame(() => requestAnimationFrame(() => tr.style.setProperty('--fill', f))); worldTrackShown = true; }
+    return;
+  }
   const places = worldData.places || [];
   if (!worldSel || !places.some(p => p.id === worldSel)) worldSel = (places.find(p => !p.locked) || places[0] || {}).id || null;
   const sel = places.find(p => p.id === worldSel);
   document.getElementById('worldTopSeg').textContent = sel && !sel.locked ? sel.name : '맵';
-  body.innerHTML = worldMapHtml(places, sel) + worldChaptersHtml();
+  body.innerHTML = worldMapHtml(places, sel);
   // 고른 장소가 화면 가운데 오도록 지도를 가로로 옮깁니다(좁은 화면).
   const st = body.querySelector('.wm-stage'), el = body.querySelector('.wm-node.sel');
   if (st && el && st.scrollWidth > st.clientWidth) st.scrollLeft = el.offsetLeft - st.clientWidth / 2 + el.offsetWidth / 2;
   worldPlaceFill(true);
-  // 챕터 트랙은 처음 열 때만 왼쪽부터 차오르게
-  const tr = body.querySelector('.wm-track');
-  if (tr && !worldTrackShown) { const f = tr.style.getPropertyValue('--fill'); tr.style.setProperty('--fill', 0); requestAnimationFrame(() => requestAnimationFrame(() => tr.style.setProperty('--fill', f))); worldTrackShown = true; }
   bindWorldFx();
 }
 let worldTrackShown = false, worldFillPrev = null;

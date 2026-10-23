@@ -2445,6 +2445,7 @@
   .mail-preview i { color: var(--point); }
   /* PLAY 룸(LOOP)에는 맵을 달아 둡니다(챕터 없음 · 학교 잠김) */
   body.is-play.is-battle .sidebar #sidebarMapBtn { display:flex !important; }
+  body.is-play #sidebarChapterBtn { display:none !important; }
   body.is-play .m-battle-tools, body.is-play .m-userlist-btn { display:none !important; }
 
   /* ================================================================
@@ -4170,6 +4171,7 @@
     body.is-lounge .sidebar #sbGroupNews > .sb-ghead, body.is-battle .sidebar #sbGroupNews > .sb-ghead { order:1; }
     body.is-lounge .sidebar #sbGroupBattle > .sb-ghead, body.is-battle .sidebar #sbGroupBattle > .sb-ghead { order:3; }
     body.is-lounge .sidebar #sbGroupDorm > .sb-ghead, body.is-battle .sidebar #sbGroupDorm > .sb-ghead { order:4; }
+    body.is-lounge .sidebar #sbGroupMap > .sb-ghead, body.is-battle .sidebar #sbGroupMap > .sb-ghead { order:5; }
     body.is-lounge .sidebar #sbGroupPeople > .sb-ghead, body.is-battle .sidebar #sbGroupPeople > .sb-ghead { order:6; }
   }
   /* 휴대폰 하단 탭 위 하위 메뉴 목록 */

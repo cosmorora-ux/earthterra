@@ -87,7 +87,13 @@
       <button class="sidebar-icon" id="sidebarDormManageBtn" onclick="openDormView('manage')" style="display:none;"><i class="fa-solid fa-sliders"></i><span class="sb-label">마이룸 관리</span></button>
     </div></div>
   </div>
-  <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap()" data-tip="맵"><i class="fa-solid fa-map"></i><span class="sb-label">지도</span></button>
+  <div class="sb-group" id="sbGroupMap">
+    <button class="sidebar-icon sb-ghead" onclick="sbGroupClick(event, 'sbGroupMap')" aria-label="지도"><i class="fa-solid fa-map"></i><span class="sb-label">지도</span><i class="fa-solid fa-chevron-down sb-caret"></i><span class="notice-dot"></span></button>
+    <div class="sb-sub"><div class="sb-sub-in">
+      <button class="sidebar-icon" id="sidebarMapBtn" onclick="openWorldMap('map')"><i class="fa-solid fa-earth-asia"></i><span class="sb-label">월드맵</span></button>
+      <button class="sidebar-icon" id="sidebarChapterBtn" onclick="openWorldMap('chapter')"><i class="fa-solid fa-book-open"></i><span class="sb-label">챕터</span></button>
+    </div></div>
+  </div>
   <div class="sb-group" id="sbGroupPeople">
     <button class="sidebar-icon sb-ghead" onclick="sbGroupClick(event, 'sbGroupPeople')" aria-label="유저"><i class="fa-solid fa-user"></i><span class="sb-label">유저</span><i class="fa-solid fa-chevron-down sb-caret"></i><span class="notice-dot"></span></button>
     <div class="sb-sub"><div class="sb-sub-in">
