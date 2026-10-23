@@ -3555,7 +3555,7 @@ function renderUserInfoList() {
           + `<i class="fa-solid ${hidden ? 'fa-eye-slash' : 'fa-eye'}"></i></button>`
         : '';
       // 누르면 그 캐릭터의 마이페이지(운영진 = 수정 가능, 그 외 = 보기 전용).
-      // 왼쪽(점 + 이름)에 마우스를 올리면 프로필 사진 카드가 따라다니고, 오른쪽 링크 아이콘은 그 캐릭터의 프로필 문서로 가요.
+      // 왼쪽 절반(점 + 이름)에만 마우스를 올리면 프로필 사진 카드가 따라다니고, 오른쪽 링크 아이콘은 그 캐릭터의 프로필 문서로 가요.
       const doc = docUrlOf(name);
       // 링크가 없으면 흐린 아이콘(운영진은 눌러서 그 캐릭터의 마이페이지 '프로필' 칸에 넣어요). NPC는 사이트 안 프로필 창
       const link = npcProfileOf(name) ? `<button type="button" class="ui-doc" onclick="event.stopPropagation(); openNpcProfile('${js}')" aria-label="${esc(name)} 프로필" data-tip="프로필"><i class="fa-solid fa-link"></i></button>`
@@ -3571,9 +3571,16 @@ function renderUserInfoList() {
           <div class="cap"><span class="ui-dot"></span><span class="t"><b>${esc(name)}</b></span>${eye}</div></div>`;
       }
       return `<div class="userinfo-row ${hidden ? 'is-hidden' : ''} ${online ? 'is-online' : ''}" data-name="${esc(name)}" onclick="openUserFromList('${js}')">
-        <span class="ui-left" onmouseenter="uiHoverShow(this.parentNode, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()"><span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}${npcProfileOf(name) ? '<span class="npc-tag">NPC</span>' : ''}</b></span></span>${isGm && online ? deviceBadgesHtml(name) : ''}${link}${eye}</div>`;
+        <span class="ui-left" onmouseenter="uiHoverShow(this.parentNode, event)" onmousemove="uiHoverMove(event)" onmouseleave="uiHoverHide()"><span class="ui-dot"></span><span class="userinfo-name"><b>${esc(name)}${npcProfileOf(name) ? '<span class="npc-tag">NPC</span>' : ''}</b></span></span><span class="ui-prof" onclick="uiProfArea(this, event)"></span>${isGm && online ? deviceBadgesHtml(name) : ''}${link}${eye}</div>`;
     }).join('');
   }).join('') + (grid ? '</div>' : '');
+}
+// 목록 오른쪽 빈 곳 : 누르면 그 줄의 프로필(링크 아이콘과 같은 동작). 프로필이 없으면 평소처럼 마이페이지
+function uiProfArea(el, e) {
+  const d = el.parentNode.querySelector('.ui-doc');
+  if (!d || d.tagName === 'SPAN') return;
+  e.stopPropagation();
+  d.click();
 }
 // 유저 리스트 보기 방식(목록 / 썸네일) : 이 기기에 기억해요
 var userInfoView = (() => { try { return localStorage.getItem('userInfoView') === 'grid' ? 'grid' : 'list'; } catch (e) { return 'list'; } })();

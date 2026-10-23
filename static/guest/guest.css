@@ -350,7 +350,7 @@
   .ui-dev i { font-size:11px; color:#cfcfd4; }
   .ui-dev em { font-style:normal; }
   .userinfo-row { cursor:pointer; transition: opacity .25s ease, background .2s ease; }
-  @media (hover:hover) and (pointer:fine) { .userinfo-list:hover .userinfo-row:not(:hover) { opacity:.42; } }
+  @media (hover:hover) and (pointer:fine) { .userinfo-list:has(.ui-left:hover) .userinfo-row:not(:has(.ui-left:hover)) { opacity:.42; } }
   .ui-hovercard { position:fixed; left:0; top:0; z-index:400; width:168px; pointer-events:none; border-radius:16px; overflow:hidden;
     background: var(--panel); box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.07);
     opacity:0; scale:.86; transition: opacity .22s ease, scale .28s cubic-bezier(.2,.8,.2,1); will-change: transform; }
@@ -368,7 +368,10 @@
   .userinfo-row.is-hidden .userinfo-name b { color: var(--muted); text-decoration: line-through; }
   .userinfo-eye { background:none; border:none; color: var(--muted); cursor:pointer; font-size:14px; padding:2px 4px; }
   .userinfo-eye:hover { color: var(--text); }
-  .ui-left { flex:1; min-width:0; display:flex; align-items:center; gap:12px; align-self:stretch; }
+  /* 왼쪽 절반만 사진 카드가 뜨는 곳, 나머지 오른쪽은 프로필(링크)을 여는 곳 */
+  .ui-left { flex:0 1 50%; min-width:0; display:flex; align-items:center; gap:12px; align-self:stretch; }
+  .ui-prof { flex:1; align-self:stretch; }
+  @media (hover:hover) { .userinfo-row .ui-prof:hover ~ .ui-doc:not(.empty) { color:#fff; background: rgba(255,255,255,.06); } }
   .ui-doc { flex:none; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; margin:-4px 0; border-radius:10px;
     color: var(--point); font-size:13px; text-decoration:none; transition: color .15s ease, background .15s ease; }
   .ui-doc:hover { color: var(--point); background: rgba(var(--point-rgb),.12); }
