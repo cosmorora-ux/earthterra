@@ -2625,6 +2625,13 @@
     .wm-zones { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); overflow:visible; scroll-snap-type:none; }
     .wm-zone { flex:none; }
   }
+  /* 넓은 태블릿(가로 901~1366px, 터치 화면)도 휴대폰처럼 구역 카드를 옆으로 넘겨요 — 크기는 조금 더 크게 */
+  @media (min-width:901px) and (max-width:1366px) and (hover:none) and (pointer:coarse) {
+    .wm-zones { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scroll-padding:0 22px; gap:14px; scrollbar-width:none; }
+    .wm-zones::-webkit-scrollbar { display:none; }
+    .wm-zone { flex:0 0 280px; scroll-snap-align:start; }
+    .wm-zone .img { aspect-ratio:4 / 3; }
+  }
   /* 맵 머리 : 장소 이름은 굵게 하지 않고, 좁은 화면에서는 Pangaea만 */
   .world-topbar #worldTopSeg { font-weight:500; }
   @media (max-width:600px) { .world-topbar #worldTopSeg, .world-topbar #worldTopSeg + .sep, .world-topbar .world-brand + .sep { display:none !important; } }
