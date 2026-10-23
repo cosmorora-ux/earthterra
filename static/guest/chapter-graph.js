@@ -118,9 +118,12 @@ function cgLayout() {
   // 멀리서 보기 : 이 배율보다 작으면 카드를 이름만 있는 간단한 모양으로(글자는 화면에서 읽을 만한 크기로 키워요)
   const lodOn = cg.s < CG_LOD_S;
   if (!cg.zooming && st.classList.contains('lod') !== lodOn) {
-    if (lodOn) st.classList.add('lod'); else cgLodExit(st);
+    if (lodOn) cgLodEnter(st); else cgLodExit(st);
   }
-  st.style.setProperty('--inv', Math.min(2.4, 1 / cg.s).toFixed(3));
+  // 간단한 모양의 글자 크기 : 막 바뀌는 배율(60%)에서는 원래 머리 글자와 같은 크기로 시작해, 더 줄일수록 화면에서 13px까지 천천히 커져요
+  const lodT = Math.max(0, Math.min(1, (CG_LOD_S - cg.s) / (CG_LOD_S - .35)));
+  const lodScreen = 12.5 * CG_LOD_S + (13 - 12.5 * CG_LOD_S) * lodT;
+  st.style.setProperty('--inv', (lodScreen / 13 / cg.s).toFixed(3));
   st.style.transform = `scale(${cg.s})`;
   const sz = document.getElementById('cgSizer');
   sz.style.width = Math.ceil(W * cg.s) + 'px'; sz.style.height = Math.ceil(H * cg.s) + 'px';
@@ -143,6 +146,22 @@ function cgZoomApply(z, cx, cy) {
 }
 // 카드 쪽으로 부드럽게 다가가기 : 배율과 위치를 함께 천천히 바꿔 그 카드가 창 가운데에 오게(끝날 때 내용이 살며시 나타나요)
 // 간단한 모양 → 원래 모양 : 카드 높이가 부드럽게 늘어나고, 이름은 겹쳐 사라지며 내용이 살며시(깜빡임 없이)
+// 원래 모양 → 간단한 모양 : 카드 높이가 부드럽게 줄고 이름이 살며시 나타나요
+function cgLodEnter(st) {
+  const boxes = [...st.querySelectorAll('.cg-node .cg-box')], h0 = boxes.map(b => b.offsetHeight);
+  st.classList.add('lod', 'lod-enter');
+  const h1 = boxes.map(b => b.offsetHeight);
+  boxes.forEach((b, i) => { b.style.height = h0[i] + 'px'; b.style.overflow = 'hidden'; });
+  void st.offsetWidth;
+  boxes.forEach((b, i) => { b.style.transition = 'height .36s cubic-bezier(.3,.7,.2,1)'; b.style.height = h1[i] + 'px'; });
+  const t0 = performance.now();
+  const tick = (now) => {
+    cgDraw();
+    if (now - t0 < 400) requestAnimationFrame(tick);
+    else { boxes.forEach(b => { b.style.height = ''; b.style.overflow = ''; b.style.transition = ''; }); st.classList.remove('lod-enter'); cgLayout(); cgDraw(); }
+  };
+  requestAnimationFrame(tick);
+}
 function cgLodExit(st) {
   const boxes = [...st.querySelectorAll('.cg-node .cg-box')], h0 = boxes.map(b => b.offsetHeight);
   st.classList.remove('lod'); st.classList.add('lod-out');
