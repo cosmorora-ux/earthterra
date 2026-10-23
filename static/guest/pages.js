@@ -138,10 +138,10 @@ function renderBattleHub(tickOnly) {
     const can = !!b.can_enter;
     const ic = (BT_TYPES.find(t => t[0] === b.type) || [])[2] || 'fa-shield-halved';
     // 남은 시간 · 마감 · 입장 조건 문구는 표시하지 않아요(날짜 · 시간과 상태 표시만)
-    // 참여자 : 네모난 프로필 사진을 겹쳐 몇 개만, 나머지는 +n. 오른쪽에 팀 인원(n:n)
+    // 참여자 : 동그란 프로필 사진을 겹쳐 몇 개만, 나머지는 +n. 오른쪽에 팀 인원(n:n)
     const sides = b.sides || [0, 0];
     const faces = (b.faces || []).map(f => `<span class="bt-face" data-tip="${mailEsc(f.name)}"${f.color ? ` style="--fc:${mailEsc(f.color)}"` : ''}>${f.avatar ? `<img src="${mailEsc(f.avatar)}" alt="" loading="lazy" onerror="this.remove()">` : ''}<em>${mailEsc((f.name || '').slice(0, 1))}</em></span>`).join('')
-      + (b.faces_more ? `<span class="bt-face more">+${b.faces_more}</span>` : '');
+      + (b.faces_more ? `<span class="more">+${b.faces_more}</span>` : '');
     const when = (faces ? `<span class="bt-faces">${faces}</span>` : '') + (sides[0] || sides[1] ? `<span class="bt-vs">${sides[0]} : ${sides[1]}</span>` : '');
     const thumbStyle = b.thumb ? ` style="background-image:url('${mailEsc(b.thumb)}')"` : '';
     const drag = gm ? ` draggable="true" data-id="${b.id}" ondragstart="btDragStart(event)" ondragend="btDragEnd(event)" ondragover="btDragOver(event)" ondrop="btDrop(event)"` : '';
