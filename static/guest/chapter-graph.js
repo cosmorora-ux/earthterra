@@ -66,9 +66,9 @@ function cgNodeHtml(n) {
   } else inner = `${n.title ? `<div class="cg-tt">${worldEsc(n.title)}</div>` : ''}${n.text || cg.edit || !n.title ? `<div class="cg-tx${open ? '' : ' clamp'}">${worldEsc(n.text || '') || (cg.edit ? '<em>글을 넣어 주세요</em>' : '')}</div>` : ''}`;
   const ports = cg.edit ? ['l', 'r', 't', 'b'].map(s => `<span class="cg-port p-${s}" data-s="${s}"></span>`).join('') : '';
   const gate = cg.edit && n.chapter ? `<span class="cg-gate">Ch. ${n.chapter}</span>` : '';
-  // 멀리서 볼 때(작게 줄였을 때) 쓰는 간단한 모양 : 색 점 + 이름(없으면 제목 · 글 앞부분)만 크게
+  // 멀리서 볼 때(작게 줄였을 때) 쓰는 간단한 모양 : 색 점 + 이름(없으면 제목 · 글 앞부분)만 크게, 작은 표시는 빼요
   const brief = n.locked ? '???' : (n.label || n.title || (n.kind === 'timeline' ? ((n.items || [])[0] || {}).head : '') || (n.text || '').slice(0, 18) || '');
-  const lod = `<div class="cg-lod"><i class="pip"></i><b>${worldEsc(brief)}</b>${n.tag ? `<span>${worldEsc(n.tag)}</span>` : ''}</div>`;
+  const lod = `<div class="cg-lod"><b>${worldEsc(brief)}</b></div>`;
   return `<div class="cg-node k-${n.locked ? 'lock' : n.kind}${cg.sel === n.id ? ' sel' : ''}${fold ? ' foldable' : ''}${fold && open ? ' open' : ''}" data-id="${n.id}" style="left:${n.x}px; top:${n.y}px; width:${n.w}px; --ac:${cgAc(n)};">
     <div class="cg-box">${lod}${hd}<div class="cg-in">${inner}</div>${ports}${gate}</div></div>`;
 }
@@ -157,18 +157,17 @@ function cgPort(id, side, t) {
   if (side === 't') return { x: r.x + r.w * t, y: r.y };
   return { x: r.x + r.w * t, y: r.y + r.h };
 }
-// 선 : 레퍼런스처럼 카드 면에서 곧게 나와 부드럽게 이어지는 곡선(끝은 면과 수직)
+// 선 : 카드 면에서 부드럽게 휘어 나가는 곡선(카드 색을 옅게)
 function cgPath(p1, s1, p2, s2) {
-  const [ax, ay] = CG_DIR[s1], [bx, by] = s2 ? CG_DIR[s2] : [-ax, -ay];
-  const span = (dx, dy, hz) => Math.max(36, Math.abs(hz ? dx : dy) * .5);
-  const d1 = span(p2.x - p1.x, p2.y - p1.y, !!ax), d2 = span(p2.x - p1.x, p2.y - p1.y, !!bx);
-  return `M${p1.x},${p1.y} C${p1.x + ax * d1},${p1.y + ay * d1} ${p2.x + bx * d2},${p2.y + by * d2} ${p2.x},${p2.y}`;
+  const d = Math.max(40, Math.hypot(p2.x - p1.x, p2.y - p1.y) * .45);
+  const [ax, ay] = CG_DIR[s1], [bx, by] = s2 ? CG_DIR[s2] : [0, 0];
+  return `M${p1.x},${p1.y} C${p1.x + ax * d},${p1.y + ay * d} ${p2.x + bx * d},${p2.y + by * d} ${p2.x},${p2.y}`;
 }
 function cgDraw() {
   const svg = document.querySelector('#cgStage .cg-svg'), dots = document.querySelector('#cgStage .cg-dots'); if (!svg || !dots) return;
   const g = cgGraph();
   let h = '', o = '';
-  const dot = (p) => `<circle class="cg-dot" cx="${p.x}" cy="${p.y}" r="6.5"/>`;
+  const dot = (p) => `<circle class="cg-dot" cx="${p.x}" cy="${p.y}" r="4"/>`;
   g.edges.forEach((e, i) => {
     const p1 = cgPort(e.a, e.as, e.at), p2 = cgPort(e.b, e.bs, e.bt); if (!p1 || !p2) return;
     const d = cgPath(p1, e.as, p2, e.bs), sel = cg.edit && cg.selEdge === i;

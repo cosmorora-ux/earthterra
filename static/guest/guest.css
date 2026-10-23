@@ -4810,12 +4810,11 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .cg-stage { position:absolute; left:0; top:0; transform-origin:0 0; }
 .cg-svg, .cg-dots { position:absolute; left:0; top:0; overflow:visible; pointer-events:none; }
 .cg-svg { z-index:0; } .cg-dots { z-index:3; }
-/* 선 · 끝 점 : 레퍼런스처럼 밝고 연한 한 가지 색(포인트 색을 아주 옅게) */
-.cg-line { fill:none; stroke: color-mix(in srgb, var(--point) 28%, #f3f5e6); stroke-width:2.4; stroke-linecap:round; }
+.cg-line { fill:none; stroke: color-mix(in srgb, var(--ac, var(--point)) 55%, transparent); stroke-width:1.6; stroke-linejoin:round; stroke-linecap:round; }
 .cg-line.temp { stroke-dasharray:5 5; }
 .cg-hit { fill:none; stroke:transparent; stroke-width:14; pointer-events:stroke; cursor:pointer; }
 .cg-hit:hover { stroke: rgba(255,90,90,.3); }
-.cg-dot { fill: color-mix(in srgb, var(--point) 12%, #e4e6dc); stroke: color-mix(in srgb, var(--point) 28%, #f3f5e6); stroke-width:2.4; }
+.cg-dot { fill:#e9e9ee; stroke:#0c0c0e; stroke-width:2; }
 .cg-node { position:absolute; z-index:1; user-select:none; touch-action:none; cursor:grab; }
 /* 확대 · 축소 때 글자가 뭉개지지 않게 : 카드를 미리 그림(레이어)으로 굳혀 두지 않고, 배율이 바뀌면 글자를 다시 또렷하게 그려요 */
 .cg-stage, .cg-node { -webkit-font-smoothing:antialiased; text-rendering:geometricPrecision; }
@@ -4929,7 +4928,7 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cg-stage.lod .cg-lod .pip { display:none; }
 .cg-stage.lod .cg-lod b::before { content:""; flex:none; width: calc(7px * var(--inv, 1)); height: calc(7px * var(--inv, 1)); border-radius:50%; background: var(--ac, var(--point)); box-shadow: 0 0 8px var(--ac, var(--point)); }
-.cg-stage.lod .cg-lod span { padding-left: calc(14px * var(--inv, 1)); font-size: calc(11.5px * var(--inv, 1)); color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cg-stage.lod .cg-hd { display:none; }
 .cg-stage.lod .k-text .cg-in, .cg-stage.lod .k-timeline .cg-in, .cg-stage.lod .k-lock .cg-in { display:none; }
 .cg-stage.lod .cg-node.open { z-index:1; }
+.cg-stage.lod .cg-line { stroke-width: calc(1.6px * var(--inv, 1)); }
