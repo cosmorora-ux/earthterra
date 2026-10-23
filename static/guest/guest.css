@@ -5018,10 +5018,8 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
   .gbmode .dorm-frame-wrap { height:auto; padding-bottom:0; }
   .gbmode .map-frame.dorm-frame { height: min(100vw, 64vh); margin:0 -20px; }   /* 방 그림만 화면 양옆 끝까지 */
   #dormBody:has(> .gbmode) { margin-left:-20px; margin-right:-20px; padding-left:20px; padding-right:20px; }   /* 방 칸이 잘리지 않게 바깥 칸을 화면 끝까지 */
-  /* 휴대폰 : 방 바로 아래에 붙은 막대, 누르면 아래로 펼쳐져요 */
-  .dorm-gbdrawer { position:relative; margin-top:12px; border-radius:16px; border-bottom:1px solid var(--line); box-shadow:none; }
-  .dorm-gbdrawer.open { max-height:2000px; }
-  .dorm-gbdrawer .dorm-gb-bar i { transform: rotate(180deg); }
-  .dorm-gbdrawer.open .dorm-gb-bar i { transform: none; }
-  .dorm-gb-fold { overflow:visible; }
+  /* 휴대폰 : 챕터처럼 하단 탭 바로 위에 떠 있는 막대, 누르면 위로 올라와 방을 덮어요 */
+  .dorm-gbdrawer { position:fixed; left:20px; right:20px; bottom: calc(var(--mbar-h, 76px) + 14px); border-radius:16px; border-bottom:1px solid var(--line); }
+  .dorm-gbdrawer.open { max-height: calc(100dvh - var(--mbar-h, 76px) - 120px); }
+  .gbmode { padding-bottom:76px; }
 }
