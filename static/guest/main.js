@@ -833,6 +833,7 @@ function renderBattle(battle) {
     fxLastRound = null;
     renderSiteStatusCard(null);
     renderGrid(null, []);
+    renderMyPage();   // 전투가 없을 때(라운지 등)도 마이페이지 수정이 바로 보이게
     return;
   }
   document.getElementById('formatLabel').textContent = `${battle.format_label} ${BATTLE_TYPE_LABEL}`;
