@@ -4996,3 +4996,23 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 /* 노드 그림 확대 · 축소 버튼 : 휴대폰에서는 위 오른쪽(아래 챕터 막대와 겹치지 않게) */
 @media (max-width:900px) { .cg-view .cg-zoom { position:absolute !important; top:10px; bottom:auto !important; right:10px; } }
 .cg-card > .cg-h { padding-top:14px; }
+/* 마이룸 방명록 : 접었다 펼치기. 접혀 있으면 방 그림이 넓게 */
+.dorm-gb-toggle { width:100%; border:none; border-bottom:1px solid var(--line); background:none; color: var(--text); cursor:pointer; font-family:inherit; text-align:left; display:flex; align-items:center; gap:10px; }
+.dorm-gb-toggle .dorm-gb-cnt { font-size:13px; color: var(--muted); }
+.dorm-gb-toggle i { margin-left:auto; font-size:12px; color: var(--muted); transition: transform .3s; }
+.dorm-gbside.open .dorm-gb-toggle i { transform: rotate(180deg); }
+.dorm-gb-fold { flex:1; min-height:0; display:flex; flex-direction:column; }
+.dorm-gbside:not(.open) .dorm-gb-fold { display:none; }
+@media (min-width:901px) {
+  .member-panel.dorm-gbside { transition: width .32s cubic-bezier(.3,.7,.2,1); overflow:hidden; }
+  .member-panel.dorm-gbside:not(.open) { width:56px; }
+  .dorm-gbside:not(.open) .dorm-gb-toggle { flex:1; flex-direction:column; justify-content:flex-start; align-items:center; gap:12px; padding:18px 0; border-bottom:none; }
+  .dorm-gbside:not(.open) .dorm-gb-toggle b { writing-mode: vertical-rl; }
+  .dorm-gbside:not(.open) .dorm-gb-toggle i { margin:0; order:-1; transform: rotate(90deg); }
+  .dorm-gbside.open .dorm-gb-toggle i { transform: rotate(-90deg); }
+}
+@media (max-width:900px) {
+  .map-frame.dorm-frame { height: min(92vw, 66vh); }
+  .dorm-gb-toggle { border-bottom:none; }
+  .dorm-gbside.open .dorm-gb-toggle { border-bottom:1px solid var(--line); }
+}

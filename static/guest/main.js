@@ -6645,8 +6645,10 @@ function dormGuestbookHtml(r) {
           <input type="file" id="dormMusicFile" accept=".mp3,.ogg,.wav,.m4a,audio/*" style="display:none" onchange="onDormMusicFile(event)">` : ''}
       </div>
     </div>` : '';
-  return `<div class="member-panel panel dorm-side">
-    <div class="member-header"><b>Guestbook</b></div>${info}
+  // 방명록은 접었다 펼치는 패널 : 접혀 있으면 방 그림이 넓게(PC는 오른쪽 얇은 막대, 휴대폰은 방 아래 한 줄)
+  return `<div class="member-panel panel dorm-side dorm-gbside ${dormGbOpen ? 'open' : ''}">
+    <button type="button" class="member-header dorm-gb-toggle" onclick="dormGbToggle()" aria-expanded="${dormGbOpen}"><b>Guestbook</b><span class="dorm-gb-cnt">${list.length || ''}</span><i class="fa-solid fa-chevron-down"></i></button>
+    <div class="dorm-gb-fold">${info}
     ${me && !mine ? `<div class="dorm-gb-write"><textarea id="dormGbText" maxlength="300" rows="3" placeholder="방명록을 작성해 주세요."
         oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
       <div class="row"><button class="dorm-tbtn primary sm" onclick="writeDormGuestbook()">남기기</button></div></div>`
@@ -6662,7 +6664,18 @@ function dormGuestbookHtml(r) {
           : `<p>${mailEsc(e.text)}</p>
         <div class="gn-f"><span class="t">${fmt(e.at)}</span>${own ? '' : delBtn}${own ? `<button class="dorm-note-btn" onclick="dormGbEdit(true)" data-tip="고치기"><i class="fa-solid fa-pen"></i></button>` : ''}</div>`}</article>`; }).join('')
       : emptyHtml('fa-feather-pointed', '아직 방명록이 없어요', me ? '첫 방명록을 남겨 보세요.' : '', null, true)}</div>
-  </div>`;
+  </div></div>`;
+}
+let dormGbOpen = (() => { try { return localStorage.getItem('dormGbOpen') === '1'; } catch (e) { return false; } })();
+function dormGbToggle() {
+  dormGbOpen = !dormGbOpen;
+  try { localStorage.setItem('dormGbOpen', dormGbOpen ? '1' : '0'); } catch (e) {}
+  const side = document.querySelector('.dorm-gbside'); if (!side) return;
+  side.classList.toggle('open', dormGbOpen);
+  side.querySelector('.dorm-gb-toggle').setAttribute('aria-expanded', dormGbOpen);
+  // 방 칸 크기가 바뀌는 동안 · 뒤에 방 그림을 다시 맞춰요
+  const t0 = performance.now(), tick = (now) => { dormRenderStage(); if (now - t0 < 380) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
 }
 
 function dormLoggedName() { return dormIsGm() ? '운영진' : dormMe(); }
