@@ -77,13 +77,17 @@ function cgLayout() {
   st.querySelectorAll('svg').forEach(svg => { svg.setAttribute('width', W); svg.setAttribute('height', H); });
 }
 // 확대 · 축소 · 전체 맞춤 · 원래 크기 : 보고 있던 가운데가 그대로 가운데에 오게 스크롤을 맞춰요
-function cgZoomApply(z) {
+// (cx, cy) : 노드 그림 창 안의 기준점(마우스 · 두 손가락 가운데). 그 점 아래의 내용이 그대로 그 자리에 남아요
+function cgZoomApply(z, cx, cy) {
   const wrap = document.getElementById('cgWrap'); if (!wrap) return;
-  const cx = (wrap.scrollLeft + wrap.clientWidth / 2) / cg.s;
+  const pl = parseFloat(getComputedStyle(wrap).paddingLeft) || 0;
+  if (cx == null) { cx = wrap.clientWidth / 2; cy = wrap.clientHeight / 2; }
+  const px = (wrap.scrollLeft + cx - pl) / cg.s, py = (wrap.scrollTop + cy) / cg.s;
   cg.z = z; cgLayout(); cgDraw();
-  wrap.scrollLeft = cx * cg.s - wrap.clientWidth / 2;
+  wrap.scrollLeft = px * cg.s - cx + pl; wrap.scrollTop = py * cg.s - cy;
 }
-function cgZoomBy(k) { cgZoomApply(Math.max(.25, Math.min(2.5, Math.round(cg.s * k * 100) / 100))); }
+const cgClampZ = (z) => Math.max(.25, Math.min(2.5, Math.round(z * 100) / 100));
+function cgZoomBy(k, cx, cy) { cgZoomApply(cgClampZ(cg.s * k), cx, cy); }
 function cgZoomSet(z) { cgZoomApply(z); }
 // 카드 상자(위 이름 빼고)의 무대 좌표 사각형 : 끌고 있는 만큼(off)도 더해요
 function cgBoxRect(id) {
@@ -134,6 +138,7 @@ function cgApplyOff(id) {
 
 function cgBind() {
   const st = document.getElementById('cgStage'); if (!st || st._cg) return; st._cg = true;
+  cgBindPan();
   st.addEventListener('pointerdown', (e) => {
     if (e.button && e.button !== 0) return;
     const port = e.target.closest('.cg-port'), node = e.target.closest('.cg-node'), hit = e.target.closest('.cg-hit');
@@ -190,6 +195,43 @@ function cgBind() {
     cgSpring();
   };
   st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
+}
+// 빈 곳을 끌어서 둘러보기(마우스) · 휠로 확대/축소(마우스 위치 기준) · 두 손가락 벌리고 오므리기(휴대폰)
+function cgBindPan() {
+  const wrap = document.getElementById('cgWrap'); if (!wrap || wrap._pan) return; wrap._pan = true;
+  let pan = null;
+  wrap.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('.cg-node, .cg-hit')) return;
+    pan = { x: e.clientX, y: e.clientY, l: wrap.scrollLeft, t: wrap.scrollTop };
+    wrap.classList.add('panning');
+    try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  wrap.addEventListener('pointermove', (e) => {
+    if (!pan) return;
+    wrap.scrollLeft = pan.l - (e.clientX - pan.x); wrap.scrollTop = pan.t - (e.clientY - pan.y);
+  });
+  const stop = () => { pan = null; wrap.classList.remove('panning'); };
+  wrap.addEventListener('pointerup', stop); wrap.addEventListener('pointercancel', stop);
+  wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = wrap.getBoundingClientRect();
+    cgZoomBy(Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015)), e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+  let pinch = null;
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  wrap.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 2) return;
+    const r = wrap.getBoundingClientRect();
+    pinch = { d: dist(e.touches), s: cg.s, cx: (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left, cy: (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top };
+    if (cg.drag && cg.drag.type === 'play') { const id = cg.drag.id; cg.drag = null; cgSpring(); const el = document.querySelector(`#cgStage .cg-node[data-id="${id}"]`); if (el) el.classList.remove('held'); }
+  }, { passive: true });
+  wrap.addEventListener('touchmove', (e) => {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    cgZoomApply(cgClampZ(pinch.s * dist(e.touches) / pinch.d), pinch.cx, pinch.cy);
+  }, { passive: false });
+  const end = (e) => { if (e.touches.length < 2) pinch = null; };
+  wrap.addEventListener('touchend', end); wrap.addEventListener('touchcancel', end);
 }
 // 손을 놓으면 용수철처럼 제자리로 : 살짝 지나쳤다가 돌아오는 텐션
 function cgSpring() {
