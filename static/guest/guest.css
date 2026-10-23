@@ -4984,3 +4984,13 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
   .main-topbar #roundTimerLabel { display:flex; align-items:center; transform: scale(.82); transform-origin: right center; }
   .main-topbar .bt-back { flex:none; }
 }
+/* 휴대폰 상단 헤더 통일 : 상자 없이 48px, 왼쪽 큰 이름(제목 글꼴 26px)만, 오른쪽 끝에 버튼(36px). 전투 방 머리는 방 이름 · 라운드가 필요해 따로 */
+@media (max-width:900px) {
+  .topbar.v2:not(.main-topbar) { height:48px; min-height:48px; padding:0 !important; margin:0 0 16px !important; gap:10px; flex-wrap:nowrap;
+    background:none !important; border:none !important; box-shadow:none !important; }
+  .topbar.v2:not(.main-topbar)::before, .topbar.v2:not(.main-topbar)::after { display:none !important; }
+  .topbar.v2 .world-brand, .topbar.v2 .ops-brand, .topbar.v2 .dorm-brand { font-size:26px !important; font-weight:400; flex:none; }
+  .topbar.v2:not(.main-topbar) > .sep, .topbar.v2:not(.main-topbar) > .seg:not(.world-brand):not(.ops-brand):not(.dorm-brand) { display:none !important; }
+  .topbar.v2:not(.main-topbar) .dorm-tools-r { margin-left:auto; display:flex; align-items:center; gap:6px; }
+  .topbar.v2:not(.main-topbar) .dorm-tbtn { height:36px; min-width:36px; }
+}
