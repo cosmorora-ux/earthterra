@@ -3783,6 +3783,16 @@
   .bt-name { font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em; }
   .bt-when { margin-top:3px; font-size:12.5px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .bt-icons { display:flex; gap:2px; flex:none; }
+  /* 참여자 사진 : 네모(라운드 6) 겹쳐 놓기, 오른쪽에 팀 인원 */
+  .bt-card .bt-when { display:flex; align-items:center; gap:10px; margin-top:8px; overflow:visible; }
+  .bt-faces { display:flex; align-items:center; }
+  .bt-face { position:relative; width:24px; height:24px; border-radius:6px; overflow:hidden; flex:none; margin-left:-6px; box-shadow:0 0 0 2px #141416;
+    background: color-mix(in srgb, var(--fc, #3a3a40) 35%, #1c1c20); display:inline-flex; align-items:center; justify-content:center; }
+  .bt-face:first-child { margin-left:0; }
+  .bt-face img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
+  .bt-face em { font-style:normal; font-size:11px; font-weight:700; color:#e6e6ea; }
+  .bt-face.more { background:#26262b; color:#cfcfd4; font-size:10.5px; font-weight:700; }
+  .bt-vs { margin-left:auto; font-size:12.5px; font-weight:700; color:#cfcfd4; font-variant-numeric: tabular-nums; letter-spacing:.02em; }
   .bt-icons .ops-btn.icon.danger:hover { color: var(--ds-danger, #ff8a80); }
   .bt-gm { border-top:1px solid var(--ds-line, var(--line)); padding:14px 16px 16px; display:flex; flex-direction:column; gap:10px; }
   .bt-gm-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
@@ -3851,6 +3861,7 @@
     .bt-foot { min-height:0; padding:10px 8px 10px 12px; gap:4px; }
     .bt-name { font-size:13.5px; }
     .bt-when { font-size:11px; margin-top:2px; }
+    .bt-card .bt-when { margin-top:6px; gap:6px; } .bt-face { width:20px; height:20px; border-radius:5px; margin-left:-5px; } .bt-vs { font-size:11px; }
     .bt-icons { position:absolute; right:6px; top:6px; z-index:3; gap:2px; padding:2px; border-radius:10px; background: rgba(12,12,13,.72); }
     .bt-icons .ops-btn.icon { width:28px; height:28px; }
     .bt-card:has(.bt-icons) .bt-tags { right:72px; }

@@ -138,14 +138,18 @@ function renderBattleHub(tickOnly) {
     const can = !!b.can_enter;
     const ic = (BT_TYPES.find(t => t[0] === b.type) || [])[2] || 'fa-shield-halved';
     // 남은 시간 · 마감 · 입장 조건 문구는 표시하지 않아요(날짜 · 시간과 상태 표시만)
-    const when = `참여 ${b.count || 0}명` + (b.watch_ok ? ' · 관전 가능' : ' · 관전 불가');
+    // 참여자 : 네모난 프로필 사진을 겹쳐 몇 개만, 나머지는 +n. 오른쪽에 팀 인원(n:n)
+    const sides = b.sides || [0, 0];
+    const faces = (b.faces || []).map(f => `<span class="bt-face" data-tip="${mailEsc(f.name)}"${f.color ? ` style="--fc:${mailEsc(f.color)}"` : ''}>${f.avatar ? `<img src="${mailEsc(f.avatar)}" alt="" loading="lazy" onerror="this.remove()">` : ''}<em>${mailEsc((f.name || '').slice(0, 1))}</em></span>`).join('')
+      + (b.faces_more ? `<span class="bt-face more">+${b.faces_more}</span>` : '');
+    const when = (faces ? `<span class="bt-faces">${faces}</span>` : '') + (sides[0] || sides[1] ? `<span class="bt-vs">${sides[0]} : ${sides[1]}</span>` : '');
     const thumbStyle = b.thumb ? ` style="background-image:url('${mailEsc(b.thumb)}')"` : '';
     const drag = gm ? ` draggable="true" data-id="${b.id}" ondragstart="btDragStart(event)" ondragend="btDragEnd(event)" ondragover="btDragOver(event)" ondrop="btDrop(event)"` : '';
     return `<div class="bt-card ${st}${can ? ' can' : ''}${b.hidden ? ' hid' : ''}"${drag}${can ? ` onclick="socket.emit('battle_enter', {room_id:'${b.id}'})"` : ''}>
       <div class="bt-thumb${b.thumb ? ' has-img' : ''}"${thumbStyle}>${b.thumb ? '' : `<i class="fa-solid ${ic} ic"></i>`}
-        <div class="bt-tags">${stChip}${b.mine ? '<span class="bt-chip mine"><i class="fa-solid fa-check"></i>참여</span>' : b.watch ? '<span class="bt-chip"><i class="fa-solid fa-eye"></i>관전</span>' : ''}</div>
+        <div class="bt-tags">${stChip}</div>
         ${can ? `<div class="bt-go"><i class="fa-solid ${b.watch ? 'fa-eye' : 'fa-right-to-bracket'}"></i>${b.watch ? '관전하기' : '입장하기'}</div>` : ''}</div>
-      <div class="bt-foot"><div class="bt-info"><div class="bt-name">${mailEsc(b.name)}</div><div class="bt-when">${when}</div></div>
+      <div class="bt-foot"><div class="bt-info"><div class="bt-name">${mailEsc(b.name)}</div>${when ? `<div class="bt-when">${when}</div>` : ''}</div>
         ${gm ? `<div class="bt-icons" onclick="event.stopPropagation()"><button class="ops-btn icon" onclick="location.href = '${b.url || ''}' + '&view=ops'" data-tip="방 설정 · 일정 · 배정"><i class="fa-solid fa-pen"></i></button>
           <button class="ops-btn icon danger" onclick="battleDelete('${b.id}')" data-tip="전투 방 지우기"><i class="fa-regular fa-trash-can"></i></button></div>` : ''}</div>
       </div>`;

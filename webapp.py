@@ -45,7 +45,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.99"
+SERVER_BUILD = "2026-10-13.100"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -1321,6 +1321,39 @@ def battle_participants(room):
     return list(pt.get("team_a") or []) + list(pt.get("team_b") or [])
 
 
+BT_FACES_MAX = 5
+
+
+def _battle_sides(room):
+    """룸 목록 카드용 : (1팀 이름들, 2팀 이름들). 2x2 보스는 부위 넷을 한 명으로 셉니다."""
+    b = room.game.battle
+    if b is not None:
+        def names(team):
+            out, seen = [], set()
+            for c in team:
+                g = getattr(c, "boss_group", None)
+                if g and g in seen:
+                    continue
+                if g:
+                    seen.add(g)
+                out.append(c.name)
+            return out
+        return names(b.team_a), names(b.team_b)
+    pt = room.preview_teams or {}
+    return list(pt.get("team_a") or []), list(pt.get("team_b") or [])
+
+
+def _battle_faces(room, names):
+    """참여자 프로필 사진(네모) 몇 개 : 몹은 빼요. 나머지는 수만 넘겨요."""
+    out = []
+    for n in names:
+        d = room.game.db.get(n) or {}
+        if d.get("mob"):
+            continue
+        out.append({"name": n, "avatar": d.get("avatar_url"), "color": d.get("color")})
+    return out[:BT_FACES_MAX], max(0, len(out) - BT_FACES_MAX)
+
+
 def battle_watch_ok(room):
     """관전자 입장 허용(전투 설정의 체크박스 = 관전 탭)."""
     return bool((room.chat_tabs_enabled or {}).get("spectator"))
@@ -1337,6 +1370,9 @@ def _battle_card(room, me, is_gm):
             "mine": mine, "watch": watch, "watch_ok": battle_watch_ok(room), "can_enter": is_gm or ((mine or watch) and not getattr(room, "hidden", False)),
             "hidden": bool(getattr(room, "hidden", False)),
             "thumb": getattr(room, "thumb", None) or (room.scene or {}).get("url") or (room.map_bg or {}).get("url") or None}
+    side_a, side_b = _battle_sides(room)
+    card["sides"] = [len(side_a), len(side_b)]
+    card["faces"], card["faces_more"] = _battle_faces(room, side_a + side_b)
     if is_gm:
         card["url"] = url_for("guest_page", room_id=room.id, key=room.guest_key)
     return card
