@@ -3791,7 +3791,6 @@
     background: color-mix(in srgb, var(--fc, #3a3a40) 35%, #1c1c20); display:inline-flex; align-items:center; justify-content:center; }
   .bt-face:first-child { margin-left:0; }
   .bt-face img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; }
-  .bt-face em { font-style:normal; font-size:11px; font-weight:700; color:#e6e6ea; }
   .bt-faces .more { margin-left:6px; color: var(--muted); font-size:12px; font-weight:600; }
   .bt-vs { margin-left:auto; font-size:12.5px; font-weight:700; color:#cfcfd4; font-variant-numeric: tabular-nums; letter-spacing:.02em; }
   .bt-icons .ops-btn.icon.danger:hover { color: var(--ds-danger, #ff8a80); }
