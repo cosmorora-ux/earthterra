@@ -4996,23 +4996,32 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 /* 노드 그림 확대 · 축소 버튼 : 휴대폰에서는 위 오른쪽(아래 챕터 막대와 겹치지 않게) */
 @media (max-width:900px) { .cg-view .cg-zoom { position:absolute !important; top:10px; bottom:auto !important; right:10px; } }
 .cg-card > .cg-h { padding-top:14px; }
-/* 마이룸 방명록 : 접었다 펼치기. 접혀 있으면 방 그림이 넓게 */
-.dorm-gb-toggle { width:100%; border:none; border-bottom:1px solid var(--line); background:none; color: var(--text); cursor:pointer; font-family:inherit; text-align:left; display:flex; align-items:center; gap:10px; }
-.dorm-gb-toggle .dorm-gb-cnt { font-size:13px; color: var(--muted); }
-.dorm-gb-toggle i { margin-left:auto; font-size:12px; color: var(--muted); transition: transform .3s; }
-.dorm-gbside.open .dorm-gb-toggle i { transform: rotate(180deg); }
-.dorm-gb-fold { flex:1; min-height:0; display:flex; flex-direction:column; }
-.dorm-gbside:not(.open) .dorm-gb-fold { display:none; }
-@media (min-width:901px) {
-  .member-panel.dorm-gbside { transition: width .32s cubic-bezier(.3,.7,.2,1); overflow:hidden; }
-  .member-panel.dorm-gbside:not(.open) { width:56px; }
-  .dorm-gbside:not(.open) .dorm-gb-toggle { flex:1; flex-direction:column; justify-content:flex-start; align-items:center; gap:12px; padding:18px 0; border-bottom:none; }
-  .dorm-gbside:not(.open) .dorm-gb-toggle b { writing-mode: vertical-rl; }
-  .dorm-gbside:not(.open) .dorm-gb-toggle i { margin:0; order:-1; transform: rotate(90deg); }
-  .dorm-gbside.open .dorm-gb-toggle i { transform: rotate(-90deg); }
-}
+/* 마이룸 방(보기) : 챕터 화면처럼 방 그림은 상자 없이 꽉 차게, 방명록은 아래 서랍(막대를 누르면 올라와 덮어요) */
+.dorm-room-layout.gbmode { position:relative; display:block; height:100%; min-height:0; }
+.gbmode .dorm-frame-wrap { height:100%; padding-bottom:68px; box-sizing:border-box; }
+.gbmode .map-frame.dorm-frame { border:none !important; background:none !important; box-shadow:none !important; border-radius:0; height:100%; }
+.gbmode .map-frame.dorm-frame::before, .gbmode .map-frame.dorm-frame::after { display:none !important; }
+.dorm-gbdrawer { position:absolute; left:0; right:0; bottom:0; z-index:20; display:flex; flex-direction:column; max-height:56px; overflow:hidden;
+  border-radius:16px 16px 0 0; background: var(--panel); border:1px solid var(--line); border-bottom:none; box-shadow: 0 -12px 40px rgba(0,0,0,.45);
+  transition: max-height .45s cubic-bezier(.3,.7,.2,1); }
+.dorm-gbdrawer.open { max-height: calc(100% - 40px); }
+.dorm-gb-bar { flex:none; display:flex; align-items:center; gap:10px; height:56px; padding:0 20px; border:none; background:none; color: var(--text); cursor:pointer; font-family:inherit; text-align:left; }
+.dorm-gb-bar .en { font-family: var(--font-title); font-weight:400; font-size:20px; letter-spacing:.02em; }
+.dorm-gb-bar .sub { font-size:12.5px; color: var(--muted); }
+.dorm-gb-bar .sp { flex:1; }
+.dorm-gb-bar i { font-size:13px; color: var(--muted); transition: transform .35s; }
+.dorm-gbdrawer.open .dorm-gb-bar i { transform: rotate(180deg); }
+.dorm-gb-fold { flex:1; min-height:0; display:flex; flex-direction:column; overflow-y:auto; overscroll-behavior:contain; border-top:1px solid var(--line); }
+.dorm-gb-fold .dorm-side-body { overflow:visible; max-height:none; }
 @media (max-width:900px) {
-  .map-frame.dorm-frame { height: min(92vw, 66vh); }
-  .dorm-gb-toggle { border-bottom:none; }
-  .dorm-gbside.open .dorm-gb-toggle { border-bottom:1px solid var(--line); }
+  .dorm-room-layout.gbmode { height:auto; }
+  .gbmode .dorm-frame-wrap { height:auto; padding-bottom:0; }
+  .gbmode .map-frame.dorm-frame { height: min(100vw, 64vh); margin:0 -20px; }   /* 방 그림만 화면 양옆 끝까지 */
+  #dormBody:has(> .gbmode) { margin-left:-20px; margin-right:-20px; padding-left:20px; padding-right:20px; }   /* 방 칸이 잘리지 않게 바깥 칸을 화면 끝까지 */
+  /* 휴대폰 : 방 바로 아래에 붙은 막대, 누르면 아래로 펼쳐져요 */
+  .dorm-gbdrawer { position:relative; margin-top:12px; border-radius:16px; border-bottom:1px solid var(--line); box-shadow:none; }
+  .dorm-gbdrawer.open { max-height:2000px; }
+  .dorm-gbdrawer .dorm-gb-bar i { transform: rotate(180deg); }
+  .dorm-gbdrawer.open .dorm-gb-bar i { transform: none; }
+  .dorm-gb-fold { overflow:visible; }
 }

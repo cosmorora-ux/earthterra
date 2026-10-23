@@ -6457,7 +6457,7 @@ function renderDormRoom(body) {
     : dormGuestbookHtml(r);
   const isOwner = dormMe() && dormMe() === r.owner;
   const bubble = r.line ? `<div class="dorm-line-bubble"><b>${mailEsc(r.owner)}</b><span>${mailEsc(r.line)}</span></div>` : '';
-  body.innerHTML = `<div class="dorm-room-layout"><div class="dorm-frame-wrap">${dormEdit ? '' : bubble}<div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>
+  body.innerHTML = `<div class="dorm-room-layout${dormEdit ? '' : ' gbmode'}"><div class="dorm-frame-wrap">${dormEdit ? '' : bubble}<div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>
     <button class="dorm-back" onclick="dormLeaveRoom()" aria-label="목록으로" data-tip="${mailEsc(dormP().name)} 목록으로"><i class="fa-solid fa-chevron-left"></i></button>
     <div class="zoom-ctl" id="dormZoom">
       <button onclick="dormZoomBy(1 / 1.25)" data-tip="축소"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
@@ -6645,9 +6645,9 @@ function dormGuestbookHtml(r) {
           <input type="file" id="dormMusicFile" accept=".mp3,.ogg,.wav,.m4a,audio/*" style="display:none" onchange="onDormMusicFile(event)">` : ''}
       </div>
     </div>` : '';
-  // 방명록은 접었다 펼치는 패널 : 접혀 있으면 방 그림이 넓게(PC는 오른쪽 얇은 막대, 휴대폰은 방 아래 한 줄)
-  return `<div class="member-panel panel dorm-side dorm-gbside ${dormGbOpen ? 'open' : ''}">
-    <button type="button" class="member-header dorm-gb-toggle" onclick="dormGbToggle()" aria-expanded="${dormGbOpen}"><b>Guestbook</b><span class="dorm-gb-cnt">${list.length || ''}</span><i class="fa-solid fa-chevron-down"></i></button>
+  // 방명록은 챕터 화면처럼 아래 서랍 : 막대(위 화살표)를 누르면 올라와 방을 덮고, 다시 누르면 내려가요
+  return `<div class="dorm-side dorm-gbdrawer ${dormGbOpen ? 'open' : ''}">
+    <button type="button" class="dorm-gb-bar" onclick="dormGbToggle()" aria-expanded="${dormGbOpen}"><span class="en">Guestbook</span><span class="sub">${list.length ? list.length + '개' : ''}</span><span class="sp"></span><i class="fa-solid fa-chevron-up"></i></button>
     <div class="dorm-gb-fold">${info}
     ${me && !mine ? `<div class="dorm-gb-write"><textarea id="dormGbText" maxlength="300" rows="3" placeholder="방명록을 작성해 주세요."
         oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
@@ -6670,12 +6670,9 @@ let dormGbOpen = (() => { try { return localStorage.getItem('dormGbOpen') === '1
 function dormGbToggle() {
   dormGbOpen = !dormGbOpen;
   try { localStorage.setItem('dormGbOpen', dormGbOpen ? '1' : '0'); } catch (e) {}
-  const side = document.querySelector('.dorm-gbside'); if (!side) return;
+  const side = document.querySelector('.dorm-gbdrawer'); if (!side) return;
   side.classList.toggle('open', dormGbOpen);
-  side.querySelector('.dorm-gb-toggle').setAttribute('aria-expanded', dormGbOpen);
-  // 방 칸 크기가 바뀌는 동안 · 뒤에 방 그림을 다시 맞춰요
-  const t0 = performance.now(), tick = (now) => { dormRenderStage(); if (now - t0 < 380) requestAnimationFrame(tick); };
-  requestAnimationFrame(tick);
+  side.querySelector('.dorm-gb-bar').setAttribute('aria-expanded', dormGbOpen);
 }
 
 function dormLoggedName() { return dormIsGm() ? '운영진' : dormMe(); }

@@ -113,7 +113,8 @@ function cgLayout() {
   // 창 높이 : 화면의 70%까지, 그리고 아래 챕터 서랍 막대에 가리지 않게
   let room = Math.round(window.innerHeight * .7);
   const dr = document.getElementById('cgDrawer');
-  if (dr && !dr.hidden) room = Math.min(room, Math.max(160, dr.getBoundingClientRect().top - wrap.getBoundingClientRect().top - 16));
+  // 서랍이 열려 있어도 닫힌 막대 자리(맨 아래 56px) 기준으로 재요 : 열렸을 때 재면 닫은 뒤에도 창이 작게 남아요
+  if (dr && !dr.hidden) { const pg = dr.parentElement.getBoundingClientRect(); room = Math.min(room, Math.max(160, pg.bottom - 56 - wrap.getBoundingClientRect().top - 16)); }
   const viewH = cg.viewH || (cg.viewH = Math.max(cg.edit ? 480 : 120, Math.min(Math.ceil(H * autoS), room)));
   wrap.style.height = viewH + 'px';
   const insp = document.getElementById('cgForm'); if (insp) insp.style.setProperty('--cg-h', viewH + 'px');
