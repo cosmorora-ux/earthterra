@@ -4939,3 +4939,5 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 @keyframes cgLodIn { from { opacity:0; } }
 @keyframes cgLodFade { to { opacity:0; } }
 .cg-stage.lod-enter .cg-lod { animation: cgLodIn .32s ease both; }
+/* 멀리서 보기 : 그림 카드는 이름을 그림 위에 얹어요(카드가 길어져 옆 카드와 겹치지 않게) */
+.cg-stage.lod .k-image .cg-lod { position:absolute; left:6px; right:6px; top:6px; z-index:2; border-radius:12px 12px 0 0; background: linear-gradient(rgba(10,10,12,.82), rgba(10,10,12,0)); padding-bottom: calc(18px * var(--inv, 1)); }

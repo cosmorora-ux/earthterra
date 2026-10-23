@@ -282,6 +282,7 @@ function cgBind() {
       d.moved = true;
       const n = cgNode(d.id);
       n.x = Math.max(0, Math.round((d.x0 + dx) / CG_SNAP) * CG_SNAP); n.y = Math.max(0, Math.round((d.y0 + dy) / CG_SNAP) * CG_SNAP);
+      if (cg.undoPos) { cg.undoPos = null; cgDock(); }
       const el = st.querySelector(`.cg-node[data-id="${d.id}"]`); el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
       cgDraw(); return;
     }
@@ -392,7 +393,7 @@ function cgSpring() {
 function cgStartEdit() {
   if (!worldIsGm()) return;
   cg.draft = JSON.parse(JSON.stringify((worldData && worldData.graph) || { nodes: [], edges: [] }));
-  cg.edit = true; cg.sel = null; cg.selEdge = null; cg.linkFrom = null; cg.off = {}; renderWorld();
+  cg.edit = true; cg.sel = null; cg.selEdge = null; cg.linkFrom = null; cg.undoPos = null; cg.off = {}; renderWorld();
 }
 function cgDefault() {
   uiConfirm('지금 노드를 모두 지우고 기본 스토리(1차 · 2차 기간 · 세계 연표)로 되돌릴까요?', { title: '기본 스토리', okText: '되돌리기', danger: true }).then(ok => {
@@ -426,7 +427,62 @@ function cgDock() {
     <i class="sep"></i>
     <button type="button" onclick="cgLinkMode(true)" ${has ? '' : 'disabled'} data-tip="고른 카드에서 다른 카드로 선 잇기"><i class="fa-solid fa-link"></i><span>선 잇기</span></button>
     <button type="button" onclick="cgCopy()" ${has ? '' : 'disabled'} data-tip="고른 카드 복사 (Ctrl+D)"><i class="fa-regular fa-copy"></i><span>복사</span></button>
-    <button type="button" class="danger" onclick="cgDel()" ${has ? '' : 'disabled'} data-tip="고른 카드 지우기 (Delete)"><i class="fa-solid fa-trash-can"></i><span>지우기</span></button>`;
+    <button type="button" class="danger" onclick="cgDel()" ${has ? '' : 'disabled'} data-tip="고른 카드 지우기 (Delete)"><i class="fa-solid fa-trash-can"></i><span>지우기</span></button>
+    <i class="sep"></i>
+    ${cg.undoPos ? `<button type="button" onclick="cgTidyUndo()" data-tip="자동 정리 전으로"><i class="fa-solid fa-rotate-left"></i><span>되돌리기</span></button>`
+      : `<button type="button" onclick="cgTidy()" ${cg.draft.nodes.length > 1 ? '' : 'disabled'} data-tip="대충 놓은 카드를 줄 · 간격 맞춰 반듯하게"><i class="fa-solid fa-wand-magic-sparkles"></i><span>자동 정리</span></button>`}`;
+}
+// 자동 정리 : 그려 둔 배치는 살리고, 비슷한 가로 위치는 한 열로 · 비슷한 높이는 윗선 맞춤 · 붙거나 겹친 카드는 일정한 간격으로.
+// 멀리 떨어뜨려 둔 묶음(큰 빈틈)은 그대로 둬요.
+const CG_GAP_X = 70, CG_GAP_Y = 50, CG_NEAR_X = 90, CG_NEAR_Y = 40, CG_BAND = 140;
+function cgTidy() {
+  const st = document.getElementById('cgStage'), ns = cg.draft.nodes; if (!st || ns.length < 2) return;
+  cg.undoPos = ns.map(n => ({ id: n.id, x: n.x, y: n.y }));
+  // 카드 높이는 늘 원래 모양 기준으로 재요(멀리서 보기 · 바뀌는 중인 높이는 잠깐 풀고)
+  const cls = ['lod', 'lod-enter', 'lod-out'].filter(c => st.classList.contains(c)); st.classList.remove(...cls);
+  const boxes = [...st.querySelectorAll('.cg-box')], keepH = boxes.map(b => b.style.height); boxes.forEach(b => { b.style.height = ''; });
+  const H = {}; ns.forEach(n => { const el = st.querySelector(`.cg-node[data-id="${n.id}"]`); H[n.id] = el ? el.offsetHeight : 120; });
+  boxes.forEach((b, i) => { b.style.height = keepH[i]; }); st.classList.add(...cls);
+  // 1) 열 : 왼쪽 위치가 비슷한 카드끼리 묶어 왼쪽 끝을 맞춰요
+  const byX = [...ns].sort((a, b) => a.x - b.x), cols = [];
+  byX.forEach(n => { const c = cols[cols.length - 1]; if (c && n.x - c.x0 < CG_NEAR_X) c.ns.push(n); else cols.push({ x0: n.x, ns: [n] }); });
+  cols.forEach(c => { const x = Math.min(...c.ns.map(n => n.x)); c.ns.forEach(n => { n.x = x; }); });
+  // 2) 윗선 : 높이가 비슷한 카드끼리 맞춰요
+  const byY = [...ns].sort((a, b) => a.y - b.y); let row = [];
+  const flush = () => { if (row.length > 1) { const y = Math.min(...row.map(n => n.y)); row.forEach(n => { n.y = y; }); } row = []; };
+  byY.forEach(n => { if (row.length && n.y - row[0].y >= CG_NEAR_Y) flush(); row.push(n); }); flush();
+  // 3) 열 안 세로 간격 : 붙거나 겹치면 일정하게(큰 빈틈은 묶음 사이로 보고 그대로)
+  cols.forEach(c => {
+    c.ns.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < c.ns.length; i++) {
+      const p = c.ns[i - 1], n = c.ns[i], gap = n.y - (p.y + H[p.id]);
+      if (gap < CG_BAND) n.y = p.y + H[p.id] + CG_GAP_Y;
+    }
+  });
+  // 4) 열 사이 가로 간격 : 겹치거나 너무 붙거나 어중간하면 일정하게
+  for (let i = 1; i < cols.length; i++) {
+    const prev = cols[i - 1], w = Math.max(...prev.ns.map(n => n.w)), x = prev.ns[0].x + w + CG_GAP_X;
+    const cur = cols[i].ns[0].x;
+    if (cur - (prev.ns[0].x + w) < CG_BAND) cols[i].ns.forEach(n => { n.x = x; });
+  }
+  // 5) 칸에 맞춰 정리 · 왼쪽 위 여백
+  const mx = Math.min(...ns.map(n => n.x)), my = Math.min(...ns.map(n => n.y));
+  ns.forEach(n => { n.x = Math.round((n.x - mx + 40) / CG_SNAP) * CG_SNAP; n.y = Math.round((n.y - my + 40) / CG_SNAP) * CG_SNAP; });
+  cgAnimTo();
+}
+function cgTidyUndo() {
+  if (!cg.undoPos) return;
+  cg.undoPos.forEach(p => { const n = cgNode(p.id); if (n) { n.x = p.x; n.y = p.y; } });
+  cg.undoPos = null; cgAnimTo();
+}
+// 카드를 새 자리로 부드럽게 옮겨요(선도 따라)
+function cgAnimTo() {
+  const st = document.getElementById('cgStage');
+  cg.draft.nodes.forEach(n => { const el = st.querySelector(`.cg-node[data-id="${n.id}"]`); if (!el) return;
+    el.style.transition = 'left .45s cubic-bezier(.3,.7,.2,1), top .45s cubic-bezier(.3,.7,.2,1)'; el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; });
+  const t0 = performance.now();
+  const tick = (now) => { cgDraw(); if (now - t0 < 500) requestAnimationFrame(tick); else { st.querySelectorAll('.cg-node').forEach(el => { el.style.transition = ''; }); cgLayout(); cgDraw(); } };
+  requestAnimationFrame(tick); cgDock();
 }
 function cgLinkMode(on) {
   cg.linkFrom = on && cg.sel ? cg.sel : null;
@@ -460,7 +516,7 @@ function cgAdd(kind) {
   const n = { id: Math.random().toString(16).slice(2, 10), kind, label: { text: '새 글', image: '새 그림', timeline: '새 타임라인' }[kind], tag: '', title: '', text: '',
     image: null, x: Math.max(0, Math.round((cx + k * 20) / CG_SNAP) * CG_SNAP), y: Math.max(0, Math.round((cy + k * 20) / CG_SNAP) * CG_SNAP), w, chapter: 0, accent: 'point',
     items: kind === 'timeline' ? [{ head: '01', text: '' }] : [] };
-  ns.push(n); cg.sel = n.id; cg.selEdge = null; cgMount(); cgDock();
+  ns.push(n); cg.sel = n.id; cg.selEdge = null; cg.undoPos = null; cgMount(); cgDock();
 }
 function cgSet(key, v) {
   const n = cgNode(cg.sel); if (!n) return;
