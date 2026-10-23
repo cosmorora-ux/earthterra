@@ -13,6 +13,7 @@ const CG_DIR = { l: [-1, 0], r: [1, 0], t: [0, -1], b: [0, 1] };
 const CG_ACCENTS = [['point', '포인트', 'var(--point)'], ['violet', '보라', '#8b6cff'], ['blue', '파랑', '#3b8cff'], ['green', '초록', '#3ecf6e'],
   ['pink', '분홍', '#e05bd0'], ['red', '빨강', '#ef4b5f'], ['amber', '노랑', '#e9c05b'], ['gray', '회색', '#9a9aa2']];
 const cgAc = (n) => (CG_ACCENTS.find(a => a[0] === (n && n.accent)) || CG_ACCENTS[0])[2];
+const CG_LOD_S = .6;   // 이보다 작게 줄이면 간단한 모양
 const CG_PULL = 56;   // 보기에서 카드를 끌 수 있는 거리(이보다 멀리는 점점 덜 따라와요)
 // 선은 카드 아래, 선 끝 점은 카드 위에 그려요
 const CG_LAYERS = (g) => '<svg class="cg-svg"></svg>' + g.nodes.map(cgNodeHtml).join('') + '<svg class="cg-dots"></svg>';
@@ -65,8 +66,11 @@ function cgNodeHtml(n) {
   } else inner = `${n.title ? `<div class="cg-tt">${worldEsc(n.title)}</div>` : ''}${n.text || cg.edit || !n.title ? `<div class="cg-tx${open ? '' : ' clamp'}">${worldEsc(n.text || '') || (cg.edit ? '<em>글을 넣어 주세요</em>' : '')}</div>` : ''}`;
   const ports = cg.edit ? ['l', 'r', 't', 'b'].map(s => `<span class="cg-port p-${s}" data-s="${s}"></span>`).join('') : '';
   const gate = cg.edit && n.chapter ? `<span class="cg-gate">Ch. ${n.chapter}</span>` : '';
+  // 멀리서 볼 때(작게 줄였을 때) 쓰는 간단한 모양 : 색 점 + 이름(없으면 제목 · 글 앞부분)만 크게
+  const brief = n.locked ? '???' : (n.label || n.title || (n.kind === 'timeline' ? ((n.items || [])[0] || {}).head : '') || (n.text || '').slice(0, 18) || '');
+  const lod = `<div class="cg-lod"><i class="pip"></i><b>${worldEsc(brief)}</b>${n.tag ? `<span>${worldEsc(n.tag)}</span>` : ''}</div>`;
   return `<div class="cg-node k-${n.locked ? 'lock' : n.kind}${cg.sel === n.id ? ' sel' : ''}${fold ? ' foldable' : ''}${fold && open ? ' open' : ''}" data-id="${n.id}" style="left:${n.x}px; top:${n.y}px; width:${n.w}px; --ac:${cgAc(n)};">
-    <div class="cg-box">${hd}<div class="cg-in">${inner}</div>${ports}${gate}</div></div>`;
+    <div class="cg-box">${lod}${hd}<div class="cg-in">${inner}</div>${ports}${gate}</div></div>`;
 }
 // 펼치기 · 접기 : 높이가 부드럽게 바뀌는 동안 선도 따라 그려요(타임라인은 단계가 차례로 촤라락)
 function cgToggle(id) {
@@ -111,6 +115,10 @@ function cgLayout() {
   cg.s = cg.z === 'fit' ? Math.min(1.5, avail / W, viewH / H) : typeof cg.z === 'number' ? cg.z : autoS;
   const zl = document.getElementById('cgZoomLabel'); if (zl) zl.textContent = Math.round(cg.s * 100) + '%';
   st.style.width = W + 'px'; st.style.height = H + 'px';
+  // 멀리서 보기 : 이 배율보다 작으면 카드를 이름만 있는 간단한 모양으로(글자는 화면에서 읽을 만한 크기로 키워요)
+  const lodOn = cg.s < CG_LOD_S;
+  if (st.classList.contains('lod') !== lodOn) { st.classList.toggle('lod', lodOn); }
+  st.style.setProperty('--inv', Math.min(2.4, 1 / cg.s).toFixed(3));
   st.style.transform = `scale(${cg.s})`;
   // 배율이 바뀐 뒤 한 번 더 그려 글자를 새 배율에 맞춰 또렷하게(브라우저가 예전 배율 그림을 늘려 쓰지 않게)
   clearTimeout(cg.crisp); cg.crisp = setTimeout(() => { st.style.transform = `scale(${cg.s}) translateZ(0)`; requestAnimationFrame(() => { st.style.transform = `scale(${cg.s})`; }); }, 160);
@@ -255,7 +263,11 @@ function cgBind() {
     }
     const el = st.querySelector(`.cg-node[data-id="${d.id}"]`); if (el) el.classList.remove('held');
     cgSpring();
-    if (d.far < 5) cgToggle(d.id);
+    if (d.far < 5) {
+      // 멀리서 보기에서 카드를 누르면 그 카드 쪽으로 크게(원래 크기), 아니면 펼치기 · 접기
+      if (cg.s < CG_LOD_S) { const w = document.getElementById('cgWrap').getBoundingClientRect(); cgZoomApply(1, e.clientX - w.left, e.clientY - w.top); }
+      else cgToggle(d.id);
+    }
   };
   st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
 }
