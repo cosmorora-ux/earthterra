@@ -68,12 +68,18 @@ function cgLayout() {
     H = Math.max(H, el.offsetTop + el.offsetHeight + CG_PAD);
   });
   const cs = getComputedStyle(wrap), avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-  cg.s = cg.z === 'fit' ? Math.min(1.5, avail / W) : typeof cg.z === 'number' ? cg.z : Math.max(CG_MIN_SCALE, Math.min(1, avail / W));
+  // 창(블럭) 크기는 확대 · 축소와 상관없이 늘 같아요 : 기본 배율일 때의 높이(화면 70%까지)로 고정하고, 안의 카드만 커지고 작아져요
+  const autoS = Math.max(CG_MIN_SCALE, Math.min(1, avail / W));
+  const viewH = Math.max(120, Math.min(Math.ceil(H * autoS), Math.round(window.innerHeight * .7)));
+  wrap.style.height = viewH + 'px';
+  cg.s = cg.z === 'fit' ? Math.min(1.5, avail / W, viewH / H) : typeof cg.z === 'number' ? cg.z : autoS;
   const zl = document.getElementById('cgZoomLabel'); if (zl) zl.textContent = Math.round(cg.s * 100) + '%';
   st.style.width = W + 'px'; st.style.height = H + 'px';
   st.style.transform = `scale(${cg.s})`;
   const sz = document.getElementById('cgSizer');
   sz.style.width = Math.ceil(W * cg.s) + 'px'; sz.style.height = Math.ceil(H * cg.s) + 'px';
+  // 작게 줄였을 때는 창 가운데에
+  sz.style.marginLeft = Math.max(0, (avail - W * cg.s) / 2) + 'px'; sz.style.marginTop = Math.max(0, (viewH - H * cg.s) / 2) + 'px';
   st.querySelectorAll('svg').forEach(svg => { svg.setAttribute('width', W); svg.setAttribute('height', H); });
 }
 // 확대 · 축소 · 전체 맞춤 · 원래 크기 : 보고 있던 가운데가 그대로 가운데에 오게 스크롤을 맞춰요
@@ -82,9 +88,12 @@ function cgZoomApply(z, cx, cy) {
   const wrap = document.getElementById('cgWrap'); if (!wrap) return;
   const pl = parseFloat(getComputedStyle(wrap).paddingLeft) || 0;
   if (cx == null) { cx = wrap.clientWidth / 2; cy = wrap.clientHeight / 2; }
-  const px = (wrap.scrollLeft + cx - pl) / cg.s, py = (wrap.scrollTop + cy) / cg.s;
+  const sz = document.getElementById('cgSizer'), m = () => [parseFloat(sz.style.marginLeft) || 0, parseFloat(sz.style.marginTop) || 0];
+  let [ml, mt] = m();
+  const px = (wrap.scrollLeft + cx - pl - ml) / cg.s, py = (wrap.scrollTop + cy - mt) / cg.s;
   cg.z = z; cgLayout(); cgDraw();
-  wrap.scrollLeft = px * cg.s - cx + pl; wrap.scrollTop = py * cg.s - cy;
+  [ml, mt] = m();
+  wrap.scrollLeft = px * cg.s - cx + pl + ml; wrap.scrollTop = py * cg.s - cy + mt;
 }
 const cgClampZ = (z) => Math.max(.25, Math.min(2.5, Math.round(z * 100) / 100));
 function cgZoomBy(k, cx, cy) { cgZoomApply(cgClampZ(cg.s * k), cx, cy); }
