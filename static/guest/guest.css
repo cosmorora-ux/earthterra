@@ -4968,3 +4968,19 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .cg-drawer-body > .wm-card { border:none; background:none; }
 .cg-drawer-body > .wm-card > .wm-h .en, .cg-drawer-body > .wm-card > .wm-h > .en + .sub { display:none; }
 .cg-drawer-body > .wm-card > .wm-h:not(:has(.sub + .sp + .sub)) { display:none; }
+/* ================================================================
+   상단 헤더 블럭 통일 : 어느 화면이든 같은 높이 · 같은 여백 · 같은 글자
+   - 왼쪽 큰 이름(Battle · Pangaea · Dorm · Settings)은 제목 글꼴 24px
+   - ▶ 뒤 이름(룸 목록 · 장소 · 기숙사 · 전투 방 이름 · 라운드)은 18px 보통 굵기
+   - 오른쪽 버튼 · 시계는 가운데 맞춤, 블럭 높이는 64px로 고정
+   ================================================================ */
+@media (min-width:901px) {
+  .topbar.v2, .topbar.v2.ops-topbar { height:64px; min-height:64px; padding:0 20px 0 26px; margin-bottom:14px; gap:16px; flex-wrap:nowrap; box-sizing:border-box; }
+  .topbar.v2 .seg { font-size:18px; font-weight:500; white-space:nowrap; }
+  .topbar.v2 .world-brand, .topbar.v2 .ops-brand, .topbar.v2 .dorm-brand { font-size:24px; font-weight:400; }
+  .topbar.v2 .sep { font-size:12px; }
+  .topbar.v2 .dorm-tools-r { display:flex; align-items:center; gap:6px; }
+  .topbar.v2 .dorm-tbtn { height:38px; }
+  .main-topbar #roundTimerLabel { display:flex; align-items:center; transform: scale(.82); transform-origin: right center; }
+  .main-topbar .bt-back { flex:none; }
+}
