@@ -109,7 +109,11 @@ function cgLayout() {
   const cs = getComputedStyle(wrap), avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
   // 창(블럭) 크기는 확대 · 축소와 상관없이 늘 같아요 : 기본 배율일 때의 높이(화면 70%까지)로 고정하고, 안의 카드만 커지고 작아져요
   const autoS = Math.max(CG_MIN_SCALE, Math.min(1, avail / W));
-  const viewH = cg.viewH || (cg.viewH = Math.max(cg.edit ? 480 : 120, Math.min(Math.ceil(H * autoS), Math.round(window.innerHeight * .7))));
+  // 창 높이 : 화면의 70%까지, 그리고 아래 챕터 서랍 막대에 가리지 않게
+  let room = Math.round(window.innerHeight * .7);
+  const dr = document.getElementById('cgDrawer');
+  if (dr && !dr.hidden) room = Math.min(room, Math.max(260, dr.getBoundingClientRect().top - wrap.getBoundingClientRect().top - 16));
+  const viewH = cg.viewH || (cg.viewH = Math.max(cg.edit ? 480 : 120, Math.min(Math.ceil(H * autoS), room)));
   wrap.style.height = viewH + 'px';
   const insp = document.getElementById('cgForm'); if (insp) insp.style.setProperty('--cg-h', viewH + 'px');
   cg.s = cg.z === 'fit' ? Math.min(1.5, avail / W, viewH / H) : typeof cg.z === 'number' ? cg.z : autoS;

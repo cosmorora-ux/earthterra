@@ -824,15 +824,16 @@ function renderWorld() {
        <button class="dorm-tbtn primary" onclick="saveWorld()" data-tip="저장"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`
     : `<button class="dorm-tbtn" onclick="startWorldEdit()" data-tip="맵 편집"><i class="fa-solid fa-pen-ruler"></i><span class="t">편집</span></button>`;
   if (!worldData) { body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '맵을 불러오는 중입니다'); return; }
-  if (worldEditMode) { document.getElementById('worldTopSeg').textContent = '편집'; body.innerHTML = worldEditHtml(); return; }
+  if (worldEditMode) { worldDrawer(null); document.getElementById('worldTopSeg').textContent = '편집'; body.innerHTML = worldEditHtml(); return; }
   if (worldView === 'chapter') {
     document.getElementById('worldTopSeg').textContent = '챕터';
-    body.innerHTML = worldGraphHtml() + (worldChaptersHtml() || emptyHtml('fa-book-open', '아직 챕터가 없어요', gm ? '편집에서 챕터를 추가해 주세요.' : ''));
+    // 챕터 화면 : 노드 그림이 위, 챕터는 아래 서랍(위 화살표를 누르면 올라와 덮고, 다시 누르면 내려가 노드가 보여요)
+    body.innerHTML = worldGraphHtml();
+    worldDrawer(worldChaptersHtml() || emptyHtml('fa-book-open', '아직 챕터가 없어요', gm ? '편집에서 챕터를 추가해 주세요.' : ''));
     cgMount();
-    const tr = body.querySelector('.wm-track');
-    if (tr && !worldTrackShown) { const f = tr.style.getPropertyValue('--fill'); tr.style.setProperty('--fill', 0); requestAnimationFrame(() => requestAnimationFrame(() => tr.style.setProperty('--fill', f))); worldTrackShown = true; }
     return;
   }
+  worldDrawer(null);
   const places = worldData.places || [];
   if (!worldSel || !places.some(p => p.id === worldSel)) worldSel = (places.find(p => !p.locked) || places[0] || {}).id || null;
   const sel = places.find(p => p.id === worldSel);
@@ -956,6 +957,26 @@ function worldChaptersHtml() {
   return `<div class="wm-card"><div class="wm-h"><span class="en">Chapter</span><span class="sub">${n} / ${chs.length} 해금</span><span class="sp"></span>
     ${gm ? '<span class="sub">점을 누르면 그 챕터까지 해금돼요</span>' : ''}</div>
     <div class="wm-track" style="--fill:${fill}">${nodes}</div><div class="wm-chlist">${rows}</div></div>`;
+}
+let worldDrawerOpen = false;
+function worldDrawer(html) {
+  const d = document.getElementById('cgDrawer'); if (!d) return;
+  document.getElementById('worldBody').classList.toggle('has-drawer', html != null);
+  if (html == null) { d.hidden = true; d.innerHTML = ''; return; }
+  const chs = (worldData && worldData.chapters) || [], n = (worldData && worldData.unlocked) || 0;
+  d.hidden = false; d.classList.toggle('open', worldDrawerOpen);
+  d.innerHTML = `<button type="button" class="cg-drawer-bar" onclick="worldDrawerToggle()" aria-expanded="${worldDrawerOpen}">
+      <span class="en">Chapter</span><span class="sub">${n} / ${chs.length} 해금</span><span class="sp"></span><i class="fa-solid fa-chevron-up"></i></button>
+    <div class="cg-drawer-body">${html}</div>`;
+}
+function worldDrawerToggle() {
+  worldDrawerOpen = !worldDrawerOpen;
+  const d = document.getElementById('cgDrawer'); if (!d) return;
+  d.classList.toggle('open', worldDrawerOpen);
+  d.querySelector('.cg-drawer-bar').setAttribute('aria-expanded', worldDrawerOpen);
+  // 처음 열 때 챕터 진행선이 왼쪽부터 차오르게
+  const tr = d.querySelector('.wm-track');
+  if (worldDrawerOpen && tr) { const f = tr.style.getPropertyValue('--fill'); tr.style.setProperty('--fill', 0); requestAnimationFrame(() => requestAnimationFrame(() => tr.style.setProperty('--fill', f))); }
 }
 function setWorldUnlocked(k) {
   if (!worldIsGm()) return;
