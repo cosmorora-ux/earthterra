@@ -4941,3 +4941,11 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .cg-stage.lod-enter .cg-lod { animation: cgLodIn .32s ease both; }
 /* 멀리서 보기 : 그림 카드는 이름을 그림 위에 얹어요(카드가 길어져 옆 카드와 겹치지 않게) */
 .cg-stage.lod .k-image .cg-lod { position:absolute; left:6px; right:6px; top:6px; z-index:2; border-radius:12px 12px 0 0; background: linear-gradient(rgba(10,10,12,.82), rgba(10,10,12,0)); padding-bottom: calc(18px * var(--inv, 1)); }
+/* 휴대폰 : 노드 그림은 카드 테두리 안에 가두지 않고 화면 양옆 끝까지 넓게 */
+@media (max-width:600px) {
+  #worldBody { margin-left:-20px; margin-right:-20px; padding-left:20px; padding-right:20px; }   /* 스크롤 칸을 화면 끝까지 넓혀 노드 그림이 잘리지 않게 */
+  .wm-card.cg-card { margin-left:-20px; margin-right:-20px; border:none; border-radius:0; background:none; overflow:visible; }
+  .cg-card .cg-view { margin:10px 0 14px; }
+  .cg-card .cg-wrap { border-radius:0; }
+  .cg-card .cg-insp { margin:0 12px; }
+}
