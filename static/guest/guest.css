@@ -5023,3 +5023,45 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
   .dorm-gbdrawer.open { max-height: calc(100dvh - var(--mbar-h, 76px) - 120px); }
   .gbmode { padding-bottom:76px; }
 }
+/* 운영진 성능 분석 탭 : 왼쪽 캐릭터 표 · 오른쪽 고른 캐릭터 자세히(분포 막대 · 공격하면 평균 피해) */
+.anal-bar { display:flex; gap:8px; margin:4px 0 14px; flex-wrap:wrap; }
+.anal-bar .ops-in { width:auto; flex:1 1 160px; }
+.anal-bar select.ops-in { flex:0 0 150px; }
+.anal-wrap { display:grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); gap:16px; align-items:start; }
+.anal-table { display:flex; flex-direction:column; gap:2px; max-height:68vh; overflow:auto; }
+.anal-row { display:grid; grid-template-columns: minmax(110px, 1.4fr) .6fr 1.1fr .8fr 1fr 1fr .6fr .6fr; gap:8px; align-items:center; padding:9px 10px; border:none; border-radius:10px; background:none; color: var(--text); font-family:inherit; font-size:13px; text-align:left; cursor:pointer; }
+.anal-row:not(.head):hover { background: rgba(255,255,255,.04); }
+.anal-row.on { background: rgba(var(--point-rgb), .12); }
+.anal-row.head { cursor:default; font-size:11.5px; color: var(--muted); position:sticky; top:0; background: var(--panel); z-index:1; }
+.anal-row small { font-size:10.5px; color: var(--muted); margin-left:4px; }
+.anal-row b { font-weight:700; font-variant-numeric: tabular-nums; }
+.anal-row em { font-style:normal; font-size:11px; color: var(--muted); margin-left:6px; font-variant-numeric: tabular-nums; }
+.anal-row .nm { display:flex; align-items:center; gap:8px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+.anal-row .dot, .anal-who .dot { flex:none; width:8px; height:8px; border-radius:50%; }
+.anal-detail { display:flex; flex-direction:column; gap:12px; position:sticky; top:0; }
+.anal-who { display:flex; align-items:center; gap:8px; font-size:16px; }
+.anal-who span { font-size:12.5px; color: var(--muted); }
+.anal-stats { display:flex; flex-wrap:wrap; gap:6px 12px; font-size:12px; color: var(--muted); }
+.anal-stats b { color: var(--text); }
+.anal-dice { font-size:12.5px; color:#cfcfd4; line-height:1.6; padding:10px 12px; border-radius:10px; background: rgba(255,255,255,.03); }
+.anal-blk { padding:12px; border-radius:12px; background:#0f0f11; border:1px solid rgba(255,255,255,.05); }
+.anal-blk .h { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13px; margin-bottom:8px; }
+.anal-blk .h > span { margin-left:auto; color: var(--muted); font-size:12px; }
+.anal-blk .h > span b { color: var(--text); }
+.anal-blk .h select.ops-in { width:auto; margin-left:auto; height:32px; font-size:12.5px; }
+.anal-blk .x { margin-top:8px; font-size:12px; color: var(--muted); }
+.anal-hist { display:flex; align-items:flex-end; gap:3px; height:70px; }
+.anal-hist i { flex:1; border-radius:3px 3px 0 0; background: rgba(var(--point-rgb), .55); }
+.anal-axis { display:flex; justify-content:space-between; font-size:11px; color: var(--muted); margin-top:4px; font-variant-numeric: tabular-nums; }
+.anal-vs { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; }
+.anal-vs > div { display:flex; flex-direction:column; gap:2px; padding:10px; border-radius:10px; background: rgba(255,255,255,.03); }
+.anal-vs span { font-size:11.5px; color: var(--muted); }
+.anal-vs b { font-size:20px; font-variant-numeric: tabular-nums; }
+.anal-vs em { font-style:normal; font-size:11.5px; color: var(--muted); }
+.anal-vs small { font-size:11.5px; color:#cfcfd4; }
+@media (max-width:1100px) { .anal-wrap { grid-template-columns: 1fr; } .anal-detail { position:static; } }
+@media (max-width:700px) {
+  .anal-row { grid-template-columns: minmax(90px, 1.2fr) 1fr 1fr 1fr; }
+  .anal-row > span:nth-child(2), .anal-row > span:nth-child(4), .anal-row > span:nth-child(7), .anal-row > span:nth-child(8) { display:none; }
+  .anal-vs { grid-template-columns: 1fr; }
+}

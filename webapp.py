@@ -32,6 +32,7 @@ import notices as notices_mod
 import mailbox as mailbox_mod
 import dorm as dorm_mod
 import world as world_mod
+import dice_analysis
 import loop_game as loop_mod
 import backup as backup_mod
 import errlog
@@ -45,7 +46,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-13.102"
+SERVER_BUILD = "2026-10-13.103"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -3942,6 +3943,34 @@ def on_world_save(data):
     world_mod.shared_world().set_all(data or {})
     emit("world_result", {"ok": True, "message": "맵이 저장되었습니다."})
     _world_broadcast()
+
+
+@socketio.on("dice_analysis")
+def on_dice_analysis(data=None):
+    """운영진 '성능 분석' : 이 방 명단의 캐릭터마다 다이스 값이 어느 정도로 나오는지(이 방 전투 유형의 수식 값 기준).
+    수식이 담겨 있어 운영진에게만 보냅니다."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        return
+    overrides = config.load_profile_overrides(room.battle_type)
+    db = room.game.db
+    chars = [dice_analysis.analyze_one(n, db.get(n), overrides) for n in db.all_names()]
+    emit("dice_analysis", {"chars": chars, "samples": dice_analysis.SAMPLES, "type_label": BATTLE_TYPE_LABELS.get(room.battle_type, "")})
+
+
+@socketio.on("dice_matchup")
+def on_dice_matchup(data):
+    """운영진 '성능 분석' : 공격자 → 대상 평균 피해 · 쓰러뜨리는 타수."""
+    room = _require_gm_or_guest_gm(request.sid)
+    if room is None:
+        return
+    data = data or {}
+    db = room.game.db
+    a, b = db.get(str(data.get("a") or "")), db.get(str(data.get("b") or ""))
+    if a is None or b is None:
+        return
+    res = dice_analysis.matchup(a, b, config.load_profile_overrides(room.battle_type))
+    emit("dice_matchup", dict(res, a=data.get("a"), b=data.get("b")))
 
 
 @socketio.on("world_graph_save")

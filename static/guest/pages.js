@@ -23,7 +23,7 @@ const IS_LOUNGE = BATTLE_TYPE === 'lounge';
 // 운영 페이지는 두 가지 : 전투 관리(전투 방 · 사이드 슬라이더 / 룸 목록 연필) · 방 설정(모든 방 · 사이드 톱니바퀴)
 const OPS_BATTLE_ROOM = ['pvp', 'siege', 'mass_raid'].includes(BATTLE_TYPE);
 const OPS_TAB_SETS = {
-  battle: [['battle', '전투 준비'], ['music', '음악'], ['bset', '전투 설정']],
+  battle: [['battle', '전투 준비'], ['music', '음악'], ['bset', '전투 설정'], ['anal', '성능 분석']],
   general: [['chars', '캐릭터']].concat(OPS_BATTLE_ROOM ? [] : [['music', '음악']], [['room', '방 설정']]),
 };
 let opsMode = OPS_BATTLE_ROOM ? 'battle' : 'general';
@@ -270,6 +270,7 @@ function renderOps() {
   if (opsTab === 'battle') body.innerHTML = opsBattleHtml();
   else if (opsTab === 'chars') body.innerHTML = opsCharsHtml();
   else if (opsTab === 'music') body.innerHTML = opsMusicHtml();
+  else if (opsTab === 'anal') body.innerHTML = opsAnalHtml();
   else body.innerHTML = opsRoomHtml(opsTab === 'bset' ? 'battle' : 'general');
   renderOpsData();
 }
@@ -280,6 +281,7 @@ function renderOpsData() {
   else if (opsTab === 'chars') { opsRenderRoster(); opsQuickRefresh(); }
   else if (opsTab === 'music') opsRenderMusicNow();
   else if (opsTab === 'room' || opsTab === 'bset') opsRenderRoomInfo();
+  else if (opsTab === 'anal') opsRenderAnal();
 }
 
 // ---------- 전투 준비 ----------
@@ -550,6 +552,74 @@ function opsPlayMp3() {
 
 // ---------- 방 설정 ----------
 // 방 설정(일반 · 톱니바퀴) / 전투 설정(전투 방 · 전투 관리)
+// ---------- 성능 분석 : 캐릭터마다 다이스 값이 어느 정도로 나오는지(이 방 전투 유형의 수식으로 여러 번 굴려 본 값) ----------
+let opsAnal = null, opsAnalSel = null, opsAnalSort = 'atk', opsAnalVs = null, opsAnalMatch = null;
+socket.on('dice_analysis', (d) => { opsAnal = d; if (!opsAnalSel && d.chars.length) opsAnalSel = d.chars[0].name; if (opsOpen() && opsTab === 'anal') opsRenderAnal(); });
+socket.on('dice_matchup', (d) => { opsAnalMatch = d; if (opsOpen() && opsTab === 'anal') opsRenderAnalDetail(); });
+function opsAnalHtml() {
+  if (!opsAnal) socket.emit('dice_analysis');
+  return `<div class="ops-card anal-card">
+    <h3><i class="fa-solid fa-chart-simple"></i> 성능 분석<span class="sub" id="opsAnalSub">계산하는 중이에요…</span></h3>
+    <div class="anal-bar">
+      <input class="ops-in" id="opsAnalQ" placeholder="이름 검색" autocomplete="off" oninput="opsRenderAnal()">
+      <select class="ops-in" onchange="opsAnalSort = this.value; opsRenderAnal()">
+        ${[['atk', '공격 높은 순'], ['def', '방어 높은 순'], ['heal', '회복 높은 순'], ['hp', '체력 높은 순'], ['name', '이름 순']].map(o => `<option value="${o[0]}"${o[0] === opsAnalSort ? ' selected' : ''}>${o[1]}</option>`).join('')}
+      </select>
+      <button class="ops-btn" onclick="opsAnal = null; opsAnalMatch = null; socket.emit('dice_analysis'); document.getElementById('opsAnalSub').textContent = '다시 계산하는 중이에요…'" data-tip="수식이나 스탯을 바꿨으면 다시 계산"><i class="fa-solid fa-rotate"></i> 다시 계산</button>
+    </div>
+    <div class="anal-wrap"><div class="anal-table" id="opsAnalTable"></div><div class="anal-detail" id="opsAnalDetail"></div></div>
+  </div>`;
+}
+function opsAnalRange(o) { return `<em>${o.p10}~${o.p90}</em>`; }
+function opsRenderAnal() {
+  const box = document.getElementById('opsAnalTable'); if (!box) return;
+  if (!opsAnal) { box.innerHTML = emptyHtml('fa-circle-notch fa-spin', '캐릭터마다 다이스를 굴려 보는 중이에요'); return; }
+  const sub = document.getElementById('opsAnalSub');
+  if (sub) sub.textContent = `${opsAnal.type_label} 수식으로 캐릭터마다 ${opsAnal.samples.toLocaleString()}번 굴려 본 값 · 큰 숫자는 평균, 작은 숫자는 10~90% 범위 · 아이템 · 버프 제외`;
+  const q = ((document.getElementById('opsAnalQ') || {}).value || '').trim().toLowerCase();
+  const key = { atk: c => c.atk.avg, def: c => c.def.avg, heal: c => c.heal.avg, hp: c => c.hp }[opsAnalSort];
+  const list = opsAnal.chars.filter(c => !q || c.name.toLowerCase().includes(q))
+    .sort((a, b) => key ? key(b) - key(a) : a.name.localeCompare(b.name, 'ko'));
+  box.innerHTML = `<div class="anal-row head"><span>이름</span><span>체력</span><span>공격</span><span>치명</span><span>방어 <small>능동 / 수동</small></span><span>회복</span><span>회피</span><span>이동</span></div>`
+    + list.map(c => `<button type="button" class="anal-row${c.name === opsAnalSel ? ' on' : ''}" onclick='opsAnalPick(${JSON.stringify(c.name)})'>
+      <span class="nm"><i class="dot" style="background:${roleColorVar(c.role)}"></i>${mailEsc(c.name)}${c.mob ? '<small>몹</small>' : ''}</span>
+      <span>${c.hp}</span>
+      <span><b>${c.atk.avg}</b>${opsAnalRange(c.atk)}</span>
+      <span>${c.atk.crit_on ? `${c.atk.crit}%<em>×${c.atk.crit_mult}</em>` : '<em>없음</em>'}</span>
+      <span><b>${c.def.avg}</b><em>/ ${c.def.passive}</em></span>
+      <span><b>${c.heal.avg}</b>${opsAnalRange(c.heal)}</span>
+      <span>${c.dodge}%</span><span>${c.move}칸</span></button>`).join('');
+  opsRenderAnalDetail();
+}
+function opsAnalPick(name) { opsAnalSel = name; opsAnalMatch = null; opsRenderAnal(); }
+function opsAnalBars(h, unit) {
+  const max = Math.max(...h.bars, 1);
+  return `<div class="anal-hist">${h.bars.map(b => `<i style="height:${Math.max(2, b / max * 100)}%" data-tip="${b}%"></i>`).join('')}</div>
+    <div class="anal-axis"><span>${h.lo}</span><span>${h.hi}${unit || ''}</span></div>`;
+}
+function opsRenderAnalDetail() {
+  const box = document.getElementById('opsAnalDetail'); if (!box || !opsAnal) return;
+  const c = opsAnal.chars.find(x => x.name === opsAnalSel); if (!c) { box.innerHTML = ''; return; }
+  const d = c.dice, st = c.stats || {};
+  const stat = ['체력', '공격', '방어', '이능', '정신', '민첩', '행운'].map(k => `<span>${k} <b>${st[k] || 0}</b></span>`).join('');
+  const block = (title, o, extra) => `<div class="anal-blk"><div class="h"><b>${title}</b><span>평균 <b>${o.avg}</b> · 가운데 ${o.p50} · ${o.min}~${o.max}</span></div>${opsAnalBars(o.hist)}${extra ? `<div class="x">${extra}</div>` : ''}</div>`;
+  const others = opsAnal.chars.filter(x => x.name !== c.name);
+  if (!opsAnalVs || opsAnalVs === c.name || !others.some(x => x.name === opsAnalVs)) opsAnalVs = others.length ? others[0].name : null;
+  const m = opsAnalMatch && opsAnalMatch.a === c.name && opsAnalMatch.b === opsAnalVs ? opsAnalMatch : null;
+  box.innerHTML = `<div class="anal-who"><i class="dot" style="background:${roleColorVar(c.role)}"></i><b>${mailEsc(c.name)}</b><span>${mailEsc(c.role || '포지션 없음')}</span></div>
+    <div class="anal-stats">${stat}</div>
+    <div class="anal-dice">다이스 <b>${d.sides}면</b> · 공격 ${d.atk_count}개 · 방어 ${d.def_count}개 · 회복 ${d.heal_count}개 · ${d.reroll_at > 0 ? `${d.reroll_at} 이하가 나오면 다시 굴려 높은 값` : '다시 굴림 없음'}</div>
+    ${block('공격', c.atk, c.atk.crit_on ? `치명타 ${c.atk.crit}% · 치명타 배율 ×${c.atk.crit_mult}` : '치명타 없음(스트라이커가 아니에요)')}
+    ${block('방어 (스스로 능동 방어)', c.def, `방어 안 할 때(수동) ${c.def.passive} · 치명 방어 ${c.def.crit}%`)}
+    ${block('회복', c.heal, c.heal.crit_on ? `치명 회복 ${c.heal.crit}%` : '치명 회복 없음(메딕이 아니에요)')}
+    <div class="anal-blk vs"><div class="h"><b>이 캐릭터가 공격하면</b>
+      <select class="ops-in" onchange="opsAnalVs = this.value; opsAnalMatch = null; opsRenderAnalDetail()">${others.map(x => `<option value="${mailEsc(x.name)}"${x.name === opsAnalVs ? ' selected' : ''}>${mailEsc(x.name)}</option>`).join('')}</select></div>
+      ${!opsAnalVs ? '' : m ? `<div class="anal-vs">
+          <div><span>방어 안 할 때</span><b>${m.passive.avg}</b><em>${m.passive.p10}~${m.passive.p90}</em><small>${m.passive.hits ? `약 ${m.passive.hits}번에 쓰러져요` : ''}</small></div>
+          <div><span>능동 방어할 때</span><b>${m.active.avg}</b><em>${m.active.p10}~${m.active.p90}</em><small>${m.active.hits ? `약 ${m.active.hits}번에 쓰러져요` : ''}</small></div>
+          <div><span>대상 체력 · 회피</span><b>${m.hp}</b><em>회피 ${m.dodge}%</em></div></div>`
+        : (socket.emit('dice_matchup', { a: c.name, b: opsAnalVs }), '<div class="ops-hint">계산하는 중이에요…</div>')}</div>`;
+}
 function opsRoomHtml(kind) {
   const C = {
     room: `    <div class="ops-card">

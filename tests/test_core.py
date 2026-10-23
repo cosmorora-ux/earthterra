@@ -296,6 +296,24 @@ class TestChapterGraph(unittest.TestCase):
             self.assertEqual(got["i_nexus"]["image"], want_img, "3판 처리 잘못(고친 그림을 덮었거나, 손대지 않은 것을 안 바꿈)")
 
 
+class TestDiceAnalysis(unittest.TestCase):
+    def test_gm_only_and_numbers(self):
+        """성능 분석 : 운영진만 받고(수식이 담겨 있어요), 값이 실제 굴림 범위 안에 들어와요."""
+        room = rooms_mod.create_room("pvp", name="점검 분석")
+        r = Client(); r.join(room, "AA")
+        self.assertEqual(names(r.emit("dice_analysis"), "dice_analysis"), [], "러너에게 성능 분석이 감")
+        self.assertEqual(names(r.emit("dice_matchup", {"a": "AA", "b": "AB"}), "dice_matchup"), [], "러너에게 대결 분석이 감")
+        g = Client(); g.join(room, "GM", gm_password=PW)
+        res = names(g.emit("dice_analysis"), "dice_analysis")
+        self.assertTrue(res and res[0]["chars"], "운영진에게 분석이 안 옴")
+        c = next(x for x in res[0]["chars"] if x["name"] == "AA")
+        self.assertTrue(c["atk"]["min"] <= c["atk"]["p10"] <= c["atk"]["avg"] <= c["atk"]["p90"] <= c["atk"]["max"])
+        self.assertAlmostEqual(sum(c["atk"]["hist"]["bars"]), 100, delta=1)
+        m = names(g.emit("dice_matchup", {"a": "AA", "b": "AB"}), "dice_matchup")
+        self.assertTrue(m and m[0]["passive"]["avg"] >= m[0]["active"]["avg"], "능동 방어가 수동보다 피해가 큼")
+        r.close(); g.close()
+
+
 class TestEngine(unittest.TestCase):
     def test_multi_action_and_undo(self):
         import config

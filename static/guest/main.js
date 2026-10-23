@@ -565,7 +565,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-13.102";
+const EXPECTED_SERVER_BUILD = "2026-10-13.103";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
