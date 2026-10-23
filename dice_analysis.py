@@ -45,6 +45,39 @@ def _sample(fn, n):
     return out, round(crit * 100 / n, 1)
 
 
+def reroll_effect(stats, overrides=None):
+    """정신 재굴림 효과(정확한 계산) : 다이스 하나가 기준치 이하로 나와 다시 굴릴 확률,
+    다시 굴림이 없을 때와 있을 때 다이스 하나의 평균, 그리고 중간값."""
+    ability = int(stats.get("이능", 0))
+    mental = int(stats.get("정신", 0))
+    S = int(config.get_value("BASE_DICE_SIDES", overrides) + ability * config.get_value("ABILITY_BONUS", overrides))
+    T = mental * config.get_value("MENTAL_FLOOR_MULTIPLIER", overrides)
+    T = int(T) if float(T).is_integer() else round(T, 2)
+    k = max(1, int(config.get_value("MENTAL_REROLL_COUNT", overrides)))
+    # 다이스 하나의 최종 값 분포 : r > T면 그대로, r <= T면 max(r, k번 굴린 값)
+    p = [0.0] * (S + 1)
+    for r in range(1, S + 1):
+        if r > T:
+            p[r] += 1 / S
+        else:
+            for v in range(1, S + 1):   # max(r, k번 중 최대)가 v일 확률
+                if v < r:
+                    continue
+                cdf = lambda x: (min(max(x, 0), S) / S) ** k
+                pv = cdf(v) if v == r else cdf(v) - cdf(v - 1)
+                p[v] += pv / S
+    avg = sum(v * p[v] for v in range(1, S + 1))
+    acc, med = 0.0, S
+    for v in range(1, S + 1):
+        acc += p[v]
+        if acc >= .5:
+            med = v
+            break
+    return {"sides": S, "threshold": T, "rerolls": k, "chance": round(min(T, S) / S * 100, 1),
+            "plain_avg": round((S + 1) / 2, 2), "avg": round(avg, 2), "median": med,
+            "plain_median": (S + 1) // 2 if S % 2 else S // 2, "gain": round(avg - (S + 1) / 2, 2)}
+
+
 def analyze_one(name, entry, overrides=None, n=SAMPLES, rng_seed=None):
     if rng_seed is not None:
         random.seed(rng_seed)
@@ -68,6 +101,7 @@ def analyze_one(name, entry, overrides=None, n=SAMPLES, rng_seed=None):
         "def": dict(_summary(dfn_vals), crit=dfn_crit, passive=passive),
         "heal": dict(_summary(heal_vals), crit=heal_crit, crit_on=one_heal["position_match"]),
         "dodge": dodge,
+        "reroll": reroll_effect(stats, overrides),
     }
     res["atk"]["hist"] = _hist(atk_vals, res["atk"]["min"], res["atk"]["max"])
     res["def"]["hist"] = _hist(dfn_vals, res["def"]["min"], res["def"]["max"])

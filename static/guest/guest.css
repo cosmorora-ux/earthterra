@@ -5065,3 +5065,11 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
   .anal-row > span:nth-child(2), .anal-row > span:nth-child(4), .anal-row > span:nth-child(7), .anal-row > span:nth-child(8) { display:none; }
   .anal-vs { grid-template-columns: 1fr; }
 }
+.anal-hist { position:relative; }
+.anal-hist .mk { position:absolute; top:-4px; bottom:0; width:0; border-left:2px dashed #ededf0; pointer-events:auto; }
+.anal-hist .mk.med { border-left-style:solid; border-color: var(--point); }
+.anal-rr { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; }
+.anal-rr > div { display:flex; flex-direction:column; gap:2px; padding:10px; border-radius:10px; background: rgba(255,255,255,.03); }
+.anal-rr span { font-size:11.5px; color: var(--muted); }
+.anal-rr b { font-size:18px; font-variant-numeric: tabular-nums; }
+.anal-rr em { font-style:normal; font-size:11.5px; color: var(--muted); }

@@ -575,26 +575,28 @@ function opsRenderAnal() {
   const box = document.getElementById('opsAnalTable'); if (!box) return;
   if (!opsAnal) { box.innerHTML = emptyHtml('fa-circle-notch fa-spin', '캐릭터마다 다이스를 굴려 보는 중이에요'); return; }
   const sub = document.getElementById('opsAnalSub');
-  if (sub) sub.textContent = `${opsAnal.type_label} 수식으로 캐릭터마다 ${opsAnal.samples.toLocaleString()}번 굴려 본 값 · 큰 숫자는 평균, 작은 숫자는 10~90% 범위 · 아이템 · 버프 제외`;
+  if (sub) sub.textContent = `${opsAnal.type_label} 수식으로 캐릭터마다 ${opsAnal.samples.toLocaleString()}번 굴려 본 값 · 큰 숫자는 평균, 작은 숫자는 중간값(마우스를 올리면 10~90% 범위) · 아이템 · 버프 제외`;
   const q = ((document.getElementById('opsAnalQ') || {}).value || '').trim().toLowerCase();
   const key = { atk: c => c.atk.avg, def: c => c.def.avg, heal: c => c.heal.avg, hp: c => c.hp }[opsAnalSort];
   const list = opsAnal.chars.filter(c => !q || c.name.toLowerCase().includes(q))
     .sort((a, b) => key ? key(b) - key(a) : a.name.localeCompare(b.name, 'ko'));
-  box.innerHTML = `<div class="anal-row head"><span>이름</span><span>체력</span><span>공격</span><span>치명</span><span>방어 <small>능동 / 수동</small></span><span>회복</span><span>회피</span><span>이동</span></div>`
+  box.innerHTML = `<div class="anal-row head"><span>이름</span><span>체력</span><span>공격 <small>평균 · 중간</small></span><span>치명</span><span>방어 <small>평균 · 중간 / 수동</small></span><span>회복 <small>평균 · 중간</small></span><span>회피</span><span>이동</span></div>`
     + list.map(c => `<button type="button" class="anal-row${c.name === opsAnalSel ? ' on' : ''}" onclick='opsAnalPick(${JSON.stringify(c.name)})'>
       <span class="nm"><i class="dot" style="background:${roleColorVar(c.role)}"></i>${mailEsc(c.name)}${c.mob ? '<small>몹</small>' : ''}</span>
       <span>${c.hp}</span>
-      <span><b>${c.atk.avg}</b>${opsAnalRange(c.atk)}</span>
+      <span data-tip="10~90% : ${c.atk.p10}~${c.atk.p90}"><b>${c.atk.avg}</b><em>${c.atk.p50}</em></span>
       <span>${c.atk.crit_on ? `${c.atk.crit}%<em>×${c.atk.crit_mult}</em>` : '<em>없음</em>'}</span>
-      <span><b>${c.def.avg}</b><em>/ ${c.def.passive}</em></span>
-      <span><b>${c.heal.avg}</b>${opsAnalRange(c.heal)}</span>
+      <span data-tip="10~90% : ${c.def.p10}~${c.def.p90}"><b>${c.def.avg}</b><em>${c.def.p50} / ${c.def.passive}</em></span>
+      <span data-tip="10~90% : ${c.heal.p10}~${c.heal.p90}"><b>${c.heal.avg}</b><em>${c.heal.p50}</em></span>
       <span>${c.dodge}%</span><span>${c.move}칸</span></button>`).join('');
   opsRenderAnalDetail();
 }
 function opsAnalPick(name) { opsAnalSel = name; opsAnalMatch = null; opsRenderAnal(); }
-function opsAnalBars(h, unit) {
-  const max = Math.max(...h.bars, 1);
-  return `<div class="anal-hist">${h.bars.map(b => `<i style="height:${Math.max(2, b / max * 100)}%" data-tip="${b}%"></i>`).join('')}</div>
+// 분포 막대 + 평균(점선) · 중간값(실선) 표시 : 재굴림으로 위로 쏠리면 두 선이 벌어져요
+function opsAnalBars(h, unit, o) {
+  const max = Math.max(...h.bars, 1), at = (v) => h.hi > h.lo ? ((v - h.lo) / (h.hi - h.lo) * 100).toFixed(1) : 50;
+  const marks = o ? `<b class="mk avg" style="left:${at(o.avg)}%" data-tip="평균 ${o.avg}"></b><b class="mk med" style="left:${at(o.p50)}%" data-tip="중간 ${o.p50}"></b>` : '';
+  return `<div class="anal-hist">${h.bars.map(b => `<i style="height:${Math.max(2, b / max * 100)}%" data-tip="${b}%"></i>`).join('')}${marks}</div>
     <div class="anal-axis"><span>${h.lo}</span><span>${h.hi}${unit || ''}</span></div>`;
 }
 function opsRenderAnalDetail() {
@@ -602,13 +604,22 @@ function opsRenderAnalDetail() {
   const c = opsAnal.chars.find(x => x.name === opsAnalSel); if (!c) { box.innerHTML = ''; return; }
   const d = c.dice, st = c.stats || {};
   const stat = ['체력', '공격', '방어', '이능', '정신', '민첩', '행운'].map(k => `<span>${k} <b>${st[k] || 0}</b></span>`).join('');
-  const block = (title, o, extra) => `<div class="anal-blk"><div class="h"><b>${title}</b><span>평균 <b>${o.avg}</b> · 가운데 ${o.p50} · ${o.min}~${o.max}</span></div>${opsAnalBars(o.hist)}${extra ? `<div class="x">${extra}</div>` : ''}</div>`;
+  const block = (title, o, extra) => `<div class="anal-blk"><div class="h"><b>${title}</b><span>평균 <b>${o.avg}</b> · 중간 <b>${o.p50}</b> · 10~90% ${o.p10}~${o.p90}</span></div>${opsAnalBars(o.hist, '', o)}${extra ? `<div class="x">${extra}</div>` : ''}</div>`;
+  const rr = c.reroll, sign = (v) => (v > 0 ? '+' : '') + v;
+  const reroll = `<div class="anal-blk rr"><div class="h"><b>정신 재굴림</b><span>정신 ${st['정신'] || 0} · ${rr.threshold > 0 ? `${rr.threshold} 이하면 ${rr.rerolls}번 더 굴려 가장 높은 값` : '다시 굴림 없음'}</span></div>
+      <div class="anal-rr">
+        <div><span>다시 굴릴 확률</span><b>${rr.chance}%</b><em>다이스 하나마다</em></div>
+        <div><span>다이스 하나 평균</span><b>${rr.avg}</b><em>재굴림 없으면 ${rr.plain_avg} (${sign(rr.gain)})</em></div>
+        <div><span>다이스 하나 중간값</span><b>${rr.median}</b><em>재굴림 없으면 ${rr.plain_median}</em></div>
+        <div><span>공격에 더해지는 평균</span><b>${sign(Math.round(rr.gain * d.atk_count * 10) / 10)}</b><em>다이스 ${d.atk_count}개 기준</em></div>
+      </div></div>`;
   const others = opsAnal.chars.filter(x => x.name !== c.name);
   if (!opsAnalVs || opsAnalVs === c.name || !others.some(x => x.name === opsAnalVs)) opsAnalVs = others.length ? others[0].name : null;
   const m = opsAnalMatch && opsAnalMatch.a === c.name && opsAnalMatch.b === opsAnalVs ? opsAnalMatch : null;
   box.innerHTML = `<div class="anal-who"><i class="dot" style="background:${roleColorVar(c.role)}"></i><b>${mailEsc(c.name)}</b><span>${mailEsc(c.role || '포지션 없음')}</span></div>
     <div class="anal-stats">${stat}</div>
     <div class="anal-dice">다이스 <b>${d.sides}면</b> · 공격 ${d.atk_count}개 · 방어 ${d.def_count}개 · 회복 ${d.heal_count}개 · ${d.reroll_at > 0 ? `${d.reroll_at} 이하가 나오면 다시 굴려 높은 값` : '다시 굴림 없음'}</div>
+    ${reroll}
     ${block('공격', c.atk, c.atk.crit_on ? `치명타 ${c.atk.crit}% · 치명타 배율 ×${c.atk.crit_mult}` : '치명타 없음(스트라이커가 아니에요)')}
     ${block('방어 (스스로 능동 방어)', c.def, `방어 안 할 때(수동) ${c.def.passive} · 치명 방어 ${c.def.crit}%`)}
     ${block('회복', c.heal, c.heal.crit_on ? `치명 회복 ${c.heal.crit}%` : '치명 회복 없음(메딕이 아니에요)')}
