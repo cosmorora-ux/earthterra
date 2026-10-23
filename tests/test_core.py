@@ -278,7 +278,7 @@ class TestChapterGraph(unittest.TestCase):
         p3 = os.path.join(d, "c.json")
         with open(p3, "w", encoding="utf-8") as f:
             json.dump({"chapters": [], "places": [], "unlocked": 0, "story_seeded": True,
-                       "graph": {"nodes": [{"id": i, "kind": "text", "text": "x"} for i in world_story.OLD_STORY_IDS], "edges": []}}, f)
+                       "graph": {"nodes": [{"id": i, "kind": "text", "text": "x"} for i in world_story.OLD_STORY_IDS[0]], "edges": []}}, f)
         self.assertEqual(len(world_mod.World(path=p3).graph["nodes"]), len(world_story.DEFAULT_GRAPH["nodes"]), "예전 기본 스토리가 새 판으로 안 바뀜")
         self.assertTrue(all(n.get("accent") for n in world_mod.World(path=p3).graph["nodes"]))
 

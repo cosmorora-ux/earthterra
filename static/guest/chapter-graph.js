@@ -5,7 +5,7 @@
 //   선을 눌러 지우기 · 카드를 눌러 내용(위 이름 · 옆 표시 · 제목 · 글 · 그림 · 너비 · 공개 챕터) 고치기.
 // 공개 전 챕터에 묶인 카드는 서버가 내용을 보내지 않아요(자리만 ???로).
 // ==================================================================
-const cg = { edit: false, draft: null, sel: null, off: {}, raf: 0, s: 1, z: null, drag: null };   // z : 사용자가 고른 배율(null = 화면에 맞춰 자동, 'fit' = 전체 보기)
+const cg = { edit: false, draft: null, sel: null, off: {}, raf: 0, s: 1, z: null, drag: null, open: new Set(), viewH: null };   // z : 사용자가 고른 배율(null = 화면에 맞춰 자동, 'fit' = 전체 보기)
 const CG_MIN_W = 900, CG_MIN_H = 380, CG_PAD = 60, CG_SNAP = 10;
 const CG_MIN_SCALE = .62;   // 좁은 화면 : 이보다 작게 줄이지 않고 옆으로 밀어서 봐요
 const CG_DIR = { l: [-1, 0], r: [1, 0], t: [0, -1], b: [0, 1] };
@@ -26,6 +26,7 @@ function worldGraphHtml() {
   const tools = !gm ? '' : cg.edit
     ? `<button class="dorm-tbtn" onclick="cgAdd('text')"><i class="fa-solid fa-plus"></i><span class="t">글 카드</span></button>
        <button class="dorm-tbtn" onclick="cgAdd('image')"><i class="fa-solid fa-plus"></i><span class="t">그림 카드</span></button>
+       <button class="dorm-tbtn" onclick="cgAdd('timeline')"><i class="fa-solid fa-plus"></i><span class="t">타임라인 카드</span></button>
        <button class="dorm-tbtn" onclick="cgCopy()" data-tip="고른 카드 복사 (Ctrl+D)"><i class="fa-regular fa-copy"></i><span class="t">복사</span></button>
        <button class="dorm-tbtn" onclick="cgDefault()" data-tip="노드 그림을 처음 스토리로 되돌려요"><i class="fa-solid fa-book"></i><span class="t">기본 스토리</span></button>
        <button class="dorm-tbtn" onclick="cgCancel()"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
@@ -45,23 +46,54 @@ function worldGraphHtml() {
     ${cg.edit ? '<div class="cg-form" id="cgForm"></div>' : ''}</div>`;
 }
 
+// 접기 : 긴 글 카드와 타임라인 카드는 처음에 접혀 있어요(카드를 누르면 펼치기 · 접기). 편집 중에는 늘 펼쳐 둬요
+function cgFoldable(n) {
+  if (!n || n.locked) return false;
+  if (n.kind === 'timeline') return (n.items || []).length > 1;
+  return n.kind === 'text' && ((n.text || '').length > 120 || (n.text || '').split('\n').length > 5);
+}
+function cgIsOpen(n) { return cg.edit || !cgFoldable(n) || cg.open.has(n.id); }
 function cgNodeHtml(n) {
-  const hd = n.label || n.tag || n.locked ? `<div class="cg-hd"><i class="pip"></i>${n.label ? `<b>${worldEsc(n.label)}</b>` : ''}${n.tag ? `<span>${worldEsc(n.tag)}</span>` : ''}</div>` : '';
+  const fold = cgFoldable(n) && !cg.edit, open = cgIsOpen(n);
+  const ic = fold ? `<i class="fa-solid fa-chevron-down cg-fold-ic"></i>` : '';
+  const hd = n.label || n.tag || n.locked || fold ? `<div class="cg-hd"><i class="pip"></i>${n.label ? `<b>${worldEsc(n.label)}</b>` : ''}${n.tag ? `<span>${worldEsc(n.tag)}</span>` : ''}${ic}</div>` : '';
   let inner;
   if (n.locked) inner = '<div class="cg-lock"><i class="fa-solid fa-lock"></i>???</div>';
   else if (n.kind === 'image') inner = `<div class="cg-img"${n.image ? ` style="background-image:url('${worldEsc(n.image)}')"` : ''}>${n.image ? '' : '<i class="fa-regular fa-image"></i>'}</div>`;
-  else inner = `${n.title ? `<div class="cg-tt">${worldEsc(n.title)}</div>` : ''}${n.text || cg.edit || !n.title ? `<div class="cg-tx">${worldEsc(n.text || '') || (cg.edit ? '<em>글을 넣어 주세요</em>' : '')}</div>` : ''}`;
+  else if (n.kind === 'timeline') {
+    const its = n.items || [];
+    inner = `${n.title ? `<div class="cg-tt">${worldEsc(n.title)}</div>` : ''}<div class="cg-tl${open ? '' : ' fold'}">${its.map((it, i) => `<div class="cg-ti" style="--i:${i}"><i class="dot"></i>
+        ${it.head ? `<div class="h">${worldEsc(it.head)}</div>` : ''}${it.text ? `<div class="t">${worldEsc(it.text)}</div>` : ''}</div>`).join('')
+      || (cg.edit ? '<div class="cg-tx"><em>단계를 넣어 주세요</em></div>' : '')}</div>${!open && its.length > 1 ? `<div class="cg-more">+${its.length - 1}</div>` : ''}`;
+  } else inner = `${n.title ? `<div class="cg-tt">${worldEsc(n.title)}</div>` : ''}${n.text || cg.edit || !n.title ? `<div class="cg-tx${open ? '' : ' clamp'}">${worldEsc(n.text || '') || (cg.edit ? '<em>글을 넣어 주세요</em>' : '')}</div>` : ''}`;
   const ports = cg.edit ? ['l', 'r', 't', 'b'].map(s => `<span class="cg-port p-${s}" data-s="${s}"></span>`).join('') : '';
   const gate = cg.edit && n.chapter ? `<span class="cg-gate">Ch. ${n.chapter}</span>` : '';
-  return `<div class="cg-node k-${n.locked ? 'lock' : n.kind}${cg.sel === n.id ? ' sel' : ''}" data-id="${n.id}" style="left:${n.x}px; top:${n.y}px; width:${n.w}px; --ac:${cgAc(n)};">
+  return `<div class="cg-node k-${n.locked ? 'lock' : n.kind}${cg.sel === n.id ? ' sel' : ''}${fold ? ' foldable' : ''}${fold && open ? ' open' : ''}" data-id="${n.id}" style="left:${n.x}px; top:${n.y}px; width:${n.w}px; --ac:${cgAc(n)};">
     <div class="cg-box">${hd}<div class="cg-in">${inner}</div>${ports}${gate}</div></div>`;
+}
+// 펼치기 · 접기 : 높이가 부드럽게 바뀌는 동안 선도 따라 그려요(타임라인은 단계가 차례로 촤라락)
+function cgToggle(id) {
+  const n = cgNode(id), el = document.querySelector(`#cgStage .cg-node[data-id="${id}"]`);
+  if (!n || !el || !cgFoldable(n)) return;
+  const h0 = el.querySelector('.cg-in').offsetHeight, opening = !cg.open.has(id);
+  if (opening) cg.open.add(id); else cg.open.delete(id);
+  const tmp = document.createElement('div'); tmp.innerHTML = cgNodeHtml(n).trim();
+  const nw = tmp.firstChild; nw.style.transform = el.style.transform;
+  el.replaceWith(nw);
+  const inn = nw.querySelector('.cg-in'), h1 = inn.offsetHeight;
+  if (opening) { const tl = nw.querySelector('.cg-tl'); if (tl) tl.classList.add('reveal'); }
+  inn.style.height = h0 + 'px'; inn.style.overflow = 'hidden'; void inn.offsetHeight;
+  inn.style.transition = 'height .38s cubic-bezier(.3,.7,.2,1)'; inn.style.height = h1 + 'px';
+  const t0 = performance.now();
+  const tick = (now) => { cgDraw(); if (now - t0 < 420) requestAnimationFrame(tick); else { inn.style.cssText = ''; cgLayout(); cgDraw(); } };
+  requestAnimationFrame(tick);
 }
 
 // 그리기 : 카드를 놓고 크기를 잰 뒤, 무대 크기 · 배율을 맞추고 선을 그려요
 function cgMount() {
   const st = document.getElementById('cgStage'); if (!st) return;
   const g = cgGraph();
-  st.innerHTML = CG_LAYERS(g);
+  st.innerHTML = CG_LAYERS(g); cg.viewH = null;
   const empty = document.querySelector('#cgWrap .cg-empty'); if (empty) empty.style.display = g.nodes.length ? 'none' : '';
   cgLayout(); cgDraw(); cgBind();
   if (cg.edit) cgForm();
@@ -76,7 +108,7 @@ function cgLayout() {
   const cs = getComputedStyle(wrap), avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
   // 창(블럭) 크기는 확대 · 축소와 상관없이 늘 같아요 : 기본 배율일 때의 높이(화면 70%까지)로 고정하고, 안의 카드만 커지고 작아져요
   const autoS = Math.max(CG_MIN_SCALE, Math.min(1, avail / W));
-  const viewH = Math.max(120, Math.min(Math.ceil(H * autoS), Math.round(window.innerHeight * .7)));
+  const viewH = cg.viewH || (cg.viewH = Math.max(120, Math.min(Math.ceil(H * autoS), Math.round(window.innerHeight * .7))));
   wrap.style.height = viewH + 'px';
   cg.s = cg.z === 'fit' ? Math.min(1.5, avail / W, viewH / H) : typeof cg.z === 'number' ? cg.z : autoS;
   const zl = document.getElementById('cgZoomLabel'); if (zl) zl.textContent = Math.round(cg.s * 100) + '%';
@@ -181,7 +213,7 @@ function cgBind() {
     const id = node.dataset.id, p = cgPt(e);
     if (cg.edit && port) cg.drag = { type: 'link', a: id, as: port.dataset.s, to: p };
     else if (cg.edit) { const n = cgNode(id); cg.drag = { type: 'move', id, p, x0: n.x, y0: n.y, moved: false }; }
-    else { const o = cg.off[id] || (cg.off[id] = { x: 0, y: 0, vx: 0, vy: 0, r: 0 }); cg.drag = { type: 'play', id, p, last: p, t: performance.now() }; o.vx = o.vy = 0; node.classList.add('held'); }
+    else { const o = cg.off[id] || (cg.off[id] = { x: 0, y: 0, vx: 0, vy: 0, r: 0 }); cg.drag = { type: 'play', id, p, last: p, t: performance.now(), far: 0 }; o.vx = o.vy = 0; node.classList.add('held'); }
     try { st.setPointerCapture(e.pointerId); } catch (err) {}
   });
   st.addEventListener('pointermove', (e) => {
@@ -200,6 +232,7 @@ function cgBind() {
     // 보기 : 살짝만 따라와요(멀리 끌수록 덜 따라오는 고무줄), 기울기도 아주 조금
     const o = cg.off[d.id], now = performance.now(), dt = Math.max(1, now - d.t) / 1000;
     const rub = (v) => CG_PULL * Math.tanh(v * .6 / CG_PULL);
+    d.far = Math.max(d.far, Math.hypot(p.x - d.p.x, p.y - d.p.y));
     const nx = rub(p.x - d.p.x), ny = rub(p.y - d.p.y);
     o.vx = (nx - o.x) / dt; o.vy = (ny - o.y) / dt;
     o.x = nx; o.y = ny;
@@ -228,6 +261,7 @@ function cgBind() {
     }
     const el = st.querySelector(`.cg-node[data-id="${d.id}"]`); if (el) el.classList.remove('held');
     cgSpring();
+    if (d.far < 5) cgToggle(d.id);
   };
   st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
 }
@@ -312,12 +346,13 @@ function cgSave() {
 function cgAdd(kind) {
   const ns = cg.draft.nodes, k = ns.length;
   const n = { id: Math.random().toString(16).slice(2, 10), kind, label: kind === 'image' ? 'Image' : '', tag: '', title: '', text: '',
-    image: null, x: 40 + (k % 6) * 40, y: 40 + (k % 6) * 30, w: kind === 'image' ? 240 : 280, chapter: 0 };
+    image: null, x: 40 + (k % 6) * 40, y: 40 + (k % 6) * 30, w: kind === 'image' ? 240 : 300, chapter: 0, items: kind === 'timeline' ? [{ head: '01', text: '' }] : [] };
   ns.push(n); cg.sel = n.id; cgMount();
 }
 function cgSet(key, v) {
   const n = cgNode(cg.sel); if (!n) return;
   n[key] = v;
+  if (key === 'kind' && v === 'timeline' && !(n.items || []).length) n.items = [{ head: '01', text: '' }];
   const keep = document.activeElement && document.activeElement.id;
   const st = document.getElementById('cgStage');
   st.innerHTML = CG_LAYERS(cg.draft);
@@ -337,6 +372,11 @@ document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); cgCopy(); }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && cg.sel) { e.preventDefault(); cgDel(); }
 });
+// 타임라인 단계 고치기
+function cgItem(i, k, v) { const n = cgNode(cg.sel); if (!n || !n.items[i]) return; n.items[i][k] = v; cgSet('items', n.items); }
+function cgItemAdd() { const n = cgNode(cg.sel); if (!n) return; n.items = n.items || []; n.items.push({ head: String(n.items.length + 1).padStart(2, '0'), text: '' }); cgSet('items', n.items); cgForm(); }
+function cgItemDel(i) { const n = cgNode(cg.sel); if (!n) return; n.items.splice(i, 1); cgSet('items', n.items); cgForm(); }
+function cgItemMove(i, d) { const n = cgNode(cg.sel); if (!n || !n.items[i + d]) return; [n.items[i], n.items[i + d]] = [n.items[i + d], n.items[i]]; cgSet('items', n.items); cgForm(); }
 function cgDel() {
   cg.draft.nodes = cg.draft.nodes.filter(n => n.id !== cg.sel);
   cg.draft.edges = cg.draft.edges.filter(e => e.a !== cg.sel && e.b !== cg.sel);
@@ -359,15 +399,21 @@ function cgForm() {
   const chs = (worldData && worldData.chapters) || [];
   const chOpts = `<option value="0"${!n.chapter ? ' selected' : ''}>처음부터</option>` + chs.map((c, i) => `<option value="${i + 1}"${n.chapter === i + 1 ? ' selected' : ''}>Chapter ${i + 1} · ${worldEsc(c.title || '')}</option>`).join('');
   box.innerHTML = `<div class="cg-fgrid">
-    <div class="ops-field"><span class="lb">종류</span><select class="ops-in" onchange="cgSet('kind', this.value)"><option value="text"${n.kind === 'text' ? ' selected' : ''}>글</option><option value="image"${n.kind === 'image' ? ' selected' : ''}>그림</option></select></div>
+    <div class="ops-field"><span class="lb">종류</span><select class="ops-in" onchange="cgSet('kind', this.value)"><option value="text"${n.kind === 'text' ? ' selected' : ''}>글</option><option value="image"${n.kind === 'image' ? ' selected' : ''}>그림</option><option value="timeline"${n.kind === 'timeline' ? ' selected' : ''}>타임라인</option></select></div>
     <div class="ops-field"><span class="lb">이름</span><input class="ops-in" id="cgfLabel" maxlength="30" value="${worldEsc(n.label)}" oninput="cgSet('label', this.value)"></div>
     <div class="ops-field"><span class="lb">오른쪽 표시</span><input class="ops-in" id="cgfTag" maxlength="30" value="${worldEsc(n.tag)}" oninput="cgSet('tag', this.value)"></div>
     <div class="ops-field"><span class="lb">색</span><select class="ops-in" onchange="cgSet('accent', this.value)">${CG_ACCENTS.map(a => `<option value="${a[0]}"${(n.accent || 'point') === a[0] ? ' selected' : ''}>${a[1]}</option>`).join('')}</select></div>
     <div class="ops-field"><span class="lb">공개</span><select class="ops-in" onchange="cgSet('chapter', +this.value)">${chOpts}</select></div>
     ${n.kind === 'text' ? `<div class="ops-field"><span class="lb">제목</span><input class="ops-in" id="cgfTitle" maxlength="40" value="${worldEsc(n.title)}" oninput="cgSet('title', this.value)"></div>
       <div class="ops-field wide"><span class="lb">글</span><textarea class="ops-in" id="cgfText" maxlength="600" oninput="cgSet('text', this.value)">${worldEsc(n.text)}</textarea></div>`
+    : n.kind === 'timeline' ? `<div class="ops-field"><span class="lb">제목</span><input class="ops-in" id="cgfTitle" maxlength="40" value="${worldEsc(n.title)}" oninput="cgSet('title', this.value)"></div>
+      <div class="ops-field wide"><span class="lb">단계 (위에서부터 차례로)</span><div class="cg-items">${(n.items || []).map((it, i) => `<div class="cg-item">
+        <input class="ops-in" id="cgfIh${i}" maxlength="40" placeholder="머리 (예: 공력 514년)" value="${worldEsc(it.head)}" oninput="cgItem(${i}, 'head', this.value)">
+        <textarea class="ops-in" id="cgfIt${i}" maxlength="600" placeholder="내용" oninput="cgItem(${i}, 'text', this.value)">${worldEsc(it.text)}</textarea>
+        <span class="cg-item-tools"><button class="ops-btn icon" onclick="cgItemMove(${i}, -1)" data-tip="위로"><i class="fa-solid fa-angle-up"></i></button><button class="ops-btn icon" onclick="cgItemMove(${i}, 1)" data-tip="아래로"><i class="fa-solid fa-angle-down"></i></button><button class="ops-btn icon" onclick="cgItemDel(${i})" data-tip="지우기"><i class="fa-solid fa-trash-can"></i></button></span></div>`).join('')}
+        <button class="ops-btn" onclick="cgItemAdd()"><i class="fa-solid fa-plus"></i> 단계 추가</button></div></div>`
     : `<div class="ops-field"><span class="lb">그림</span><label class="ops-btn"><i class="fa-solid fa-image"></i> 그림 올리기<input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="cgPickImage(this)"></label></div>`}
     <div class="ops-field"><span class="lb">너비 ${n.w}px</span><input type="range" id="cgfW" min="140" max="520" step="10" value="${n.w}" oninput="this.previousElementSibling.textContent='너비 '+this.value+'px'; cgSet('w', +this.value)"></div>
     </div><div class="ops-foot"><button class="ops-btn" onclick="cgCopy()"><i class="fa-regular fa-copy"></i> 복사</button><button class="ops-btn danger" onclick="cgDel()"><i class="fa-solid fa-trash-can"></i> 이 카드 지우기</button></div>`;
 }
-window.addEventListener('resize', () => { if (document.getElementById('cgStage')) { cgLayout(); cgDraw(); } });
+window.addEventListener('resize', () => { if (document.getElementById('cgStage')) { cg.viewH = null; cgLayout(); cgDraw(); } });

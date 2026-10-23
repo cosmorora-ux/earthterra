@@ -23,7 +23,8 @@ WORLD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "world.jso
 MAX_PLACES, MAX_CHAPTERS, MAX_INFO = 40, 60, 8
 # 챕터 노드 그림(챕터 화면 위쪽) : 카드(글 · 그림)와 카드끼리 잇는 선
 MAX_NODES, MAX_EDGES, GRAPH_SPAN = 80, 160, 4000
-NODE_KINDS = ("text", "image")
+NODE_KINDS = ("text", "image", "timeline")
+MAX_ITEMS, ITEM_HEAD, ITEM_TEXT = 20, 40, 600
 NODE_ACCENTS = ("point", "violet", "blue", "green", "pink", "red", "amber", "gray")
 SIDES = ("l", "r", "t", "b")
 ZONES = 4  # 장소마다 1~4구역 카드
@@ -113,7 +114,12 @@ def clean_graph(data, n_chapters):
             continue
         ids.add(nid)
         kind = nd.get("kind") if nd.get("kind") in NODE_KINDS else "text"
-        nodes.append({"id": nid, "kind": kind, "label": _s(nd.get("label"), 30), "tag": _s(nd.get("tag"), 30),
+        items = []
+        if kind == "timeline":   # 타임라인 카드 : 한 카드 안의 단계들(머리 · 글)
+            for it in (nd.get("items") or [])[:MAX_ITEMS]:
+                if isinstance(it, dict) and (_s(it.get("head"), ITEM_HEAD) or _text(it.get("text"), ITEM_TEXT)):
+                    items.append({"head": _s(it.get("head"), ITEM_HEAD), "text": _text(it.get("text"), ITEM_TEXT)})
+        nodes.append({"id": nid, "kind": kind, "items": items, "label": _s(nd.get("label"), 30), "tag": _s(nd.get("tag"), 30),
                       "title": _s(nd.get("title"), 40), "text": _text(nd.get("text"), 600), "image": _img_ok(nd.get("image")),
                       "x": round(_num(nd.get("x"), 0, GRAPH_SPAN, 40)), "y": round(_num(nd.get("y"), 0, GRAPH_SPAN, 40)),
                       "w": round(_num(nd.get("w"), 140, 520, 260)),
@@ -185,7 +191,7 @@ class World:
         if self.story_seeded < STORY_VERSION:
             # 노드 그림이 비었거나 손대지 않은 예전 기본 스토리면 새 기본 스토리로(운영진이 만든 노드는 그대로)
             ids = {n["id"] for n in self.graph["nodes"]}
-            if not ids or (self.story_seeded and ids == OLD_STORY_IDS):
+            if not ids or (self.story_seeded and ids in OLD_STORY_IDS):
                 self.graph = clean_graph(DEFAULT_GRAPH, len(self.chapters))
             self.story_seeded = STORY_VERSION
             migrated = True
