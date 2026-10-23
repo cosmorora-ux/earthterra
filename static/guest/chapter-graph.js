@@ -22,6 +22,7 @@ function worldGraphHtml() {
     ? `<button class="dorm-tbtn" onclick="cgAdd('text')"><i class="fa-solid fa-plus"></i><span class="t">글 카드</span></button>
        <button class="dorm-tbtn" onclick="cgAdd('image')"><i class="fa-solid fa-plus"></i><span class="t">그림 카드</span></button>
        <button class="dorm-tbtn" onclick="cgCopy()" data-tip="고른 카드 복사 (Ctrl+D)"><i class="fa-regular fa-copy"></i><span class="t">복사</span></button>
+       <button class="dorm-tbtn" onclick="cgDefault()" data-tip="노드 그림을 처음 스토리로 되돌려요"><i class="fa-solid fa-book"></i><span class="t">기본 스토리</span></button>
        <button class="dorm-tbtn" onclick="cgCancel()"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
        <button class="dorm-tbtn primary" onclick="cgSave()"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`
     : `<button class="dorm-tbtn" onclick="cgStartEdit()"><i class="fa-solid fa-diagram-project"></i><span class="t">노드 편집</span></button>`;
@@ -44,7 +45,7 @@ function cgNodeHtml(n) {
   let box;
   if (n.locked) box = '<div class="cg-lock"><i class="fa-solid fa-lock"></i>???</div>';
   else if (n.kind === 'image') box = `<div class="cg-img"${n.image ? ` style="background-image:url('${worldEsc(n.image)}')"` : ''}>${n.image ? '' : '<i class="fa-regular fa-image"></i>'}</div>`;
-  else box = `${n.title ? `<div class="cg-tt">${worldEsc(n.title)}</div>` : ''}<div class="cg-tx">${worldEsc(n.text || '') || (cg.edit ? '<em>글을 넣어 주세요</em>' : '')}</div>`;
+  else box = `${n.title ? `<div class="cg-tt">${worldEsc(n.title)}</div>` : ''}${n.text || cg.edit || !n.title ? `<div class="cg-tx">${worldEsc(n.text || '') || (cg.edit ? '<em>글을 넣어 주세요</em>' : '')}</div>` : ''}`;
   const ports = cg.edit ? ['l', 'r', 't', 'b'].map(s => `<span class="cg-port p-${s}" data-s="${s}"></span>`).join('') : '';
   const gate = cg.edit && n.chapter ? `<span class="cg-gate">Ch. ${n.chapter}</span>` : '';
   return `<div class="cg-node k-${n.locked ? 'lock' : n.kind}${cg.sel === n.id ? ' sel' : ''}" data-id="${n.id}" style="left:${n.x}px; top:${n.y}px; width:${n.w}px;">
@@ -270,6 +271,13 @@ function cgStartEdit() {
   if (!worldIsGm()) return;
   cg.draft = JSON.parse(JSON.stringify((worldData && worldData.graph) || { nodes: [], edges: [] }));
   cg.edit = true; cg.sel = null; cg.off = {}; renderWorld();
+}
+function cgDefault() {
+  uiConfirm('지금 노드를 모두 지우고 기본 스토리(1차 · 2차 기간 · 세계 연표)로 되돌릴까요?', { title: '기본 스토리', okText: '되돌리기', danger: true }).then(ok => {
+    if (!ok) return;
+    socket.emit('world_graph_default');
+    cg.edit = false; cg.draft = null; cg.sel = null;
+  });
 }
 function cgCancel() { cg.edit = false; cg.draft = null; cg.sel = null; renderWorld(); }
 function cgSave() {

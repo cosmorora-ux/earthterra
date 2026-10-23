@@ -17,6 +17,7 @@ import threading
 import uuid
 
 from world_zones import ZONE_DEFAULTS
+from world_story import DEFAULT_GRAPH
 
 WORLD_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "world.json")
 MAX_PLACES, MAX_CHAPTERS, MAX_INFO = 40, 60, 8
@@ -143,6 +144,7 @@ class World:
         self.lock = threading.Lock()
         self.places, self.chapters, self.unlocked = [], [], 0
         self.graph = {"nodes": [], "edges": []}
+        self.story_seeded = False
         self.load()
 
     def load(self):
@@ -176,12 +178,18 @@ class World:
         self.chapters = d.get("chapters", [])
         self.unlocked = int(d.get("unlocked") or 0)
         self.graph = clean_graph(d.get("graph"), len(self.chapters))
+        self.story_seeded = bool(d.get("story_seeded"))
+        if not self.story_seeded:   # 처음 한 번 : 노드 그림이 비어 있으면 기본 스토리로 채워요(이미 만든 노드는 그대로)
+            if not self.graph["nodes"]:
+                self.graph = clean_graph(DEFAULT_GRAPH, len(self.chapters))
+            self.story_seeded = True
+            migrated = True
         if migrated and os.path.exists(self.path):
             self.save()
 
     def save(self):
         safeio.write_json(self.path, {"places": self.places, "chapters": self.chapters, "unlocked": self.unlocked,
-                                        "graph": self.graph}, indent=1)
+                                        "graph": self.graph, "story_seeded": self.story_seeded}, indent=1)
 
     # ---- 운영진 : 통째로 저장 ----
     def set_all(self, data):
@@ -217,6 +225,10 @@ class World:
             self.chapters, self.places, self.unlocked = chapters, places, unlocked
             self.graph = clean_graph(self.graph, len(chapters))   # 챕터 수가 줄면 노드 공개 시점도 맞춰요
             self.save()
+
+    def reset_graph(self):
+        """운영진 : 노드 그림을 기본 스토리로 되돌려요."""
+        self.set_graph(DEFAULT_GRAPH)
 
     def set_graph(self, data):
         with self.lock:

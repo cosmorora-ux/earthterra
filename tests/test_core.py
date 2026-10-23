@@ -261,6 +261,20 @@ class TestChapterGraph(unittest.TestCase):
         self.assertTrue(pub[1].get("locked") and "label" not in pub[1], "공개 전 카드 내용이 러너에게 감")
         self.assertEqual(w.payload_play()["chapters"], [])
 
+    def test_story_seed_once(self):
+        """기본 스토리 : 노드 그림이 없을 때 한 번만 채우고, 이미 만든 노드는 덮지 않아요."""
+        import json, world as world_mod, world_story
+        d = tempfile.mkdtemp()
+        w = world_mod.World(path=os.path.join(d, "a.json"))
+        self.assertEqual(len(w.graph["nodes"]), len(world_story.DEFAULT_GRAPH["nodes"]), "기본 스토리가 안 채워짐")
+        p = os.path.join(d, "b.json")
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump({"chapters": [], "places": [], "unlocked": 0, "graph": {"nodes": [{"id": "mine", "kind": "text", "text": "내 노드"}], "edges": []}}, f)
+        w2 = world_mod.World(path=p)
+        self.assertEqual([n["id"] for n in w2.graph["nodes"]], ["mine"], "이미 만든 노드를 덮어씀")
+        w2.set_graph({"nodes": [], "edges": []})
+        self.assertEqual(world_mod.World(path=p).graph["nodes"], [], "비운 뒤 다시 켜면 기본 스토리가 또 채워짐")
+
 
 class TestEngine(unittest.TestCase):
     def test_multi_action_and_undo(self):

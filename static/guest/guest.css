@@ -4820,6 +4820,7 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .cg-lb b { font-weight:700; } .cg-lb span { font-weight:400; color:#c9c9ce; }
 .cg-box { position:relative; border-radius:16px; background:#1e1e22; padding:14px 14px 16px; transition: box-shadow .2s; }
 .cg-tt { font-size:14px; color:#d9d9de; margin:0 0 10px 2px; }
+.cg-tt:last-child { margin-bottom:0; font-size:15px; font-weight:600; color:#ededf0; }
 .cg-tx { min-height:72px; padding:12px 14px; border-radius:10px; background: rgba(255,255,255,.04); font-size:14px; line-height:1.55; color:#ededf0; white-space:pre-wrap; word-break:keep-all; overflow-wrap:anywhere; }
 .cg-tx em { font-style:normal; color: var(--muted); }
 .k-image .cg-box { padding:0; overflow:hidden; background:#b9c0c2; }
