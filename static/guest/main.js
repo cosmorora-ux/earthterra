@@ -3684,24 +3684,35 @@ function uiHoverEl() {
   if (!uiHover.el) {
     uiHover.el = document.createElement('div');
     uiHover.el.className = 'ui-hovercard';
-    uiHover.el.innerHTML = '<div class="pic"></div><div class="cap"><b></b><span></span></div>';
+    // 사진 칸은 두 겹 : 다음 사람으로 넘어가면 새 사진을 안 보이는 겹에 깔고 서로 바꿔 부드럽게 넘어가요
+    uiHover.el.innerHTML = '<div class="pic"><i class="l"></i><i class="l"></i></div><div class="cap"><b></b><span></span></div>';
     document.body.appendChild(uiHover.el);
   }
   return uiHover.el;
 }
+// 줄 사이를 오갈 때 카드가 꺼졌다 켜지지 않게 : 숨기기는 잠깐 미뤄 두고, 바로 다음 줄에 들어오면 취소해요.
+function uiHoverPic(url) {
+  const layers = uiHover.el.querySelectorAll('.pic .l');
+  const cur = uiHover.layer || 0, next = 1 - cur;
+  if ((layers[cur].dataset.url || '') === (url || '')) return;
+  const swap = () => {
+    layers[next].style.backgroundImage = url ? `url('${url}')` : 'none'; layers[next].dataset.url = url || '';
+    layers[next].classList.add('on'); layers[cur].classList.remove('on'); uiHover.layer = next;
+  };
+  if (!url) { swap(); return; }
+  const img = new Image(), want = uiHover.name;
+  img.onload = () => { if (uiHover.name === want) swap(); };   // 다 받은 뒤에 바꿔요(못 불러오면 앞 사진 그대로)
+  img.src = url;
+}
 function uiHoverShow(row, e) {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  clearTimeout(uiHover.hideT);
   const name = row.dataset.name, d = (lastRosterMypage || {})[name] || npcEntry(name) || {};
-  const el = uiHoverEl(), pic = el.querySelector('.pic');
+  const el = uiHoverEl();
   const fresh = !uiHover.on;
-  pic.style.backgroundImage = 'none';
-  if (d.avatar_url) {
-    // 이미지를 다 받은 뒤에 바꿔 끼워서, 못 불러오면 검은 블럭을 그대로 둡니다.
-    const img = new Image(), want = name;
-    img.onload = () => { if (uiHover.name === want) { pic.style.backgroundImage = `url('${d.avatar_url}')`; } };
-    img.src = d.avatar_url;
-  }
   uiHover.name = name;
+  if (fresh) { const ls = el.querySelectorAll('.pic .l'); ls.forEach(l => { l.classList.remove('on'); l.style.backgroundImage = 'none'; l.dataset.url = ''; }); }
+  uiHoverPic(d.avatar_url || '');
   el.querySelector('.cap b').textContent = name;
   el.querySelector('.cap span').textContent = d.role || '';
   uiHover.tx = e.clientX; uiHover.ty = e.clientY;
@@ -3712,12 +3723,15 @@ function uiHoverShow(row, e) {
 }
 function uiHoverMove(e) { uiHover.tx = e.clientX; uiHover.ty = e.clientY; }
 function uiHoverHide() {
-  uiHover.on = false;
-  if (uiHover.el) uiHover.el.classList.remove('on');
+  clearTimeout(uiHover.hideT);
+  uiHover.hideT = setTimeout(() => {
+    uiHover.on = false;
+    if (uiHover.el) uiHover.el.classList.remove('on');
+  }, 260);
 }
 function uiHoverTick() {
-  uiHover.x += (uiHover.tx - uiHover.x) * 0.18;
-  uiHover.y += (uiHover.ty - uiHover.y) * 0.18;
+  uiHover.x += (uiHover.tx - uiHover.x) * 0.38;
+  uiHover.y += (uiHover.ty - uiHover.y) * 0.38;
   const el = uiHover.el;
   // 카드는 커서 오른쪽에 둬서 이름이 가려지지 않게, 화면 밖으로는 나가지 않게
   const w = el.offsetWidth || 168, h = el.offsetHeight || 210;
