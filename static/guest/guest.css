@@ -642,8 +642,8 @@
   .main-grid:not(.with-grid-map) .team-block h2 { height:40px; display:flex; align-items:center; margin:0 0 10px 2px; }
   .sort-row:has(> #multiSkillSlot:empty) { display:none; }
   /* ================================================================
-     홀로그램(글리터) 효과 : 카드·채팅창·상단바·행동 블럭·지도 등에 마우스를 올리면 테두리에 무지개빛이 돌고,
-     포인터 주변이 밝게 비칩니다. 안쪽은 반짝이 질감이 깔린 어두운 면이 됩니다(지도는 테두리 빛만).
+     홀로그램 효과 : 카드·채팅창·상단바·행동 블럭·지도 등에 마우스를 올리면 테두리에만 무지개빛이 돌아요.
+     (안쪽 면의 포인터 빛 · 반짝이 질감은 쓰지 않아요)
      카드 영역(.holo-zone)은 영역 안 카드 전부가 함께 반응합니다.
      (JS가 요소마다 --mouse-x/--mouse-y(px), --ratio-x/--ratio-y(0~1)를 넣고 .holo-on을 붙입니다)
      ================================================================ */
@@ -687,6 +687,13 @@
     filter: brightness(1.4) contrast(.725);
     transition-delay: .1s;
   }
+  /* 모든 블럭 : 안쪽 면(포인터 빛 · 반짝이 질감)은 없이 테두리에만 무지개빛 */
+  .char-card::before, .site-card::before, .compact-card::before, .member-panel::before, .topbar.v2::before, .action-bar-bottom::before, .bgm-player::before {
+    padding:1px;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+  .char-card::after, .site-card::after, .compact-card::after, .member-panel::after, .topbar.v2::after, .action-bar-bottom::after, .bgm-player::after { display:none; }
   /* 지도는 배경 이미지를 가리지 않도록 테두리(1px) 빛만 */
   .map-frame::before {
     padding:2px;
