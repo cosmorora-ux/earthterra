@@ -1066,25 +1066,18 @@ document.addEventListener('keydown', (e) => {
 });
 
 function worldChaptersHtml() {
+  // 세로 타임라인 하나 : 왼쪽 점(번호 · 잠금)과 이어지는 선, 오른쪽 Ch. 번호 · 제목 · 요약. 지금 챕터만 '진행 중'.
+  // 운영진은 점을 누르면 그 챕터까지 해금돼요.
   const chs = worldData.chapters || [], n = worldData.unlocked || 0, gm = worldIsGm();
-  if (!chs.length) return gm ? '' : '';
-  const fill = chs.length > 1 ? Math.max(0, (n - 1) / (chs.length - 1)) : (n ? 1 : 0);
-  const nodes = chs.map((c, i) => {
-    const open = i < n, now = i === n - 1;
-    const title = c.locked ? '???' : worldEsc(c.title);
-    return `<div class="wm-cnode ${open ? 'open' : ''} ${now ? 'now' : ''} ${gm ? 'gm' : ''}" ${gm ? `onclick="setWorldUnlocked(${i + 1})" data-tip="여기까지 해금"` : ''}>
-      <span class="dot">${open ? i + 1 : '<i class="fa-solid fa-lock" style="font-size:10px"></i>'}</span><span class="t">${title}</span></div>`;
-  }).join('');
+  if (!chs.length) return '';
   const rows = chs.map((c, i) => {
     const open = i < n, now = i === n - 1, locked = !!c.locked || !open;
-    const st = now ? '<span class="st now">진행 중</span>' : open ? '<span class="st open">해금</span>' : '<span class="st lock"><i class="fa-solid fa-lock"></i> 잠김</span>';
-    return `<div class="wm-chrow ${locked && !gm ? 'locked' : ''}"><span class="no">Ch. ${i + 1}</span>
-      <span class="tt">${c.locked ? '아직 공개되지 않은 챕터입니다.' : worldEsc(c.title)}</span>${st}
-      ${!c.locked && (open || gm) && c.summary ? `<span class="sm">${worldEsc(c.summary)}</span>` : ''}</div>`;
+    const dot = `<span class="dot"${gm ? ` onclick="setWorldUnlocked(${i + 1})" data-tip="여기까지 해금"` : ''}>${open ? i + 1 : '<i class="fa-solid fa-lock"></i>'}</span>`;
+    return `<div class="wm-step ${open ? 'open' : ''} ${now ? 'now' : ''} ${locked && !gm ? 'locked' : ''} ${gm ? 'gm' : ''}">${dot}
+      <div class="bd"><div class="hd"><span class="no">Ch. ${i + 1}</span><b>${c.locked ? '???' : worldEsc(c.title)}</b>${now ? '<span class="st">진행 중</span>' : ''}</div>
+      ${!c.locked && (open || gm) && c.summary ? `<p>${worldEsc(c.summary)}</p>` : ''}</div></div>`;
   }).join('');
-  return `<div class="wm-card"><div class="wm-h"><span class="en">Chapter</span><span class="sub">${n} / ${chs.length} 해금</span><span class="sp"></span>
-    ${gm ? '<span class="sub">점을 누르면 그 챕터까지 해금돼요</span>' : ''}</div>
-    <div class="wm-track" style="--fill:${fill}">${nodes}</div><div class="wm-chlist">${rows}</div></div>`;
+  return `<div class="wm-steps">${rows}</div>`;
 }
 let worldDrawerOpen = false;
 function worldDrawer(html) {
@@ -1102,9 +1095,6 @@ function worldDrawerToggle() {
   const d = document.getElementById('cgDrawer'); if (!d) return;
   d.classList.toggle('open', worldDrawerOpen);
   d.querySelector('.cg-drawer-bar').setAttribute('aria-expanded', worldDrawerOpen);
-  // 처음 열 때 챕터 진행선이 왼쪽부터 차오르게
-  const tr = d.querySelector('.wm-track');
-  if (worldDrawerOpen && tr) { const f = tr.style.getPropertyValue('--fill'); tr.style.setProperty('--fill', 0); requestAnimationFrame(() => requestAnimationFrame(() => tr.style.setProperty('--fill', f))); }
 }
 function setWorldUnlocked(k) {
   if (!worldIsGm()) return;
