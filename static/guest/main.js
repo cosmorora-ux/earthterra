@@ -607,7 +607,7 @@ socket.on('public_state', (state) => {
   renderChat(state.chat);
   renderMusic(state.music, state.server_now);
   renderShop();
-  { const bs = document.getElementById('btShop'); if (bs) bs.outerHTML = btShopHtml(); }   // 룸 목록의 상점 블럭 : P · 소지품 개수 갱신
+  { const bs = document.getElementById('btShop'); if (bs && typeof btShopHtml === 'function') bs.outerHTML = btShopHtml(); }   // 룸 목록의 상점 블럭 : P · 소지품 개수 갱신
   renderMyPagePoints();
   applyMapBackground();
   renderMapBgModal();
@@ -741,7 +741,7 @@ function renderSiteStatusCard(battle) {
     el.style.display = '';
     el.dataset.fx = 'group:' + groupLabel; el.dataset.hp = totalCurrent; el.dataset.max = totalMax;
     if (mobs.some(m => m.hp_hidden)) el.dataset.hpHidden = '1'; else delete el.dataset.hpHidden;
-    runHpFx(el.parentNode || el);
+    if (typeof runHpFx === 'function') runHpFx(el.parentNode || el);
     return;
   }
 
@@ -771,7 +771,7 @@ function renderSiteStatusCard(battle) {
   el.style.display = '';
   el.dataset.fx = site.name; el.dataset.hp = site.current_hp; el.dataset.max = site.max_hp;
   if (site.hp_hidden) el.dataset.hpHidden = '1'; else delete el.dataset.hpHidden;
-  runHpFx(el.parentNode || el);
+  if (typeof runHpFx === 'function') runHpFx(el.parentNode || el);
 }
 
 function setSiteViewMode(mode) {
@@ -842,7 +842,7 @@ function renderBattle(battle) {
     : `Round ${battle.round_no} · ${battle.current_turn_team === battle.round_first_team ? '선공' : '후공'} · ${battle.current_turn_team} 행동`;
   roundDeadlineAt = battle.finished ? null : battle.round_deadline_at;
   tickTimer();
-  maybeShowRoundBanner(battle);
+  if (typeof maybeShowRoundBanner === 'function') maybeShowRoundBanner(battle);
 
   const control = myControlInfo(battle);
   const seesAll = control.scope === 'all';
@@ -872,7 +872,7 @@ function renderCards() {
   const renderOne = useCompact ? renderCompactCardHtml : renderCardHtml;
   // 공성전/마스 레이드는 러너(1팀)만 이 칸에 넣습니다(2팀은 siteStatusCard에서 따로 보여줍니다).
   splitAndRenderTeams(lastAllForCards, renderOne);
-  if (lastBattleForPanel) runHpFx(document);
+  if (lastBattleForPanel && typeof runHpFx === 'function') runHpFx(document);
   const slot = document.getElementById('multiSkillSlot');
   if (slot) slot.innerHTML = renderMultiSkillTrigger();
 }
@@ -1513,7 +1513,8 @@ function renderGrid(battle, all) {
   const byH = Math.floor((availH - gridHeight) / gridHeight);
   const fitCellPx = Math.max(window.innerWidth <= 900 ? 18 : 28, Math.min(120, byW, byH > 0 ? byH : byW));
   // 휴대폰 : 확대 배율(맞춤 = 1). 확대하면 칸이 커지고 지도 틀 안에서 스크롤 · 드래그로 이동합니다.
-  const zoom = gridZoomOn() ? gridZoom : 1;
+  // attack-lines.js(확대 기능)가 아직 내려받는 중일 때 상태가 먼저 오면 맞춤(1)으로 그려요
+  const zoom = typeof gridZoomOn === 'function' && gridZoomOn() ? gridZoom : 1;
   const cellPx = Math.min(96, Math.round(fitCellPx * zoom));
   frame.classList.toggle('zoomed', zoom > 1.001);
   const zl = document.getElementById('gridZoomLabel'); if (zl) zl.textContent = Math.round(zoom * 100) + '%';
@@ -1651,7 +1652,7 @@ function renderGrid(battle, all) {
   html += '</table>';
   el.innerHTML = html;
   applyMapBackground();
-  drawAttackLines();
+  if (typeof drawAttackLines === 'function') drawAttackLines();
   // 이동/사거리 안내는 지도 아래가 아니라 지도 위 알림줄(라디오 아이콘 옆)에 함께 보여줍니다.
   const guide = (selChar && selChar.teamLabel === 'B' && enemyZone.size && !(gmView && highlightCells.size && !highlightIsAction))
     ? `${displayNameOf(selChar).replace(/\s*[\[-]\s*[NS][EW]\]?$/, '')}의 사거리를 표시합니다. 사거리 내의 캐릭터가 피격될 시 피해가 1.2배 가산됩니다.`
@@ -6721,7 +6722,7 @@ function dormStageHtml(r, base, s, editing, mini) {
     return `<div class="dorm-surface" style="left:${f[0] * s}px; top:${f[1] * s}px; width:${f[2] * s}px; height:${a.h * sc * s}px; background-image:url('${a.url}');"></div>`;
   }).join('');
   return `<div class="dorm-stage ${editing ? 'editing' : ''} ${mini ? 'mini' : ''}" ${mini ? '' : 'id="dormStage"'} style="width:${W}px; height:${H}px; background:url('${base.url}') 0 0 / 100% 100% no-repeat;">${fitted}
-    ${items.map(({ it, i, a }) => `<div class="dorm-item ${it.f ? 'dflip' : ''} ${a.smooth ? 'smooth' : ''} ${a.category === 'chara' ? 'chara' : ''} ${editing && i === dormSel ? 'sel' : ''}" data-i="${i}" ${a.category === 'chara' && !editing ? '' : `data-tip="${mailEsc(a.name)}"`}
+    ${items.map(({ it, i, a }) => `<div class="dorm-item ${it.f ? 'dflip' : ''} ${a.smooth ? 'smooth' : ''} ${a.category === 'chara' ? 'chara' : ''} ${editing && i === dormSel ? 'sel' : ''}" data-i="${i}"
       style="left:${it.x * s}px; top:${it.y * s}px; width:${a.w * dormZ(it, a) * s}px; height:${a.h * dormZ(it, a) * s}px; background-image:url('${a.url}');"></div>`).join('')}
     ${mini ? '' : '<div class="dorm-ghost" id="dormGhost"></div>'}</div>`;
 }

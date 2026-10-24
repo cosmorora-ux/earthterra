@@ -3210,7 +3210,8 @@
   .map-frame.dorm-frame .dorm-stage { flex:none; will-change:transform; }
   .dorm-item.smooth, .dorm-asset.smooth { image-rendering:auto; }
   .dorm-stage:not(.editing) .dorm-item.chara { cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
-    transform-origin:50% 100%; transition: scale .18s ease, filter .2s ease; }
+    transform-origin:50% 100%; transition: scale .18s ease, filter .2s ease;
+    will-change: scale, translate;   /* 늘 따로 그려 둬요 : 누를 때만 따로 그리면 앞에 겹친 가구가 그 순간 다시 그려지며 움찔거려요 */ }
   /* 꾹 누르는 중 : 살짝 눌림 → 들림 : 위로 떠서 흔들흔들 + 바닥 그림자 → 놓으면 통통 */
   .dorm-stage:not(.editing) .dorm-item.chara.pressing { scale: .94 1.04; transition-duration:.35s; }
   .dorm-stage:not(.editing) .dorm-item.chara.held { cursor:grabbing; z-index:50; scale:1.04; transition: scale .2s cubic-bezier(.3,1.4,.5,1);
