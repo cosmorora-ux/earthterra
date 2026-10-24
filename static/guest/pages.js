@@ -912,9 +912,12 @@ function renderWorld() {
        <button class="dorm-tbtn primary" onclick="saveWorld()" data-tip="저장"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`
     : `<button class="dorm-tbtn" onclick="startWorldEdit()" data-tip="맵 편집"><i class="fa-solid fa-pen-ruler"></i><span class="t">편집</span></button>`;
   if (!worldData) { body.innerHTML = emptyHtml('fa-circle-notch fa-spin', '맵을 불러오는 중입니다'); return; }
+  body.classList.toggle('chapter', worldView === 'chapter' && !worldEditMode);   // 챕터 노드 화면 : 태블릿 · 휴대폰에서 화면 끝까지 넓게
   if (worldEditMode) { worldDrawer(null); document.getElementById('worldTopSeg').textContent = '편집'; body.innerHTML = worldEditHtml(); return; }
   if (worldView === 'chapter') {
     document.getElementById('worldTopSeg').textContent = '챕터';
+    // 노드 편집 중에는 노드 버튼만, 아니면 노드 편집 · 맵(챕터) 편집
+    if (gm) tools.innerHTML = cg.edit ? cgToolsHtml() : cgToolsHtml() + tools.innerHTML;
     // 챕터 화면 : 노드 그림이 위, 챕터는 아래 서랍(위 화살표를 누르면 올라와 덮고, 다시 누르면 내려가 노드가 보여요)
     body.innerHTML = worldGraphHtml();
     worldDrawer(worldChaptersHtml() || emptyHtml('fa-book-open', '아직 챕터가 없어요', gm ? '편집에서 챕터를 추가해 주세요.' : ''));

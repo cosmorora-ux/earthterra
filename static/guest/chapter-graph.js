@@ -21,16 +21,19 @@ const CG_LAYERS = (g) => '<svg class="cg-svg"></svg>' + g.nodes.map(cgNodeHtml).
 function cgGraph() { return cg.edit ? cg.draft : ((worldData && worldData.graph) || { nodes: [], edges: [] }); }
 function cgNode(id) { return cgGraph().nodes.find(n => n.id === id); }
 
-function worldGraphHtml() {
-  const g = cgGraph(), gm = worldIsGm();
-  if (!g.nodes.length && !gm) return '';
-  const tools = !gm ? '' : cg.edit
+// 노드 편집 버튼은 위 머리(Pangaea ▶ 챕터) 오른쪽에 달아요 : renderWorld가 #worldTools에 넣어요
+function cgToolsHtml() {
+  if (!worldIsGm()) return '';
+  return cg.edit
     ? `<button class="dorm-tbtn" onclick="cgDefault()" data-tip="노드를 모두 지우고 처음 스토리로 되돌려요"><i class="fa-solid fa-book"></i><span class="t">기본 스토리</span></button>
        <button class="dorm-tbtn" onclick="cgCancel()"><i class="fa-solid fa-xmark"></i><span class="t">취소</span></button>
        <button class="dorm-tbtn primary" onclick="cgSave()"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`
     : `<button class="dorm-tbtn" onclick="cgStartEdit()"><i class="fa-solid fa-diagram-project"></i><span class="t">노드 편집</span></button>`;
-  // 제목은 위 머리(Pangaea ▶ 챕터) 하나만 : 여기엔 운영진 버튼 줄만(버튼이 없으면 줄도 없어요)
-  return `<div class="wm-card cg-card${cg.edit ? ' editing' : ''}">${tools ? `<div class="wm-h cg-h"><span class="sp"></span><span class="cg-tools">${tools}</span></div>` : ''}
+}
+function worldGraphHtml() {
+  const g = cgGraph(), gm = worldIsGm();
+  if (!g.nodes.length && !gm) return '';
+  return `<div class="cg-card${cg.edit ? ' editing' : ''}">
     <div class="cg-view${cg.edit ? ' editing' : ''}"><div class="cg-canvas">
       <div class="cg-wrap" id="cgWrap"><div class="cg-sizer" id="cgSizer"><div class="cg-stage" id="cgStage"></div></div>
         <div class="cg-empty">${cg.edit ? '아래 도구에서 카드를 더해 보세요.' : '노드 편집에서 카드를 추가해 주세요.'}</div></div>
@@ -108,14 +111,15 @@ function cgLayout() {
     H = Math.max(H, el.offsetTop + el.offsetHeight + CG_PAD);
   });
   const cs = getComputedStyle(wrap), avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-  // 창(블럭) 크기는 확대 · 축소와 상관없이 늘 같아요 : 기본 배율일 때의 높이(화면 70%까지)로 고정하고, 안의 카드만 커지고 작아져요
+  // 창 크기는 확대 · 축소와 상관없이 늘 같아요 : 아래 챕터 서랍 막대 바로 위까지 화면을 다 쓰고, 안의 카드만 커지고 작아져요
   const autoS = Math.max(CG_MIN_SCALE, Math.min(1, avail / W));
-  // 창 높이 : 화면의 70%까지, 그리고 아래 챕터 서랍 막대에 가리지 않게
   let room = Math.round(window.innerHeight * .7);
   const dr = document.getElementById('cgDrawer');
   // 서랍이 열려 있어도 닫힌 막대 자리(맨 아래 56px) 기준으로 재요 : 열렸을 때 재면 닫은 뒤에도 창이 작게 남아요
-  if (dr && !dr.hidden) { const pg = dr.parentElement.getBoundingClientRect(); room = Math.min(room, Math.max(160, pg.bottom - 56 - wrap.getBoundingClientRect().top - 16)); }
-  const viewH = cg.viewH || (cg.viewH = Math.max(cg.edit ? 480 : 120, Math.min(Math.ceil(H * autoS), room)));
+  if (dr && !dr.hidden) { const pg = dr.parentElement.getBoundingClientRect(); room = Math.max(260, pg.bottom - 56 - wrap.getBoundingClientRect().top - 12); }
+  // 좁은 화면 편집 : 고치는 칸이 그림 아래에 오니 그림은 조금 줄여서 칸이 보이게
+  if (cg.edit && window.innerWidth <= 860) room = Math.max(300, Math.round(room * .62));
+  const viewH = cg.viewH || (cg.viewH = room);
   wrap.style.height = viewH + 'px';
   const insp = document.getElementById('cgForm'); if (insp) insp.style.setProperty('--cg-h', viewH + 'px');
   cg.s = cg.z === 'fit' ? Math.min(1.5, avail / W, viewH / H) : typeof cg.z === 'number' ? cg.z : autoS;

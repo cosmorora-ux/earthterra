@@ -4943,14 +4943,21 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 .cg-stage.lod-enter .cg-lod { animation: cgLodIn .32s ease both; }
 /* 멀리서 보기 : 그림 카드는 이름 없이 그림만 */
 .cg-stage.lod .k-image .cg-lod, .cg-stage.lod-out .k-image .cg-lod { display:none; }
-/* 휴대폰 : 노드 그림은 카드 테두리 안에 가두지 않고 화면 양옆 끝까지 넓게 */
-@media (max-width:600px) {
-  #worldBody { margin-left:-20px; margin-right:-20px; padding-left:20px; padding-right:20px; }   /* 스크롤 칸을 화면 끝까지 넓혀 노드 그림이 잘리지 않게 */
-  .wm-card.cg-card { margin-left:-20px; margin-right:-20px; border:none; border-radius:0; background:none; overflow:visible; }
-  .cg-card .cg-view { margin:10px 0 14px; }
-  .cg-card .cg-wrap { border-radius:0; }
-  .cg-card .cg-insp { margin:0 12px; }
+/* 노드 그림 : 겉 카드 없이 그림 칸 하나만(블럭 안에 블럭 없이). 태블릿 · 휴대폰은 테두리 없이 화면 끝까지 넓게 */
+.cg-card { display:block; }
+.cg-card .cg-view { margin:0; }
+.cg-wrap { border-radius:16px; }
+.cg-insp { border-radius:16px; border:none; background: var(--panel); }
+#worldBody.chapter { gap:0; padding-bottom:0; }
+@media (max-width:1180px) {
+  #worldBody.chapter { --bleed:14px; margin-left:calc(-1 * var(--bleed)); margin-right:calc(-1 * var(--bleed)); }
+  .cg-wrap { border-radius:0; }
+  .cg-card .cg-insp { margin:0 var(--bleed, 14px); }
 }
+@media (max-width:600px) { #worldBody { margin-left:-20px; margin-right:-20px; padding-left:20px; padding-right:20px; } }   /* 맵 : 구역 카드 줄을 화면 끝까지 */
+@media (max-width:900px) { #worldBody.chapter { --bleed:20px; padding-left:0; padding-right:0; } }
+@media (max-width:1180px) { .world-page .cg-drawer { left:-14px; right:-14px; } }
+@media (max-width:900px) { .world-page .cg-drawer { left:-20px; right:-20px; } }
 /* 챕터 서랍 : 챕터 화면 아래에 붙은 막대(위 화살표). 누르면 챕터가 올라와 노드 그림을 덮고, 다시 누르면 내려가요 */
 .world-page { position:relative; }
 .world-body.has-drawer { padding-bottom:84px; }
@@ -4998,7 +5005,6 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 }
 /* 노드 그림 확대 · 축소 버튼 : 휴대폰에서는 위 오른쪽(아래 챕터 막대와 겹치지 않게) */
 @media (max-width:900px) { .cg-view .cg-zoom { position:absolute !important; top:10px; bottom:auto !important; right:10px; } }
-.cg-card > .cg-h { padding-top:14px; }
 /* 마이룸 방(보기) : 챕터 화면처럼 방 그림은 상자 없이 꽉 차게, 방명록은 아래 서랍(막대를 누르면 올라와 덮어요) */
 .dorm-room-layout.gbmode { position:relative; display:block; height:100%; min-height:0; }
 .gbmode .dorm-frame-wrap { height:100%; padding-bottom:68px; box-sizing:border-box; }
