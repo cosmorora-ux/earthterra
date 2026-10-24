@@ -75,6 +75,7 @@
     <div class="sb-sub"><div class="sb-sub-in">
       <button class="sidebar-icon" id="sidebarBattlesBtn" onclick="openBattleHub()"><i class="fa-solid fa-shield-halved"></i><span class="sb-label">전투</span><span class="notice-dot" id="battlesDot"></span></button>
       <button class="sidebar-icon active" id="sidebarBattleBtn" onclick="sidebarBattleClick()"><i class="fa-solid {% if battle_type == 'play' %}fa-globe{% else %}fa-shield-halved{% endif %}"></i><span class="sb-label">{% if battle_type == 'play' %}LOOP{% else %}전투{% endif %}</span></button>
+      <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps('battle')" style="display:none;"><i class="fa-solid fa-sliders"></i><span class="sb-label">전투 관리</span></button>
       <button class="sidebar-icon" id="sidebarShopBtn" onclick="openShop()" style="display:none;"><i class="fa-solid fa-store"></i><span class="sb-label">상점</span></button>
       {% if battle_type == 'play' %}<button class="sidebar-icon" id="sidebarLoopEditBtn" onclick="openLoopAdmin()" style="display:none;"><i class="fa-solid fa-pen-ruler"></i><span class="sb-label">LOOP 편집</span></button>{% endif %}
     </div></div>
@@ -101,7 +102,6 @@
       <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i><span class="sb-label">마이페이지</span></button>
     </div></div>
   </div>
-  <button class="sidebar-icon" id="sidebarOpsBtn" onclick="openOps('battle')" data-tip="전투 관리" style="display:none;"><i class="fa-solid fa-sliders"></i><span class="sb-label">전투 관리</span></button>
   <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsTab()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
   <div class="sidebar-grow"></div>
   <button class="sidebar-icon" id="sidebarSettingsBtn" onclick="openOps('general')" data-tip="방 설정" style="display:none;"><i class="fa-solid fa-gear"></i><span class="sb-label">방 설정</span></button>
