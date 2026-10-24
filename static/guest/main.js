@@ -6431,7 +6431,7 @@ function renderDormRoom(body) {
   const side = dormEdit
     ? `<div class="member-panel panel dorm-side dorm-items"><div class="member-header"><b>Items</b><span class="dorm-gb-cnt" id="dormItemCnt"></span></div>
         <div class="member-toptabs dorm-cattabs" id="dormCatTabs"></div><div class="dorm-pfilter" id="dormFilter"></div>
-        <div class="dorm-side-body" id="dormPalette"></div><div class="dorm-palette-foot" id="dormHint"></div></div>`
+        <div class="dorm-side-body" id="dormPalette"></div></div>`
     : dormGuestbookHtml(r);
   const isOwner = dormMe() && dormMe() === r.owner;
   body.innerHTML = `<div class="dorm-room-layout${dormEdit ? '' : ' gbmode'}"><div class="dorm-frame-wrap"><div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>
@@ -6633,13 +6633,13 @@ function dormGuestbookHtml(r) {
     <div class="dorm-side-body dorm-gb-list">${list.length ? list.map((e, i) => {
       const own = e.author === me, editing = own && dormGbEditing;
       const delBtn = canDel(e) ? `<button class="dorm-note-btn del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-trash-can"></i></button>` : '';
-      // 한 줄 머리(캐릭터 색 점 · 이름 · 시간 · 번호, 내 글이면 고치기) + 아래 글. 상자 없이 가는 선으로만 나눠요.
+      // 카드에 보이는 건 다섯 가지 : 캐릭터 이름 · 캐릭터 색 · 시간 · (내 글이면) 고치기 아이콘 · 번호. 지우기는 고치는 중이나 마우스를 올렸을 때만.
       return `<article class="dorm-note ${own ? 'mine' : ''} ${editing ? 'editing' : ''}" style="--nc:${color(e.author)}">
-        <div class="gn-h"><i class="dot"></i><b>${mailEsc(e.author)}</b><span class="t">${fmt(e.at)}</span><span class="sp"></span>
-          ${editing ? '' : `${own ? `<button class="dorm-note-btn" onclick="dormGbEdit(true)" data-tip="고치기"><i class="fa-solid fa-pen"></i></button>` : delBtn}`}<span class="no">No.${String(list.length - i).padStart(2, '0')}</span></div>
+        <div class="gn-h"><b>${mailEsc(e.author)}</b><span class="no">No.${String(list.length - i).padStart(2, '0')}</span></div>
         ${editing ? `<textarea id="dormGbText" maxlength="300" rows="3" oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
           <div class="gn-edit">${delBtn}<span class="sp"></span><button class="gn-btn" onclick="dormGbEdit(false)">취소</button><button class="gn-btn on" onclick="writeDormGuestbook()">저장</button></div>`
-          : `<p>${mailEsc(e.text)}</p>`}</article>`; }).join('')
+          : `<p>${mailEsc(e.text)}</p>
+        <div class="gn-f"><span class="t">${fmt(e.at)}</span>${own ? '' : delBtn}${own ? `<button class="dorm-note-btn" onclick="dormGbEdit(true)" data-tip="고치기"><i class="fa-solid fa-pen"></i></button>` : ''}</div>`}</article>`; }).join('')
       : emptyHtml('fa-feather-pointed', '아직 방명록이 없어요', me ? '첫 방명록을 남겨 보세요.' : '', null, true)}</div>
   </div></div>`;
 }
@@ -6776,10 +6776,6 @@ function renderDormPalette() {
     `<button class="${dormCat === k ? 'active' : ''}" onclick="dormCat='${k}'; dormPick=null; dormSet=''; renderDormPalette(); dormUpdateGhost()"><span>${t}</span></button>`).join('');
   document.getElementById('dormFilter').innerHTML = `<select onchange="dormSet=this.value; renderDormGrid()"><option value="">전체 세트 · ${all.length}</option>${sets.map(t => `<option ${t === dormSet ? 'selected' : ''}>${mailEsc(t)}</option>`).join('')}</select>
     <div class="dorm-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="이름 검색" value="${mailEsc(dormQ)}" oninput="dormQ=this.value; renderDormGrid()"></div>`;
-  document.getElementById('dormHint').textContent = dormCat === 'mine' ? '직접 등록한 가구와 캐릭터 SD입니다. 캐릭터는 클릭 시 등록된 대사가 랜덤 출력됩니다.'
-    : dormCat === 'room' ? '고르면 방 바탕이 바뀌어요.'
-    : dormCat === 'surface' ? '벽지·바닥은 고르면 방에 딱 맞춰 깔려요. 다시 누르면 걷어내요.'
-    : '고른 뒤 방을 눌러 놓아요.' + (window.matchMedia('(hover: none)').matches ? '' : ' Esc 고르기 취소');
   renderDormGrid();
 }
 // ---------- 아이템 추가 (참가자 : 가구 · 캐릭터 SD) ----------
@@ -6894,8 +6890,9 @@ function renderDormEditBar() {
     // 내 방이고 지난 기간 방이 있으면 : 그 배치를 불러와 고쳐 쓸 수 있게(저장해야 적용)
     const mine = dormRoom && dormMe() && dormMe() === dormRoom.owner && !dormIsGm();
     const past = mine && dormPast.owner === dormRoom.owner ? (dormPast.rooms || []) : [];
-    bar.innerHTML = `<i class="fa-solid fa-hand-pointer"></i><span class="hint">놓은 소품을 누르면 옮기거나 크기를 바꿀 수 있어요</span>`
-      + (past.length ? '<span class="sep"></span>' + past.map((e, i) => `<button class="txt" onclick="loadDormPastLayout(${i})" data-tip="${e.period.no}차 ${mailEsc(e.period.name)} 방 배치를 불러와요 (저장해야 적용)"><i class="fa-solid fa-clock-rotate-left"></i> ${e.period.no}차 ${mailEsc(e.period.name)} 불러오기</button>`).join('') : '');
+    // 아무것도 안 골랐을 때는 설명 없이 비워 둬요(지난 기간 배치 불러오기가 있을 때만 줄이 떠요)
+    bar.className = past.length ? 'dorm-edit-bar on' : 'dorm-edit-bar';
+    bar.innerHTML = (past.length ? past.map((e, i) => `<button class="txt" onclick="loadDormPastLayout(${i})" data-tip="${e.period.no}차 ${mailEsc(e.period.name)} 방 배치를 불러와요 (저장해야 적용)"><i class="fa-solid fa-clock-rotate-left"></i> ${e.period.no}차 ${mailEsc(e.period.name)} 불러오기</button>`).join('') : '');
   }
 }
 function pickDormAsset(id) {
@@ -7011,66 +7008,72 @@ function setDormCurrentPeriod(pid) {
   uiConfirm(`지금 마이룸을 ${p.no}차 ${p.name}(으)로 바꿀까요? 모두의 마이룸이 이 기간의 배치로 바뀌고, 지난 기간의 방은 각자 마이페이지에서만 볼 수 있어요.`,
     { title: '마이룸 기간 바꾸기', okText: '바꾸기' }).then(ok => ok && socket.emit('dorm_period_set', { period: pid }));
 }
+// 마이룸 관리(운영진) : 탭 네 개(배치 · 기본 방 · 도트 자료 · 출처). 겉 상자 없이 탭 + 도구 줄 + 내용.
+// 배치 · 기본 방은 위 기간 칩으로 어느 기간을 고칠지 골라요.
+let dormManageTab = 'halls';
+const DORM_MANAGE_TABS = [['halls', '배치'], ['default', '기본 방'], ['assets', '도트 자료'], ['credits', '출처']];
+function setDormManageTab(t) { dormManageTab = t; renderDorm(); }
 function dormManageHtml() {
   const periods = dormData.periods || [DORM_P_DEFAULT];
   if (!dormManagePeriod || !periods.some(p => p.id === dormManagePeriod)) dormManagePeriod = dormP().id;
   const MP = periods.find(p => p.id === dormManagePeriod) || dormP();
   const srcHalls = (dormData.period_halls && dormData.period_halls[MP.id]) || (MP.id === dormP().id ? dormData.halls : []) || [];
   if (!dormHallsDraft) dormHallsDraft = JSON.parse(JSON.stringify(srcHalls));
-  const stLabel = { current: '지금', past: '지난 기간', future: '다음 기간' };
-  const periodSec = `<div class="dorm-sec"><h3><i class="fa-solid fa-calendar-days"></i> 마이룸 기간 <span class="dorm-room-sub">기간마다 배치 · 꾸밈 · 방명록이 따로예요</span></h3>
-    <div class="dorm-periods">${periods.map(p => `<button class="dorm-period ${p.id === MP.id ? 'on' : ''} ${p.status}" onclick="setDormManagePeriod('${p.id}')">
-        <span class="no">${p.no}차</span><b>${mailEsc(p.name)}</b><span class="st">${stLabel[p.status] || ''}</span></button>`).join('')}</div>
-    <div class="dorm-default-row"><div class="dorm-default-prev">${dormMiniRoomHtml((dormData.period_defaults || {})[MP.id] || { base: dormData.default_base, items: [] }, 120, 90)}</div>
-      <div class="dorm-default-txt"><b>${MP.no}차 ${mailEsc(MP.name)} 기본 방</b><span>아직 꾸미지 않은 방은 모두 이 모양으로 보여요. 기간마다 따로 꾸밀 수 있어요.</span></div>
-      <button class="btn" onclick="openDormDefaultEdit('${MP.id}')"><i class="fa-solid fa-paintbrush"></i> 기본 방 꾸미기</button></div>
-    ${MP.status !== 'current' ? `<div class="dorm-period-act"><span>${MP.no}차 ${mailEsc(MP.name)} 배치를 미리 짜 두고, 때가 되면 지금 기간으로 바꿔요.</span>
-      <button class="btn" onclick="setDormCurrentPeriod('${MP.id}')"><i class="fa-solid fa-arrow-right-arrow-left"></i> 지금 기간으로 바꾸기</button></div>` : ''}</div>`;
   if (!dormCreditsDraft) dormCreditsDraft = JSON.parse(JSON.stringify(dormData.credits || []));
-  const used = new Set(dormHallsDraft.flatMap(h => h.slots || []).filter(Boolean));
-  const opt = (cur) => `<option value="">빈 방</option>` + dormRoster.map(n => `<option value="${mailEsc(n)}" ${n === cur ? 'selected' : ''} ${used.has(n) && n !== cur ? 'disabled' : ''}>${mailEsc(n)}</option>`).join('');
-  const halls = dormHallsDraft.map((h, hi) => `<div class="dorm-hall-edit">
-      <input type="text" value="${mailEsc(h.name)}" placeholder="${mailEsc(MP.unit)} 이름" oninput="dormHallsDraft[${hi}].name=this.value">
-      ${[0, 1, 2, 3, 4, 5].map(si => `<select onchange="dormHallsDraft[${hi}].slots[${si}]=this.value||null; renderDorm()">${opt((h.slots || [])[si])}</select>`).join('')}
-      <button class="dorm-x" data-tip="${mailEsc(MP.unit)} 지우기" onclick="dormHallsDraft.splice(${hi},1); renderDorm()"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
+  const T = dormManageTab;
+  const tabs = `<div class="member-toptabs dm-tabs">${DORM_MANAGE_TABS.map(([k, t]) => `<button class="${k === T ? 'active' : ''}" onclick="setDormManageTab('${k}')">${t}</button>`).join('')}</div>`;
+  const stLabel = { current: '지금', past: '지난', future: '다음' };
+  const periodChips = `<div class="dm-periods">${periods.map(p => `<button class="${p.id === MP.id ? 'on' : ''} ${p.status}" onclick="setDormManagePeriod('${p.id}')"><span class="no">${p.no}차</span>${mailEsc(p.name)}<em>${stLabel[p.status] || ''}</em></button>`).join('')}</div>`;
   const crOpt = (cur) => `<option value="">출처 없음</option>` + (dormData.credits || []).map(c => `<option value="${c.id}" ${c.id === cur ? 'selected' : ''}>${mailEsc(c.title)}</option>`).join('');
   const catOpt = (cur) => DORM_CATS.map(([k, t]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${t}</option>`).join('');
-  const builtinN = (dormData.assets || []).filter(a => a.builtin).length;
-  const builtinSets = new Set((dormData.assets || []).filter(a => a.builtin).map(a => a.set)).size;
-  const assets = (dormData.assets || []).filter(a => !a.builtin).map(a => `<div class="dorm-arow"><div class="th" style="background-image:url('${a.url}')"></div>
-      <input type="text" value="${mailEsc(a.name)}" onchange="socket.emit('dorm_asset_update',{id:'${a.id}',name:this.value})">
-      <select onchange="socket.emit('dorm_asset_update',{id:'${a.id}',category:this.value})">${catOpt(a.category)}</select>
-      <span class="sz">${a.w}×${a.h}</span>
-      <select class="cr" onchange="socket.emit('dorm_asset_update',{id:'${a.id}',credit:this.value})">${crOpt(a.credit)}</select>
-      <button class="dorm-x" data-tip="자료 지우기" onclick="uiConfirm('이 자료를 지울까요? 이미 놓인 것도 사라져요.',{title:'자료 지우기',okText:'지우기',danger:true}).then(ok=>ok&&socket.emit('dorm_asset_delete',{id:'${a.id}'}))"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
-  const credits = dormCreditsDraft.map((c, ci) => `<div class="dorm-crow">
-      <input type="text" value="${mailEsc(c.title)}" placeholder="자료 이름" oninput="dormCreditsDraft[${ci}].title=this.value">
-      <input type="text" value="${mailEsc(c.author)}" placeholder="제작자" oninput="dormCreditsDraft[${ci}].author=this.value">
-      <input type="text" value="${mailEsc(c.license)}" placeholder="라이선스 (예: CC0)" oninput="dormCreditsDraft[${ci}].license=this.value">
-      <input type="text" value="${mailEsc(c.url)}" placeholder="주소 https://…" oninput="dormCreditsDraft[${ci}].url=this.value">
-      <button class="dorm-x" onclick="dormCreditsDraft.splice(${ci},1); renderDorm()"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
-  return `
-    ${periodSec}
-    <div class="dorm-sec"><h3><i class="fa-solid fa-building"></i> ${MP.no}차 ${mailEsc(MP.name)} · ${mailEsc(MP.unit)} 배치 <span class="dorm-room-sub">한 ${mailEsc(MP.unit)}에 ${dormData.hall_size}명</span><span class="sp"></span>
-      <button class="btn-plain" onclick="dormHallsDraft.push({name:'${(dormHallsDraft.length + 1)}${mailEsc(MP.unit)}', slots:[null,null,null,null,null,null]}); renderDorm()"><i class="fa-solid fa-plus"></i> ${mailEsc(MP.unit)} 추가</button>
-      <button class="btn" onclick="socket.emit('dorm_halls_save',{halls:dormHallsDraft, period:'${MP.id}'}); dormHallsDraft=null">저장</button></h3>
-      ${halls || '<div class="dorm-hint">관 추가를 눌러 첫 관을 만들어 주세요.</div>'}</div>
-    <div class="dorm-sec"><h3><i class="fa-solid fa-chess-rook"></i> 도트 자료 <span class="dorm-room-sub">기본 ${builtinN}개(${builtinSets}세트) · 올린 자료 ${(dormData.assets || []).length - builtinN}개</span></h3>
-      <div class="dorm-up">
-        <div class="dorm-up-prev" onclick="document.getElementById('dormUpFile').click()" style="${dormUp.url ? `background-image:url('${dormUp.url}')` : ''}">${dormUp.url ? '' : '이미지<br>고르기'}</div>
-        <input type="text" placeholder="이름 (예: 침대)" value="${mailEsc(dormUp.name)}" oninput="dormUp.name=this.value">
+  let bar = '', body = '';
+  if (T === 'halls') {
+    const used = new Set(dormHallsDraft.flatMap(h => h.slots || []).filter(Boolean));
+    const opt = (cur) => `<option value="">빈 방</option>` + dormRoster.map(n => `<option value="${mailEsc(n)}" ${n === cur ? 'selected' : ''} ${used.has(n) && n !== cur ? 'disabled' : ''}>${mailEsc(n)}</option>`).join('');
+    bar = `${periodChips}<span class="sp"></span>
+      <button class="dorm-tbtn" onclick="dormHallsDraft.push({name:'${(dormHallsDraft.length + 1)}${mailEsc(MP.unit)}', slots:[null,null,null,null,null,null]}); renderDorm()"><i class="fa-solid fa-plus"></i><span class="t">${mailEsc(MP.unit)} 추가</span></button>
+      <button class="dorm-tbtn primary" onclick="socket.emit('dorm_halls_save',{halls:dormHallsDraft, period:'${MP.id}'}); dormHallsDraft=null"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`;
+    body = dormHallsDraft.length ? `<div class="dm-halls">${dormHallsDraft.map((h, hi) => `<div class="dm-hall">
+        <div class="hd"><input type="text" value="${mailEsc(h.name)}" placeholder="${mailEsc(MP.unit)} 이름" oninput="dormHallsDraft[${hi}].name=this.value">
+          <button class="dorm-x" data-tip="${mailEsc(MP.unit)} 지우기" onclick="dormHallsDraft.splice(${hi},1); renderDorm()"><i class="fa-solid fa-trash-can"></i></button></div>
+        <div class="slots">${Array.from({ length: dormData.hall_size || 6 }, (_, si) => `<label><span>${si + 1}</span><select onchange="dormHallsDraft[${hi}].slots[${si}]=this.value||null; renderDorm()">${opt((h.slots || [])[si])}</select></label>`).join('')}</div></div>`).join('')}</div>`
+      : emptyHtml('fa-building', `아직 ${mailEsc(MP.unit)}이 없어요`, '', null, true);
+  } else if (T === 'default') {
+    bar = `${periodChips}<span class="sp"></span>
+      ${MP.status !== 'current' ? `<button class="dorm-tbtn" onclick="setDormCurrentPeriod('${MP.id}')"><i class="fa-solid fa-arrow-right-arrow-left"></i><span class="t">지금 기간으로</span></button>` : ''}
+      <button class="dorm-tbtn primary" onclick="openDormDefaultEdit('${MP.id}')"><i class="fa-solid fa-paintbrush"></i><span class="t">기본 방 꾸미기</span></button>`;
+    body = `<div class="dm-default" onclick="openDormDefaultEdit('${MP.id}')">${dormMiniRoomHtml((dormData.period_defaults || {})[MP.id] || { base: dormData.default_base, items: [] }, 480, 360)}</div>`;
+  } else if (T === 'assets') {
+    const mine = (dormData.assets || []).filter(a => !a.builtin);
+    bar = `<div class="dm-up">
+        <button class="dm-up-pick" onclick="document.getElementById('dormUpFile').click()" style="${dormUp.url ? `background-image:url('${dormUp.url}')` : ''}" data-tip="png · gif · webp (${UPLOAD_IMG_MB}MB까지), 원본 크기 그대로">${dormUp.url ? '' : '<i class="fa-solid fa-image"></i>'}</button>
+        <input type="text" placeholder="이름" value="${mailEsc(dormUp.name)}" oninput="dormUp.name=this.value">
         <select onchange="dormUp.category=this.value">${catOpt(dormUp.category)}</select>
         <select onchange="dormUp.credit=this.value">${crOpt(dormUp.credit)}</select>
-        <button class="btn" onclick="uploadDormAsset()"><i class="fa-solid fa-upload"></i> 올리기</button>
-      </div>
-      <div class="dorm-hint">png·gif·webp (최대 ${UPLOAD_IMG_MB}MB). 방 그림 크기에 맞춘 원본 크기 그대로 올려 주세요${dormUp.nw ? ` → <b style="color:var(--text)">${dormUp.nw}×${dormUp.nh}</b>` : ''}.
-        "방" 종류로 올리면 방 바탕으로 쓸 수 있어요. 출처를 먼저 아래에 등록하면 자료마다 고를 수 있어요.</div>
-      <input type="file" id="dormUpFile" accept="image/png,image/gif,image/webp" style="display:none" onchange="onDormUpFile(event)">
-      <div class="dorm-alist">${assets}</div></div>
-    <div class="dorm-sec"><h3><i class="fa-solid fa-circle-info"></i> 출처<span class="sp"></span>
-      <button class="btn-plain" onclick="dormCreditsDraft.push({title:'',author:'',license:'',url:''}); renderDorm()"><i class="fa-solid fa-plus"></i> 출처 추가</button>
-      <button class="btn" onclick="socket.emit('dorm_credits_save',{credits:dormCreditsDraft}); dormCreditsDraft=null">저장</button></h3>
-      ${credits || '<div class="dorm-hint">도트 자료를 가져온 곳(자료 이름·제작자·라이선스·주소)을 적어 주세요. 마이룸 화면의 "출처"에 모두 보여요.</div>'}</div>`;
+        ${dormUp.nw ? `<span class="sz">${dormUp.nw}×${dormUp.nh}</span>` : ''}
+        <button class="dorm-tbtn primary" onclick="uploadDormAsset()"><i class="fa-solid fa-upload"></i><span class="t">올리기</span></button></div>
+      <input type="file" id="dormUpFile" accept="image/png,image/gif,image/webp" style="display:none" onchange="onDormUpFile(event)">`;
+    body = mine.length ? `<div class="dm-table dm-assets"><div class="dm-row head"><span></span><span>이름</span><span>종류</span><span>크기</span><span>출처</span><span></span></div>${mine.map(a => `<div class="dm-row">
+        <span class="th" style="background-image:url('${a.url}')"></span>
+        <input type="text" value="${mailEsc(a.name)}" onchange="socket.emit('dorm_asset_update',{id:'${a.id}',name:this.value})">
+        <select onchange="socket.emit('dorm_asset_update',{id:'${a.id}',category:this.value})">${catOpt(a.category)}</select>
+        <span class="sz">${a.w}×${a.h}</span>
+        <select onchange="socket.emit('dorm_asset_update',{id:'${a.id}',credit:this.value})">${crOpt(a.credit)}</select>
+        <button class="dorm-x" data-tip="자료 지우기" onclick="uiConfirm('이 자료를 지울까요? 이미 놓인 것도 사라져요.',{title:'자료 지우기',okText:'지우기',danger:true}).then(ok=>ok&&socket.emit('dorm_asset_delete',{id:'${a.id}'}))"><i class="fa-solid fa-trash-can"></i></button></div>`).join('')}</div>`
+      : emptyHtml('fa-chess-rook', '올린 자료가 없어요', `기본 자료 ${(dormData.assets || []).length}개`, null, true);
+  } else {
+    bar = `<span class="sp"></span>
+      <button class="dorm-tbtn" onclick="dormCreditsDraft.push({title:'',author:'',license:'',url:''}); renderDorm()"><i class="fa-solid fa-plus"></i><span class="t">출처 추가</span></button>
+      <button class="dorm-tbtn primary" onclick="socket.emit('dorm_credits_save',{credits:dormCreditsDraft}); dormCreditsDraft=null"><i class="fa-solid fa-floppy-disk"></i><span class="t">저장</span></button>`;
+    body = dormCreditsDraft.length ? `<div class="dm-table dm-credits"><div class="dm-row head"><span>자료 이름</span><span>제작자</span><span>라이선스</span><span>주소</span><span></span></div>${dormCreditsDraft.map((c, ci) => `<div class="dm-row">
+        <input type="text" value="${mailEsc(c.title)}" placeholder="자료 이름" oninput="dormCreditsDraft[${ci}].title=this.value">
+        <input type="text" value="${mailEsc(c.author)}" placeholder="제작자" oninput="dormCreditsDraft[${ci}].author=this.value">
+        <input type="text" value="${mailEsc(c.license)}" placeholder="예: CC0" oninput="dormCreditsDraft[${ci}].license=this.value">
+        <input type="text" value="${mailEsc(c.url)}" placeholder="https://" oninput="dormCreditsDraft[${ci}].url=this.value">
+        <button class="dorm-x" onclick="dormCreditsDraft.splice(${ci},1); renderDorm()" data-tip="지우기"><i class="fa-solid fa-trash-can"></i></button></div>`).join('')}</div>`
+      : emptyHtml('fa-circle-info', '등록한 출처가 없어요', '', null, true);
+  }
+  return `<div class="dm-page">${tabs}<div class="dm-bar">${bar}</div>${body}</div>`;
 }
 function onDormUpFile(ev) {
   const f = ev.target.files && ev.target.files[0]; ev.target.value = '';

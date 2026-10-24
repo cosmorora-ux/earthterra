@@ -5327,22 +5327,68 @@ body { line-height:1.5; letter-spacing:-0.01em; word-break:keep-all; overflow-wr
 @media (max-width:900px) { .wm-steps { padding:4px 20px 24px; } .wm-step { column-gap:14px; } }
 .cg-drawer-body { overflow-x:hidden; }
 
-/* 방명록 : 상자 없이 한 목록. 머리 한 줄(색 점 · 이름 · 시간 · 번호) + 글, 사이는 가는 선 */
-.dorm-gbdrawer .dorm-gb-list { gap:0; padding:0 22px 18px; }
-.dorm-gbdrawer .dorm-note { padding:16px 0; border:none; border-bottom:1px solid rgba(255,255,255,.06); border-radius:0; background:none; box-shadow:none; }
-.dorm-gbdrawer .dorm-note:last-child { border-bottom:none; }
-.dorm-gbdrawer .dorm-note::before { display:none; }
-.dorm-gbdrawer .dorm-note .gn-h { align-items:center; gap:10px; }
-.dorm-gbdrawer .dorm-note .gn-h .dot { width:8px; height:8px; border-radius:50%; background: var(--nc); flex:none; }
-.dorm-gbdrawer .dorm-note .gn-h b { flex:none; max-width:40%; font-size:14px; font-weight:700; }
-.dorm-gbdrawer .dorm-note .gn-h .t { font-size:12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space:nowrap; }
-.dorm-gbdrawer .dorm-note .gn-h .sp { flex:1; }
-.dorm-gbdrawer .dorm-note .gn-h .no { font-size:12px; color: rgba(255,255,255,.28); }
-.dorm-gbdrawer .dorm-note p { margin:8px 0 0 18px; font-size:15px; line-height:1.6; color:#e2e2e6; }
-.dorm-gbdrawer .dorm-note .dorm-note-btn { opacity:0; transition: opacity .15s; }
-.dorm-gbdrawer .dorm-note:hover .dorm-note-btn, .dorm-gbdrawer .dorm-note:focus-within .dorm-note-btn { opacity:1; }
-@media (hover:none) { .dorm-gbdrawer .dorm-note .dorm-note-btn { opacity:.7; } }
-.dorm-gbdrawer .dorm-note textarea, .dorm-gbdrawer .dorm-note .gn-edit { margin-left:18px !important; width:calc(100% - 18px) !important; }
+/* 방명록 서랍 : 카드(위 테두리 포인트 빛)는 그대로, 서랍 여백만 맞춰요 */
+.dorm-gbdrawer .dorm-gb-list { padding:14px 22px 18px; }
 .dorm-gbdrawer .dorm-roominfo { padding:12px 22px; }
 .dorm-gbdrawer .dorm-gb-write { padding:14px 22px; }
 @media (max-width:900px) { .dorm-gbdrawer .dorm-gb-list, .dorm-gbdrawer .dorm-roominfo, .dorm-gbdrawer .dorm-gb-write { padding-left:20px; padding-right:20px; } }
+
+/* 마이룸 관리 : 탭 + 도구 줄 + 내용(겉 상자 없이) */
+.dm-page { display:flex; flex-direction:column; gap:16px; min-width:0; }
+.dm-tabs { margin-bottom:0; }
+.dm-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-height:38px; }
+.dm-bar .sp { flex:1; }
+.dm-periods { display:flex; gap:6px; flex-wrap:wrap; }
+.dm-periods button { height:38px; display:inline-flex; align-items:center; gap:7px; padding:0 14px; border:none; border-radius:10px; background: var(--panel); color:#cfcfd4; font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+.dm-periods button .no { font-weight:500; color: var(--muted); }
+.dm-periods button em { font-style:normal; font-size:12px; font-weight:600; color: var(--muted); }
+.dm-periods button.current em { color: var(--point); }
+.dm-periods button.on { background: rgba(var(--point-rgb),.16); color:#fff; }
+/* 배치 : 관마다 이름 줄 + 자리 6칸 */
+.dm-halls { display:grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap:14px; }
+.dm-hall { border-radius:16px; background: var(--panel); padding:14px 16px 16px; display:flex; flex-direction:column; gap:12px; }
+.dm-hall .hd { display:flex; align-items:center; gap:8px; }
+.dm-hall .hd input { flex:1; min-width:0; height:38px; font-size:15px; font-weight:700; }
+.dm-hall .slots { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; }
+.dm-hall .slots label { position:relative; display:block; min-width:0; }
+.dm-hall .slots label span { position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:11px; font-weight:700; color: var(--muted); pointer-events:none; z-index:1; }
+.dm-hall .slots select { width:100%; height:38px; padding-left:28px !important; }
+/* 기본 방 : 미리보기 크게(누르면 꾸미기) */
+.dm-default { display:flex; justify-content:center; align-items:center; padding:28px; border-radius:16px; background: var(--panel); cursor:pointer; transition: background-color .15s; }
+.dm-default:hover { background: rgba(var(--point-rgb),.06); }
+/* 도트 자료 · 출처 : 표 */
+.dm-up { display:flex; align-items:center; gap:8px; flex:1; flex-wrap:wrap; }
+.dm-up input { flex:1 1 200px; min-width:0; height:38px; }
+.dm-up select { height:38px; width:auto; min-width:120px; }
+.dm-up .sz, .dm-row .sz { font-size:13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space:nowrap; }
+.dm-up-pick { flex:none; width:38px; height:38px; border-radius:10px; border:1px dashed rgba(var(--point-rgb),.5); background: rgba(var(--point-rgb),.06) center/contain no-repeat; color: var(--point); cursor:pointer; image-rendering:pixelated; }
+.dm-table { border-radius:16px; background: var(--panel); overflow:hidden; }
+.dm-row { display:grid; align-items:center; gap:10px; padding:8px 14px; }
+.dm-row + .dm-row { border-top:1px solid rgba(255,255,255,.05); }
+.dm-row.head { padding-top:12px; padding-bottom:10px; font-size:12px; font-weight:600; color: var(--muted); }
+.dm-row input, .dm-row select { height:36px; min-width:0; width:100%; }
+.dm-assets .dm-row { grid-template-columns: 40px minmax(0,1.4fr) 130px 80px minmax(0,1fr) 36px; }
+.dm-assets .th { width:40px; height:40px; border-radius:8px; background:#0e0e11 center/contain no-repeat; image-rendering:pixelated; }
+.dm-credits .dm-row { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr) 150px minmax(0,1.4fr) 36px; }
+.dm-row .dorm-x, .dm-hall .dorm-x { width:36px; height:36px; border-radius:10px; }
+@media (max-width:900px) {
+  .dm-halls { grid-template-columns: minmax(0,1fr); }
+  .dm-hall .slots { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .dm-row.head { display:none; }
+  .dm-assets .dm-row { grid-template-columns: 40px minmax(0,1fr) 36px; }
+  .dm-assets .dm-row > select, .dm-assets .dm-row > .sz { grid-column: 2 / 3; }
+  .dm-credits .dm-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr) 36px; padding:12px 14px; }
+  .dm-credits .dm-row > input:nth-child(1) { grid-area: 1 / 1; } .dm-credits .dm-row > input:nth-child(2) { grid-area: 1 / 2; }
+  .dm-credits .dm-row > .dorm-x { grid-area: 1 / 3; }
+  .dm-credits .dm-row > input:nth-child(3) { grid-area: 2 / 1; } .dm-credits .dm-row > input:nth-child(4) { grid-area: 2 / 2 / 3 / 4; }
+
+  .dm-default { padding:16px; }
+  .dm-bar .dorm-tbtn .t { display:none; }
+}
+/* 마이룸 꾸미기 : 방 칸 테두리 · 자료 칸 테두리 없이, 설명 줄 없이 */
+.map-frame.dorm-frame.editing { box-shadow:none; border:none; }
+.dorm-edit-bar:not(.on) { display:none; }
+.dorm-frame-wrap:has(.dorm-edit-bar:not(.on)) .zoom-ctl { bottom:16px; }
+.dorm-items .dorm-asset { border-color:transparent !important; background-color: rgba(255,255,255,.03); }
+.dorm-items .dorm-asset:hover { background-color: rgba(255,255,255,.07); }
+.dorm-items .dorm-asset.on { background-color: rgba(var(--point-rgb),.16); box-shadow: inset 0 0 0 1.5px rgba(var(--point-rgb),.7); }
