@@ -5834,7 +5834,7 @@ function mailEraHtml() {
       </div>
       ${mailAgeCells(mailDraft.year)}
     </div>
-    <label class="my-none"><input type="checkbox" ${off ? 'checked' : ''} onchange="mailDraft.noYear=this.checked; mailRefreshEra()"> 연도 없음 <span>(시기 · 연도 없이 보내요)</span></label>`;
+    <label class="my-none"><input type="checkbox" ${off ? 'checked' : ''} onchange="mailDraft.noYear=this.checked; mailRefreshEra()"> 연도 없음</label>`;
 }
 function mailStepYear(d) { const e = mailEra(mailDraft.era); if (!e) return; mailDraft.year = Math.max(e.from, Math.min(e.to, (mailDraft.year || e.from) + d)); mailRefreshEra(); }
 function mailRefreshEra() { const el = document.getElementById('mailEraBox'); if (el) el.innerHTML = mailEraHtml(); }
@@ -5958,14 +5958,17 @@ function renderMail() {
   // 받은 편지함 · 보낸 편지함(관리자는 전체)만 탭으로, 편지 쓰기는 오른쪽 별도 버튼(일반 메일 앱처럼)
   const tabs = [['inbox', 'fa-solid fa-inbox', '받은 편지함', d.unread], ['outbox', 'fa-solid fa-paper-plane', '보낸 편지함']];
   if (d.is_gm) tabs.push(['all', 'fa-solid fa-envelopes-bulk', '전체 편지']);
-  // 편지 쓰기는 따로 들어가는 화면 : 탭 대신 '← 새 편지' 머리(눌러서 목록으로 돌아가기)
-  tabsEl.classList.toggle('write-mode', mailTab === 'write');
+  // 편지 쓰기 · 편지 읽기는 따로 들어가는 화면 : 탭 대신 '← 제목' 머리(눌러서 목록으로 돌아가기)
+  const listNow = mailTab === 'outbox' ? d.outbox : mailTab === 'all' ? (d.all || []) : d.inbox;
+  const reading = mailTab !== 'write' && mailOpenId && listNow.find(l => l.id === mailOpenId);
+  tabsEl.classList.toggle('write-mode', mailTab === 'write' || !!reading);
   document.getElementById('mailBody').classList.toggle('writing', mailTab === 'write');
   tabsEl.innerHTML = mailTab === 'write'
     ? `<div class="mail-write-head"><button class="mail-back" onclick="setMailTab(mailListTab || 'inbox')" aria-label="목록으로" data-tip="목록으로"><i class="fa-solid fa-chevron-left"></i></button><b>새 편지</b></div>`
+    : reading ? `<div class="mail-write-head"><button class="mail-back" onclick="mailOpenId=null; renderMail()" aria-label="목록으로" data-tip="목록으로"><i class="fa-solid fa-chevron-left"></i></button><b>${mailTab === 'inbox' ? (reading.from ? mailEsc(reading.from) : '익명') : '보낸 편지'}</b></div>`
     : tabs.map(([k, ic, t, n]) => `<button class="shop-tab ${mailTab === k ? 'active' : ''}" onclick="setMailTab('${k}')"><i class="${ic}"></i>${t}${n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('');
   // 편지 쓰기 : 목록 위에 떠 있는 버튼(오른쪽 아래). 쓰는 중이거나 미리보기(보낼 수 없는 방)에서는 숨겨요.
-  document.getElementById('mailFab').style.display = mailTab === 'write' ? 'none' : '';
+  document.getElementById('mailFab').style.display = mailTab === 'write' || reading ? 'none' : '';
   const pv = d.preview ? '<div class="mail-preview"><i class="fa-solid fa-eye"></i>미리보기예요. 이 방에서는 편지를 보내거나 받을 수 없어요.</div>' : '';
   if (mailTab === 'write') {
     const keep = body.scrollTop;   // 다시 그려도 보던 위치 그대로(덜컹거리지 않게)
@@ -5979,8 +5982,8 @@ function renderMail() {
   const open = mailOpenId && list.find(l => l.id === mailOpenId);
   if (open) { body.innerHTML = mailLetterHtml(open, d); return; }
   if (!list.length) {
-    body.innerHTML = pv + (mailTab === 'inbox' ? emptyHtml('fa-inbox', '아직 받은 편지가 없어요', '누군가 편지를 보내면 여기에 모여요.')
-      : mailTab === 'outbox' ? emptyHtml('fa-paper-plane', '아직 보낸 편지가 없어요', '오른쪽 아래 버튼으로 첫 편지를 써 보세요.')
+    body.innerHTML = pv + (mailTab === 'inbox' ? emptyHtml('fa-inbox', '아직 받은 편지가 없어요')
+      : mailTab === 'outbox' ? emptyHtml('fa-paper-plane', '아직 보낸 편지가 없어요')
       : emptyHtml('fa-envelope-open', '편지가 없어요'));
     return;
   }
@@ -6012,7 +6015,6 @@ function mailItemHtml(l) {
     else who = `<span class="mail-who">${mailEsc(l.from)} → ${mailEsc(l.to)}</span>`;
     const badges = (l.anonymous && mailTab !== 'inbox' ? '<span class="mail-badge">익명</span>' : '') + (l.random && mailTab !== 'outbox' ? '<span class="mail-badge">랜덤</span>' : '') + (mailTab === 'outbox' && l.random && (l.send_count || 1) > 1 ? `<span class="mail-badge">${l.send_count}통</span>` : '');
     return `<div class="mail-item ${unread ? 'unread' : ''}" onclick="openLetter('${l.id}')">
-      <div class="mail-ic"><i class="fa-solid ${unread ? 'fa-envelope' : 'fa-envelope-open'}"></i></div>
       <div class="mail-main"><div class="mail-top">${who}${badges}<span class="mail-time">${mailRealTime(l.at)}</span>${unread ? '<span class="mail-dot"></span>' : ''}</div>
       <div class="mail-prev">${(l.images || []).length ? `<i class="fa-regular fa-image"></i>${l.images.length > 1 ? `${l.images.length}장${l.text ? ' · ' : ''}` : ''}` : ''}${l.text ? mailEsc(l.text.replace(/\s+/g, ' ')) : (l.images || []).length === 1 ? '이미지' : ''}</div></div></div>`;
 }
@@ -6027,9 +6029,8 @@ function mailLetterHtml(l, d) {
   const toName = many ? l.to_list.map(mailEsc).join(', ') : l.to ? mailEsc(l.to) : '누군가 (랜덤)';
   const fromName = l.from ? mailEsc(l.from) : '익명';
   const canDelete = mailTab !== 'all' || d.is_gm;
-  return `<div class="mail-write-head"><button class="mail-back" onclick="mailOpenId=null; renderMail()" aria-label="목록으로" data-tip="목록으로"><i class="fa-solid fa-chevron-left"></i></button><b>편지</b></div>
-    <div class="mail-letter">${mailEraLabel(l) ? `<div class="era">${mailEsc(mailEraLabel(l))}</div>` : ''}<div class="to">To.<b>${toName}</b></div>${l.text ? `<div class="txt">${mailEsc(l.text)}</div>` : ''}${(l.images || []).length ? `<div class="mail-imgs n${Math.min(l.images.length, 4)}">${l.images.map(u => `<a href="${mailEsc(u)}" target="_blank" rel="noopener"><img src="${mailEsc(u)}" alt="" loading="lazy"></a>`).join('')}</div>` : ''}
-      <div class="from">From.<b>${fromName}</b></div><div class="date">${mailYearLabel(l) ? `<span class="y">${mailYearLabel(l)}</span>` : ''}<span class="r"><i class="fa-regular fa-clock"></i>${mailRealTime(l.at)} 발송</span></div></div>
+  return `<div class="mail-letter">${mailEraLabel(l) ? `<div class="era">${mailEsc(mailEraLabel(l))}</div>` : ''}<div class="to">To.<b>${toName}</b></div>${l.text ? `<div class="txt">${mailEsc(l.text)}</div>` : ''}${(l.images || []).length ? `<div class="mail-imgs n${Math.min(l.images.length, 4)}">${l.images.map(u => `<a href="${mailEsc(u)}" target="_blank" rel="noopener"><img src="${mailEsc(u)}" alt="" loading="lazy"></a>`).join('')}</div>` : ''}
+      <div class="from">From.<b>${fromName}</b></div><div class="date"><span class="r"><i class="fa-regular fa-clock"></i>${mailRealTime(l.at)} 발송</span></div></div>
     <div class="mail-actions"><span style="display:flex;align-items:center;gap:10px;">
       ${canDelete ? `<button class="mail-del" onclick="deleteLetter('${l.id}')"><i class="fa-solid fa-trash-can"></i> ${mailTab === 'all' ? '편지 지우기' : '내 목록에서 지우기'}</button>` : ''}
       ${many && mailTab === 'outbox' ? `<span class="mail-badge">${l.to_list.length}명 중 ${l.read_count || 0}명 읽음</span>` : ''}${l.anonymous ? '<span class="mail-badge">익명 편지</span>' : ''}${l.random ? '<span class="mail-badge">랜덤 편지</span>' : ''}</span>
@@ -6053,28 +6054,27 @@ function mailComposeHtml(d) {
   // ① 받는 사람 ② 연도 ③ 내용 순서로 칸을 나누고, 아래 보내기 줄은 늘 화면 아래에 붙어 있어요.
   return `<div class="mail-form">
     <section class="mf-sec">
-      <header class="mf-h"><span class="mf-n">1</span><b>연도</b><span class="mf-aside">${era ? mailEsc(era.name) : ''}</span></header>
+      <header class="mf-h"><b>연도</b><span class="mf-aside">${era ? mailEsc(era.name) : ''}</span></header>
       <div id="mailEraBox">${mailEraHtml()}</div>
     </section>
     <section class="mf-sec">
-      <header class="mf-h"><span class="mf-n">2</span><b>받는 사람</b><span class="mf-aside" id="mailToCnt">${mailToAside()}</span></header>
+      <header class="mf-h"><b>받는 사람</b><span class="mf-aside" id="mailToCnt">${mailToAside()}</span></header>
       <div class="mail-seg"><button class="${pick ? 'on' : ''}" onclick="mailDraft.mode='pick'; renderMail()"><i class="fa-solid fa-user"></i> 직접 고르기</button>
-        <button class="${pick ? '' : 'on'}" onclick="mailDraft.mode='random'; renderMail()"><i class="fa-solid fa-shuffle"></i> 랜덤</button></div>
+        <button class="${pick ? '' : 'on'}" onclick="mailDraft.mode='random'; renderMail()" data-tip="누구에게 갔는지는 보낸 사람에게도 공개되지 않아요"><i class="fa-solid fa-shuffle"></i> 랜덤</button></div>
       ${pick ? `<div class="mf-search"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="이름 검색" value="${mailEsc(mailDraft.q)}" oninput="mailDraft.q=this.value; mailRefreshNames()" autocomplete="off"></div>
         <div class="mail-picked" id="mailPicked">${mailPickedHtml()}</div>
         <div class="mail-names" id="mailNames">${mailNamesHtml(names)}</div>`
-        : `<div class="mail-rcount"><span>몇 명에게</span>${[1, 2, 3, 4, 5].map(n => `<button class="${mailDraft.randomCount === n ? 'on' : ''}" onclick="mailDraft.randomCount=${n}; renderMail()">${n}명</button>`).join('')}</div>
-          <div class="mail-rand"><i class="fa-solid fa-shuffle"></i><span>누구에게 갔는지는 보낸 사람에게도 공개되지 않아요.</span></div>`}
+        : `<div class="mail-rcount"><span>몇 명에게</span>${[1, 2, 3, 4, 5].map(n => `<button class="${mailDraft.randomCount === n ? 'on' : ''}" onclick="mailDraft.randomCount=${n}; renderMail()">${n}명</button>`).join('')}</div>`}
     </section>
     <section class="mf-sec">
-      <header class="mf-h"><span class="mf-n">3</span><b>내용</b><span class="mf-aside mail-count" id="mailCount">${mailDraft.text.length} / 2000</span></header>
+      <header class="mf-h"><b>내용</b><span class="mf-aside mail-count" id="mailCount">${mailDraft.text.length} / 2000</span></header>
       <textarea class="mail-text" id="mailText" maxlength="2000" placeholder="편지를 써 주세요."
         ondrop="if(event.dataTransfer.files.length) event.preventDefault()" oninput="mailDraft.text=this.value; document.getElementById('mailCount').textContent=this.value.length+' / 2000'">${mailEsc(mailDraft.text)}</textarea>
       <div class="mail-imgrow" id="mailImgs">${mailImagesHtml()}</div>
       <input type="file" id="mailImgFile" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none" onchange="mailAddImages(this.files); this.value=''">
     </section>
     <div class="mail-foot">
-      ${pick ? `<span class="mail-anon off"><i class="fa-solid fa-signature"></i>이름을 밝혀서 보내요</span>`
+      ${pick ? '<span></span>'
         : `<label class="mail-anon"><input type="checkbox" ${mailDraft.anon ? 'checked' : ''} onchange="mailDraft.anon=this.checked"> 익명으로 보내기</label>`}
       <button class="btn mail-send" id="mailSendBtn" onclick="sendLetter()"><i class="fa-solid fa-paper-plane"></i> 보내기</button>
     </div></div>`;
@@ -6099,7 +6099,7 @@ function mailToggleTo(n) {
   mailRefreshNames();
 }
 function mailPickedHtml() {
-  if (!mailDraft.to.length) return '<span class="mail-picked-none">고른 사람이 여기에 보여요</span>';
+  if (!mailDraft.to.length) return '';
   return mailDraft.to.map(n => `<span class="mail-chip">${n === (mailData && mailData.me) ? '나에게' : mailEsc(n)}<button onclick="mailToggleTo(${mailEsc(JSON.stringify(n))})" aria-label="빼기"><i class="fa-solid fa-xmark"></i></button></span>`).join('');
 }
 function mailRefreshNames() {

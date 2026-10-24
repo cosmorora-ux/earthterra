@@ -5469,3 +5469,17 @@ body { line-height:1.5; letter-spacing:-0.01em; word-break:keep-all; overflow-wr
   .mypage.v2 .mypage-cols { gap:24px; }
   .mypage.v2 .mp-card.mp-skill { margin:0 -4px; padding:16px; }
 }
+
+/* 메일함(정돈) : 목록은 상자 없이 줄과 가는 선, 편지 쓰기 칸도 상자 없이 가는 선으로만 나눠요 */
+.mg-block { background:none; border-radius:0; overflow:visible; }
+.mg-block::before { display:none; }
+.mg-h { padding:6px 4px 0; }
+.mg-y { padding:14px 4px 4px; border-bottom:1px solid rgba(255,255,255,.07); }
+.mg-block .mail-item { padding:14px 4px 14px 20px; position:relative; border-radius:0; }
+.mg-block .mail-item:hover { background: rgba(255,255,255,.03); }
+.mail-item .mail-dot { position:absolute; left:4px; top:50%; margin-top:-4px; }
+.mail-item.unread .mail-who { color:#fff; font-weight:800; }
+.mf-sec { padding:18px 0; border:none; border-radius:0; background:none; border-bottom:1px solid rgba(255,255,255,.07); }
+.mail-form > .mf-sec:first-child { padding-top:4px; }
+.mail-names { border:none; background:none; padding:2px 0; }
+.mail-picked:empty { display:none; }
