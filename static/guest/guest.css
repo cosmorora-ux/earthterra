@@ -5435,3 +5435,37 @@ body { line-height:1.5; letter-spacing:-0.01em; word-break:keep-all; overflow-wr
 /* 운영진 상품 관리 : 줄마다 상자 대신 가는 선 */
 .shop-edit { border:none !important; border-radius:0 !important; background:none !important; border-bottom:1px solid rgba(255,255,255,.06) !important; padding:12px 4px !important; margin:0 !important; }
 .shop-edit .shop-icon { border:none; background: rgba(var(--point-rgb),.1); color: var(--point); }
+
+/* 스킬 컷인(정돈) : 배경 흐르는 글자 · 속도선 · 빛 · 이름 잔상 · 그림 HUD 틀 없이, 이름 · 캐치프레이즈 · 스킬만 조용히 */
+.skill-cutin.show::before, .skill-cutin.show::after, .skill-cutin .ci-fx { display:none !important; }
+.ci-name > span { background:none !important; color:#fff !important; -webkit-text-fill-color:#fff; filter:none !important; }
+.ci-name::before, .ci-name::after { display:none !important; }
+.ci-name { text-shadow:none; }
+.ci-phrase { color:#cfcfd6; text-shadow:none; }
+.ci-phrase::before, .ci-phrase::after { display:none; }
+.ci-skill { margin-top:28px; }
+.ci-title { font-size:clamp(20px, 2.6vw, 34px); font-weight:700; text-shadow:none; color: var(--point-soft); }
+.ci-body { text-shadow:none; color:#dcdce1; }
+.ci-pic { display:flex; flex-direction:column; align-items:center; gap:16px; }
+.ci-img { filter:none; border-radius:12px; }
+.skill-cutin.show.m-clean .skill-cutin-band > * { animation-name: ciClean; animation-timing-function: ease; }
+@keyframes ciClean { 0% { opacity:0; transform:translateY(14px); } 14% { opacity:1; transform:none; } 86% { opacity:1; transform:none; } 100% { opacity:0; transform:translateY(-6px); } }
+
+/* 마이페이지(정돈) : 위 프로필과 왼쪽 칸(체력 · 재화 · 소지품 · 마이룸)은 상자 없이 가는 선으로만 나누고,
+   스킬 로그만 한 판으로. */
+.mypage.v2 .mp-card { background:none; border:none; border-radius:0 !important; padding:0; }
+.mypage.v2 .mp-card.mp-skill { border-radius:16px !important; }
+.mypage.v2 .mp-hero { padding:4px 0 22px; margin-bottom:22px; border-bottom:1px solid rgba(255,255,255,.07); }
+.mypage.v2 .mp-hero .mp-hero-line { display:none; }
+.mypage.v2 .mypage-cols { gap:36px; }
+.mypage.v2 .mypage-col { gap:0; }
+.mypage.v2 .mypage-col:first-child > * + * { margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,.07); }
+.mypage.v2 .mp-tiles { gap:24px; }
+.mypage.v2 .mp-tile { gap:6px; }
+.mypage.v2 .mypage-col > .idc-room { padding:20px 0 0; }
+.mypage.v2 .mp-card.mp-skill { background: var(--panel); border-radius:16px; padding:18px 20px 20px; }
+.mypage.v2 .mp-card.mp-skill .idc-editor { background: rgba(0,0,0,.2); border:none; }
+@media (max-width:900px) {
+  .mypage.v2 .mypage-cols { gap:24px; }
+  .mypage.v2 .mp-card.mp-skill { margin:0 -4px; padding:16px; }
+}

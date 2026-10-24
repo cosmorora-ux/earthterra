@@ -3612,7 +3612,7 @@ function toggleUserInfoHidden(name) {
 }
 
 // LOOP 방(웹 공개) 미리보기 : 실제 참가자 정보는 받지 않고, 화면 안에서 만든 예시 캐릭터로 유저 리스트 · 마이페이지를 보여 줘요.
-// [이름, 포지션, 표시 컬러, 나이, 캐치프레이즈, 접속 중, 출신지(장소:구역), 프로필 사진]
+// [이름, 포지션, 테마 컬러, 나이, 캐치프레이즈, 접속 중, 출신지(장소:구역), 프로필 사진]
 const PLAY_PREVIEW_CHARS = [
   ['앙투안 얀 다비드', '메딕', '#f0d27a', '??', '', 1, 'arcadia:0', '/static/preview/antoine.png'],
   ['이네이타 장', '가디언', '#e25a5a', '??', '', 1, 'nova:0', '/static/preview/ineita.png'],
@@ -3988,7 +3988,7 @@ function renderMyPage() {
     document.getElementById('myPagePortraitIcon').style.display = '';
   }
   document.getElementById('myPageColorDot').style.background = c.color || '#fff';
-  // 프로필 상단 빛줄 : 표시 컬러로(방명록 · 기록창처럼 캐릭터 색에 맞춰요)
+  // 프로필 상단 빛줄 : 테마 컬러로(방명록 · 기록창처럼 캐릭터 색에 맞춰요)
   const hero = document.querySelector('#myPageModal .mp-hero'); if (hero) hero.style.setProperty('--mp-c', c.color || 'var(--point)');
   const raidInput = document.getElementById('myPageRaidNameInput');
   raidInput.disabled = !canEdit;
@@ -4169,26 +4169,19 @@ function showSkillCutin(fx) {
   const el = document.getElementById('skillCutin');
   const band = document.getElementById('skillCutinBand');
   const esc = t => String(t || '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  const motion = 'slash';   // 컷인 등장 모션은 고르지 않고 모두 기본 연출로
-  // 이름 + 캐치프레이즈(공통), 그 아래 글(스킬명 · 본문) 또는 이미지
-  // 이름 : 글자 뒤로 윤곽선 잔상 두 겹이 퍼지는 레이어드 타이포 (data-t를 ::before/::after가 그대로 씁니다)
-  const head = `<div class="ci-name" data-t="${esc(fx.actor)}"><span>${esc(fx.actor)}</span></div>`
+  // 군더더기 없이 : 어두운 바탕 위에 이름 · 캐치프레이즈, 그 아래 스킬(글 또는 그림)이 조용히 떠올랐다 사라져요
+  const motion = 'clean';
+  const head = `<div class="ci-name"><span>${esc(fx.actor)}</span></div>`
     + (fx.catchphrase ? `<div class="ci-phrase">${esc(fx.catchphrase)}</div>` : '');
   let main = '';
   if (fx.type === 'image') {
     const u = esc(fx.image).replace(/'/g, '%27');
-    // 그림 : HUD 프레임(모서리 꺾쇠 · 이중 테두리 · 눈금 · 훑는 빛 · 이름표)이 그려지며 열립니다
-    main = `<div class="ci-frame"><img class="ci-img" src="${u}" alt=""><i class="ci-scan"></i>
-      <i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>
-      <i class="tk t"></i><i class="tk b"></i><i class="tk l"></i><i class="tk r"></i>
-      <span class="ci-tag">SKILL<b>${esc(fx.title || '')}</b></span></div>`;
+    main = `<div class="ci-pic"><img class="ci-img" src="${u}" alt="">${fx.title ? `<div class="ci-title">${esc(fx.title)}</div>` : ''}</div>`;
   } else if (fx.title || (fx.body || '').replace(/<[^>]*>/g, '').trim()) {
     // 본문은 서버에서 굵게/기울임만 남기고 정리된 HTML입니다(미리 보기는 내 화면에서만 표시).
-    main = `<div class="ci-skill">${fx.title ? `<div class="ci-title"><em>SKILL</em>${esc(fx.title)}</div>` : ''}${fx.body ? `<div class="ci-body">${fx.body}</div>` : ''}</div>`;
+    main = `<div class="ci-skill">${fx.title ? `<div class="ci-title">${esc(fx.title)}</div>` : ''}${fx.body ? `<div class="ci-body">${fx.body}</div>` : ''}</div>`;
   }
-  // 배경 효과 층 : 크게 흐르는 윤곽선 워터마크 + 모션별 효과(::before/::after)
-  const wm = esc(fx.title || fx.actor || '');
-  document.getElementById('skillCutinFx').innerHTML = wm ? `<div class="ci-wm"><span>${wm}&nbsp;&nbsp;·&nbsp;&nbsp;${wm}&nbsp;&nbsp;·&nbsp;&nbsp;${wm}&nbsp;&nbsp;·&nbsp;&nbsp;</span></div>` : '';
+  document.getElementById('skillCutinFx').innerHTML = '';
   band.innerHTML = fx.type === 'image' ? `${main}<div class="ci-head">${head}</div>` : `<div class="ci-head">${head}</div>${main}`;
   el.className = 'skill-cutin';
   void el.offsetWidth;  // 애니메이션을 처음부터 다시 재생
@@ -4525,6 +4518,8 @@ function shopIsGm() { return myControlInfo(lastBattleForPanel).scope === 'all'; 
 function shopEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 function shopTargetName() { return shopIsGm() ? (shopGmTarget || null) : myLoggedInName(); }
 function shopCharData(name) { return name ? (lastRosterMypage[name] || null) : null; }
+// 재화 · 소지품은 러너만(몹은 상점 대상이 아니에요)
+function shopRunners() { return (lastRoster || []).filter(n => !((lastRosterMypage || {})[n] || {}).mob); }
 function shopItemById(id) { return (lastShop && lastShop.items || []).find(it => it.id === id) || null; }
 
 function showShopToast(msg) { uiToast(msg); }
@@ -4572,7 +4567,7 @@ function renderShop() {
   const data = shopCharData(target);
   if (gm) {
     const opts = ['<option value="">캐릭터 고르기</option>'].concat(
-      (lastRoster || []).map(n => `<option value="${shopEsc(n)}" ${n === shopGmTarget ? 'selected' : ''}>${shopEsc(n)}</option>`));
+      shopRunners().map(n => `<option value="${shopEsc(n)}" ${n === shopGmTarget ? 'selected' : ''}>${shopEsc(n)}</option>`));
     wallet.innerHTML = `<select onchange="shopGmTarget=this.value; renderShop();">${opts.join('')}</select>` +
       (data ? `<span class="pts"><b>${data.points || 0}</b>P</span>` : '');
   } else {
@@ -4659,7 +4654,7 @@ function renderShopItemsAdmin() {
 let shopWalletQuery = '';
 function renderShopWallets() {
   const q = shopWalletQuery.trim().toLowerCase();
-  const names = (lastRoster || []).filter(n => !q || n.toLowerCase().includes(q));
+  const names = shopRunners().filter(n => !q || n.toLowerCase().includes(q));
   if (!names.length) return emptyHtml('fa-users', '등록된 캐릭터가 없어요');
   const itemOpts = (lastShop.items || []).map(it => `<option value="${it.id}">${shopEsc(it.name)}</option>`).join('');
   const rows = names.map(n => {
@@ -4729,8 +4724,8 @@ function shopSetPoints(name, v) { socket.emit('shop_admin_points', { name, set: 
 function shopBulkPoints(sign) {
   const v = parseInt(document.getElementById('shopBulkPoints').value || '0', 10) * sign;
   if (!v) return;
-  uiConfirm(`등록된 캐릭터 전원에게 ${v > 0 ? '+' : ''}${v}P 할까요?`, {title:'P 일괄 지급', okText:'적용', icon:'fa-coins'})
-    .then(ok => ok && socket.emit('shop_admin_points', { names: lastRoster || [], delta: v }));
+  uiConfirm(`러너 전원에게 ${v > 0 ? '+' : ''}${v}P 할까요?`, {title:'P 일괄 지급', okText:'적용', icon:'fa-coins'})
+    .then(ok => ok && socket.emit('shop_admin_points', { names: shopRunners(), delta: v }));
 }
 function shopGive(name, itemId, delta) { socket.emit('shop_admin_give', { name, item_id: itemId, delta }); }
 function shopReqDone(id, done) { socket.emit('shop_admin_request', { request_id: id, done }); }
