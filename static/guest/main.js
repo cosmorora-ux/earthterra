@@ -4571,9 +4571,9 @@ function renderShop() {
   const target = shopTargetName();
   const data = shopCharData(target);
   if (gm) {
-    const opts = ['<option value="">(캐릭터 선택)</option>'].concat(
+    const opts = ['<option value="">캐릭터 고르기</option>'].concat(
       (lastRoster || []).map(n => `<option value="${shopEsc(n)}" ${n === shopGmTarget ? 'selected' : ''}>${shopEsc(n)}</option>`));
-    wallet.innerHTML = `<span>대상</span><select onchange="shopGmTarget=this.value; renderShop();">${opts.join('')}</select>` +
+    wallet.innerHTML = `<select onchange="shopGmTarget=this.value; renderShop();">${opts.join('')}</select>` +
       (data ? `<span class="pts"><b>${data.points || 0}</b>P</span>` : '');
   } else {
     wallet.innerHTML = target ? `<span>${shopEsc(target)}</span><span class="pts"><b>${data ? (data.points || 0) : 0}</b>P</span>` : '<span>로그인 필요</span>';
@@ -4584,7 +4584,6 @@ function renderShop() {
   if (gm) tabs.push(['items', '상품 관리', 'gm', 0, 'fa-tags'], ['wallets', '재화·소지품', 'gm', 0, 'fa-coins'], ['requests', '처리 요청', 'gm', pending, 'fa-inbox']);
   document.getElementById('shopTabs').style.display = tabs.length > 1 ? '' : 'none';   // 참가자는 상점 하나라 탭 줄 없이
   document.getElementById('shopTabs').innerHTML = tabs.map(([k, label, cls, cnt, ic], i) =>
-    (cls === 'gm' && i === 1 ? '<span class="shop-tab-sep">운영진</span>' : '') +
     `<button class="shop-tab ${cls || ''} ${shopTab === k ? 'active' : ''}" onclick="setShopTab('${k}')"><i class="fa-solid ${ic}"></i>${label}${cnt ? `<span class="cnt">${cnt}</span>` : ''}</button>`).join('');
 
   const body = document.getElementById('shopBody');
@@ -4600,35 +4599,32 @@ function renderShop() {
 }
 
 function renderShopList(target, data) {
+  // 상자 없는 목록 : 아이콘 · 이름 + 사용 시점 · 설명 한 줄 | 오른쪽에 (가진 것만) 보유 수 · 사용, 그리고 가격 버튼(누르면 구매)
   const items = lastShop.items || [];
   const mine = (data && data.items) || {};
-  // 판매가 끝났지만 아직 가지고 있는 상품은 맨 아래에 따로
   const gone = Object.entries(mine).filter(([id, n]) => n > 0 && !shopItemById(id));
-  if (!items.length && !gone.length) return emptyHtml('fa-store', '판매 중인 상품이 없어요', '운영진이 상품을 올리면 여기에 보여요.');
+  if (!items.length && !gone.length) return emptyHtml('fa-store', '판매 중인 상품이 없어요');
   const points = data ? (data.points || 0) : 0;
   const statKeys = lastShop.stat_keys || [];
-  const cards = items.map(it => {
+  const tl = lastShop.timing_labels || {};
+  const rows = items.map(it => {
     const can = !!target && points >= it.price;
     const owned = mine[it.id] || 0;
     let extra = '';
     if (owned && it.effect === 'stat_up') extra = `<select id="shopStat_${it.id}">${statKeys.map(k => `<option>${k}</option>`).join('')}</select>`;
-    if (owned && it.effect === 'request') extra = `<input id="shopMemo_${it.id}" maxlength="200" placeholder="요청 내용 (선택)">`;
+    if (owned && it.effect === 'request') extra = `<input id="shopMemo_${it.id}" maxlength="200" placeholder="요청 내용">`;
     const use = !owned ? '' : it.effect === 'role_change'
-      ? `<button class="shop-btn ghost" onclick="closeShop(); openMyPage();">마이페이지에서 사용</button>`
-      : `<button class="shop-btn ghost" onclick="shopUse('${it.id}')">사용</button>`;
-    return `<div class="shop-card ${owned ? 'has' : ''}">
-      <div class="sc-head">${shopIconHtml(it, false)}
-        <div class="sc-title"><b>${shopEsc(it.name)}</b><span>${shopMetaText(it)}</span></div>
-        <span class="sc-price">${it.price}<small>P</small></span></div>
-      <p class="sc-desc">${shopEsc(it.desc)}</p>
-      ${extra ? `<div class="sc-foot sc-use">${extra}</div>` : ''}
-      <div class="sc-foot">${target ? `<span class="sc-owned ${owned ? 'on' : ''}"><i class="fa-solid fa-briefcase"></i>보유 ${owned}개</span>` : ''}
-        ${use}<button class="shop-btn" ${can ? '' : 'disabled'} onclick="shopBuy('${it.id}')">구매</button></div>
-    </div>`;
+      ? `<button class="shop-btn ghost sm" onclick="closeShop(); openMyPage();">마이페이지에서 사용</button>`
+      : `<button class="shop-btn ghost sm" onclick="shopUse('${it.id}')">사용</button>`;
+    return `<div class="sp-row ${owned ? 'has' : ''}">${shopIconHtml(it, false)}
+      <div class="sp-main"><div class="sp-t"><b>${shopEsc(it.name)}</b><em>${shopEsc(tl[it.timing] || it.timing)}</em></div>
+        ${it.desc ? `<p>${shopEsc(it.desc)}</p>` : ''}${extra ? `<div class="sp-extra">${extra}</div>` : ''}</div>
+      <div class="sp-act">${owned ? `<span class="sp-own" data-tip="보유">×${owned}</span>${use}` : ''}
+        <button class="sp-buy" ${can ? '' : 'disabled'} onclick="shopBuy('${it.id}')">${it.price}<small>P</small></button></div></div>`;
   });
-  gone.forEach(([id, n]) => cards.push(`<div class="shop-card has"><div class="sc-head"><span class="shop-icon"><i class="fa-solid fa-ban"></i></span>
-      <div class="sc-title"><b>삭제된 상품</b><span>판매가 끝난 상품이에요</span></div><span class="sc-count">×${n}</span></div></div>`));
-  return '<div class="shop-grid">' + cards.join('') + '</div>';
+  gone.forEach(([id, n]) => rows.push(`<div class="sp-row has gone"><span class="shop-icon"><i class="fa-solid fa-ban"></i></span>
+      <div class="sp-main"><div class="sp-t"><b>삭제된 상품</b></div></div><div class="sp-act"><span class="sp-own">×${n}</span></div></div>`));
+  return '<div class="sp-list">' + rows.join('') + '</div>';
 }
 
 // 빈 화면(공통) : 아이콘 · 제목 · 설명 · 버튼([글자, onclick, 아이콘])
@@ -4655,10 +4651,9 @@ function renderShopItemsAdmin() {
       <input class="desc" value="${shopEsc(it.desc)}" maxlength="200" onchange="shopEditItem('${it.id}', {desc:this.value})" placeholder="설명">
       ${shopIconPickFor === it.id ? shopIconPickerHtml(it) : ''}
     </div>`).join('');
-  return `<div class="shop-toolbar"><span>고치면 바로 저장돼요 · 아이콘 칸을 누르면 아이콘을 고를 수 있어요</span>
-      <div style="flex:1"></div><button class="shop-btn" onclick="shopAddItem()"><i class="fa-solid fa-plus"></i> 상품 추가</button></div>
+  return `<div class="shop-toolbar"><div style="flex:1"></div><button class="shop-btn" onclick="shopAddItem()"><i class="fa-solid fa-plus"></i> 상품 추가</button></div>
     <div class="shop-edit-head"><span>아이콘</span><span>이름</span><span>가격(P)</span><span>효과</span><span>사용 시점</span><span>수치</span><span></span></div>
-    ${rows || emptyHtml('fa-tags', '상품이 없어요', '위에서 새 상품을 추가해 주세요.', null, true)}`;
+    ${rows || emptyHtml('fa-tags', '상품이 없어요', '', null, true)}`;
 }
 
 let shopWalletQuery = '';
@@ -4678,7 +4673,7 @@ function renderShopWallets() {
     return `<div class="shop-char">
       <span class="shop-char-name">${shopEsc(n)}</span>
       <span class="shop-char-pts"><input type="number" min="0" value="${d.points || 0}" onchange="shopSetPoints('${shopEsc(n)}', this.value)" data-tip="보유 P (고치면 바로 저장)">P</span>
-      <div class="shop-char-items">${chips || '<span class="none">소지품 없음</span>'}</div>
+      <div class="shop-char-items">${chips || '<span class="none">–</span>'}</div>
       <span class="shop-char-give"><select id="shopGiveSel_${key}">${itemOpts}</select>
         <button class="shop-ico-btn" onclick="shopGive('${shopEsc(n)}', document.getElementById('shopGiveSel_${key}').value, 1)" data-tip="아이템 1개 지급"><i class="fa-solid fa-gift"></i></button></span>
     </div>`;
@@ -4694,7 +4689,7 @@ function renderShopWallets() {
 
 function renderShopRequests() {
   const reqs = lastShopRequests || [];
-  if (!reqs.length) return emptyHtml('fa-inbox', '들어온 요청이 없어요', '참가자가 아이템 사용을 요청하면 여기에 쌓여요.');
+  if (!reqs.length) return emptyHtml('fa-inbox', '들어온 요청이 없어요');
   return reqs.map(r => `<div class="shop-req ${r.done ? 'done' : ''}">
       <span class="when">${shopEsc(r.time)}</span>
       <div class="what"><b>${shopEsc(r.character)}</b> · ${shopEsc(r.item_name)}${r.memo ? `<div class="memo">${shopEsc(r.memo)}</div>` : ''}</div>
