@@ -565,7 +565,7 @@ socket.on('error', (d) => { if (!(d && d.quiet)) showError(d.message); });   // 
 socket.on('action_error', (d) => showError(d.message));
 
 // 화면 파일(html)과 짝이 맞는 서버 버전. 서버 .py를 고치면 webapp.py의 SERVER_BUILD와 함께 올립니다.
-const EXPECTED_SERVER_BUILD = "2026-10-24.104";
+const EXPECTED_SERVER_BUILD = "2026-10-24.105";
 socket.on('public_state', (state) => {
   lastPublicStateAt = Date.now();
   bootReady('state');
@@ -3812,26 +3812,6 @@ function setMyPageNation(name, nation) {
   if (myControlInfo(lastBattleForPanel).scope === 'all') socket.emit('set_mypage_gm_fields', { name, nation });
   else socket.emit('set_my_skill_log', { name: myPageEditName(), nation });
 }
-// 마이룸 한마디 : 방에 들어온 사람에게 말풍선으로 보이는 방 주인 대사. 마이페이지 맨 위에서 본인만 고쳐요.
-function renderMyPageLine(c) {
-  const el = document.getElementById('myPageLine'); if (!el) return;
-  const name = c && c.name;
-  const hasRoom = !!(name && dormData && dormHallOf(name));
-  const line = hasRoom ? (((dormData.rooms || {})[name] || {}).line || '') : '';
-  const mine = hasRoom && name === dormMe() && !dormIsGm();
-  if (!hasRoom || (!mine && !line)) { el.style.display = 'none'; el.innerHTML = ''; return; }
-  el.style.display = '';
-  if (!mine) { el.innerHTML = `<i class="fa-solid fa-quote-left"></i><span class="t">${mailEsc(line)}</span>`; return; }
-  if (document.activeElement && document.activeElement.id === 'myPageLineInput') return;
-  el.innerHTML = `<i class="fa-solid fa-quote-left"></i><input id="myPageLineInput" maxlength="80" autocomplete="off" placeholder="마이룸에 들어온 사람에게 보일 한마디" value="${mailEsc(line)}"
-    onchange="saveMyPageLine(this.value)" onkeydown="if(event.key==='Enter') this.blur()"><i class="fa-solid fa-pen ed"></i>`;
-}
-function saveMyPageLine(v) {
-  const name = dormMe(); if (!name) return;
-  const text = String(v || '').trim().slice(0, 80);
-  if (dormData && dormData.rooms && dormData.rooms[name]) dormData.rooms[name].line = text;
-  socket.emit('dorm_line_save', { owner: name, text });
-}
 // 출신지 : 맵의 장소 · 구역 중에서 고릅니다(맵 구역 카드를 누르면 '00의 출신지.'로 나옵니다). 본인과 운영진이 바꿀 수 있어요.
 function myPageHomeLabel(key) {
   const [pid, zi] = String(key || '').split(':');
@@ -3967,7 +3947,6 @@ function renderMyPage() {
     document.getElementById('myPageRaidNameInput').disabled = true;
     document.getElementById('myPageRoles').innerHTML = '';
     renderMyPageNation(null);
-    renderMyPageLine(null);
     renderMyPageHome(null);
     renderMyPageAge(null);
     renderMyPageDoc(null);
@@ -4001,7 +3980,6 @@ function renderMyPage() {
   if (document.activeElement !== raidInput) raidInput.value = c.raid_display_name || '';
   renderMyPageRoles(c, canEdit);
   renderMyPageNation(c);
-  renderMyPageLine(c);
   renderMyPageHome(c);
   renderMyPageAge(c);
   renderMyPageDoc(c);
@@ -6259,7 +6237,7 @@ function renderMyPageRoom() {
   const box = document.getElementById('myPageRoomBox');
   if (!box || document.getElementById('myPageModal').style.display !== 'flex') return;
   const c = myPageTargetChar(), name = c && c.name;
-  renderMyPageLine(c); renderMyPageNation(c);
+  renderMyPageNation(c);
   const hall = name && dormData ? dormHallOf(name) : null;
   // 지난 기간의 마이룸 : 본인 마이페이지에서만(서버도 본인 것만 보내 줍니다)
   const self = !!(name && name === dormMe() && !dormIsGm());
@@ -6456,8 +6434,7 @@ function renderDormRoom(body) {
         <div class="dorm-side-body" id="dormPalette"></div><div class="dorm-palette-foot" id="dormHint"></div></div>`
     : dormGuestbookHtml(r);
   const isOwner = dormMe() && dormMe() === r.owner;
-  const bubble = r.line ? `<div class="dorm-line-bubble"><b>${mailEsc(r.owner)}</b><span>${mailEsc(r.line)}</span></div>` : '';
-  body.innerHTML = `<div class="dorm-room-layout${dormEdit ? '' : ' gbmode'}"><div class="dorm-frame-wrap">${dormEdit ? '' : bubble}<div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>
+  body.innerHTML = `<div class="dorm-room-layout${dormEdit ? '' : ' gbmode'}"><div class="dorm-frame-wrap"><div class="map-frame dorm-frame ${dormEdit ? 'editing' : ''}" id="dormStageBox"></div>
     <button class="dorm-back" onclick="dormLeaveRoom()" aria-label="목록으로" data-tip="${mailEsc(dormP().name)} 목록으로"><i class="fa-solid fa-chevron-left"></i></button>
     <div class="zoom-ctl" id="dormZoom">
       <button onclick="dormZoomBy(1 / 1.25)" data-tip="축소"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
@@ -6655,14 +6632,14 @@ function dormGuestbookHtml(r) {
       : ''}
     <div class="dorm-side-body dorm-gb-list">${list.length ? list.map((e, i) => {
       const own = e.author === me, editing = own && dormGbEditing;
-      // 카드에 보이는 건 다섯 가지 : 캐릭터 이름 · 캐릭터 색 · 시간 · (내 글이면) 고치기 아이콘 · 번호. 지우기는 고치는 중이나 마우스를 올렸을 때만.
       const delBtn = canDel(e) ? `<button class="dorm-note-btn del" onclick="deleteDormGuestbook(${mailEsc(JSON.stringify(e.author))})" data-tip="지우기"><i class="fa-solid fa-trash-can"></i></button>` : '';
+      // 한 줄 머리(캐릭터 색 점 · 이름 · 시간 · 번호, 내 글이면 고치기) + 아래 글. 상자 없이 가는 선으로만 나눠요.
       return `<article class="dorm-note ${own ? 'mine' : ''} ${editing ? 'editing' : ''}" style="--nc:${color(e.author)}">
-        <div class="gn-h"><b>${mailEsc(e.author)}</b><span class="no">No.${String(list.length - i).padStart(2, '0')}</span></div>
+        <div class="gn-h"><i class="dot"></i><b>${mailEsc(e.author)}</b><span class="t">${fmt(e.at)}</span><span class="sp"></span>
+          ${editing ? '' : `${own ? `<button class="dorm-note-btn" onclick="dormGbEdit(true)" data-tip="고치기"><i class="fa-solid fa-pen"></i></button>` : delBtn}`}<span class="no">No.${String(list.length - i).padStart(2, '0')}</span></div>
         ${editing ? `<textarea id="dormGbText" maxlength="300" rows="3" oninput="dormGbDraft['${mailEsc(r.owner)}']=this.value">${mailEsc(draft)}</textarea>
           <div class="gn-edit">${delBtn}<span class="sp"></span><button class="gn-btn" onclick="dormGbEdit(false)">취소</button><button class="gn-btn on" onclick="writeDormGuestbook()">저장</button></div>`
-          : `<p>${mailEsc(e.text)}</p>
-        <div class="gn-f"><span class="t">${fmt(e.at)}</span>${own ? '' : delBtn}${own ? `<button class="dorm-note-btn" onclick="dormGbEdit(true)" data-tip="고치기"><i class="fa-solid fa-pen"></i></button>` : ''}</div>`}</article>`; }).join('')
+          : `<p>${mailEsc(e.text)}</p>`}</article>`; }).join('')
       : emptyHtml('fa-feather-pointed', '아직 방명록이 없어요', me ? '첫 방명록을 남겨 보세요.' : '', null, true)}</div>
   </div></div>`;
 }

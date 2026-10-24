@@ -204,10 +204,10 @@ class Dorms:
         lay = r if r.get("updated") else (pdata.get("default") or {})
         return {"owner": name, "base": lay.get("base") or DEFAULT_BASE, "wall": lay.get("wall"), "floor": lay.get("floor"),
                 "items": [dict(i) for i in lay.get("items", [])], "updated": r.get("updated"),
-                # 마지막으로 바뀐 때(꾸밈 · 음악 · 대사 · 방명록) : 기숙사 목록의 New! 표시에 씁니다.
+                # 마지막으로 바뀐 때(꾸밈 · 음악 · 방명록) : 기숙사 목록의 New! 표시에 씁니다.
                 "activity": max([r.get("updated") or 0, r.get("touched") or 0]
                                 + [e.get("at", 0) for e in gb.get(name, [])]),
-                "music": r.get("music"), "line": r.get("line") or "",
+                "music": r.get("music"),
                 "guestbook": sorted(gb.get(name, []), key=lambda e: -e.get("at", 0))}
 
     # ---- 기간 ----
@@ -283,14 +283,6 @@ class Dorms:
             r["touched"] = time.time()
             self.save()
         return old
-
-    def set_line(self, owner, text):
-        text = (text or "").strip()[:80]
-        with self.lock:
-            r = self._room_rec(owner)
-            r["line"] = text
-            r["touched"] = time.time()
-            self.save()
 
     # ---- 방명록 ----
     def write_guestbook(self, owner, author, text):
@@ -461,7 +453,7 @@ class Dorms:
         lay = self._clean_layout(data)
         with self.lock:
             old = self.rooms.get(owner) or {}
-            self.rooms[owner] = dict(lay, v=2, updated=time.time(), music=old.get("music"), line=old.get("line", ""))
+            self.rooms[owner] = dict(lay, v=2, updated=time.time(), music=old.get("music"))
             self.save()
         return self.room(owner)
 

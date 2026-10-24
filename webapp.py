@@ -46,7 +46,7 @@ from rooms import (
 
 # 서버(.py) 버전 표시. 화면(html)에 적힌 기대 버전과 다르면 "서버를 다시 켜 주세요" 안내가 뜹니다.
 # .py를 고칠 때마다 templates/guest.html의 EXPECTED_SERVER_BUILD와 함께 올려 주세요.
-SERVER_BUILD = "2026-10-24.104"
+SERVER_BUILD = "2026-10-24.105"
 
 app = Flask(__name__)
 # 세션 서명 키 : 처음 켤 때 무작위로 만들어 git에 안 올라가는 secret_key.txt에 보관합니다.
@@ -4165,18 +4165,6 @@ def on_dorm_music_clear(data):
             os.remove(os.path.join(DORM_MUSIC_DIR, os.path.basename(old["url"])))
         except OSError:
             pass
-    socketio.emit("dorm_room", dorms.room(owner))
-
-
-@socketio.on("dorm_line_save")
-def on_dorm_line_save(data):
-    data = data or {}
-    owner = (data.get("owner") or "").strip()
-    dorms = _dorm_owner_only(owner)
-    if dorms is None:
-        return
-    dorms.set_line(owner, data.get("text"))
-    emit("dorm_result", {"ok": True, "message": "방 주인 대사를 바꿨어요."})
     socketio.emit("dorm_room", dorms.room(owner))
 
 
