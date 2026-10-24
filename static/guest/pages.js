@@ -1558,26 +1558,43 @@ function loopTopSub(d) {
 }
 function loopWarStarted(r) { return !!(r && r.era && r.era.id >= 4); }
 function loopHeadHtml(d) {
-  // 제목은 왼쪽, 이번 생애 정보는 아래 한 줄(점으로 구분), 새로 시작은 오른쪽 위 작은 버튼.
+  // 머리 한 줄(겉 상자 없이) : 왼쪽 Loop · 이번 생애 정보, 오른쪽 시대 진행. 진행 중이면 아래 줄에 체력 · 정신 · 자원 · 균열.
+  // 이름표 대신 아이콘(누르거나 올리면 이름), 설명 문장은 빼고 모양으로 보여 줘요.
   const r = d.run;
   const country = (r && r.country) || d.country, faction = (r && r.faction) || d.faction;
-  // 프롤로그(BIRTH)에서는 같은 정보를 태그로 보여 주니 여기서는 숨깁니다.
-  // 진영은 전쟁(IV 시대)부터, 몇 번째 생애인지는 루프에 들어간 뒤부터만 보여요.
   const it = [];
   if (r && r.status !== 'prologue') {
     if (country) it.push(`<span class="c ${country}"><i></i>${loopEsc((LOOP_COUNTRY[country] || [''])[0])}</span>`);
     it.push(`<span>${loopEsc((LOOP_RES[r.res] || [''])[0])}</span><span class="${r.privileged ? 'up' : ''}">${r.privileged ? '기득권' : '비기득권'}</span>`);
     if (faction && loopWarStarted(r)) it.push(`<span>${loopEsc(faction)}</span>`);
-    if (r.view) it.push(`<span>문명관 ${loopEsc(r.view.name)}</span>`);
-    if (r.loop_no) it.push(`<span>${r.life_no}번째 생애</span><span class="up"><i class="fa-solid fa-infinity"></i> 루프 ${r.loop_no}</span>`);
+    if (r.view) it.push(`<span>${loopEsc(r.view.name)}</span>`);
+    if (r.loop_no) it.push(`<span class="up"><i class="fa-solid fa-infinity"></i>${r.life_no}번째 · 루프 ${r.loop_no}</span>`);
   }
   const playing = r && !['prologue', 'ended'].includes(r.status) && r.era;
-  const folded = playing && loopFold;
-  const fold = playing ? `<button class="pl-restart pl-fold" onclick="event.stopPropagation(); loopToggleFold()"><i class="fa-solid ${folded ? 'fa-chevron-down' : 'fa-chevron-up'}"></i><span>${folded ? '펼치기' : '접기'}</span></button>` : '';
-  if (folded) { it.length = 0; it.push(loopMiniHtml(d, r)); }
-  const restart = fold;   // '새로 시작'은 기록판(Log) 머리로 옮겼어요
-  return `<div class="pl-box glow pl-head ${folded ? 'folded' : ''}"><div class="pl-head-top"><div class="pl-logo"><b>Loop</b><span>러닝 시뮬레이션</span></div>
-    ${it.length ? `<div class="pl-meta">${it.join('')}</div>` : '<div class="pl-meta-gap"></div>'}${restart}</div></div>`;
+  return `<div class="pl-hud${playing ? ' playing' : ''}"><div class="pl-hud-top"><div class="pl-logo"><b>Loop</b></div>
+    ${it.length ? `<div class="pl-meta">${it.join('')}</div>` : ''}<span class="sp"></span>${playing ? loopErasHtml(d, r) : ''}</div>
+    ${playing ? loopGaugesHtml(d, r) : ''}</div>`;
+}
+function loopErasHtml(d, r) {
+  const nowIdx = r.eras.indexOf(r.era.id);
+  const eraById = Object.fromEntries((d.eras || []).map(e => [e.id, e]));
+  const step = Math.min(r.era_step + (r.status === 'event' ? 1 : 0), r.era_len);
+  return `<div class="pl-eras">${r.eras.map((id, i) => {
+    const e = eraById[id] || { no: id };
+    const st = i < nowIdx || (r.status === 'ending' && !(r.ending || {}).paused) ? 'done' : i === nowIdx && r.status !== 'ending' ? 'now' : (r.closed_eras || []).includes(id) ? 'locked' : '';
+    if (st === 'locked') return `<span class="pl-era locked" data-tip="다음 업데이트에서 공개돼요"><i class="fa-solid fa-lock"></i></span>`;
+    return `<span class="pl-era ${st}" data-tip="${loopEsc(e.no)}. ${loopEsc(e.name || '')}">${st === 'now' ? `<b>${e.no}</b><em>${loopEsc(e.name || '')}</em><span class="pg">${Array.from({ length: r.era_len }, (_, k) => `<i class="${k < step ? 'on' : ''}"></i>`).join('')}</span>` : e.no}</span>`;
+  }).join('')}</div>`;
+}
+function loopGaugesHtml(d, r) {
+  const bar = (k, v, max) => `<span class="pl-g ${k} ${v <= 1 ? 'low' : ''}" data-tip="${LOOP_STAT[k][0]} ${v} / ${max}"><i class="fa-solid ${LOOP_STAT[k][1]}"></i><span class="pl-hp ${k}">${Array.from({ length: max }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</span><b>${v}</b></span>`;
+  const A = r.assets || {};
+  const note = r.country === 'nova' ? '노바는 지능과 기술이 중요해요' : r.country === 'arcadia' ? '아르카디아는 재산과 재능이 중요해요' : '';
+  const sv = r.strain || 0, sm = r.strain_max || 10;
+  const strainText = sv === 0 ? '지구는 아직 조용합니다.' : sv < sm * 0.3 ? '땅이 가끔 뒤척입니다.' : sv < sm * 0.6 ? '문명이 커질수록 재난이 잦아집니다.' : '지구가 인류를 덜어 내려 합니다.';
+  return `<div class="pl-gauges">${bar('hp', r.hp, d.hp_max || 5)}${bar('mind', r.mind, d.mind_max || 5)}
+    <span class="pl-assets">${LOOP_ASSETS.map(([k, ic]) => `<span class="pl-asset ${k}" data-tip="${loopEsc(loopAssetName(k, r))}${note ? ' · ' + note : ''}"><i class="fa-solid ${ic}"></i><b>${A[k] || 0}</b></span>`).join('')}</span>
+    <span class="pl-strain ${sv >= sm * 0.6 ? 'hot' : ''}" data-tip="균열 ${sv} / ${sm} · ${strainText}"><i class="fa-solid fa-house-crack"></i><span class="tk">${Array.from({ length: sm }, (_, i) => `<i class="${i < sv ? 'on' : ''}"></i>`).join('')}</span></span></div>`;
 }
 // 진행 중인 생애를 버리고 처음(공명 여부 고르기)부터. 지난 생애 기록은 남아요. 기록은 이 브라우저에만 저장돼요.
 // 끝난 운명에서 다시(Loop) : 시작 연출을 리트라이 문구로 다시 보여 줘요.
@@ -1592,40 +1609,7 @@ function loopRestart() {
     loopEmit('loop_reset', { force: true });
   });
 }
-// 상태판 접기 : 접으면 헤더에 체력 · 정신 · 시대만. 기기마다 기억해요(처음엔 휴대폰은 접힘, PC는 펼침).
-var loopFold = (() => { try { const v = localStorage.getItem('loopFold'); if (v != null) return v === '1'; } catch (e) {} return window.matchMedia('(max-width:900px)').matches; })();
-function loopToggleFold() { loopFold = !loopFold; try { localStorage.setItem('loopFold', loopFold ? '1' : '0'); } catch (e) {} renderLoop(); }
-function loopMiniHtml(d, r) {
-  const dots = (k, v, max) => `<span class="pm ${k} ${v <= 1 ? 'low' : ''}"><i class="fa-solid ${LOOP_STAT[k][1]}"></i><span class="pm-d">${Array.from({ length: max }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}</span><b>${v}</b></span>`;
-  const e = r.era || {};
-  return `<span class="pl-mini">${dots('hp', r.hp, d.hp_max || 5)}${dots('mind', r.mind, d.mind_max || 5)}<span class="pm era"><i class="fa-solid fa-hourglass-half"></i><b>${loopEsc(e.no || '')}</b><em>${Math.min(r.era_step + (r.status === 'event' ? 1 : 0), r.era_len)}/${r.era_len}</em></span></span>`;
-}
-function loopStatusHtml(d, r) {
-  loopNarrHtml(r);
-  if (loopFold) return '';
-  const bar = (k, v, max) => `<div class="pl-hp ${k} ${v <= 1 ? 'low' : ''}">${Array.from({ length: max }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('')}<b>${v}<span> / ${max}</span></b></div>`;
-  const nowIdx = r.eras.indexOf(r.era.id);
-  const eraById = Object.fromEntries((d.eras || []).map(e => [e.id, e]));
-  const eras = r.eras.map((id, i) => {
-    const e = eraById[id] || { no: id };
-    const st = i < nowIdx || (r.status === 'ending' && !(r.ending || {}).paused) ? 'done' : i === nowIdx && r.status !== 'ending' ? 'now' : (r.closed_eras || []).includes(id) ? 'locked' : '';
-    if (st === 'locked') return `<span class="pl-era locked" data-tip="다음 업데이트에서 공개돼요"><i class="fa-solid fa-lock"></i>${e.no}</span>`;
-    return `<span class="pl-era ${st}">${e.no}${st === 'now' ? `<em><span class="nm">${loopEsc(e.name)} · </span>${Math.min(r.era_step + (r.status === 'event' ? 1 : 0), r.era_len)}/${r.era_len}</em>` : ''}</span>`;
-  }).join('');
-  const mood = [...(r.mood || []), ...(r.mood_mind || [])];
-  const A = r.assets || {};
-  const note = r.country === 'nova' ? '노바는 지능과 기술이 중요해요' : r.country === 'arcadia' ? '아르카디아는 재산과 재능이 중요해요' : '';
-  const sv = r.strain || 0, sm = r.strain_max || 10;
-  const strainText = sv === 0 ? '지구는 아직 조용합니다.' : sv < sm * 0.3 ? '땅이 가끔 뒤척입니다.' : sv < sm * 0.6 ? '문명이 커질수록 재난이 잦아집니다.' : '지구가 인류를 덜어 내려 합니다.';
-  const cell = (cls, k, ic, label, body, tip) => `<div class="ps-c ${cls}"><span class="pl-k"${tip ? ` data-tip="${loopEsc(tip)}"` : ''}><i class="fa-solid ${ic}"></i>${label}</span><div class="ps-v">${body}</div></div>`;
-  // PC : 두 칸(왼쪽 체력 · 정신 · 상태 / 오른쪽 자원 · 균열 · 시대) — 휴대폰 : 체력 · 정신 나란히, 나머지는 한 줄씩
-  return `<div class="pl-box pl-stat">
-    ${cell('hp', 'hp', LOOP_STAT.hp[1], LOOP_STAT.hp[0], bar('hp', r.hp, d.hp_max || 5))}
-    ${cell('assets', 'a', 'fa-gem', '자원', `<div class="pl-assets">${LOOP_ASSETS.map(([k, ic]) => `<span class="pl-asset ${k}"><i class="fa-solid ${ic}"></i>${k === 'talent' ? loopEsc(r.talent_name || '재능') : LOOP_ASSET_NAME[k]}<b>${A[k] || 0}</b></span>`).join('')}</div>`, note)}
-    ${cell('mind', 'mind', LOOP_STAT.mind[1], LOOP_STAT.mind[0], bar('mind', r.mind, d.mind_max || 5))}
-    ${cell('strain', 's', 'fa-house-crack', '균열', `<div class="pl-strain ${sv >= sm * 0.6 ? 'hot' : ''}">${Array.from({ length: sm }, (_, i) => `<i class="${i < sv ? 'on' : ''}"></i>`).join('')}<span>${strainText}</span></div>`, strainText)}
-    ${cell('eras', 'e', 'fa-hourglass-half', '시대', `<div class="pl-eras">${eras}</div>`)}</div>`;
-}
+function loopStatusHtml(d, r) { loopNarrHtml(r); return ''; }   // 상태판은 머리(HUD)에 합쳤어요
 // 몸 · 마음 상태 문장 : 화면에 붙여 두지 않고, 상태가 바뀔 때만 잠깐 팝업으로 알려 줘요(처음 들어왔을 때는 조용히).
 var loopNarrLast = null, loopNarrTimer = null, loopNarrQ = [];
 const loopSentences = lines => lines.join(' ').split(/(?<=[.!?。…])\s+/).map(t => t.trim()).filter(Boolean);
@@ -1706,7 +1690,7 @@ function loopEventHtml(r, marks) {
       <div class="pl-result">${rt.html}<div class="pl-fade pl-res-fx"${loopAfter(rt.end + 150, rt.fresh)}>${res.solved ? `<div class="pl-deltas">${loopGainHtml(res.gain, r)}</div>` : loopDeltaHtml(res.delta, res.dmind).replace('</div>', loopGainHtml(res.gain, r) + '</div>')}</div>${tw}</div>`;
     if (r.status === 'result') dock = `<div class="pl-actions pl-fade"${loopAfter(loopTailMs, rt.fresh)}><button class="pl-btn primary wide" ${loopBusy ? 'disabled' : ''} onclick="loopEmit('loop_next')">다음 사건<i class="fa-solid fa-arrow-right"></i></button></div>`;
   }
-  return { main: `<div class="pl-box glow pl-ev"><div class="pl-ev-meta pl-fade"${loopAfter(0, story.fresh)}><span class="pl-ev-no">EVENT ${String(r.count + (done ? 0 : 1)).padStart(2, '0')}</span><span>${loopEsc(ev.era.no)}. ${loopEsc(ev.era.name)}</span></div>
+  return { main: `<div class="pl-box glow pl-ev"><div class="pl-ev-meta pl-fade"${loopAfter(0, story.fresh)}><span class="pl-ev-no">EVENT ${String(r.count + (done ? 0 : 1)).padStart(2, '0')}</span></div>
     ${origin}<h2 class="pl-ev-title pl-fade"${loopAfter(120, story.fresh)}>${loopEsc(ev.title)}</h2><div class="pl-story">${story.html}</div>${memory}</div>${resHtml ? `<div class="pl-answer">${resHtml}</div>` : ''}`, dock };
 }
 // 지난 사건 다시 보기 : 읽기만 해요(고른 결과 · 깎인 체력 · 정신은 그대로).

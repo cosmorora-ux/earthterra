@@ -5241,3 +5241,79 @@ body { line-height:1.5; letter-spacing:-0.01em; word-break:keep-all; overflow-wr
   .rs-edit .ops-stat-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
 }
 @media (min-width:901px) { .rs-row .m-meta, .rs-row .m-stats { display:none; } }
+
+/* ================================================================
+   LOOP 리라이트 : 겉 상자 없이 읽는 한 줄기.
+   머리(HUD) 한 줄에 Loop · 생애 정보 · 시대, 아래 줄에 체력 · 정신 · 자원 · 균열(이름은 아이콘, 올리면 이름).
+   사건 · 고른 답 · 결과는 같은 줄기 안에서 가는 선으로만 나눠요.
+   ================================================================ */
+.play-page { --pl-col: 760px; }
+.play-page .pl-wrap { max-width: var(--pl-col); margin:0 auto; padding:0 0 48px; gap:0; }
+.play-page .pl-dock-in { max-width: var(--pl-col); margin:0 auto; }
+.play-page .pl-box { background:none; border-radius:0; padding:0; }
+.play-page .pl-box.glow::before { display:none; }
+/* 머리 */
+.pl-hud { position:sticky; top:0; z-index:3; margin:0 0 28px; padding:14px 0 14px; background: var(--bg); border-bottom:1px solid rgba(255,255,255,.07); }
+.pl-hud-top { display:flex; align-items:center; gap:14px; min-height:32px; }
+.pl-hud-top .sp { flex:1; }
+.pl-hud .pl-meta { flex:0 1 auto; margin:0; padding:0 0 0 14px; }
+.pl-hud .pl-eras { display:flex; align-items:center; gap:4px; flex:none; }
+.pl-hud .pl-era { height:28px; min-width:28px; padding:0 8px; display:inline-flex; align-items:center; justify-content:center; gap:8px; border-radius:10px; font-size:12px; font-weight:700; color: rgba(255,255,255,.3); background:none; border:none; }
+.pl-hud .pl-era.done { color: rgba(var(--point-rgb),.7); }
+.pl-hud .pl-era.locked { color: rgba(255,255,255,.18); font-size:10px; }
+.pl-hud .pl-era.now { background: rgba(var(--point-rgb),.14); color:#fff; padding:0 12px; }
+.pl-hud .pl-era.now em { font-style:normal; font-weight:600; color:#d6d6dc; }
+.pl-hud .pl-era .pg { display:inline-flex; gap:3px; }
+.pl-hud .pl-era .pg i { width:6px; height:6px; border-radius:50%; background: rgba(255,255,255,.18); }
+.pl-hud .pl-era .pg i.on { background: var(--point); }
+.pl-gauges { display:flex; align-items:center; gap:22px; margin-top:12px; flex-wrap:wrap; }
+.pl-g { display:inline-flex; align-items:center; gap:9px; color: var(--point); }
+.pl-g.mind { color:#5ec8b8; }
+.pl-g.low { color:#ff6b5e; }
+.pl-g > i { font-size:13px; width:14px; text-align:center; }
+.pl-g .pl-hp { gap:4px; }
+.pl-g .pl-hp i { width:20px; height:8px; }
+.pl-g b { font-size:14px; color:#fff; font-variant-numeric: tabular-nums; min-width:10px; }
+.pl-gauges .pl-assets { display:inline-flex; gap:14px; margin-left:auto; }
+.pl-gauges .pl-asset { height:auto; padding:0; background:none; gap:7px; }
+.pl-gauges .pl-asset b { margin:0; }
+.pl-gauges .pl-strain { display:inline-flex; align-items:center; gap:8px; color: rgba(255,255,255,.45); }
+.pl-gauges .pl-strain > i { font-size:12px; }
+.pl-gauges .pl-strain .tk { display:inline-flex; gap:2px; }
+.pl-gauges .pl-strain .tk i { width:5px; height:12px; border-radius:2px; }
+.pl-gauges .pl-strain.hot { color:#ff7a59; }
+/* 사건 */
+.play-page .pl-ev-meta { margin-bottom:10px; }
+.play-page .pl-ev-title { font-size:24px; line-height:1.4; letter-spacing:-0.02em; margin:0 0 18px; }
+.play-page .pl-story p { color:#dcdce1; }
+.play-page .pl-story p.q { color:#fff; font-weight:700; }
+/* 고른 답 + 결과 : 가는 선 아래 같은 줄기 */
+.play-page .pl-answer { gap:0; margin-top:28px; padding-top:24px; border-top:1px solid rgba(255,255,255,.07); }
+.play-page .pl-answer .pl-picked { margin:0 0 14px; padding:2px 0 2px 14px; background:none; border:none; border-left:2px solid var(--point); border-radius:0 !important; color:#fff; font-weight:600; font-size:15px; }
+.play-page .pl-answer .pl-picked .k { width:22px; height:22px; border-radius:7px; background: rgba(var(--point-rgb),.18); color: var(--point); }
+.play-page .pl-answer .pl-result, .play-page .pl-result { margin:0; padding:0; background:none; border-radius:0 !important; }
+.play-page .pl-result p { font-size:var(--fs-prose); line-height:var(--lh-prose); color:#e6e6ea; }
+.play-page .pl-res-fx { margin-top:12px; }
+.play-page .pl-memory { margin-top:20px; background:none; padding:0 0 0 14px; border-left:2px solid rgba(var(--point-rgb),.5); border-radius:0 !important; }
+/* 아래 고정(선택지 · 다음) */
+.play-page .pl-dock { padding:14px 0 4px; }
+/* 시작 카드 : 상자 안의 상자 없이 */
+.play-page .pl-res .prc { background:none; border:none; padding:0; }
+/* 끝 장면 : 가운데 정렬 한 장 */
+.play-page .pl-endpage { padding:24px 0; }
+/* 휴대폰 */
+@media (max-width:900px) {
+  .pl-hud { margin:0 -20px 22px; padding:10px 20px 12px; }
+  .pl-hud-top { gap:10px; flex-wrap:wrap; }
+  .pl-hud .pl-meta { order:3; flex:1 1 100%; padding:0; border:none; font-size:12px; }
+  .pl-hud .pl-era.now em { display:none; }
+  .pl-hud .pl-era { min-width:22px; padding:0 5px; }
+  .pl-gauges { gap:12px; margin-top:10px; flex-wrap:nowrap; }
+  .pl-g { gap:6px; }
+  .pl-g .pl-hp { gap:3px; }
+  .pl-g .pl-hp i { width:9px; height:7px; }
+  .pl-gauges .pl-assets { gap:9px; margin-left:auto; }
+  .pl-gauges .pl-asset { gap:4px; font-size:12px; }
+  .pl-gauges .pl-strain .tk { display:none; }
+  .play-page .pl-ev-title { font-size:21px; margin-bottom:14px; }
+}
