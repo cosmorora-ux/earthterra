@@ -100,11 +100,12 @@
     <div class="sb-sub"><div class="sb-sub-in">
       <button class="sidebar-icon" id="sidebarUserListBtn" onclick="toggleUserInfoPanel()"><i class="fa-solid fa-list-ul"></i><span class="sb-label">유저 리스트</span></button>
       <button class="sidebar-icon" id="sidebarMyPageBtn" onclick="openMyPage()" style="display:none;"><i class="fa-solid fa-user"></i><span class="sb-label">마이페이지</span></button>
+      <button class="sidebar-icon" id="sidebarCharsBtn" onclick="openOps('chars')" style="display:none;"><i class="fa-solid fa-id-card"></i><span class="sb-label">캐릭터</span></button>
     </div></div>
   </div>
   <button class="sidebar-icon m-news-btn" id="sidebarNewsBtn" onclick="openNewsTab()" data-tip="소식"><i class="fa-solid fa-bell"></i><span class="notice-dot" id="newsDot"></span></button>
   <div class="sidebar-grow"></div>
-  <button class="sidebar-icon" id="sidebarSettingsBtn" onclick="openOps('general')" data-tip="방 설정" style="display:none;"><i class="fa-solid fa-gear"></i><span class="sb-label">방 설정</span></button>
+  <button class="sidebar-icon" id="sidebarSettingsBtn" onclick="openOps('general')" data-tip="사이트 설정" style="display:none;"><i class="fa-solid fa-gear"></i><span class="sb-label">사이트 설정</span></button>
   <div class="sb-sound" id="sbSound"><button class="sidebar-icon" id="sidebarSoundBtn" onclick="toggleSoundPop(event)" aria-label="음악 음량"><i class="fa-solid fa-volume-high"></i><span class="sb-label">음악</span></button>
     <div class="sb-sound-pop" id="sbSoundPop" onclick="event.stopPropagation()"><button type="button" class="sb-mute" onclick="toggleMusicMute()" aria-label="음소거" data-tip="음소거"><span class="bgm-eq" id="sbEq"><span></span><span></span><span></span><span></span></span></button>
       <input type="range" class="nice-range" id="sbVolSlider" min="0" max="100" oninput="onVolumeChange(this.value)" aria-label="음악 음량"><span class="sb-vol-num" id="sbVolNum"></span></div></div>

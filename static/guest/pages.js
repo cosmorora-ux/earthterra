@@ -20,11 +20,12 @@ const IS_LOUNGE = BATTLE_TYPE === 'lounge';
 // 일반 룸은 전투가 없으므로 전투 준비 탭을 뺍니다.
 // PLAY 룸은 전투 준비 대신 LOOP 편집(사건 · 규칙 · 문장)이 첫 탭이에요.
 // PLAY 룸은 전투가 없어서 전투 준비 탭을 빼요(LOOP 편집은 사이드바의 따로 된 페이지).
-// 운영 페이지는 두 가지 : 전투 관리(전투 방 · 사이드 슬라이더 / 룸 목록 연필) · 방 설정(모든 방 · 사이드 톱니바퀴)
+// 운영 페이지는 세 가지 : 전투 관리(전투 방 · 사이드 슬라이더 / 룸 목록 연필) · 사이트 설정(사이드 톱니바퀴) · 캐릭터(유저 메뉴)
 const OPS_BATTLE_ROOM = ['pvp', 'siege', 'mass_raid'].includes(BATTLE_TYPE);
 const OPS_TAB_SETS = {
   battle: [['battle', '전투 준비'], ['music', '음악'], ['bset', '전투 설정'], ['anal', '성능 분석']],
-  general: [['chars', '캐릭터']].concat(OPS_BATTLE_ROOM ? [] : [['music', '음악']], [['room', '방 설정']]),
+  general: (OPS_BATTLE_ROOM ? [] : [['music', '음악']]).concat([['room', '사이트 설정']]),
+  chars: [['chars', '캐릭터']],   // 유저 메뉴 → 캐릭터
 };
 let opsMode = OPS_BATTLE_ROOM ? 'battle' : 'general';
 let OPS_TABS = OPS_TAB_SETS[opsMode];
@@ -46,7 +47,7 @@ function openBattleHub() {
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;
   closeWorldMap(true);
-  if (typeof opsOpen === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); document.getElementById('sidebarSettingsBtn').classList.remove('active'); }
+  if (typeof opsOpen === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); document.getElementById('sidebarSettingsBtn').classList.remove('active'); const cb = document.getElementById('sidebarCharsBtn'); if (cb) cb.classList.remove('active'); }
   document.body.classList.add('view-battles');
   ['sidebarBattleBtn', 'sidebarDormBtn', 'sidebarMapBtn', 'sidebarChapterBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.classList.remove('active'); });
   document.getElementById('sidebarBattlesBtn').classList.add('active');
@@ -224,7 +225,8 @@ function syncOpsBtn() {
   if (!btn) return;
   const gm = opsIsGm();
   btn.style.display = gm && OPS_BATTLE_ROOM ? '' : 'none';   // 전투 관리는 전투 방에서만
-  const gb = document.getElementById('sidebarSettingsBtn'); if (gb) gb.style.display = gm ? '' : 'none';   // 방 설정(톱니바퀴)
+  const gb = document.getElementById('sidebarSettingsBtn'); if (gb) gb.style.display = gm ? '' : 'none';   // 사이트 설정(톱니바퀴)
+  const cb = document.getElementById('sidebarCharsBtn'); if (cb) cb.style.display = gm ? '' : 'none';   // 유저 → 캐릭터 : 운영진만
   if (!gm && opsOpen()) closeOps();
   // 상점 : 메뉴의 '전투' 묶음 안에 모두에게 보여요(LOOP 방은 운영진만)
   const sb = document.getElementById('sidebarShopBtn'); if (sb) sb.style.display = (gm || BATTLE_TYPE !== 'play') ? '' : 'none';   // 상점 : 모두(LOOP 방은 운영진만)
@@ -235,7 +237,7 @@ function syncOpsBtn() {
 }
 function openOps(mode) {
   if (!opsIsGm()) return;
-  mode = mode === 'battle' && OPS_BATTLE_ROOM ? 'battle' : mode === 'general' || !OPS_BATTLE_ROOM ? 'general' : opsMode;
+  mode = mode === 'chars' ? 'chars' : mode === 'battle' && OPS_BATTLE_ROOM ? 'battle' : mode === 'general' || !OPS_BATTLE_ROOM ? 'general' : opsMode;
   if (mode !== opsMode || !OPS_TAB_SETS[mode].some(t => t[0] === opsTab)) { opsMode = mode; OPS_TABS = OPS_TAB_SETS[mode]; opsTab = OPS_TABS[0][0]; }
   if (typeof closeLoopAdmin === 'function') closeLoopAdmin();
   closeWorldMap(true);
@@ -245,13 +247,15 @@ function openOps(mode) {
   document.body.classList.add('view-ops');
   document.getElementById('sidebarOpsBtn').classList.toggle('active', opsMode === 'battle');
   document.getElementById('sidebarSettingsBtn').classList.toggle('active', opsMode === 'general');
-  const brand = document.querySelector('#opsPage .ops-brand'); if (brand) brand.textContent = opsMode === 'battle' ? 'Admin' : 'Settings';
+  const cb = document.getElementById('sidebarCharsBtn'); if (cb) cb.classList.toggle('active', opsMode === 'chars');
+  const brand = document.querySelector('#opsPage .ops-brand'); if (brand) brand.textContent = opsMode === 'battle' ? 'Admin' : opsMode === 'chars' ? 'Users' : 'Settings';
   document.getElementById('sidebarBattleBtn').classList.remove('active');
   renderOps();
 }
 function closeOps() {
   if (!opsOpen()) return;
   document.getElementById('sidebarSettingsBtn').classList.remove('active');
+  const cb = document.getElementById('sidebarCharsBtn'); if (cb) cb.classList.remove('active');
   if (IS_LOUNGE) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); openDorm(); return; }
   document.body.classList.remove('view-ops');
   document.getElementById('sidebarOpsBtn').classList.remove('active');
@@ -263,6 +267,7 @@ if (IS_LOUNGE) document.addEventListener('DOMContentLoaded', () => openDorm());
 function setOpsTab(t) { opsTab = t; opsEditName = null; renderOps(); }
 
 function renderOps() {
+  document.getElementById('opsTabs').style.display = OPS_TABS.length > 1 ? '' : 'none';   // 탭이 하나면 탭 줄 없이
   document.getElementById('opsTabs').innerHTML = OPS_TABS.map(([k, t]) =>
     `<button class="${k === opsTab ? 'active' : ''}" onclick="setOpsTab('${k}')">${t}</button>`).join('');
   document.getElementById('opsTopSeg').textContent = (OPS_TABS.find(t => t[0] === opsTab) || [])[1] || '';
@@ -861,7 +866,7 @@ function openWorldMap(view) {
   if (document.body.classList.contains('m-chat-open')) { viewSwap(); document.body.classList.add('view-map'); toggleMobileChat(false); }
   if (document.getElementById('dormModal').style.display === 'flex') closeDorm();
   if (document.getElementById('dormModal').style.display === 'flex') return;  // 꾸미기 저장 확인 중
-  if (typeof closeOps === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); document.getElementById('sidebarSettingsBtn').classList.remove('active'); }
+  if (typeof closeOps === 'function' && opsOpen()) { document.body.classList.remove('view-ops'); document.getElementById('sidebarOpsBtn').classList.remove('active'); document.getElementById('sidebarSettingsBtn').classList.remove('active'); const cb = document.getElementById('sidebarCharsBtn'); if (cb) cb.classList.remove('active'); }
   if (typeof closeBattleHub === 'function') closeBattleHub();
   document.body.classList.add('view-map');
   if (typeof closeLoopAdmin === 'function' && document.body.classList.contains('view-loopadmin')) closeLoopAdmin();
