@@ -5084,3 +5084,27 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
   .anal-top .ops-in { flex-basis:100%; order:-1; }
   .anal-row .nm small { display:none; }
 }
+/* 성능 분석 정리 : 설명 글 대신 배치로 — 머리글을 눌러 정렬, 칩은 짧은 값만 */
+.anal-row.head button { border:none; background:none; padding:0; color: var(--muted); font-family:inherit; font-size:12px; text-align:left; cursor:pointer; }
+.anal-row.head button.on { color: var(--text); font-weight:700; }
+.anal-row.head button.on::after { content:" ↓"; }
+.anal-top { margin-bottom:14px; }
+.anal-who { flex-wrap:wrap; }
+.anal-who .facts { margin-left:auto; display:flex; gap:12px; font-size:13px; color:#cfcfd4; font-variant-numeric: tabular-nums; }
+.anal-who .facts i { font-size:11px; color: var(--muted); margin-right:5px; }
+.anal-stats { display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; }
+.anal-stats span { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 0; border-radius:8px; background: rgba(255,255,255,.03); }
+.anal-stats em { font-style:normal; font-size:11px; color: var(--muted); }
+.anal-stats b { font-size:14px; color: var(--text); }
+.anal-blk .h { flex-wrap:wrap; }
+.anal-blk .h strong { margin-left:auto; font-size:22px; font-variant-numeric: tabular-nums; }
+.anal-blk .h strong.arrow { display:flex; align-items:center; gap:8px; }
+.anal-blk .h strong.arrow em { font-style:normal; color: var(--muted); font-weight:500; }
+.anal-blk .h strong.arrow i { font-size:12px; color: var(--muted); }
+.anal-blk .chip { font-size:11.5px; padding:3px 8px; border-radius:8px; background: rgba(255,255,255,.05); color:#cfcfd4; font-variant-numeric: tabular-nums; }
+.anal-blk .h:only-child { margin-bottom:0; }
+.anal-vs > div { align-items:flex-start; }
+.anal-vs em { font-size:12px; }
+@media (max-width:700px) { .anal-stats { grid-template-columns: repeat(4, 1fr); } }
+.anal-blk .h > span.chip { margin-left:0; }
+@media (max-width:700px) { .anal-row > :nth-child(2) { display:none !important; } }
