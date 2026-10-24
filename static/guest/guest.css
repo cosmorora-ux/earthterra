@@ -5108,3 +5108,7 @@ button.ui-doc { border:none; padding:0; font-size:13px; cursor:pointer; }
 @media (max-width:700px) { .anal-stats { grid-template-columns: repeat(4, 1fr); } }
 .anal-blk .h > span.chip { margin-left:0; }
 @media (max-width:700px) { .anal-row > :nth-child(2) { display:none !important; } }
+/* 전투 준비 : 명단이 화면 높이를 다 쓰게(한 번에 많이 보이게), 줄 간격은 촘촘히 */
+@media (min-width:901px) { #opsPage .ops-grid.wide-left { height: calc(100dvh - 245px); min-height:420px; } #opsPage .ops-grid.wide-left > .ops-card { min-height:0; } }
+#opsPool .ops-prow { padding-top:6px; padding-bottom:6px; }
+@media (max-width:900px) { #opsPool { max-height:70vh; } }

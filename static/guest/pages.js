@@ -318,8 +318,16 @@ function opsChip(name, team) {
   return `<span class="ops-chip" style="--rc:${opsRoleColor(opsRoleOf(name))}"><span class="dot"></span>${mailEsc(name)}${acts}
     <button onclick='opsSetTeam(${JSON.stringify(name)}, null)' data-tip="빼기"><i class="fa-solid fa-xmark"></i></button></span>`;
 }
+// 이미 편성해 둔 팀(미리보기) 또는 진행 중인 전투의 팀을 불러와요 : 전투 관리에 다시 들어와도 새로 짜는 것처럼 비어 보이지 않게
+function opsSeedTeams() {
+  if (opsTeamA.length || opsTeamB.length) return;
+  const b = lastBattleForPanel, pt = lastPreviewTeams;
+  if (b && !b.finished && (b.team_a || []).length) { opsTeamA = b.team_a.map(c => c.name); opsTeamB = (b.team_b || []).map(c => c.name); }
+  else if (pt && ((pt.team_a || []).length || (pt.team_b || []).length)) { opsTeamA = (pt.team_a || []).slice(); opsTeamB = (pt.team_b || []).slice(); }
+}
 function opsRenderTeams() {
   const el = document.getElementById('opsTeams'); if (!el) return;
+  opsSeedTeams();
   const known = new Set(opsRosterDetail().map(c => c.name));
   opsTeamA = opsTeamA.filter(n => known.has(n)); opsTeamB = opsTeamB.filter(n => known.has(n));
   const [la, lb] = opsTeamLabels();
