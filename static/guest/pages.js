@@ -25,7 +25,7 @@ const OPS_BATTLE_ROOM = ['pvp', 'siege', 'mass_raid'].includes(BATTLE_TYPE);
 const OPS_TAB_SETS = {
   battle: [['battle', '전투 준비'], ['music', '음악'], ['bset', '전투 설정'], ['anal', '성능 분석']],
   general: (OPS_BATTLE_ROOM ? [] : [['music', '음악']]).concat([['room', '사이트 설정']]),
-  chars: [['chars', '캐릭터']],   // 유저 메뉴 → 캐릭터
+  chars: [['roster', '등록된 캐릭터'], ['chars', '캐릭터 등록']],   // 유저 메뉴 → 캐릭터
 };
 let opsMode = OPS_BATTLE_ROOM ? 'battle' : 'general';
 let OPS_TABS = OPS_TAB_SETS[opsMode];
@@ -274,6 +274,7 @@ function renderOps() {
   const body = document.getElementById('opsBody');
   if (opsTab === 'battle') body.innerHTML = opsBattleHtml();
   else if (opsTab === 'chars') body.innerHTML = opsCharsHtml();
+  else if (opsTab === 'roster') body.innerHTML = opsRosterHtml();
   else if (opsTab === 'music') body.innerHTML = opsMusicHtml();
   else if (opsTab === 'anal') body.innerHTML = opsAnalHtml();
   else body.innerHTML = opsRoomHtml(opsTab === 'bset' ? 'battle' : 'general');
@@ -283,7 +284,8 @@ function renderOps() {
 function renderOpsData() {
   if (!opsOpen()) return;
   if (opsTab === 'battle') { opsRenderTeams(); opsRenderPool(); opsRenderLive(); }
-  else if (opsTab === 'chars') { opsRenderRoster(); opsQuickRefresh(); }
+  else if (opsTab === 'chars') opsQuickRefresh();
+  else if (opsTab === 'roster') opsRenderRoster();
   else if (opsTab === 'music') opsRenderMusicNow();
   else if (opsTab === 'room' || opsTab === 'bset') opsRenderRoomInfo();
   else if (opsTab === 'anal') opsRenderAnal();
@@ -388,10 +390,9 @@ function opsStartBattle() {
 
 // ---------- 캐릭터 ----------
 function opsCharsHtml() {
-  return `<div class="ops-grid">
+  return `<div class="ops-grid rs-reg">
     <div class="ops-card">
-      <h3><i class="fa-solid fa-user-plus"></i> 캐릭터 등록
-        <span class="sub"><span class="ops-seg"><button class="${opsRegMode === 'quick' ? 'on' : ''}" onclick="opsSetReg('quick')">간편</button><button class="${opsRegMode === 'paste' ? 'on' : ''}" onclick="opsSetReg('paste')">붙여넣기</button></span></span></h3>
+      <h3><span class="sub" style="margin-left:0; padding-left:0;"><span class="ops-seg"><button class="${opsRegMode === 'quick' ? 'on' : ''}" onclick="opsSetReg('quick')">간편</button><button class="${opsRegMode === 'paste' ? 'on' : ''}" onclick="opsSetReg('paste')">붙여넣기</button></span></span></h3>
       ${opsRegMode === 'quick' ? `
       <div class="ops-field"><span class="lb">이름</span><input class="ops-in" id="opsQName" maxlength="20" placeholder="캐릭터 이름" autocomplete="off" oninput="opsQuickRefresh()">
         <div class="ops-hint" id="opsQWarn" style="display:none; margin-top:6px;">이미 있는 이름이에요. 등록하면 기존 정보를 덮어써요.</div></div>
@@ -411,11 +412,6 @@ function opsCharsHtml() {
       <div class="ops-row" style="margin-top:14px;"><span class="ops-hint" style="flex:1;">테스트용 더미 캐릭터</span>
         <input class="ops-in num" id="opsDummyN" type="number" min="1" max="100" value="6"><button class="ops-btn" onclick="opsDummies()">더미 생성</button></div>`}
       <div class="ops-result" id="opsRegResult">${opsResultHtml}</div>
-    </div>
-    <div class="ops-card fit">
-      <h3><i class="fa-solid fa-address-book"></i> 등록된 캐릭터<span class="sub" id="opsRosterCount"></span></h3>
-      <input class="ops-in" id="opsRosterQ" placeholder="이름 검색" autocomplete="off" oninput="opsRenderRoster()">
-      <div id="opsRoster" class="ops-roster"></div>
     </div>
   </div>`;
 }
@@ -461,36 +457,72 @@ socket.on('register_result', (d) => {
   const el = document.getElementById('opsRegResult'); if (el) el.innerHTML = opsResultHtml;
   if (ok.length && opsRegMode === 'paste') { const ta = document.getElementById('opsRegText'); if (ta && !bad.length) ta.value = ''; }
 });
+// 등록된 캐릭터 : 넓은 표(이름 · 포지션 · 스킬 · 진영 · 나이 · 스탯 7개 · 합계). 머리를 누르면 정렬, 줄을 누르면 그 자리에서 수정
+let opsRosterSort = { k: 'role', d: 1 }, opsRosterRole = 'all';
+const OPS_RCOLS = [['name', '이름'], ['role', '포지션'], ['skill', '스킬'], ['nation', '진영'], ['age', '나이'], ...STAT_KEYS.map(k => [k, k]), ['sum', '합계']];
+function opsRosterHtml() {
+  return `<div class="rs-page">
+    <div class="rs-bar">
+      <label class="rs-search"><i class="fa-solid fa-magnifying-glass"></i><input id="opsRosterQ" placeholder="이름 검색" autocomplete="off" oninput="opsRenderRoster()"></label>
+      <div class="rs-filter" id="opsRosterFilter"></div>
+      <span class="sp"></span>
+      <button class="ops-btn primary" onclick="setOpsTab('chars')"><i class="fa-solid fa-plus"></i><span class="t">캐릭터 등록</span></button>
+    </div>
+    <div class="rs-table" id="opsRoster"></div>
+  </div>`;
+}
+function opsRosterSortBy(k) { opsRosterSort = opsRosterSort.k === k ? { k, d: -opsRosterSort.d } : { k, d: ['name', 'role', 'skill', 'nation'].includes(k) ? 1 : -1 }; opsRenderRoster(); }
+function opsRosterFilterBy(r) { opsRosterRole = r; opsRenderRoster(); }
 function opsRenderRoster() {
   const el = document.getElementById('opsRoster'); if (!el) return;
   const list = opsRosterDetail();
-  document.getElementById('opsRosterCount').textContent = `${list.length}명`;
+  const sum = c => STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0);
+  const roles = [...OPS_ROLES, ...[...new Set(list.map(c => c.role))].filter(r => r && !OPS_ROLES.includes(r))];
+  const cnt = (f) => list.filter(f).length;
+  const chips = [['all', '전체', list.length], ...roles.map(r => [r, r, cnt(c => c.role === r)]), ['mob', '몹', cnt(c => c.mob)]].filter(x => x[0] === 'all' || x[2]);
+  if (!chips.some(x => x[0] === opsRosterRole)) opsRosterRole = 'all';
+  document.getElementById('opsRosterFilter').innerHTML = chips.map(([k, t, n]) =>
+    `<button class="${k === opsRosterRole ? 'on' : ''}" onclick='opsRosterFilterBy(${JSON.stringify(k)})'${OPS_ROLES.includes(k) ? ` style="--rc:${opsRoleColor(k)}"` : ''}>${OPS_ROLES.includes(k) ? '<i class="dot"></i>' : ''}${mailEsc(t)}<span>${n}</span></button>`).join('');
   const q = ((document.getElementById('opsRosterQ') || {}).value || '').trim().toLowerCase();
-  const shown = list.filter(c => !q || c.name.toLowerCase().includes(q));
-  if (!shown.length) { el.innerHTML = `<div class="ops-empty">${list.length ? '검색 결과가 없어요.' : '등록된 캐릭터가 없어요.'}</div>`; return; }
-  const roles = [...OPS_ROLES, ...[...new Set(shown.map(c => c.role))].filter(r => !OPS_ROLES.includes(r))];
-  el.innerHTML = roles.map(role => {
-    const g = shown.filter(c => c.role === role).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-    if (!g.length) return '';
-    return `<div class="ops-rgroup"><div class="ops-rgroup-h" style="color:${opsRoleColor(role)}">${mailEsc(role)}<span>${g.length}</span></div>
-      ${g.map(c => { const n = JSON.stringify(c.name); return `<div class="ops-prow"><span class="nm">${mailEsc(c.name)}</span>
-        ${c.mob ? '<span class="sk mob">몹</span>' : ''}${c.skill ? `<span class="sk">${mailEsc(c.skill)}</span>` : ''}${FACTION_CHOICES.includes(c.nation) ? `<span class="sk">${mailEsc(c.nation)}</span>` : ''}<span class="sp"></span>
-        <button class="ops-btn icon" onclick='opsEdit(${n})' data-tip="수정"><i class="fa-solid fa-pen"></i></button>
-        <button class="ops-btn icon" onclick='opsDelete(${n})' data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></div>
-        ${opsEditName === c.name ? opsEditHtml(c) : ''}`; }).join('')}</div>`;
+  const shown = list.filter(c => (!q || c.name.toLowerCase().includes(q))
+    && (opsRosterRole === 'all' || (opsRosterRole === 'mob' ? c.mob : c.role === opsRosterRole)));
+  const { k, d } = opsRosterSort;
+  const val = c => k === 'name' ? c.name : k === 'role' ? (OPS_ROLES.indexOf(c.role) + 1 || 9) : k === 'skill' ? (c.skill || '') : k === 'nation' ? (c.nation || '')
+    : k === 'age' ? (c.age ?? 13) : k === 'sum' ? sum(c) : (parseInt((c.stats || {})[k], 10) || 0);
+  shown.sort((a, b) => { const x = val(a), y = val(b); const r = typeof x === 'string' ? x.localeCompare(y, 'ko') : x - y; return r * d || a.name.localeCompare(b.name, 'ko'); });
+  const head = `<div class="rs-row rs-head">${OPS_RCOLS.map(([key, t]) =>
+    `<button class="c-${STAT_KEYS.includes(key) ? 'st' : key}${k === key ? ' on' : ''}" onclick='opsRosterSortBy(${JSON.stringify(key)})'>${t}${k === key ? `<i class="fa-solid fa-caret-${d > 0 ? 'up' : 'down'}"></i>` : ''}</button>`).join('')}<span class="c-act"></span></div>`;
+  if (!shown.length) { el.innerHTML = head + `<div class="ops-empty">${list.length ? '조건에 맞는 캐릭터가 없어요.' : '등록된 캐릭터가 없어요.'}</div>`; return; }
+  el.innerHTML = head + shown.map(c => {
+    const n = JSON.stringify(c.name), on = opsEditName === c.name, st = c.stats || {};
+    const av = c.avatar_url ? `<img src="${mailEsc(c.avatar_url)}" alt="" loading="lazy">` : `<i class="fa-solid fa-user"></i>`;
+    return `<div class="rs-item${on ? ' open' : ''}"><div class="rs-row" onclick='opsEdit(${n})'>
+      <span class="c-name"><span class="av">${av}</span><b>${mailEsc(c.name)}</b>${c.mob ? '<em class="mob">몹</em>' : ''}</span>
+      <span class="c-role" style="--rc:${opsRoleColor(c.role)}"><i class="dot"></i>${mailEsc(c.role || '')}</span>
+      <span class="c-skill">${c.skill ? mailEsc(c.skill) : '<i class="none">–</i>'}</span>
+      <span class="c-nation">${FACTION_CHOICES.includes(c.nation) ? mailEsc(c.nation) : '<i class="none">–</i>'}</span>
+      <span class="c-age">${c.age ?? 13}</span>
+      ${STAT_KEYS.map(s => { const v = parseInt(st[s], 10) || 0; return `<span class="c-st${v ? '' : ' zero'}" data-k="${s}">${v}</span>`; }).join('')}
+      <span class="c-sum">${sum(c)}</span>
+      <span class="m-meta"><span class="c-role" style="--rc:${opsRoleColor(c.role)}"><i class="dot"></i>${mailEsc(c.role || '')}</span>${c.skill ? `<span>${mailEsc(c.skill)}</span>` : ''}${FACTION_CHOICES.includes(c.nation) ? `<span>${mailEsc(c.nation)}</span>` : ''}<span>${c.age ?? 13}세</span></span>
+      <span class="m-stats">${STAT_KEYS.map(s => { const v = parseInt(st[s], 10) || 0; return `<span class="${v ? '' : 'zero'}"><small>${s}</small>${v}</span>`; }).join('')}<span><small>합계</small>${sum(c)}</span></span>
+      <span class="c-act" onclick="event.stopPropagation()"><button class="ops-btn icon" onclick='opsEdit(${n})' data-tip="수정"><i class="fa-solid fa-pen"></i></button><button class="ops-btn icon" onclick='opsDelete(${n})' data-tip="삭제"><i class="fa-solid fa-trash-can"></i></button></span>
+    </div>${on ? opsEditHtml(c) : ''}</div>`;
   }).join('');
 }
 function opsEditHtml(c) {
   const skills = OPS_SKILLS[c.role] || [];
-  return `<div class="ops-edit">
-    <div class="ops-row"><div class="ops-field" style="flex:1; margin:0;"><span class="lb">역할</span>
-      <select class="ops-in" id="opsERole" onchange="opsEditRole()">${OPS_ROLES.map(r => `<option ${r === c.role ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
-      <div class="ops-field" style="flex:1; margin:0;"><span class="lb">스킬</span><select class="ops-in" id="opsESkill"><option value="">(없음)</option>${skills.map(k => `<option ${k === c.skill ? 'selected' : ''}>${k}</option>`).join('')}</select></div></div>
-    <div class="ops-field" style="margin-top:10px;"><span class="lb">나이 (1차 · 空歷 514年 기준, 13~16세)</span><input class="ops-in" type="number" id="opsEAge" min="13" max="16" placeholder="비우면 기본 13세" value="${c.age ?? ''}"></div>
-    <label class="ops-check" style="margin-top:12px;"><input type="checkbox" id="opsEMob" ${c.mob ? 'checked' : ''}><span>몹 <em>참가자 화면에 정확한 체력을 숨겨요(막대만 보여요)</em></span></label>
-    <div class="ops-field" style="margin-top:10px;"><span class="lb">2차 진영</span><select class="ops-in" id="opsENation"><option value="">(미정)</option>${FACTION_CHOICES.map(n => `<option ${n === c.nation ? 'selected' : ''}>${mailEsc(n)}</option>`).join('')}</select></div>
-    <div class="ops-stat-grid">${STAT_KEYS.map(k => `<label>${k}<input class="ops-in" type="number" id="opsEStat_${k}" value="${(c.stats || {})[k] ?? 0}" oninput="opsEditTotal()"></label>`).join('')}</div>
-    <div class="ops-start"><span class="ops-hint">합계 <b id="opsETotal" style="color:var(--text)">${STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0)}</b></span>
+  return `<div class="ops-edit rs-edit" onclick="event.stopPropagation()">
+    <div class="rs-edit-grid">
+      <label><span class="lb">포지션</span><select class="ops-in" id="opsERole" onchange="opsEditRole()">${OPS_ROLES.map(r => `<option ${r === c.role ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
+      <label><span class="lb">스킬</span><select class="ops-in" id="opsESkill"><option value="">(없음)</option>${skills.map(k => `<option ${k === c.skill ? 'selected' : ''}>${k}</option>`).join('')}</select></label>
+      <label><span class="lb">2차 진영</span><select class="ops-in" id="opsENation"><option value="">(미정)</option>${FACTION_CHOICES.map(n => `<option ${n === c.nation ? 'selected' : ''}>${mailEsc(n)}</option>`).join('')}</select></label>
+      <label><span class="lb">나이</span><input class="ops-in" type="number" id="opsEAge" min="13" max="16" placeholder="13" value="${c.age ?? ''}"></label>
+    </div>
+    <div class="ops-stat-grid">${STAT_KEYS.map(k => `<label>${k}<input class="ops-in" type="number" id="opsEStat_${k}" value="${(c.stats || {})[k] ?? 0}" oninput="opsEditTotal()"></label>`).join('')}
+      <label>합계<b class="ops-in rs-total" id="opsETotal">${STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0)}</b></label></div>
+    <div class="ops-start"><label class="ops-check"><input type="checkbox" id="opsEMob" ${c.mob ? 'checked' : ''}><span>몹 <em>참가자 화면에 체력 숫자를 숨겨요</em></span></label>
+      <span class="sp"></span>
       <button class="ops-btn" onclick="opsEditName=null; opsRenderRoster()">취소</button>
       <button class="ops-btn primary" onclick="opsEditSave()">저장</button></div></div>`;
 }
