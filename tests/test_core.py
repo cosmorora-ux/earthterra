@@ -259,7 +259,10 @@ class TestChapterGraph(unittest.TestCase):
         pub = w.payload(False)["graph"]["nodes"]
         self.assertEqual(pub[0]["text"], "보임")
         self.assertTrue(pub[1].get("locked") and "label" not in pub[1], "공개 전 카드 내용이 러너에게 감")
-        self.assertEqual(w.payload_play()["chapters"], [])
+        play = w.payload_play()   # LOOP 방 : 챕터 · 노드도 러너와 같이(공개 전은 자리만), 편집은 없음
+        self.assertEqual(play["graph"], w.payload(False)["graph"])
+        self.assertFalse(play["gm"])
+        self.assertTrue(all("locked" in c or i < play["unlocked"] for i, c in enumerate(play["chapters"])))
 
     def test_story_seed_once(self):
         """기본 스토리 : 노드 그림이 없을 때 한 번만 채우고, 이미 만든 노드는 덮지 않아요."""
