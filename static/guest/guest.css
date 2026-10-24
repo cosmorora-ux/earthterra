@@ -5174,6 +5174,8 @@ body { line-height:1.5; letter-spacing:-0.01em; word-break:keep-all; overflow-wr
 .rs-filter button { display:inline-flex; align-items:center; gap:7px; height:38px; padding:0 14px; border-radius:10px; border:none; background: var(--panel); color: var(--muted); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
 .rs-filter button span { font-weight:500; opacity:.7; font-variant-numeric: tabular-nums; }
 .rs-filter button.on { background: rgba(var(--point-rgb),.16); color: var(--text); }
+.rs-role { width:auto !important; min-width:150px; height:38px; }
+.rs-row .chat-avatar { width:34px; height:34px; display:block; }
 .rs-filter .dot, .rs-row .dot { width:7px; height:7px; border-radius:50%; background: var(--rc, var(--muted)); flex:none; }
 .rs-table { border-radius:16px; background: var(--panel); overflow:hidden; }
 .rs-row { display:grid; grid-template-columns: minmax(170px,1.6fr) 112px minmax(84px,1fr) minmax(84px,1fr) 52px repeat(7, 46px) 56px 84px;
@@ -5216,10 +5218,10 @@ body { line-height:1.5; letter-spacing:-0.01em; word-break:keep-all; overflow-wr
 /* 좁은 화면 : 표 대신 두 줄 카드(이름 · 포지션 / 스킬 · 진영 · 스탯) */
 @media (max-width:1100px) { .rs-row { grid-template-columns: minmax(150px,1.5fr) 100px minmax(70px,1fr) minmax(70px,1fr) 44px repeat(7, 38px) 48px 76px; padding:0 10px 0 14px; } }
 @media (max-width:900px) {
-  .rs-search { width:auto; flex:1; }
+  .rs-search { width:auto; flex:1 1 calc(100% - 60px); }
   .rs-bar .ops-btn .t { display:none; }
   .rs-bar .sp { display:none; }
-  .rs-filter { order:3; flex:1 1 100%; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin:0 -20px; padding:0 20px; }
+  .rs-filter { order:3; flex:none; flex-wrap:nowrap; }
   .rs-filter button { flex:none; padding:0 12px; }
   .rs-table { margin:0 -20px; border-radius:0; background:none; }
   .rs-head { display:none; }
@@ -5228,8 +5230,9 @@ body { line-height:1.5; letter-spacing:-0.01em; word-break:keep-all; overflow-wr
   .rs-row .c-act { grid-area:act; }
   .rs-row > .c-role, .rs-row > .c-skill, .rs-row > .c-nation, .rs-row > .c-age { display:none; }
   .rs-row > .c-st, .rs-row > .c-sum { display:none; }
-  .rs-row .m-meta { grid-area:meta; display:flex; gap:10px; align-items:center; font-size:13px; color: var(--muted); padding-left:40px; flex-wrap:wrap; }
-  .rs-row .m-stats { grid-area:stats; display:grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap:4px; padding-left:40px; }
+  .rs-row .m-meta { grid-area:meta; display:flex; gap:10px; align-items:center; font-size:13px; color: var(--muted); padding-left:44px; flex-wrap:wrap; }
+  .rs-row .m-stats { grid-area:stats; display:grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap:4px; padding-left:44px; }
+  .rs-role { order:4; flex:1 1 0; min-width:0 !important; }
   .rs-row .m-stats span { display:flex; flex-direction:column; align-items:center; gap:1px; font-size:14px; font-weight:600; font-variant-numeric: tabular-nums; }
   .rs-row .m-stats span small { font-size:10px; font-weight:500; color: var(--muted); }
   .rs-row .m-stats span.zero { color: rgba(255,255,255,.25); }

@@ -458,7 +458,7 @@ socket.on('register_result', (d) => {
   if (ok.length && opsRegMode === 'paste') { const ta = document.getElementById('opsRegText'); if (ta && !bad.length) ta.value = ''; }
 });
 // 등록된 캐릭터 : 넓은 표(이름 · 포지션 · 스킬 · 진영 · 나이 · 스탯 7개 · 합계). 머리를 누르면 정렬, 줄을 누르면 그 자리에서 수정
-let opsRosterSort = { k: 'role', d: 1 }, opsRosterRole = 'all';
+let opsRosterSort = { k: 'role', d: 1 }, opsRosterRole = 'all', opsRosterKind = 'runner';
 const OPS_RCOLS = [['name', '이름'], ['role', '포지션'], ['skill', '스킬'], ['nation', '진영'], ['age', '나이'], ...STAT_KEYS.map(k => [k, k]), ['sum', '합계']];
 function opsRosterHtml() {
   return `<div class="rs-page">
@@ -466,6 +466,7 @@ function opsRosterHtml() {
       <label class="rs-search"><i class="fa-solid fa-magnifying-glass"></i><input id="opsRosterQ" placeholder="이름 검색" autocomplete="off" oninput="opsRenderRoster()"></label>
       <div class="rs-filter" id="opsRosterFilter"></div>
       <span class="sp"></span>
+      <select class="ops-in rs-role" id="opsRosterRole" onchange="opsRosterFilterBy(this.value)"></select>
       <button class="ops-btn primary" onclick="setOpsTab('chars')"><i class="fa-solid fa-plus"></i><span class="t">캐릭터 등록</span></button>
     </div>
     <div class="rs-table" id="opsRoster"></div>
@@ -473,19 +474,23 @@ function opsRosterHtml() {
 }
 function opsRosterSortBy(k) { opsRosterSort = opsRosterSort.k === k ? { k, d: -opsRosterSort.d } : { k, d: ['name', 'role', 'skill', 'nation'].includes(k) ? 1 : -1 }; opsRenderRoster(); }
 function opsRosterFilterBy(r) { opsRosterRole = r; opsRenderRoster(); }
+function opsRosterKindBy(k) { opsRosterKind = k; opsEditName = null; opsRenderRoster(); }
 function opsRenderRoster() {
   const el = document.getElementById('opsRoster'); if (!el) return;
   const list = opsRosterDetail();
   const sum = c => STAT_KEYS.reduce((a, k) => a + (parseInt((c.stats || {})[k], 10) || 0), 0);
   const roles = [...OPS_ROLES, ...[...new Set(list.map(c => c.role))].filter(r => r && !OPS_ROLES.includes(r))];
-  const cnt = (f) => list.filter(f).length;
-  const chips = [['all', '전체', list.length], ...roles.map(r => [r, r, cnt(c => c.role === r)]), ['mob', '몹', cnt(c => c.mob)]].filter(x => x[0] === 'all' || x[2]);
-  if (!chips.some(x => x[0] === opsRosterRole)) opsRosterRole = 'all';
-  document.getElementById('opsRosterFilter').innerHTML = chips.map(([k, t, n]) =>
-    `<button class="${k === opsRosterRole ? 'on' : ''}" onclick='opsRosterFilterBy(${JSON.stringify(k)})'${OPS_ROLES.includes(k) ? ` style="--rc:${opsRoleColor(k)}"` : ''}>${OPS_ROLES.includes(k) ? '<i class="dot"></i>' : ''}${mailEsc(t)}<span>${n}</span></button>`).join('');
+  // 러너 · 몹이 먼저(가장 큰 구분), 포지션은 고르면 좁혀 보는 옵션
+  const kindOk = c => opsRosterKind === 'all' || (opsRosterKind === 'mob' ? !!c.mob : !c.mob);
+  const kinds = [['runner', '러너', list.filter(c => !c.mob).length], ['mob', '몹', list.filter(c => c.mob).length], ['all', '전체', list.length]];
+  document.getElementById('opsRosterFilter').innerHTML = kinds.map(([k, t, n]) =>
+    `<button class="${k === opsRosterKind ? 'on' : ''}" onclick="opsRosterKindBy('${k}')">${t}<span>${n}</span></button>`).join('');
+  const base = list.filter(kindOk);
+  if (opsRosterRole !== 'all' && !roles.includes(opsRosterRole)) opsRosterRole = 'all';
+  document.getElementById('opsRosterRole').innerHTML = `<option value="all">모든 포지션</option>` + roles.map(r => {
+    const n = base.filter(c => c.role === r).length; return `<option value="${mailEsc(r)}" ${r === opsRosterRole ? 'selected' : ''}>${mailEsc(r)} ${n}</option>`; }).join('');
   const q = ((document.getElementById('opsRosterQ') || {}).value || '').trim().toLowerCase();
-  const shown = list.filter(c => (!q || c.name.toLowerCase().includes(q))
-    && (opsRosterRole === 'all' || (opsRosterRole === 'mob' ? c.mob : c.role === opsRosterRole)));
+  const shown = base.filter(c => (!q || c.name.toLowerCase().includes(q)) && (opsRosterRole === 'all' || c.role === opsRosterRole));
   const { k, d } = opsRosterSort;
   const val = c => k === 'name' ? c.name : k === 'role' ? (OPS_ROLES.indexOf(c.role) + 1 || 9) : k === 'skill' ? (c.skill || '') : k === 'nation' ? (c.nation || '')
     : k === 'age' ? (c.age ?? 13) : k === 'sum' ? sum(c) : (parseInt((c.stats || {})[k], 10) || 0);
@@ -495,9 +500,9 @@ function opsRenderRoster() {
   if (!shown.length) { el.innerHTML = head + `<div class="ops-empty">${list.length ? '조건에 맞는 캐릭터가 없어요.' : '등록된 캐릭터가 없어요.'}</div>`; return; }
   el.innerHTML = head + shown.map(c => {
     const n = JSON.stringify(c.name), on = opsEditName === c.name, st = c.stats || {};
-    const av = c.avatar_url ? `<img src="${mailEsc(c.avatar_url)}" alt="" loading="lazy">` : `<i class="fa-solid fa-user"></i>`;
+    const av = `<span class="chat-avatar"${c.avatar_url ? ` style="background-image:url('${mailEsc(c.avatar_url)}')"` : ''}></span>`;
     return `<div class="rs-item${on ? ' open' : ''}"><div class="rs-row" onclick='opsEdit(${n})'>
-      <span class="c-name"><span class="av">${av}</span><b>${mailEsc(c.name)}</b>${c.mob ? '<em class="mob">몹</em>' : ''}</span>
+      <span class="c-name">${av}<b>${mailEsc(c.name)}</b>${c.mob && opsRosterKind === 'all' ? '<em class="mob">몹</em>' : ''}</span>
       <span class="c-role" style="--rc:${opsRoleColor(c.role)}"><i class="dot"></i>${mailEsc(c.role || '')}</span>
       <span class="c-skill">${c.skill ? mailEsc(c.skill) : '<i class="none">–</i>'}</span>
       <span class="c-nation">${FACTION_CHOICES.includes(c.nation) ? mailEsc(c.nation) : '<i class="none">–</i>'}</span>
